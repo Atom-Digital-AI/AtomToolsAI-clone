@@ -17,7 +17,7 @@ import SignUp from "@/pages/sign-up";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/app/dashboard";
 import Account from "@/pages/app/account";
-import Subscriptions from "@/pages/app/subscriptions";
+import MyTools from "@/pages/app/my-tools";
 import FacebookAdsConnector from "@/pages/app/tools/facebook-ads-connector";
 import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generator";
 import SEOMetaGeneratorApp from "@/pages/app/tools/seo-meta-generator";
@@ -47,7 +47,7 @@ export default function App() {
             <Route path="/login" component={Login} />
             <Route path="/app" component={Dashboard} />
             <Route path="/app/account" component={Account} />
-            <Route path="/app/subscriptions" component={Subscriptions} />
+            <Route path="/app/my-tools" component={MyTools} />
             <Route path="/app/tools/facebook-ads-connector" component={FacebookAdsConnector} />
             <Route path="/app/tools/google-ads-copy-generator" component={GoogleAdsCopyGeneratorApp} />
             <Route path="/app/tools/seo-meta-generator" component={SEOMetaGeneratorApp} />

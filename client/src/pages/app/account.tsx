@@ -1,15 +1,16 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { User, Mail, Download, Trash2, Lock, Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { User, Mail, Download, Trash2, Lock, Settings, CreditCard, X } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { type User as UserType } from "@shared/schema";
+import { type User as UserType, type ProductWithSubscriptionStatus } from "@shared/schema";
 
 export default function Account() {
   const { data: user, isLoading, error } = useQuery<UserType>({
@@ -17,6 +18,12 @@ export default function Account() {
     retry: false,
   });
 
+  const { data: products, isLoading: productsLoading } = useQuery<ProductWithSubscriptionStatus[]>({
+    queryKey: ["/api/products/with-status"],
+    enabled: !!user,
+  });
+
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -150,6 +157,30 @@ export default function Account() {
     deleteAccountMutation.mutate(deletePassword);
   };
 
+  // Unsubscribe mutation
+  const unsubscribeMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      return apiRequest("DELETE", `/api/subscriptions/${productId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
+      toast({
+        title: "Success",
+        description: "Successfully unsubscribed from product",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unsubscribe",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const subscribedProducts = products?.filter(p => p.isSubscribed) || [];
+  const availableProducts = products?.filter(p => !p.isSubscribed) || [];
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -211,6 +242,96 @@ export default function Account() {
                   <Settings className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* My Subscriptions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <CreditCard className="w-5 h-5" />
+                <span>My Subscriptions</span>
+              </CardTitle>
+              <CardDescription>
+                Manage your active subscriptions and discover new tools
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Active Subscriptions */}
+                <div>
+                  <h3 className="text-sm font-semibold text-text-secondary mb-3">Active Subscriptions</h3>
+                  {productsLoading ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-16 bg-surface animate-pulse rounded-lg" />
+                      ))}
+                    </div>
+                  ) : subscribedProducts.length > 0 ? (
+                    <div className="space-y-2">
+                      {subscribedProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center justify-between p-3 border border-border rounded-lg bg-surface"
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-medium text-text-primary">{product.name}</h4>
+                            <p className="text-sm text-text-secondary">{product.description}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                              Active
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => unsubscribeMutation.mutate(product.id)}
+                              disabled={unsubscribeMutation.isPending}
+                              data-testid={`unsubscribe-${product.id}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-text-secondary">
+                      <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No active subscriptions</p>
+                      <p className="text-sm">Subscribe to tools to get started</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Available Products */}
+                {availableProducts.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Available Tools</h3>
+                    <div className="space-y-2">
+                      {availableProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center justify-between p-3 border border-border rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-medium text-text-primary">{product.name}</h4>
+                            <p className="text-sm text-text-secondary">{product.description}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-primary">
+                              ${product.price}
+                            </span>
+                            <Badge variant="outline">
+                              Available
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
