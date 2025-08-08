@@ -38,31 +38,18 @@ const steps = [
 
 const pricingPlans = [
   {
-    title: "Free",
-    price: "£0",
-    period: "/month",
-    description: "Perfect to get started",
+    title: "Facebook Ads Connector",
+    price: "£29",
+    period: "one-time",
+    description: "Pay once, own forever",
     features: [
-      "1 Facebook Ads account",
-      "Basic metrics",
-      "Manual refresh", 
-      "Community support",
-    ],
-    buttonText: "Start for free",
-    buttonVariant: "outline" as const,
-  },
-  {
-    title: "Pro",
-    price: "£19",
-    period: "/month",
-    description: "For growing teams",
-    features: [
-      "Up to 5 Facebook Ads accounts",
+      "Unlimited Facebook Ads accounts",
       "All metrics & dimensions",
       "Hourly auto-refresh",
       "Priority email support",
+      "Lifetime updates",
     ],
-    buttonText: "Start for free",
+    buttonText: "Buy now",
     popular: true,
   },
 ];
@@ -200,7 +187,7 @@ export default function FacebookAdsTool() {
       <Section className="bg-surface">
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl font-bold mb-4 text-text-primary">Pricing</h2>
-          <p className="text-xl text-text-secondary">Start free, upgrade when you need more</p>
+          <p className="text-xl text-text-secondary">Pay once, own forever</p>
         </div>
         
         <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">

@@ -141,7 +141,7 @@ export default function SeoMetaTool() {
                     </div>
                     <div className="p-3 bg-surface-2 rounded-lg">
                       <div className="text-xs text-accent mb-1">Description (156 chars)</div>
-                      <div className="text-sm text-text-secondary">Discover powerful marketing automation tools that help small businesses scale faster. Free trials available on top platforms.</div>
+                      <div className="text-sm text-text-secondary">Discover powerful marketing automation tools that help small businesses scale faster. Get started today.</div>
                     </div>
                   </div>
                 </div>

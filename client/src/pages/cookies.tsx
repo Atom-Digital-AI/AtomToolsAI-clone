@@ -61,7 +61,7 @@ export default function Cookies() {
                     These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously.
                   </p>
                   <ul className="list-disc pl-6 space-y-1 text-text-secondary text-sm">
-                    <li>Google Analytics cookies</li>
+                    <li>Website analytics cookies</li>
                     <li>Page view tracking</li>
                     <li>Performance monitoring</li>
                   </ul>
@@ -130,7 +130,7 @@ export default function Cookies() {
               <div className="text-text-secondary space-y-4">
                 <p>Some cookies on our site are set by third-party services:</p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Google Analytics:</strong> Helps us understand website usage</li>
+                  <li><strong>Analytics Services:</strong> Help us understand website usage</li>
                   <li><strong>Payment Processors:</strong> Secure payment processing</li>
                   <li><strong>Social Media:</strong> Social sharing functionality</li>
                   <li><strong>Advertising Platforms:</strong> Deliver relevant ads</li>

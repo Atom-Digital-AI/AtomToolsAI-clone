@@ -6,7 +6,7 @@ import Section from "@/components/ui/section";
 import { Check, ArrowRight, Rocket, Cog, Star, Plug, Bolt, Shield, ChartBar } from "lucide-react";
 
 const trustIndicators = [
-  { icon: Rocket, text: "Ship campaigns 5× faster" },
+  { icon: Rocket, text: "Build and launch campaigns faster" },
   { icon: Cog, text: "Reduce manual ops" },
   { icon: Star, text: "Standardise quality" },
 ];
@@ -32,7 +32,7 @@ const features = [
 const stackFeatures = [
   {
     title: "Connectors",
-    description: "Facebook Ads, Google Analytics, Looker Studio integration",
+    description: "Facebook Ads, Looker Studio integration",
   },
   {
     title: "Generators",
@@ -44,7 +44,7 @@ const stackFeatures = [
   },
   {
     title: "Flexible pricing",
-    description: "Freemium entry, upgrade per tool as you grow",
+    description: "Free to start, upgrade per tool as you grow",
   },
 ];
 
@@ -54,7 +54,7 @@ const tools = [
     description: "Bring Facebook Ads performance into Looker Studio in minutes.",
     icon: "fab fa-facebook-f",
     iconColor: "bg-blue-500/10 text-blue-400",
-    badge: { text: "Free", color: "success" },
+    badge: { text: "Pay once, own forever", color: "success" },
     features: [
       "Authorise Facebook account",
       "Pick ad accounts & metrics",

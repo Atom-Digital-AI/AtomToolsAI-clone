@@ -48,6 +48,8 @@ The application uses PostgreSQL with two main tables:
 
 ### Performance Optimizations
 - **Code Splitting**: Vite-based bundling with tree shaking
+- **Pricing Model**: Free to start, pay-once-own-forever for individual tools
+- **No Google Analytics**: Uses privacy-focused analytics only
 - **Font Loading**: Preconnected Google Fonts with fallback stacks
 - **Image Optimization**: Lazy loading and responsive images
 - **SEO**: Meta tags, structured data (JSON-LD), and semantic HTML
