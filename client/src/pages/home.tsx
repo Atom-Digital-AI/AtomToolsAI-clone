@@ -50,15 +50,15 @@ const stackFeatures = [
 
 const tools = [
   {
-    title: "Facebook Ads Looker Studio Connector",
-    description: "Bring Facebook Ads performance into Looker Studio in minutes.",
+    title: "Facebook Ads Looker Studio Connector Guide",
+    description: "Complete guide to building your own Facebook Ads connector. No monthly fees or data storage costs.",
     icon: "fab fa-facebook-f",
     iconColor: "bg-blue-500/10 text-blue-400",
     badge: { text: "Pay once, own forever", color: "success" },
     features: [
-      "Authorise Facebook account",
-      "Pick ad accounts & metrics",
-      "Schedule automatic refresh",
+      "Step-by-step instructions",
+      "Complete source code included",
+      "Full control & oversight",
     ],
     href: "/tools/facebook-ads-looker-studio-connector",
   },

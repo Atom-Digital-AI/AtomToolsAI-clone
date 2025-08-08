@@ -10,6 +10,7 @@ This is a dark-mode marketing website and comprehensive subscription-based appli
 - **Navigation Issues Resolved**: Fixed My Tools → Access Tool → My Tools navigation loop by correcting product route paths from marketing pages (/tools/) to app tool pages (/app/tools/).
 - **Subscription Management**: Enhanced account page with full subscription management functionality, allowing users to view active subscriptions and available products.
 - **Database Schema Updates**: Updated product route paths to point to authenticated app tools rather than public marketing pages for proper access control.
+- **Facebook Ads Connector Repositioning**: Updated Facebook Ads Looker Studio Connector from software service to educational guide (£499 one-time fee) emphasizing no monthly subscriptions, no data storage costs, and full user control versus black box middleware.
 
 ## User Preferences
 

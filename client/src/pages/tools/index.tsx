@@ -5,22 +5,22 @@ import { Button } from "@/components/ui/button";
 import Section from "@/components/ui/section";
 import ToolCard from "@/components/ui/tool-card";
 
-const filters = ["All", "Connectors", "Generators", "Reporting"];
+const filters = ["All", "Guides", "Generators", "Reporting"];
 
 const tools = [
   {
-    name: "Facebook Ads Looker Studio Connector",
-    description: "Bring Facebook Ads performance into Looker Studio in minutes.",
+    name: "Facebook Ads Looker Studio Connector Guide",
+    description: "Complete guide to building your own Facebook Ads connector. No monthly fees or data storage costs.",
     icon: "fab fa-facebook-f",
     iconColor: "bg-blue-500/10 text-blue-400",
-    badge: { text: "Free", variant: "success" as const },
+    badge: { text: "£499", variant: "secondary" as const },
     features: [
-      "Authorise Facebook account",
-      "Pick ad accounts & metrics",
-      "Schedule automatic refresh",
+      "Step-by-step instructions",
+      "Complete source code included",
+      "Full control & oversight",
     ],
     href: "/tools/facebook-ads-looker-studio-connector",
-    category: "Connectors",
+    category: "Guides",
   },
   {
     name: "SEO Meta Generator",
