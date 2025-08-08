@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import MobileMenu from "./mobile-menu";
+import MobileMenu from "@/components/layout/mobile-menu";
 
 export default function Header() {
   const [location] = useLocation();
@@ -33,8 +33,8 @@ export default function Header() {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/">
-              <a 
-                className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-1"
+              <div 
+                className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-1 cursor-pointer"
                 data-testid="logo-link"
               >
                 <svg width="32" height="32" viewBox="0 0 32 32" className="text-accent">
@@ -56,7 +56,7 @@ export default function Header() {
                 <span className="font-display font-semibold text-lg text-text-primary">
                   atomtools.ai
                 </span>
-              </a>
+              </div>
             </Link>
           </div>
           
@@ -64,8 +64,8 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <a 
-                  className={`transition-colors font-medium ${
+                <span 
+                  className={`transition-colors font-medium cursor-pointer ${
                     location === item.href
                       ? "text-text-primary"
                       : "text-text-secondary hover:text-text-primary"
@@ -73,7 +73,7 @@ export default function Header() {
                   data-testid={`nav-link-${item.label.toLowerCase()}`}
                 >
                   {item.label}
-                </a>
+                </span>
               </Link>
             ))}
           </div>

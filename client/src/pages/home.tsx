@@ -119,7 +119,7 @@ export default function Home() {
                 <span className="text-accent"> Scale without hiring.</span>
               </h1>
               <p className="text-xl text-text-secondary mb-8 leading-relaxed">
-                atomtools.ai gives marketers and agencies the tools to create, launch and report faster — with AI-powered generators and zero-friction workflows.
+                atomtools.ai gives marketers and agencies the tools to create, launch and report faster - with AI-powered generators and zero-friction workflows.
               </p>
               
               {/* Trust indicators */}
@@ -140,7 +140,7 @@ export default function Home() {
                     className="bg-accent hover:bg-accent-2 text-white px-8 py-4 rounded-2xl font-semibold text-center w-full sm:w-auto"
                     data-testid="hero-signup-button"
                   >
-                    Start for free — no credit card
+                    Start for free - no credit card
                   </Button>
                 </Link>
                 <Link href="/tools">
@@ -260,7 +260,7 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-text-secondary text-sm mt-4">
-                  Connect, automate, report — all in one place
+                  Connect, automate, report - all in one place
                 </p>
               </div>
             </CardContent>

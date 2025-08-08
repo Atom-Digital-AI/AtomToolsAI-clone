@@ -7,16 +7,16 @@ export default function Footer() {
       links: [
         { href: "/tools", label: "Tools" },
         { href: "/pricing", label: "Pricing" },
-        { href: "#", label: "API" },
-        { href: "#", label: "Integrations" },
+        { href: "/api", label: "API" },
+        { href: "/integrations", label: "Integrations" },
       ],
     },
     {
       title: "Resources",
       links: [
-        { href: "/resources", label: "Blog" },
-        { href: "/resources", label: "How-tos" },
-        { href: "/resources", label: "Templates" },
+        { href: "/resources#blog", label: "Blog" },
+        { href: "/resources#how-tos", label: "How-tos" },
+        { href: "/resources#templates", label: "Templates" },
         { href: "/contact", label: "Support" },
       ],
     },
@@ -66,8 +66,8 @@ export default function Footer() {
             <div key={section.title}>
               <h3 className="font-semibold text-text-primary mb-4">{section.title}</h3>
               <ul className="space-y-2">
-                {section.links.map((link) => (
-                  <li key={link.href}>
+                {section.links.map((link, linkIndex) => (
+                  <li key={`${section.title}-${linkIndex}`}>
                     <Link href={link.href}>
                       <a 
                         className="text-text-secondary hover:text-text-primary text-sm transition-colors"
