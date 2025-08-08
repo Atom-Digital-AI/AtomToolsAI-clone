@@ -127,7 +127,7 @@ export default function Dashboard() {
               <Button 
                 className="w-full justify-start bg-accent hover:bg-accent-2 text-white"
                 data-testid="manage-subscriptions-button"
-                onClick={() => window.location.href = "/app/subscriptions"}
+                onClick={() => window.location.href = "/app/account"}
               >
                 Manage Subscriptions
               </Button>

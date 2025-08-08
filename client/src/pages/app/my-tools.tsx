@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight, Lock, Zap } from "lucide-react";
 import { type ProductWithSubscriptionStatus } from "@shared/schema";
 
 export default function MyTools() {
@@ -118,21 +118,55 @@ export default function MyTools() {
         {/* Empty State */}
         {subscribedProducts.length === 0 && (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 bg-surface rounded-full flex items-center justify-center">
-              <Lock className="w-12 h-12 text-text-secondary" />
+            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-accent to-accent-2 rounded-full flex items-center justify-center">
+              <Zap className="w-12 h-12 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-text-primary mb-2">
-              No Tools Yet
+            <h3 className="text-2xl font-bold text-text-primary mb-3">
+              Ready to Supercharge Your Marketing?
             </h3>
-            <p className="text-text-secondary mb-6 max-w-md mx-auto">
-              Subscribe to marketing tools to start automating your campaigns and boosting your productivity.
+            <p className="text-lg text-text-secondary mb-4 max-w-lg mx-auto">
+              Get instant access to powerful AI-driven tools that save hours and boost results.
             </p>
-            <Link href="/pricing">
-              <Button size="lg">
-                Browse Available Tools
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+            <p className="text-text-secondary mb-8 max-w-md mx-auto">
+              <strong>Free to start</strong> • Pay once, own forever • No subscriptions
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/pricing">
+                <Button size="lg" className="bg-accent hover:bg-accent-2">
+                  Browse Available Tools
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/app/account">
+                <Button variant="outline" size="lg">
+                  Manage Subscriptions
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Quick preview of available tools */}
+            {availableProducts.length > 0 && (
+              <div className="mt-12">
+                <h4 className="text-lg font-semibold text-text-primary mb-4">
+                  Popular Tools to Get Started
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                  {availableProducts.slice(0, 3).map((product) => (
+                    <div
+                      key={product.id}
+                      className="p-4 border border-border rounded-lg bg-surface/50 hover:bg-surface transition-colors"
+                    >
+                      <h5 className="font-semibold text-text-primary mb-2">{product.name}</h5>
+                      <p className="text-sm text-text-secondary mb-3">{product.description}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-accent">${product.price}</span>
+                        <span className="text-xs text-text-secondary">One-time</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
