@@ -38,7 +38,7 @@ export default function Footer() {
           {/* Logo and description */}
           <div className="md:col-span-1">
             <div className="mb-4">
-              <svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-text-primary max-w-full h-auto">
+              <svg width="150" height="39" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-text-primary">
                 {/* Atomic symbol */}
                 <g>
                   {/* Central nucleus */}

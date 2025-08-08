@@ -29,15 +29,15 @@ export default function Header() {
       </a>
 
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
-        <div className="flex items-center justify-between py-6">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/">
               <div 
-                className="flex items-center focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-2 cursor-pointer text-text-primary"
+                className="flex items-center focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-1 cursor-pointer text-text-primary"
                 data-testid="logo-link"
               >
-                <svg width="200" height="53" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="block">
+                <svg width="180" height="48" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Atomic symbol */}
                   <g>
                     {/* Central nucleus */}
