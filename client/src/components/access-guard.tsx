@@ -71,7 +71,7 @@ export function AccessGuard({
             <CardTitle className="text-2xl">Subscription Required</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-text-secondary mb-6 text-lg">
+            <p className="mb-6 text-lg text-[#ffffff]">
               You need an active subscription to access <strong>{productName}</strong>.
             </p>
             <p className="text-sm mb-6 text-[#ffffff]">
