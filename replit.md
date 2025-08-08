@@ -54,6 +54,13 @@ The application uses PostgreSQL with two main tables:
 - **Image Optimization**: Lazy loading and responsive images
 - **SEO**: Meta tags, structured data (JSON-LD), and semantic HTML
 
+### Brand Identity
+- **Logo**: Custom SVG logo with animated atomic structure representing modular tools
+- **Color Palette**: Electric indigo (#6366F1) primary, with dark mode support
+- **Logo Files**: /logo.svg (full), /logo-icon.svg (icon), /favicon.svg (favicon)
+- **Typography**: Space Grotesk for headings, Inter for body text
+- **Design Philosophy**: Atomic, scientific, interconnected components
+
 ## External Dependencies
 
 ### Database Services

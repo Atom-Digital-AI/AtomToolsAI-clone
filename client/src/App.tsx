@@ -17,6 +17,7 @@ import SignUp from "@/pages/sign-up";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import Cookies from "@/pages/cookies";
+import LogoShowcase from "@/pages/logo-showcase";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/terms" component={Terms} />
             <Route path="/privacy" component={Privacy} />
             <Route path="/cookies" component={Cookies} />
+            <Route path="/logo" component={LogoShowcase} />
             <Route component={NotFound} />
           </Switch>
         </main>
