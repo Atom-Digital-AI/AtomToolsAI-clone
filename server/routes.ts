@@ -68,6 +68,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Debug endpoint to check session status
+  app.get("/api/debug/session", (req, res) => {
+    res.json({
+      sessionID: req.sessionID,
+      userId: req.session.userId,
+      hasSession: !!req.session,
+      cookies: req.headers.cookie,
+    });
+  });
+
   // Contact form endpoint
   app.post("/api/contact", async (req, res) => {
     try {

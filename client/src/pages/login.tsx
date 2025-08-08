@@ -48,13 +48,16 @@ export default function LoginPage() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Login successful, user data:", data);
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
-      // Redirect to dashboard
-      window.location.href = "/app";
+      // Force reload to ensure session is properly set
+      setTimeout(() => {
+        window.location.href = "/app";
+      }, 500);
     },
     onError: (error: any) => {
       toast({

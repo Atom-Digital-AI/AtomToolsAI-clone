@@ -8,6 +8,7 @@ export default function Dashboard() {
   const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["/api/auth/me"],
     retry: false,
+    refetchOnMount: true,
   });
 
   const handleLogout = async () => {
@@ -31,13 +32,14 @@ export default function Dashboard() {
   }
 
   if (error || !user) {
+    console.log("Authentication failed:", { error, user });
     // Wait a moment before redirecting to avoid immediate redirect loop
     setTimeout(() => {
       window.location.href = "/login";
-    }, 100);
+    }, 1000);
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-text-secondary">Redirecting to login...</div>
+        <div className="text-text-secondary">Authentication failed, redirecting...</div>
       </div>
     );
   }
