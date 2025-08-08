@@ -37,7 +37,7 @@ export default function Header() {
                 className="flex items-center focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-1 cursor-pointer text-text-primary"
                 data-testid="logo-link"
               >
-                <svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="180" height="48" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Atomic symbol */}
                   <g>
                     {/* Central nucleus */}
