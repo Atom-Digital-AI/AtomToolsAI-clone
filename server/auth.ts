@@ -21,7 +21,7 @@ export const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || "development-secret-key",
   resave: false,
   saveUninitialized: false,
-  name: "atomtools.sid",
+  name: "connect.sid",
   cookie: {
     secure: false, // Set to true in production with HTTPS
     httpOnly: true,

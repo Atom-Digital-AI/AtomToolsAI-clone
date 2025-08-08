@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Logout error:", err);
         return res.status(500).json({ message: "Could not log out" });
       }
-      res.clearCookie("atomtools.sid");
+      res.clearCookie("connect.sid");
       res.json({ message: "Logged out successfully" });
     });
   });
@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) {
         console.error("Logout error:", err);
       }
-      res.clearCookie("atomtools.sid");
+      res.clearCookie("connect.sid");
       res.redirect("/");
     });
   });
@@ -162,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           console.error("Session destroy error:", err);
         }
-        res.clearCookie("atomtools.sid");
+        res.clearCookie("connect.sid");
         res.json({ message: "Account deleted successfully" });
       });
     } catch (error) {
