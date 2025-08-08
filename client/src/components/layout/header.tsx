@@ -1,18 +1,42 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { LogOut, User, Settings } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import MobileMenu from "@/components/layout/mobile-menu";
 
 export default function Header() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const { toast } = useToast();
 
-  const navItems = [
+  const publicNavItems = [
     { href: "/tools", label: "Tools" },
     { href: "/pricing", label: "Pricing" },
     { href: "/resources", label: "Resources" },
     { href: "/contact", label: "Contact" },
   ];
+
+  const authenticatedNavItems = [
+    { href: "/app", label: "Dashboard" },
+    { href: "/app/subscriptions", label: "My Tools" },
+  ];
+
+  const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
+
+  const handleLogout = async () => {
+    try {
+      window.location.href = "/api/auth/logout";
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <header 
@@ -83,22 +107,57 @@ export default function Header() {
           
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/login">
-              <span 
-                className="text-text-secondary hover:text-text-primary font-medium cursor-pointer transition-colors"
-                data-testid="header-login-link"
-              >
-                Login
-              </span>
-            </Link>
-            <Link href="/sign-up">
-              <Button 
-                className="bg-accent hover:bg-accent-2 text-white px-4 py-2 rounded-xl font-medium"
-                data-testid="header-signup-button"
-              >
-                Sign up free
-              </Button>
-            </Link>
+            {isLoading ? (
+              <div className="w-20 h-8 bg-surface animate-pulse rounded-md" />
+            ) : isAuthenticated ? (
+              <>
+                <Link href="/resources">
+                  <Button 
+                    variant="ghost" 
+                    className="text-text-secondary hover:text-text-primary"
+                    data-testid="resources-button"
+                  >
+                    Resources
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  className="text-text-secondary hover:text-text-primary flex items-center space-x-2"
+                  data-testid="account-button"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Account</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-text-secondary hover:text-text-primary flex items-center space-x-2"
+                  onClick={handleLogout}
+                  data-testid="logout-button"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <span 
+                    className="text-text-secondary hover:text-text-primary font-medium cursor-pointer transition-colors"
+                    data-testid="header-login-link"
+                  >
+                    Login
+                  </span>
+                </Link>
+                <Link href="/sign-up">
+                  <Button 
+                    className="bg-accent hover:bg-accent-2 text-white px-4 py-2 rounded-xl font-medium"
+                    data-testid="header-signup-button"
+                  >
+                    Sign up free
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
           
           {/* Mobile menu button */}

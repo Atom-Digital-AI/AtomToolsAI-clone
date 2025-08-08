@@ -1,5 +1,8 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -9,8 +12,24 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ isOpen, onClose, navItems }: MobileMenuProps) {
   if (!isOpen) return null;
+  
+  const { isAuthenticated, isLoading } = useAuth();
+  const { toast } = useToast();
 
   const handleLinkClick = () => {
+    onClose();
+  };
+
+  const handleLogout = async () => {
+    try {
+      window.location.href = "/api/auth/logout";
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    }
     onClose();
   };
 
@@ -33,15 +52,61 @@ export default function MobileMenu({ isOpen, onClose, navItems }: MobileMenuProp
             </a>
           </Link>
         ))}
-        <Link href="/sign-up">
-          <Button 
-            className="block w-full bg-accent hover:bg-accent-2 text-white px-4 py-2 rounded-xl font-medium text-center"
-            onClick={handleLinkClick}
-            data-testid="mobile-signup-button"
-          >
-            Sign up free
-          </Button>
-        </Link>
+        
+        {isAuthenticated ? (
+          <div className="space-y-3 border-t border-border pt-4">
+            <Link href="/resources">
+              <Button 
+                variant="ghost"
+                className="block w-full text-left text-text-secondary hover:text-text-primary"
+                onClick={handleLinkClick}
+                data-testid="mobile-resources-button"
+              >
+                Resources
+              </Button>
+            </Link>
+            <Button 
+              variant="ghost"
+              className="flex w-full items-center justify-start space-x-2 text-text-secondary hover:text-text-primary"
+              onClick={handleLinkClick}
+              data-testid="mobile-account-button"
+            >
+              <User className="w-4 h-4" />
+              <span>Account</span>
+            </Button>
+            <Button 
+              variant="ghost"
+              className="flex w-full items-center justify-start space-x-2 text-text-secondary hover:text-text-primary"
+              onClick={handleLogout}
+              data-testid="mobile-logout-button"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3 border-t border-border pt-4">
+            <Link href="/login">
+              <Button 
+                variant="ghost"
+                className="block w-full text-left text-text-secondary hover:text-text-primary"
+                onClick={handleLinkClick}
+                data-testid="mobile-login-button"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link href="/sign-up">
+              <Button 
+                className="block w-full bg-accent hover:bg-accent-2 text-white px-4 py-2 rounded-xl font-medium text-center"
+                onClick={handleLinkClick}
+                data-testid="mobile-signup-button"
+              >
+                Sign up free
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
