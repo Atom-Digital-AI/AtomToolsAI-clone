@@ -81,8 +81,16 @@ export default function Header() {
             ))}
           </div>
           
-          {/* CTA Button */}
-          <div className="hidden md:flex">
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Link href="/login">
+              <span 
+                className="text-text-secondary hover:text-text-primary font-medium cursor-pointer transition-colors"
+                data-testid="header-login-link"
+              >
+                Login
+              </span>
+            </Link>
             <Link href="/sign-up">
               <Button 
                 className="bg-accent hover:bg-accent-2 text-white px-4 py-2 rounded-xl font-medium"
