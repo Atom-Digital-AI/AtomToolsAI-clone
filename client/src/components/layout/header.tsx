@@ -41,7 +41,7 @@ export default function Header() {
                 <img 
                   src={logoUrl} 
                   alt="atomtools.ai logo" 
-                  className="h-8 w-auto"
+                  className="h-12 w-auto"
                 />
               </div>
             </Link>
