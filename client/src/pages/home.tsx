@@ -306,7 +306,7 @@ export default function Home() {
                     className="w-full bg-accent hover:bg-accent-2 text-white" 
                     data-testid={`tool-card-${index}`}
                   >
-                    {tool.title.includes('Facebook Ads') ? 'View guide - £499' : 'Start for free'}
+                    {tool.title.includes('Facebook Ads') ? 'Buy guide - £499' : 'Start for free'}
                   </Button>
                 </Link>
               </CardContent>
