@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Download, Trash2, Lock, Settings, CreditCard, X } from "lucide-react";
+import { User, Mail, Download, Trash2, Lock, Settings, CreditCard, X, Plus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -156,6 +156,27 @@ export default function Account() {
 
     deleteAccountMutation.mutate(deletePassword);
   };
+
+  // Subscribe mutation
+  const subscribeMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      return apiRequest("POST", "/api/subscriptions", { productId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
+      toast({
+        title: "Success",
+        description: "Successfully subscribed to product",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to subscribe",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Unsubscribe mutation
   const unsubscribeMutation = useMutation({
@@ -323,9 +344,15 @@ export default function Account() {
                             <span className="text-sm font-medium text-primary">
                               ${product.price}
                             </span>
-                            <Badge variant="outline">
-                              Available
-                            </Badge>
+                            <Button
+                              size="sm"
+                              onClick={() => subscribeMutation.mutate(product.id)}
+                              disabled={subscribeMutation.isPending}
+                              data-testid={`subscribe-${product.id}`}
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              {subscribeMutation.isPending ? "Adding..." : "Subscribe"}
+                            </Button>
                           </div>
                         </div>
                       ))}
