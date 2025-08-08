@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Color System - atomtools.ai brand */
+    --background: hsl(214, 32%, 5%);
+    --surface: hsl(214, 32%, 8%);
+    --surface-2: hsl(215, 28%, 11%);
+    --text-primary: hsl(210, 40%, 95%);
+    --text-secondary: hsl(215, 20%, 65%);
+    --border: hsl(215, 28%, 17%);
+    --accent: hsl(239, 84%, 67%);
+    --accent-2: hsl(259, 83%, 69%);
+    --success: hsl(142, 71%, 45%);
+    --warning: hsl(38, 92%, 50%);
+    --danger: hsl(0, 84%, 60%);
+
+    /* Standard shadcn colors */
+    --foreground: hsl(210, 40%, 95%);
+    --card: hsl(214, 32%, 8%);
+    --card-foreground: hsl(210, 40%, 95%);
+    --popover: hsl(214, 32%, 8%);
+    --popover-foreground: hsl(210, 40%, 95%);
+    --primary: hsl(239, 84%, 67%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --secondary: hsl(215, 28%, 17%);
+    --secondary-foreground: hsl(210, 40%, 95%);
+    --muted: hsl(215, 28%, 17%);
+    --muted-foreground: hsl(215, 20%, 65%);
+    --accent: hsl(239, 84%, 67%);
+    --accent-foreground: hsl(0, 0%, 100%);
+    --destructive: hsl(0, 84%, 60%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --input: hsl(215, 28%, 17%);
+    --ring: hsl(239, 84%, 67%);
+    --radius: 0.75rem;
+
+    /* Typography */
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--text-primary));
+    font-family: var(--font-sans);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--surface));
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215, 28%, 25%);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
