@@ -6,7 +6,16 @@ import { type User } from "@shared/schema";
 
 export default function Dashboard() {
   const { data: user, isLoading, error } = useQuery<User>({
-    queryKey: ["/api", "auth", "me"],
+    queryKey: ["user"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
     retry: false,
     refetchOnMount: true,
   });
@@ -33,13 +42,17 @@ export default function Dashboard() {
 
   if (error || !user) {
     console.log("Authentication failed:", { error, user });
-    // Wait a moment before redirecting to avoid immediate redirect loop
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 1000);
+    // Only redirect if we have an actual error, not just no user data yet
+    if (error && !isLoading) {
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
+    }
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-text-secondary">Authentication failed, redirecting...</div>
+        <div className="text-text-secondary">
+          {error ? "Authentication failed, redirecting..." : "Loading user data..."}
+        </div>
       </div>
     );
   }
