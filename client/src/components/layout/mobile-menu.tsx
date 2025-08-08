@@ -55,16 +55,6 @@ export default function MobileMenu({ isOpen, onClose, navItems }: MobileMenuProp
         
         {isAuthenticated ? (
           <div className="space-y-3 border-t border-border pt-4">
-            <Link href="/resources">
-              <Button 
-                variant="ghost"
-                className="block w-full text-left text-text-secondary hover:text-text-primary"
-                onClick={handleLinkClick}
-                data-testid="mobile-resources-button"
-              >
-                Resources
-              </Button>
-            </Link>
             <Button 
               variant="ghost"
               className="flex w-full items-center justify-start space-x-2 text-text-secondary hover:text-text-primary"

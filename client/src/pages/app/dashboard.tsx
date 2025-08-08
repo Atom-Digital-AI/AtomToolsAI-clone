@@ -58,52 +58,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <svg width="120" height="32" viewBox="0 0 140 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-text-primary">
-                {/* Atomic symbol */}
-                <g>
-                  {/* Central nucleus */}
-                  <circle cx="16" cy="16" r="2.5" fill="#6366F1"/>
-                  
-                  {/* Electron orbits */}
-                  <ellipse cx="16" cy="16" rx="12" ry="4" stroke="#6366F1" strokeWidth="1.2" fill="none" opacity="0.6" transform="rotate(0 16 16)"/>
-                  <ellipse cx="16" cy="16" rx="12" ry="4" stroke="#6366F1" strokeWidth="1.2" fill="none" opacity="0.6" transform="rotate(60 16 16)"/>
-                  <ellipse cx="16" cy="16" rx="12" ry="4" stroke="#6366F1" strokeWidth="1.2" fill="none" opacity="0.6" transform="rotate(120 16 16)"/>
-                  
-                  {/* Electrons */}
-                  <circle cx="28" cy="16" r="1.5" fill="#6366F1" opacity="0.8"/>
-                  <circle cx="8" cy="8" r="1.5" fill="#6366F1" opacity="0.8"/>
-                  <circle cx="24" cy="24" r="1.5" fill="#6366F1" opacity="0.8"/>
-                </g>
-                
-                {/* Typography */}
-                <text x="36" y="22" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600" fill="currentColor">
-                  atom<tspan fill="#6366F1">tools</tspan>.ai
-                </text>
-              </svg>
-              <span className="text-text-secondary">Dashboard</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-text-secondary">Welcome, {user.username}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-text-secondary hover:text-text-primary"
-                data-testid="logout-button"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="bg-background">{/* Removed duplicate header - using main Header component instead */}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

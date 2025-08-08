@@ -22,6 +22,7 @@ export default function Header() {
   const authenticatedNavItems = [
     { href: "/app", label: "Dashboard" },
     { href: "/app/subscriptions", label: "My Tools" },
+    { href: "/resources", label: "Resources" },
   ];
 
   const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
@@ -111,15 +112,6 @@ export default function Header() {
               <div className="w-20 h-8 bg-surface animate-pulse rounded-md" />
             ) : isAuthenticated ? (
               <>
-                <Link href="/resources">
-                  <Button 
-                    variant="ghost" 
-                    className="text-text-secondary hover:text-text-primary"
-                    data-testid="resources-button"
-                  >
-                    Resources
-                  </Button>
-                </Link>
                 <Button 
                   variant="ghost" 
                   className="text-text-secondary hover:text-text-primary flex items-center space-x-2"
