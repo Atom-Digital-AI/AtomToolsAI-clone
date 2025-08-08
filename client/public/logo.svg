@@ -1,0 +1,77 @@
+<svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Atom-inspired icon -->
+  <g transform="translate(8, 8)">
+    <!-- Central nucleus -->
+    <circle cx="12" cy="12" r="3" fill="#6366F1"/>
+    
+    <!-- Electron orbits -->
+    <ellipse cx="12" cy="12" rx="10" ry="4" 
+             stroke="#6366F1" 
+             stroke-width="1.5" 
+             fill="none" 
+             opacity="0.6"
+             transform="rotate(0 12 12)"/>
+    
+    <ellipse cx="12" cy="12" rx="10" ry="4" 
+             stroke="#6366F1" 
+             stroke-width="1.5" 
+             fill="none" 
+             opacity="0.6"
+             transform="rotate(60 12 12)"/>
+    
+    <ellipse cx="12" cy="12" rx="10" ry="4" 
+             stroke="#6366F1" 
+             stroke-width="1.5" 
+             fill="none" 
+             opacity="0.6"
+             transform="rotate(120 12 12)"/>
+    
+    <!-- Electrons -->
+    <circle cx="22" cy="12" r="1.5" fill="#6366F1" opacity="0.8">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="0 12 12"
+                        to="360 12 12"
+                        dur="4s"
+                        repeatCount="indefinite"/>
+    </circle>
+    
+    <circle cx="12" cy="16" r="1.5" fill="#6366F1" opacity="0.8">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="60 12 12"
+                        to="420 12 12"
+                        dur="3s"
+                        repeatCount="indefinite"/>
+    </circle>
+    
+    <circle cx="12" cy="8" r="1.5" fill="#6366F1" opacity="0.8">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="120 12 12"
+                        to="480 12 12"
+                        dur="5s"
+                        repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Text -->
+  <text x="36" y="16" 
+        font-family="Space Grotesk, -apple-system, BlinkMacSystemFont, sans-serif" 
+        font-size="14" 
+        font-weight="600" 
+        fill="#F8FAFC">
+    atomtools
+  </text>
+  
+  <text x="36" y="30" 
+        font-family="Space Grotesk, -apple-system, BlinkMacSystemFont, sans-serif" 
+        font-size="10" 
+        font-weight="400" 
+        fill="#6366F1">
+    .ai
+  </text>
+</svg>

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a dark-mode marketing website and minimal app shell for atomtools.ai, a platform selling digital marketing and automation tools. The application is built as a full-stack web application with a React frontend, Express backend, and PostgreSQL database integration. It features a modern, accessible UI with a focus on marketing tool automation including connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses.
+This is a dark-mode marketing website and minimal app shell for atomtools.ai, a platform selling digital marketing and automation tools. The application is built as a full-stack web application with a React frontend, Express backend, and PostgreSQL database integration. It features a modern, accessible UI with a focus on marketing tool automation including connectors and generators for digital marketers, agencies, and small businesses.
 
 ## User Preferences
 
@@ -53,6 +53,13 @@ The application uses PostgreSQL with two main tables:
 - **Font Loading**: Preconnected Google Fonts with fallback stacks
 - **Image Optimization**: Lazy loading and responsive images
 - **SEO**: Meta tags, structured data (JSON-LD), and semantic HTML
+
+### Brand Identity
+- **Logo**: Custom SVG logo with animated atomic structure representing modular tools
+- **Color Palette**: Electric indigo (#6366F1) primary, with dark mode support
+- **Logo Files**: /logo.svg (full), /logo-icon.svg (icon), /favicon.svg (favicon)
+- **Typography**: Space Grotesk for headings, Inter for body text
+- **Design Philosophy**: Atomic, scientific, interconnected components
 
 ## External Dependencies
 
