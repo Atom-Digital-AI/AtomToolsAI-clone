@@ -193,17 +193,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get products with user subscription status
-  app.get("/api/products/with-status", requireAuth, async (req, res) => {
-    try {
-      const userId = (req as any).user.id;
-      console.log("Fetching products with status for user:", userId);
-      const products = await storage.getProductsWithSubscriptionStatus(userId);
-      console.log("Products with status result:", products);
-      res.json(products);
-    } catch (error) {
-      console.error("Error fetching products with status:", error);
-      res.status(500).json({ message: "Failed to fetch products" });
+  app.get("/api/products/with-status", (req, res) => {
+    console.log("Products request - Session ID:", req.sessionID, "User ID:", req.session.userId, "Cookies:", req.headers.cookie);
+    
+    // Check authentication manually first
+    if (!req.session?.userId) {
+      console.log("No session userId found for products/with-status");
+      return res.status(401).json({ message: "Unauthorized - No session user ID" });
     }
+
+    const userId = req.session.userId;
+    console.log("Fetching products with status for user:", userId);
+    
+    storage.getProductsWithSubscriptionStatus(userId)
+      .then(products => {
+        console.log("Products with status result:", products);
+        res.json(products);
+      })
+      .catch(error => {
+        console.error("Error fetching products with status:", error);
+        res.status(500).json({ message: "Failed to fetch products" });
+      });
   });
 
   // Subscription routes

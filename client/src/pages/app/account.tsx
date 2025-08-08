@@ -21,8 +21,16 @@ export default function Account() {
   const { data: products, isLoading: productsLoading, error: productsError } = useQuery<ProductWithSubscriptionStatus[]>({
     queryKey: ["/api/products/with-status"],
     enabled: !!user,
-    retry: 3,
-    retryDelay: 1000,
+    retry: false,
+    queryFn: async () => {
+      const response = await fetch("/api/products/with-status", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
   });
 
   const queryClient = useQueryClient();
