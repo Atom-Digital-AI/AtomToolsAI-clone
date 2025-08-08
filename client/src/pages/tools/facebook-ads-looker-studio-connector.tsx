@@ -19,21 +19,42 @@ const features = [
 const steps = [
   {
     number: "01",
-    title: "Purchase & Download",
-    description: "Get instant access to the complete guide and source code files.",
-    icon: "fas fa-download",
+    title: "Log in to Facebook and Google",
+    description: "Download the main code file and configuration JSON to get started.",
+    icon: "fas fa-sign-in-alt",
+    hasDownloads: true,
+    downloads: [
+      { name: "Main Code File", filename: "facebook-ads-connector.js" },
+      { name: "Configuration JSON", filename: "config.json" }
+    ]
   },
   {
     number: "02", 
-    title: "Follow the Guide",
-    description: "Step-by-step instructions with screenshots to build your connector.",
-    icon: "fas fa-book",
+    title: "Create Facebook App",
+    description: "Set up your Facebook App to access the Ads API with step-by-step video guidance.",
+    icon: "fab fa-facebook-f",
+    hasVideo: true
   },
   {
     number: "03",
-    title: "Deploy & Connect",
-    description: "Deploy your custom connector and connect it to Looker Studio.",
-    icon: "fas fa-rocket",
+    title: "Set up Google Cloud",
+    description: "Configure your Google Cloud project and enable necessary APIs.",
+    icon: "fab fa-google",
+    hasVideo: true
+  },
+  {
+    number: "04",
+    title: "Set up Google App Script", 
+    description: "Deploy your connector code using Google Apps Script platform.",
+    icon: "fas fa-code",
+    hasVideo: true
+  },
+  {
+    number: "05",
+    title: "Add Connector to Looker Studio",
+    description: "Connect your custom data source to Looker Studio and start reporting.",
+    icon: "fas fa-chart-bar",
+    hasVideo: true
   },
 ];
 
@@ -173,28 +194,72 @@ export default function FacebookAdsTool() {
         </div>
       </Section>
       
-      {/* How it works */}
+      {/* Implementation Guide */}
       <Section>
         <div className="text-center mb-12">
-          <h2 className="font-display text-3xl font-bold mb-4 text-text-primary">How it works</h2>
-          <p className="text-xl text-text-secondary">Get set up in three simple steps</p>
+          <h2 className="font-display text-3xl font-bold mb-4 text-text-primary">Implementation Guide</h2>
+          <p className="text-xl text-text-secondary">Follow these 5 steps to build your connector</p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="max-w-4xl mx-auto space-y-8">
           {steps.map((step, index) => (
-            <div key={index} className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <i className={`${step.icon} text-accent text-xl`}></i>
-              </div>
-              <div className="text-2xl font-bold text-accent mb-2">{step.number}</div>
-              <h3 className="font-display text-xl font-semibold mb-2 text-text-primary">{step.title}</h3>
-              <p className="text-text-secondary">{step.description}</p>
-              {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-8 left-full w-8">
-                  <ArrowRight className="h-6 w-6 text-text-secondary" />
+            <Card key={index} className="bg-surface border-border">
+              <CardContent className="p-8">
+                <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                  {/* Step Icon and Number */}
+                  <div className="flex items-center gap-4 lg:flex-col lg:items-center lg:gap-2">
+                    <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center">
+                      <i className={`${step.icon} text-accent text-xl`}></i>
+                    </div>
+                    <div className="text-2xl font-bold text-accent lg:text-center">{step.number}</div>
+                  </div>
+                  
+                  {/* Step Content */}
+                  <div className="flex-1">
+                    <h3 className="font-display text-xl font-semibold mb-3 text-text-primary">
+                      {step.title}
+                    </h3>
+                    <p className="text-text-secondary mb-6">{step.description}</p>
+                    
+                    {/* Downloads Section */}
+                    {step.hasDownloads && (
+                      <div className="mb-6">
+                        <h4 className="font-medium text-text-primary mb-3">Download Files:</h4>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          {step.downloads?.map((download, downloadIndex) => (
+                            <Button
+                              key={downloadIndex}
+                              variant="outline"
+                              className="border-accent text-accent hover:bg-accent hover:text-white"
+                              data-testid={`download-${download.filename}`}
+                            >
+                              <i className="fas fa-download mr-2"></i>
+                              {download.name}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Video Section */}
+                    {step.hasVideo && (
+                      <div className="bg-background rounded-xl p-6 border border-border">
+                        <div className="aspect-video bg-surface-2 rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <i className="fas fa-play text-accent text-xl"></i>
+                            </div>
+                            <p className="text-text-secondary text-sm">
+                              Video guide coming soon
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </Section>
