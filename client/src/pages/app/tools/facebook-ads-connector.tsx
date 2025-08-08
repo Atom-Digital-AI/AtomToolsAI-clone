@@ -65,134 +65,161 @@ export default function FacebookAdsConnector() {
         </div>
 
         <div className="space-y-6">
-          {/* Step 1: Connect Facebook */}
+          {/* Step 1: Log in to Facebook and Google */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">1</span>
-                Connect Facebook Ads Account
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!isConnected ? (
-                <div className="space-y-4">
-                  <p className="text-text-secondary">
-                    Connect your Facebook Ads account to start importing data.
-                  </p>
-                  <Button onClick={handleConnect} className="w-full" data-testid="button-connect-facebook">
-                    <Facebook className="w-4 h-4 mr-2" />
-                    Connect Facebook Account
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Alert>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertDescription>
-                      Successfully connected to Facebook Ads account.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Step 2: Select Ad Accounts */}
-          <Card className={!isConnected ? "opacity-50 pointer-events-none" : ""}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">2</span>
-                Select Ad Accounts
+                Log in to Facebook and Google
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <p className="text-text-secondary">
-                  Choose which ad accounts to include in your Looker Studio connector.
+                  Download the main code file and configuration JSON to get started.
                 </p>
                 
                 <div className="space-y-3">
-                  {mockAccounts.map((account) => (
-                    <div key={account.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={account.id}
-                        checked={selectedAccounts.includes(account.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedAccounts([...selectedAccounts, account.id]);
-                          } else {
-                            setSelectedAccounts(selectedAccounts.filter(id => id !== account.id));
-                          }
-                        }}
-                        data-testid={`checkbox-account-${account.id}`}
-                      />
-                      <Label htmlFor={account.id} className="flex-1 cursor-pointer">
-                        {account.name}
-                      </Label>
-                    </div>
-                  ))}
+                  <h4 className="font-medium text-text-primary">Download Files:</h4>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      variant="outline"
+                      className="border-accent text-accent hover:bg-accent hover:text-white"
+                      data-testid="download-main-code"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Main Code File
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-accent text-accent hover:bg-accent hover:text-white"
+                      data-testid="download-config-json"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Configuration JSON
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Step 3: Configure Settings */}
-          <Card className={!isConnected ? "opacity-50 pointer-events-none" : ""}>
+          {/* Step 2: Create Facebook App */}
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">3</span>
-                Configure Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="refresh-rate">Data Refresh Rate</Label>
-                  <Select value={refreshRate} onValueChange={setRefreshRate}>
-                    <SelectTrigger data-testid="select-refresh-rate">
-                      <SelectValue placeholder="Select refresh frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hourly">Every Hour</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Step 4: Generate Connector */}
-          <Card className={!isConnected ? "opacity-50 pointer-events-none" : ""}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">4</span>
-                Generate Connector
+                <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">2</span>
+                Create Facebook App
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <p className="text-text-secondary">
-                  Generate your custom Looker Studio connector with the selected configuration.
+                  Set up your Facebook App to access the Ads API with step-by-step video guidance.
                 </p>
                 
-                <Button 
-                  onClick={handleGenerateConnection} 
-                  className="w-full" 
-                  disabled={!isConnected || selectedAccounts.length === 0 || !refreshRate}
-                  data-testid="button-generate-connector"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Generate Looker Studio Connector
-                </Button>
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="aspect-video bg-surface-2 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i className="fas fa-play text-accent text-xl"></i>
+                      </div>
+                      <p className="text-text-secondary text-sm">
+                        Video guide coming soon
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Once generated, you'll receive a connector URL to use in Looker Studio.
-                  </AlertDescription>
-                </Alert>
+          {/* Step 3: Set up Google Cloud */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">3</span>
+                Set up Google Cloud
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-text-secondary">
+                  Configure your Google Cloud project and enable necessary APIs.
+                </p>
+                
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="aspect-video bg-surface-2 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i className="fas fa-play text-accent text-xl"></i>
+                      </div>
+                      <p className="text-text-secondary text-sm">
+                        Video guide coming soon
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step 4: Set up Google App Script */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">4</span>
+                Set up Google App Script
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-text-secondary">
+                  Deploy your connector code using Google Apps Script platform.
+                </p>
+                
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="aspect-video bg-surface-2 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i className="fas fa-play text-accent text-xl"></i>
+                      </div>
+                      <p className="text-text-secondary text-sm">
+                        Video guide coming soon
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step 5: Add Connector to Looker Studio */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="w-6 h-6 bg-primary/10 text-primary rounded-full text-sm flex items-center justify-center font-bold">5</span>
+                Add Connector to Looker Studio
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-text-secondary">
+                  Connect your custom data source to Looker Studio and start reporting.
+                </p>
+                
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="aspect-video bg-surface-2 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i className="fas fa-play text-accent text-xl"></i>
+                      </div>
+                      <p className="text-text-secondary text-sm">
+                        Video guide coming soon
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
