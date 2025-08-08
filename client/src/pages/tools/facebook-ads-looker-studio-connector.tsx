@@ -8,12 +8,12 @@ import PricingCard from "@/components/ui/pricing-card";
 import { ArrowRight, Check } from "lucide-react";
 
 const features = [
-  "Complete step-by-step guide with screenshots",
+  "Complete step-by-step guide with videos",
   "Full source code and configuration files",
   "No monthly subscriptions or recurring fees",
   "No data storage costs or management required",
   "Full control over your data integration",
-  "Works without relying on third-party middleware",
+  "Works without relying on middle men",
 ];
 
 const steps = [
@@ -44,12 +44,12 @@ const pricingPlans = [
     period: "one-time",
     description: "Complete DIY guide with source code",
     features: [
-      "Complete step-by-step guide",
+      "Complete step-by-step guide with videos",
       "Full source code included",
+      "Unlimited uses - build as many as you want",
       "No monthly subscriptions",
       "No data storage costs",
-      "Full control over integration",
-      "Priority email support",
+      "30 days priority email support",
     ],
     buttonText: "Buy guide now",
     popular: true,
@@ -59,23 +59,23 @@ const pricingPlans = [
 const faqs = [
   {
     question: "What exactly do I get for £499?",
-    answer: "You get a complete step-by-step guide with screenshots, full source code, configuration files, and detailed instructions to build your own Facebook Ads connector for Looker Studio.",
+    answer: "You get a complete step-by-step guide with videos, full source code, configuration files, and detailed instructions to build your own Facebook Ads connector for Looker Studio.",
   },
   {
     question: "Why build it myself instead of using a service?", 
-    answer: "Building it yourself means no monthly subscriptions, no data storage costs, and full control over your integration. You're not dependent on third-party services or middleware.",
+    answer: "Building it yourself means no monthly subscriptions, no data storage costs, and full control over your integration. You're not dependent on third-party services or middle men.",
   },
   {
     question: "Do I need technical skills to follow the guide?",
-    answer: "The guide is designed to be beginner-friendly with detailed step-by-step instructions and screenshots. Basic familiarity with APIs and Google Cloud Platform is helpful but not required.",
+    answer: "The guide is designed to be beginner-friendly with detailed step-by-step instructions and videos. No technical background required.",
   },
   {
     question: "What if I need help implementing the guide?",
-    answer: "The guide includes priority email support. If you get stuck, we'll help you through any issues you encounter during implementation.",
+    answer: "The guide includes 30 days of priority email support after purchase. If you get stuck, we'll help you through any issues you encounter during implementation.",
   },
   {
     question: "Will this work with multiple Facebook Ads accounts?",
-    answer: "Yes, the connector you build will support multiple Facebook Ads accounts and all standard metrics including impressions, clicks, CTR, CPC, conversions, and ROAS.",
+    answer: "Each connector works with one Facebook Ads account, but you can build unlimited connectors - one for each ad account you want to connect. The guide shows you how to build as many as you need.",
   },
 ];
 
@@ -111,7 +111,7 @@ export default function FacebookAdsTool() {
               </Link>
             </div>
             
-            <p className="text-sm text-text-secondary">One-time payment, full ownership</p>
+            <p className="text-sm text-text-secondary">One-time payment, unlimited uses</p>
           </div>
           
           {/* Benefits Card */}
@@ -147,7 +147,7 @@ export default function FacebookAdsTool() {
                     </div>
                     <div>
                       <p className="font-medium text-text-primary">Full control</p>
-                      <p className="text-sm text-text-secondary">No reliance on black box services</p>
+                      <p className="text-sm text-text-secondary">No reliance on middle men</p>
                     </div>
                   </div>
                 </div>
@@ -203,13 +203,15 @@ export default function FacebookAdsTool() {
       <Section className="bg-surface">
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl font-bold mb-4 text-text-primary">Pricing</h2>
-          <p className="text-xl text-text-secondary">Pay once, own forever</p>
+          <p className="text-xl text-text-secondary">Pay once, unlimited uses</p>
         </div>
         
-        <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {pricingPlans.map((plan, index) => (
-            <PricingCard key={index} {...plan} />
-          ))}
+        <div className="flex justify-center">
+          <div className="max-w-md">
+            {pricingPlans.map((plan, index) => (
+              <PricingCard key={index} {...plan} />
+            ))}
+          </div>
         </div>
       </Section>
       

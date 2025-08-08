@@ -13,7 +13,7 @@ const tools = [
     description: "Complete guide to building your own Facebook Ads connector. No monthly fees or data storage costs.",
     icon: "fab fa-facebook-f",
     iconColor: "bg-blue-500/10 text-blue-400",
-    badge: { text: "£499", variant: "secondary" as const },
+    badge: { text: "£499", variant: "accent" as const },
     features: [
       "Step-by-step instructions",
       "Complete source code included",
