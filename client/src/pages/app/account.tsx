@@ -18,9 +18,11 @@ export default function Account() {
     retry: false,
   });
 
-  const { data: products, isLoading: productsLoading } = useQuery<ProductWithSubscriptionStatus[]>({
+  const { data: products, isLoading: productsLoading, error: productsError } = useQuery<ProductWithSubscriptionStatus[]>({
     queryKey: ["/api/products/with-status"],
     enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const queryClient = useQueryClient();
@@ -201,6 +203,14 @@ export default function Account() {
 
   const subscribedProducts = products?.filter(p => p.isSubscribed) || [];
   const availableProducts = products?.filter(p => !p.isSubscribed) || [];
+  
+  // Debug logging - remove in production
+  if (productsError) {
+    console.log('Products error:', productsError);
+  }
+  if (products) {
+    console.log('Products loaded successfully:', products.length);
+  }
 
   if (isLoading) {
     return (
