@@ -1,0 +1,286 @@
+AI Design Prompt for Replit
+
+You are a senior product designer + front‑end engineer. Build a dark‑mode marketing site and minimal app shell for atomtools.ai — a platform selling digital marketing & automation tools to digital marketers, SMB owners, and agencies who want to automate and scale without hiring more staff.
+
+Deliver production‑ready Tailwind code with semantic HTML, accessible components (WCAG 2.2 AA), and clean UK‑English copy. Prioritise performance (Lighthouse 90+), SEO (meta + JSON‑LD), and AI‑crawler clarity (structured content, headings, descriptive labels).
+
+Brand
+
+Name: atomtools.ai
+
+Logo: simple wordmark “atomtools.ai” + small atom/bolt glyph (SVG). Provide logo-dark.svg, favicon.svg, favicon.png.
+
+Mode: Dark first (ship light‑mode tokens for later).
+
+Vibe: Cool, futuristic, highly professional and techy.
+
+Fonts (Google): Inter for UI, Space Grotesk for headlines. Load via <link>; include sensible font‑face fallbacks.
+
+Primary accent: Electric Indigo #6366F1.
+
+Design tokens (Tailwind theme)
+
+Colours:
+
+background: #0B0F14
+
+surface: #0F1720
+
+surface-2: #111827
+
+text-primary: #E5E7EB
+
+text-secondary: #94A3B8
+
+border: #1F2937
+
+accent: #6366F1
+
+accent-2 (focus/hover alt): #8B5CF6
+
+success: #22C55E, warning: #F59E0B, danger: #EF4444
+
+Radii: rounded-xl/2xl for cards & buttons.
+
+Shadows: soft, subtle; use ring for focus states.
+
+Spacing scale: Tailwind default; ensure generous py-24 hero paddings.
+
+Motion: Prefers‑reduced‑motion aware; small fade/slide on in‑view.
+
+Tailwind config (extend)
+
+Add a plugin section with container padding and custom colours using CSS variables. Provide a globals.css with dark variables.
+
+Information Architecture & Routes
+
+Home /
+
+Tools /tools
+
+Tool: Facebook Ads Looker Studio Connector /tools/facebook-ads-looker-studio-connector
+
+Tool: SEO Meta Generator /tools/seo-metas-generator
+
+Tool: Google Ads Copy Generator /tools/google-ad-copy-generator
+
+Pricing /pricing
+
+Resources (hub) /resources (tabs: Blog, How‑tos, Templates)
+
+Sign Up /sign-up
+
+Contact /contact
+
+Legal: Terms /terms, Privacy /privacy, Cookies /cookies
+
+Note: Freemium/paid per tool; show per‑tool pricing cards with placeholders.
+
+Global Components
+
+Header/Nav (sticky): logo (left) + links (Tools, Pricing, Resources, Contact) + primary CTA “Sign up free”. Mobile drawer. Current route highlighting.
+
+Buttons: primary (accent), secondary (ghost), subtle link.
+
+Badges/Chips: for “Free”, “Pro”, “New”.
+
+Cards: tool cards, feature cards, pricing cards.
+
+Accordion/FAQ
+
+Tabs (Resources hub)
+
+Form inputs with accessible labels, helper text, and error states.
+
+Toast/Alert for success/error.
+
+Footer: compact sitemap + legal + social placeholders; dummy company info.
+
+Accessibility & UX
+
+Keyboard nav and visible focus rings in accent.
+
+aria‑labels on icon buttons, descriptive alt text on images.
+
+Colour contrast ≥ 4.5:1 for text; test in dark mode.
+
+Homepage Content (copy & structure)
+
+Hero (Outcomes‑first):
+
+H1: “Automate your marketing. Scale without hiring.”
+
+Subhead: “atomtools.ai gives marketers and agencies the tools to create, launch and report faster — with AI‑powered generators and zero‑friction workflows.”
+
+CTAs: Primary Start for free — no credit card; Secondary anchor View tools.
+
+Visual: Hybrid — subtle 3D glow background with product UI collage (mock panels: tool grid, SEO meta generator form, connector config).
+
+Trust: No proof strip. Replace with concise bullet row of outcomes: “Ship campaigns 5× faster • Reduce manual ops • Standardise quality”.
+
+Feature row 1 (Three cards):
+
+“Plug‑and‑play tools” — Install and use in minutes.
+
+“Built for speed” — Opinionated defaults, undo/redo, smart presets.
+
+“Data‑safe by design” — Clear privacy, export controls.
+
+Feature row 2 (Split):
+
+Left: “Your stack, your way.”
+
+Right bullets: connectors, generators, reporting helpers; freemium entry, upgrade per tool.
+
+Tool highlights (3 up): Each card shows icon, short pitch, tags (Free/Pro), and CTA Start for free.
+
+Pricing teaser: “Only pay for what you use.” Button to /pricing.
+
+FAQ: 4–6 entries (billing, freemium, cancellations, data handling).
+
+CTA strip: “Ready to automate more, do less?” -> Start for free.
+
+Tools Index /tools
+
+Grid of available tools. Each card: name, 1‑line description, price badge (Free/Pro), and Start for free. Include search + filters (All, Connectors, Generators, Reporting).
+
+Tool page template (applies to all tool detail routes)
+
+Header: tool name, short description, Free/Pro badge.
+
+Hero panel: left copy, right illustrative UI mock (form or config panel).
+
+CTAs: Start for free, Sign up, No credit card required (combine: a primary button + small note).
+
+Sections:
+
+What it does — bullets.
+
+How it works — 3 steps with mini illustrations.
+
+Pricing — per‑tool plan cards (placeholders for tiers/limits).
+
+FAQ — 4 questions.
+
+Tool: Facebook Ads Looker Studio Connector
+
+Pitch: “Bring Facebook Ads performance into Looker Studio in minutes.”
+
+Bullets: Authorise, pick ad accounts, choose metrics/dimensions, schedule refresh.
+
+Tool: SEO Meta Generator
+
+Pitch: “Generate clean, on‑brand titles & metas at scale.”
+
+Bullets: Upload CSV/URLs, pick tone, AI generates, review & export.
+
+Tool: Google Ads Copy Generator
+
+Pitch: “High‑performing headlines & descriptions in seconds.”
+
+Bullets: Enter product/keywords, set brand rules, generate variants, export to Google Ads.
+
+Pricing /pricing
+
+Intro: “Simple, per‑tool pricing. Start free, upgrade when you need more.”
+
+Toggle: Monthly/Annual (shows % save).
+
+Cards (per tool): Free, Pro, Team — placeholder prices and limits (rows for credits, seats, API, priority support). CTA Start for free.
+
+FAQ and terms link.
+
+Resources Hub /resources
+
+Tabbed interface with filters & search.
+
+Tabs: Blog | How‑tos | Templates
+
+List cards: title, summary, tag, read time. Template cards have “Use template” CTA.
+
+Auth /sign-up
+
+Form: Email + Password, plus Continue with Google button.
+
+Password strength meter, terms checkbox, privacy note.
+
+Link to sign‑in.
+
+Contact /contact
+
+Simple form (Name, Email, Message) + info panel with dummy company details (reg, address, VAT placeholder).
+
+Legal
+
+Ship simple markdown pages for Terms, Privacy, Cookies with UK spellings. Include cookie banner (dismissible) that stores consent.
+
+SEO & AI‑Crawl
+
+Per‑page <title> and <meta name="description"> (UK English, concise, keyword‑rich, human‑readable).
+
+Open Graph/Twitter tags.
+
+JSON‑LD:
+
+Organization on home.
+
+Product for each tool page (name, description, offers with placeholder price, URL).
+
+FAQPage where applicable.
+
+Sitemap at /sitemap.xml and robots.txt allowing crawl; disallow /api/* if present.
+
+Semantic landmarks: header, nav, main, section, footer with ARIA as needed.
+
+Implementation Notes
+
+Use Tailwind (no external UI kit). Build small, reusable components: Container, Section, Button, Card, Badge, Input, Tabs, FAQ, PricingCard, ToolCard.
+
+Provide a tiny brand SVG (wordmark + glyph).
+
+Include an App Layout with Header/Footer and route stubs.
+
+Add placeholder images/illustrations as inline SVGs or CSS layers (gradients/glows) — no external assets required.
+
+Include utilities: sr-only, visually‑hidden labels, skip‑to‑content link.
+
+Ship a README.md with setup steps and where to edit tokens/copy.
+
+Example Copy (UK English)
+
+Home hero H1: Automate your marketing. Scale without hiring.
+
+Home hero subhead: AI‑powered tools for marketers, small businesses and agencies. Create, launch and report faster — without adding headcount.
+
+Primary CTA: Start for free — no credit card.
+
+Tools grid intro: Choose a tool to start fast. Upgrade when you’re ready.
+
+Pricing intro: Only pay for what you use. Flexible plans per tool.
+
+Cookie banner: “We use essential cookies and similar technologies to improve your experience. Manage preferences.”
+
+Acceptance Criteria
+
+Dark‑mode Tailwind site with pages & routes listed above.
+
+Components and tokens as described; Inter + Space Grotesk loaded.
+
+Header with CTA “Sign up free”; mobile nav works.
+
+Tools index + 3 tool detail pages with per‑tool pricing placeholders and CTAs: Start for free, Sign Up, No Credit Card Required.
+
+Sign‑up form: email/password + Continue with Google.
+
+Resources hub with Tabs (Blog, How‑tos, Templates) + filters/search.
+
+Legal pages + cookie banner.
+
+SEO: titles, descriptions, Open Graph, JSON‑LD, sitemap, robots.
+
+Accessibility: keyboard nav, focus rings, alt text, aria labels.
+
+Performance: target 90+ Lighthouse.
+
+Build clean, commented code ready for extension. Keep copy concise and professional. Use UK spellings throughout.
+
