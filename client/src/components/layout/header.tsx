@@ -12,6 +12,9 @@ export default function Header() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { toast } = useToast();
 
+  // Debug logging
+  console.log('Header auth state:', { isAuthenticated, isLoading, user });
+
   const publicNavItems = [
     { href: "/tools", label: "Tools" },
     { href: "/pricing", label: "Pricing" },
