@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import MobileMenu from "@/components/layout/mobile-menu";
 
 export default function Header() {
@@ -12,8 +13,7 @@ export default function Header() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { toast } = useToast();
 
-  // Debug logging
-  console.log('Header auth state:', { isAuthenticated, isLoading, user });
+
 
   const publicNavItems = [
     { href: "/tools", label: "Tools" },
@@ -32,8 +32,20 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      window.location.href = "/api/auth/logout";
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        // Clear the auth cache and redirect
+        queryClient.clear();
+        window.location.href = "/";
+      } else {
+        throw new Error("Logout failed");
+      }
     } catch (error) {
+      console.error("Logout error:", error);
       toast({
         title: "Error",
         description: "Failed to logout. Please try again.",

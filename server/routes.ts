@@ -47,6 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Logout endpoint
   app.post("/api/auth/logout", (req, res) => {
+    console.log("POST logout - Session ID:", req.sessionID, "User ID:", req.session.userId);
     req.session.destroy((err) => {
       if (err) {
         console.error("Logout error:", err);
@@ -54,6 +55,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.clearCookie("atomtools.sid");
       res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/auth/logout", (req, res) => {
+    console.log("GET logout - Session ID:", req.sessionID, "User ID:", req.session.userId);
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+      }
+      res.clearCookie("atomtools.sid");
+      res.redirect("/");
     });
   });
 

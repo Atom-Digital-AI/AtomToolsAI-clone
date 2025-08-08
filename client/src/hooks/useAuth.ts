@@ -20,7 +20,7 @@ export function useAuth() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  console.log('useAuth data:', { user, isLoading, error });
+
 
   return {
     user: user as User | undefined,

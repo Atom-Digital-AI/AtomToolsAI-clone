@@ -22,8 +22,21 @@ export default function MobileMenu({ isOpen, onClose, navItems }: MobileMenuProp
 
   const handleLogout = async () => {
     try {
-      window.location.href = "/api/auth/logout";
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        // Clear the auth cache and redirect
+        const { queryClient } = await import("@/lib/queryClient");
+        queryClient.clear();
+        window.location.href = "/";
+      } else {
+        throw new Error("Logout failed");
+      }
     } catch (error) {
+      console.error("Logout error:", error);
       toast({
         title: "Error",
         description: "Failed to logout. Please try again.",
