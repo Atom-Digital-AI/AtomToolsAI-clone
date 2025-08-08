@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a dark-mode marketing website and minimal app shell for atomtools.ai, a platform selling digital marketing and automation tools. The application is built as a full-stack web application with a React frontend, Express backend, and PostgreSQL database integration. It features a modern, accessible UI with a focus on marketing tool automation including connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses.
+This is a dark-mode marketing website and minimal app shell for atomtools.ai, a platform selling digital marketing and automation tools. The application is built as a full-stack web application with a React frontend, Express backend, and PostgreSQL database integration. It features a modern, accessible UI with a focus on marketing tool automation including connectors and generators for digital marketers, agencies, and small businesses.
 
 ## User Preferences
 
