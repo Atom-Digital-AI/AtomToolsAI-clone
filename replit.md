@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a dark-mode marketing website and minimal app shell for atomtools.ai, a platform selling digital marketing and automation tools. The application is built as a full-stack web application with a React frontend, Express backend, and PostgreSQL database integration. It features a modern, accessible UI with a focus on marketing tool automation including connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses.
+This is a dark-mode marketing website and comprehensive subscription-based application for atomtools.ai, a platform selling digital marketing and automation tools. The application features a complete subscription system with product access control, allowing users to subscribe to different marketing tools and restricting access based on active subscriptions. Built as a full-stack web application with React frontend, Express backend, and PostgreSQL database, it includes modern UI/UX with focus on marketing automation including connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses.
 
 ## User Preferences
 
@@ -28,10 +28,13 @@ Preferred communication style: Simple, everyday language.
 - **Development**: Hot module replacement via Vite integration in development mode
 
 ### Database Schema
-The application uses PostgreSQL with two main tables:
+The application uses PostgreSQL with a comprehensive subscription system:
 - **Users**: Stores user accounts with username, email, password, and timestamps
+- **Products**: Stores available tools with name, description, price, route path, and active status
+- **User Subscriptions**: Junction table managing user-product relationships with subscription status
 - **Contacts**: Stores contact form submissions with name, email, message, and timestamps
-- **Schema Management**: Drizzle Kit for migrations with TypeScript schema definitions
+- **Sessions**: Stores user session data for authentication persistence
+- **Schema Management**: Drizzle Kit for migrations with TypeScript schema definitions and relations
 
 ### Authentication & Security
 - **User Registration**: Basic username/email/password signup with validation

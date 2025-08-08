@@ -78,6 +78,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Product routes
+  app.get("/api/products", async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  // Get products with user subscription status
+  app.get("/api/products/with-status", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const products = await storage.getProductsWithSubscriptionStatus(userId);
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching products with status:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  // Subscription routes
+  app.get("/api/subscriptions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const subscriptions = await storage.getUserSubscriptions(userId);
+      res.json(subscriptions);
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+      res.status(500).json({ message: "Failed to fetch subscriptions" });
+    }
+  });
+
+  app.post("/api/subscriptions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { productId } = req.body;
+
+      if (!productId) {
+        return res.status(400).json({ message: "Product ID is required" });
+      }
+
+      // Check if product exists
+      const product = await storage.getProduct(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      // Subscribe user
+      const subscription = await storage.subscribeUser({ userId, productId });
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ message: "Failed to create subscription" });
+    }
+  });
+
+  app.delete("/api/subscriptions/:productId", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { productId } = req.params;
+
+      const success = await storage.unsubscribeUser(userId, productId);
+      if (success) {
+        res.json({ message: "Unsubscribed successfully" });
+      } else {
+        res.status(404).json({ message: "Subscription not found" });
+      }
+    } catch (error) {
+      console.error("Error removing subscription:", error);
+      res.status(500).json({ message: "Failed to remove subscription" });
+    }
+  });
+
+  // Check product access
+  app.get("/api/products/:productId/access", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { productId } = req.params;
+
+      const isSubscribed = await storage.isUserSubscribed(userId, productId);
+      res.json({ hasAccess: isSubscribed });
+    } catch (error) {
+      console.error("Error checking product access:", error);
+      res.status(500).json({ message: "Failed to check access" });
+    }
+  });
+
   // Contact form endpoint
   app.post("/api/contact", async (req, res) => {
     try {

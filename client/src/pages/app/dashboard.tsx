@@ -171,14 +171,16 @@ export default function Dashboard() {
             <CardContent className="space-y-3">
               <Button 
                 className="w-full justify-start bg-accent hover:bg-accent-2 text-white"
-                data-testid="create-campaign-button"
+                data-testid="manage-subscriptions-button"
+                onClick={() => window.location.href = "/app/subscriptions"}
               >
-                Create New Campaign
+                Manage Subscriptions
               </Button>
               <Button 
                 variant="outline"
                 className="w-full justify-start border-border text-text-secondary hover:text-text-primary"
                 data-testid="facebook-ads-button"
+                onClick={() => window.location.href = "/app/tools/facebook-ads-connector"}
               >
                 Facebook Ads Connector
               </Button>
@@ -186,6 +188,7 @@ export default function Dashboard() {
                 variant="outline"
                 className="w-full justify-start border-border text-text-secondary hover:text-text-primary"
                 data-testid="seo-meta-button"
+                onClick={() => window.location.href = "/app/tools/seo-meta-generator"}
               >
                 SEO Meta Generator
               </Button>
