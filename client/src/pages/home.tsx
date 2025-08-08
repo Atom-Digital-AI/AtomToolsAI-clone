@@ -101,8 +101,56 @@ export default function Home() {
     <div id="main">
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
-        {/* Background glow effects */}
+        {/* Animated Background */}
         <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-accent/10"></div>
+          {/* Animated Particles */}
+          <div className="absolute inset-0">
+            {/* Large floating atoms */}
+            <div className="absolute top-1/4 right-1/4 w-40 h-40 border border-accent/15 rounded-full animate-float-large">
+              <div className="absolute top-1/2 left-1/2 w-5 h-5 bg-accent/30 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+              <div className="absolute top-3 left-1/2 w-2 h-2 bg-accent/50 rounded-full transform -translate-x-1/2 animate-orbit" style={{animationDelay: '0s'}}></div>
+              <div className="absolute bottom-3 right-1/4 w-2 h-2 bg-accent/50 rounded-full animate-orbit" style={{animationDelay: '2s'}}></div>
+              <div className="absolute top-1/2 right-3 w-2 h-2 bg-accent/50 rounded-full animate-orbit" style={{animationDelay: '4s'}}></div>
+              <div className="absolute top-1/4 left-3 w-1.5 h-1.5 bg-accent/40 rounded-full animate-orbit" style={{animationDelay: '6s'}}></div>
+            </div>
+            
+            <div className="absolute bottom-1/4 left-1/6 w-28 h-28 border border-accent/10 rounded-full animate-float" style={{animationDelay: '2s'}}>
+              <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-accent/25 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+              <div className="absolute top-2 left-1/3 w-1.5 h-1.5 bg-accent/40 rounded-full animate-orbit" style={{animationDelay: '1s'}}></div>
+              <div className="absolute bottom-2 right-1/3 w-1.5 h-1.5 bg-accent/40 rounded-full animate-orbit" style={{animationDelay: '3s'}}></div>
+            </div>
+
+            <div className="absolute top-1/3 left-1/8 w-20 h-20 border border-accent/8 rounded-full animate-float" style={{animationDelay: '1s'}}>
+              <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-accent/20 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+              <div className="absolute top-1 left-1/2 w-1 h-1 bg-accent/30 rounded-full transform -translate-x-1/2 animate-orbit" style={{animationDelay: '1.5s'}}></div>
+            </div>
+
+            {/* Connecting lines */}
+            <svg className="absolute inset-0 w-full h-full opacity-15" style={{background: 'transparent'}}>
+              <defs>
+                <linearGradient id="homeLineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="currentColor" stopOpacity="0.1"/>
+                  <stop offset="50%" stopColor="currentColor" stopOpacity="0.6"/>
+                  <stop offset="100%" stopColor="currentColor" stopOpacity="0.1"/>
+                </linearGradient>
+              </defs>
+              <g className="text-accent">
+                <line x1="20%" y1="30%" x2="80%" y2="70%" stroke="url(#homeLineGradient)" strokeWidth="1" className="animate-pulse"/>
+                <line x1="70%" y1="20%" x2="30%" y2="80%" stroke="url(#homeLineGradient)" strokeWidth="1" className="animate-pulse" style={{animationDelay: '2s'}}/>
+                <line x1="15%" y1="50%" x2="85%" y2="50%" stroke="url(#homeLineGradient)" strokeWidth="1" className="animate-pulse" style={{animationDelay: '1s'}}/>
+              </g>
+            </svg>
+
+            {/* Floating particles */}
+            <div className="absolute top-1/5 left-1/5 w-1 h-1 bg-accent/50 rounded-full animate-ping" style={{animationDelay: '0s'}}></div>
+            <div className="absolute top-3/5 right-1/4 w-1 h-1 bg-accent/50 rounded-full animate-ping" style={{animationDelay: '2s'}}></div>
+            <div className="absolute top-2/5 right-1/6 w-0.5 h-0.5 bg-accent/40 rounded-full animate-ping" style={{animationDelay: '3s'}}></div>
+            <div className="absolute bottom-1/3 left-1/4 w-1 h-1 bg-accent/50 rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
+            <div className="absolute top-1/8 right-1/8 w-0.5 h-0.5 bg-accent/30 rounded-full animate-ping" style={{animationDelay: '4s'}}></div>
+          </div>
+          
+          {/* Original background glow effects */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/20 rounded-full blur-3xl"></div>
           <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-accent-2/10 rounded-full blur-2xl"></div>
         </div>
