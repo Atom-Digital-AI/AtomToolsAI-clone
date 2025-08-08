@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import MobileMenu from "@/components/layout/mobile-menu";
+import logoUrl from "@assets/generated_images/atomtools.ai_professional_logo_design_6ee52ac2.png";
 
 export default function Header() {
   const [location] = useLocation();
@@ -34,28 +35,14 @@ export default function Header() {
           <div className="flex-shrink-0">
             <Link href="/">
               <div 
-                className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-1 cursor-pointer"
+                className="flex items-center focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-1 cursor-pointer"
                 data-testid="logo-link"
               >
-                <svg width="32" height="32" viewBox="0 0 32 32" className="text-accent">
-                  <circle cx="16" cy="16" r="3" fill="currentColor"/>
-                  <path 
-                    d="M16 8a8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8z" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5" 
-                    fill="none" 
-                    opacity="0.6"
-                  />
-                  <path 
-                    d="M8 16h16M16 8v16" 
-                    stroke="currentColor" 
-                    strokeWidth="1" 
-                    opacity="0.4"
-                  />
-                </svg>
-                <span className="font-display font-semibold text-lg text-text-primary">
-                  atomtools.ai
-                </span>
+                <img 
+                  src={logoUrl} 
+                  alt="atomtools.ai logo" 
+                  className="h-8 w-auto"
+                />
               </div>
             </Link>
           </div>
