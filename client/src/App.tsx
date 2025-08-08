@@ -14,6 +14,7 @@ import Resources from "@/pages/resources";
 import Pricing from "@/pages/pricing";
 import Contact from "@/pages/contact";
 import SignUp from "@/pages/sign-up";
+import Login from "@/pages/login";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import Cookies from "@/pages/cookies";
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/pricing" component={Pricing} />
             <Route path="/contact" component={Contact} />
             <Route path="/sign-up" component={SignUp} />
+            <Route path="/login" component={Login} />
             <Route path="/terms" component={Terms} />
             <Route path="/privacy" component={Privacy} />
             <Route path="/cookies" component={Cookies} />
