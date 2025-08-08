@@ -6,7 +6,7 @@ import { type User } from "@shared/schema";
 
 export default function Dashboard() {
   const { data: user, isLoading, error } = useQuery<User>({
-    queryKey: ["/api/auth/me"],
+    queryKey: ["/api", "auth", "me"],
     retry: false,
     refetchOnMount: true,
   });
