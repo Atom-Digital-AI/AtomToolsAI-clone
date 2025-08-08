@@ -74,7 +74,7 @@ export function AccessGuard({
             <p className="text-text-secondary mb-6 text-lg">
               You need an active subscription to access <strong>{productName}</strong>.
             </p>
-            <p className="text-sm text-text-secondary mb-6">
+            <p className="text-sm mb-6 text-[#ffffff]">
               Subscribe to unlock this powerful marketing tool and start automating your workflow today.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
