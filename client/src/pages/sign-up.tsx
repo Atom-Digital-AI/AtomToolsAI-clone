@@ -58,7 +58,8 @@ export default function SignUp() {
         title: "Account created!",
         description: "Welcome to atomtools.ai. You can now start using our tools.",
       });
-      // Redirect to dashboard or tools page
+      // Redirect to dashboard
+      window.location.href = "/app";
     },
     onError: (error) => {
       toast({

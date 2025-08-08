@@ -52,8 +52,8 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
-      // Redirect to dashboard or home page
-      window.location.href = "/";
+      // Redirect to dashboard
+      window.location.href = "/app";
     },
     onError: (error: any) => {
       toast({
