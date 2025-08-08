@@ -8,6 +8,24 @@ import { type ProductWithSubscriptionStatus } from "@shared/schema";
 export default function MyTools() {
   const { data: products, isLoading, error } = useQuery<ProductWithSubscriptionStatus[]>({
     queryKey: ["/api/products/with-status"],
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Always fetch fresh
+    gcTime: 0, // Don't cache
+    queryFn: async () => {
+      console.log("Fetching products from My Tools page...");
+      const response = await fetch("/api/products/with-status", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Products API error:", response.status, errorText);
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log("Products fetched successfully:", data.length);
+      return data;
+    },
   });
 
   if (isLoading) {
@@ -29,10 +47,22 @@ export default function MyTools() {
   }
 
   if (error || !products) {
+    console.error("My Tools error:", error);
     return (
       <div className="bg-background min-h-screen flex items-center justify-center">
-        <div className="text-text-secondary">
-          Failed to load tools. Please try again.
+        <div className="text-center">
+          <div className="text-text-secondary mb-4">
+            Failed to load tools. Please try again.
+          </div>
+          <div className="text-sm text-text-secondary">
+            Error: {error?.message || "Unknown error"}
+          </div>
+          <Button 
+            className="mt-4" 
+            onClick={() => window.location.reload()}
+          >
+            Refresh Page
+          </Button>
         </div>
       </div>
     );
