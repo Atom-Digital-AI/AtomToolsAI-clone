@@ -212,13 +212,7 @@ export default function Account() {
   const subscribedProducts = products?.filter(p => p.isSubscribed) || [];
   const availableProducts = products?.filter(p => !p.isSubscribed) || [];
   
-  // Debug logging - remove in production
-  if (productsError) {
-    console.log('Products error:', productsError);
-  }
-  if (products) {
-    console.log('Products loaded successfully:', products.length);
-  }
+
 
   if (isLoading) {
     return (
