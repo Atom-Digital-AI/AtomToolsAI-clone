@@ -1,6 +1,8 @@
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
+import { pool } from "./db";
 
 declare module "express-session" {
   interface SessionData {
@@ -8,7 +10,14 @@ declare module "express-session" {
   }
 }
 
+const PgSession = connectPgSimple(session);
+
 export const sessionMiddleware = session({
+  store: new PgSession({
+    pool,
+    tableName: 'sessions',
+    createTableIfMissing: false,
+  }),
   secret: process.env.SESSION_SECRET || "development-secret-key",
   resave: false,
   saveUninitialized: false,
