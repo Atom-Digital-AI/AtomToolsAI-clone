@@ -80,6 +80,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Change password endpoint
+  app.post("/api/auth/change-password", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters long" });
+      }
+
+      // Get current user to verify password
+      const user = await storage.getUser(userId);
+      if (!user || user.password !== currentPassword) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      // Update password
+      await storage.updateUserPassword(userId, newPassword);
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Change password error:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Download account data endpoint
+  app.get("/api/auth/account-data", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      
+      // Get user data
+      const user = await storage.getUser(userId);
+      const subscriptions = await storage.getUserSubscriptions(userId);
+      
+      const accountData = {
+        user: {
+          id: user?.id,
+          username: user?.username,
+          email: user?.email,
+          createdAt: user?.createdAt
+        },
+        subscriptions: subscriptions,
+        exportDate: new Date().toISOString()
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="atomtools-account-data-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(accountData);
+    } catch (error) {
+      console.error("Download account data error:", error);
+      res.status(500).json({ message: "Failed to export account data" });
+    }
+  });
+
+  // Delete account endpoint
+  app.delete("/api/auth/account", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { password } = req.body;
+
+      if (!password) {
+        return res.status(400).json({ message: "Password confirmation is required" });
+      }
+
+      // Verify password
+      const user = await storage.getUser(userId);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: "Password is incorrect" });
+      }
+
+      // Delete user and related data
+      await storage.deleteUser(userId);
+      
+      // Destroy session
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destroy error:", err);
+        }
+        res.clearCookie("atomtools.sid");
+        res.json({ message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      console.error("Delete account error:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   // Debug endpoint to check session status
   app.get("/api/debug/session", (req, res) => {
     res.json({

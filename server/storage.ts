@@ -17,6 +17,8 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPassword(id: string, password: string): Promise<void>;
+  deleteUser(id: string): Promise<void>;
   
   // Product operations
   getAllProducts(): Promise<Product[]>;
@@ -60,6 +62,20 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password })
+      .where(eq(users.id, id));
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    // Delete user subscriptions first (foreign key constraint)
+    await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, id));
+    // Delete user
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Product operations

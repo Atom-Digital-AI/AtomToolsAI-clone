@@ -1,7 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Calendar, Settings } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { User, Mail, Download, Trash2, Lock, Settings } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { type User as UserType } from "@shared/schema";
 
 export default function Account() {
@@ -9,6 +16,139 @@ export default function Account() {
     queryKey: ["/api/auth/me"],
     retry: false,
   });
+
+  const { toast } = useToast();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [deletePassword, setDeletePassword] = useState("");
+
+  // Change password mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      return apiRequest("POST", "/api/auth/change-password", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+      setShowPasswordDialog(false);
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Download account data mutation
+  const downloadDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/auth/account-data", {
+        method: "GET",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to download data");
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = `atomtools-account-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Account data downloaded successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to download account data",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete account mutation
+  const deleteAccountMutation = useMutation({
+    mutationFn: async (password: string) => {
+      return apiRequest("DELETE", "/api/auth/account", { password });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted",
+      });
+      // Redirect to home page
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete account",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handlePasswordChange = () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords don't match",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "New password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    if (!deletePassword) {
+      toast({
+        title: "Error",
+        description: "Please enter your password to confirm account deletion",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    deleteAccountMutation.mutate(deletePassword);
+  };
 
   if (isLoading) {
     return (
@@ -85,22 +225,129 @@ export default function Account() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col space-y-3">
-                <Button variant="outline" disabled>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowPasswordDialog(true)}
+                  data-testid="change-password-button"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
                   Change Password
                 </Button>
-                <Button variant="outline" disabled>
-                  Download Account Data
+                <Button 
+                  variant="outline"
+                  onClick={() => downloadDataMutation.mutate()}
+                  disabled={downloadDataMutation.isPending}
+                  data-testid="download-data-button"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {downloadDataMutation.isPending ? "Downloading..." : "Download Account Data"}
                 </Button>
-                <Button variant="destructive" disabled>
+                <Button 
+                  variant="destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                  data-testid="delete-account-button"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
                   Delete Account
                 </Button>
               </div>
-              <p className="text-sm text-text-secondary">
-                Account management features are coming soon.
-              </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Change Password Dialog */}
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+              <DialogDescription>
+                Enter your current password and choose a new one.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="current-password">Current Password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  data-testid="current-password-input"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                  data-testid="new-password-input"
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  data-testid="confirm-password-input"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowPasswordDialog(false)}
+                data-testid="cancel-password-change"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePasswordChange}
+                disabled={changePasswordMutation.isPending}
+                data-testid="confirm-password-change"
+              >
+                {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Account Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Account</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="my-4">
+              <Label htmlFor="delete-password">Enter your password to confirm</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Your password"
+                data-testid="delete-password-input"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="cancel-delete-account">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                className="bg-destructive hover:bg-destructive/90"
+                disabled={deleteAccountMutation.isPending}
+                data-testid="confirm-delete-account"
+              >
+                {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
