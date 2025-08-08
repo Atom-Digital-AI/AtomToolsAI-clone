@@ -7,8 +7,6 @@ export default function Footer() {
       links: [
         { href: "/tools", label: "Tools" },
         { href: "/pricing", label: "Pricing" },
-        { href: "/api", label: "API" },
-        { href: "/integrations", label: "Integrations" },
       ],
     },
     {
@@ -16,7 +14,6 @@ export default function Footer() {
       links: [
         { href: "/resources#blog", label: "Blog" },
         { href: "/resources#how-tos", label: "How-tos" },
-        { href: "/resources#templates", label: "Templates" },
         { href: "/contact", label: "Support" },
       ],
     },
