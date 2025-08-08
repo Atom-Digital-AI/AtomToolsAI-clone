@@ -4,6 +4,13 @@
 
 This is a dark-mode marketing website and comprehensive subscription-based application for atomtools.ai, a platform selling digital marketing and automation tools. The application features a complete subscription system with product access control, allowing users to subscribe to different marketing tools and restricting access based on active subscriptions. Built as a full-stack web application with React frontend, Express backend, and PostgreSQL database, it includes modern UI/UX with focus on marketing automation including connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses.
 
+## Recent Changes (August 2025)
+
+- **Session Authentication Fixed**: Resolved session cookie naming mismatch between frontend ("atomtools.sid") and backend ("connect.sid") that was causing authentication failures across the application.
+- **Navigation Issues Resolved**: Fixed My Tools → Access Tool → My Tools navigation loop by correcting product route paths from marketing pages (/tools/) to app tool pages (/app/tools/).
+- **Subscription Management**: Enhanced account page with full subscription management functionality, allowing users to view active subscriptions and available products.
+- **Database Schema Updates**: Updated product route paths to point to authenticated app tools rather than public marketing pages for proper access control.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
