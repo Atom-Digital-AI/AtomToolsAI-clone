@@ -68,15 +68,17 @@ export default function MobileMenu({ isOpen, onClose, navItems }: MobileMenuProp
         
         {isAuthenticated ? (
           <div className="space-y-3 border-t border-border pt-4">
-            <Button 
-              variant="ghost"
-              className="flex w-full items-center justify-start space-x-2 text-text-secondary hover:text-text-primary"
-              onClick={handleLinkClick}
-              data-testid="mobile-account-button"
-            >
-              <User className="w-4 h-4" />
-              <span>Account</span>
-            </Button>
+            <Link href="/app/account">
+              <Button 
+                variant="ghost"
+                className="flex w-full items-center justify-start space-x-2 text-text-secondary hover:text-text-primary"
+                onClick={handleLinkClick}
+                data-testid="mobile-account-button"
+              >
+                <User className="w-4 h-4" />
+                <span>Account</span>
+              </Button>
+            </Link>
             <Button 
               variant="ghost"
               className="flex w-full items-center justify-start space-x-2 text-text-secondary hover:text-text-primary"

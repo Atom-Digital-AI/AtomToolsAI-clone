@@ -16,6 +16,7 @@ import Contact from "@/pages/contact";
 import SignUp from "@/pages/sign-up";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/app/dashboard";
+import Account from "@/pages/app/account";
 import Subscriptions from "@/pages/app/subscriptions";
 import FacebookAdsConnector from "@/pages/app/tools/facebook-ads-connector";
 import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generator";
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/sign-up" component={SignUp} />
             <Route path="/login" component={Login} />
             <Route path="/app" component={Dashboard} />
+            <Route path="/app/account" component={Account} />
             <Route path="/app/subscriptions" component={Subscriptions} />
             <Route path="/app/tools/facebook-ads-connector" component={FacebookAdsConnector} />
             <Route path="/app/tools/google-ads-copy-generator" component={GoogleAdsCopyGeneratorApp} />

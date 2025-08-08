@@ -127,14 +127,16 @@ export default function Header() {
               <div className="w-20 h-8 bg-surface animate-pulse rounded-md" />
             ) : isAuthenticated ? (
               <>
-                <Button 
-                  variant="ghost" 
-                  className="text-text-secondary hover:text-text-primary flex items-center space-x-2"
-                  data-testid="account-button"
-                >
-                  <User className="w-4 h-4" />
-                  <span>Account</span>
-                </Button>
+                <Link href="/app/account">
+                  <Button 
+                    variant="ghost" 
+                    className="text-text-secondary hover:text-text-primary flex items-center space-x-2"
+                    data-testid="account-button"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Account</span>
+                  </Button>
+                </Link>
                 <Button 
                   variant="ghost" 
                   className="text-text-secondary hover:text-text-primary flex items-center space-x-2"
