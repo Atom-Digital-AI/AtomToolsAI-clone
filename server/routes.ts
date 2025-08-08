@@ -30,6 +30,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
+      console.log("Login successful for user:", user.id, "Session ID:", req.sessionID);
+      
       res.json({ 
         user: { 
           id: user.id, 
@@ -50,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Logout error:", err);
         return res.status(500).json({ message: "Could not log out" });
       }
-      res.clearCookie("connect.sid");
+      res.clearCookie("atomtools.sid");
       res.json({ message: "Logged out successfully" });
     });
   });
@@ -58,6 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user endpoint
   app.get("/api/auth/me", requireAuth, async (req, res) => {
     const user = (req as any).user;
+    console.log("User authenticated:", user.id, "Session ID:", req.sessionID);
     res.json({
       id: user.id,
       username: user.username,

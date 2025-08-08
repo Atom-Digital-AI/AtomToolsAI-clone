@@ -5,13 +5,21 @@ import { BarChart3, Users, Zap, Settings, LogOut } from "lucide-react";
 import { type User } from "@shared/schema";
 
 export default function Dashboard() {
-  const { data: user, isLoading } = useQuery<User>({
+  const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["/api/auth/me"],
     retry: false,
   });
 
-  const handleLogout = () => {
-    window.location.href = "/api/auth/logout";
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { 
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+    window.location.href = "/";
   };
 
   if (isLoading) {
@@ -22,9 +30,16 @@ export default function Dashboard() {
     );
   }
 
-  if (!user) {
-    window.location.href = "/login";
-    return null;
+  if (error || !user) {
+    // Wait a moment before redirecting to avoid immediate redirect loop
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 100);
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-text-secondary">Redirecting to login...</div>
+      </div>
+    );
   }
 
   return (
