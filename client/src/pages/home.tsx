@@ -38,7 +38,10 @@ const stackFeatures = [
     title: "Generators",
     description: "AI-powered ad copy, SEO meta tags, content creation",
   },
-
+  {
+    title: "Reporting helpers",
+    description: "Automated dashboards, custom metrics, scheduled reports",
+  },
   {
     title: "Flexible pricing",
     description: "Free to start, upgrade per tool as you grow",

@@ -1,59 +1,38 @@
-import {
-  users,
-  contacts,
-  type User,
-  type UpsertUser,
-  type Contact,
-  type InsertContact,
-} from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { type User, type InsertUser } from "@shared/schema";
+import { randomUUID } from "crypto";
 
-// Interface for storage operations
+// modify the interface with any CRUD methods
+// you might need
+
 export interface IStorage {
-  // User operations for Replit Auth
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-  
-  // Contact operations
-  getContacts(): Promise<Contact[]>;
-  createContact(contact: InsertContact): Promise<Contact>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
 }
 
-export class DatabaseStorage implements IStorage {
-  // User operations for Replit Auth
+export class MemStorage implements IStorage {
+  private users: Map<string, User>;
+
+  constructor() {
+    this.users = new Map();
+  }
+
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const user: User = { ...insertUser, id, createdAt: new Date() };
+    this.users.set(id, user);
     return user;
-  }
-
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
-  }
-
-  // Contact operations
-  async getContacts(): Promise<Contact[]> {
-    return await db.select().from(contacts);
-  }
-
-  async createContact(contact: InsertContact): Promise<Contact> {
-    const [newContact] = await db
-      .insert(contacts)
-      .values(contact)
-      .returning();
-    return newContact;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();

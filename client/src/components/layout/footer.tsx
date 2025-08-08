@@ -38,7 +38,22 @@ export default function Footer() {
           {/* Logo and description */}
           <div className="md:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <img src="/logo-icon.svg" alt="atomtools.ai logo" width="24" height="24" />
+              <svg width="24" height="24" viewBox="0 0 32 32" className="text-accent">
+                <circle cx="16" cy="16" r="3" fill="currentColor"/>
+                <path 
+                  d="M16 8a8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8z" 
+                  stroke="currentColor" 
+                  strokeWidth="1.5" 
+                  fill="none" 
+                  opacity="0.6"
+                />
+                <path 
+                  d="M8 16h16M16 8v16" 
+                  stroke="currentColor" 
+                  strokeWidth="1" 
+                  opacity="0.4"
+                />
+              </svg>
               <span className="font-display font-semibold text-text-primary">atomtools.ai</span>
             </div>
             <p className="text-text-secondary text-sm mb-4">
