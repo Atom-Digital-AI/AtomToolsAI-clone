@@ -564,29 +564,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
 
-      // Build exact prompt from original Python app
+      // Build exact prompt from original PHP app
       const prompt = `
-        Based on the following content and requirements, generate compelling Google Ads copy:
+        And using these inputs:
+        Target Keywords: ${targetKeywords}
+        Brand Name: ${brandName}
+        Selling Points: ${sellingPoints || "None"}
 
         CONTENT FROM WEBSITE:
         ${urlContent.substring(0, 2000)}...
 
-        TARGET KEYWORDS: ${targetKeywords}
-        BRAND NAME: ${brandName}
-        SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
 
-        Please generate:
-        1. A compelling headline (max 30 characters)
-        2. Two description lines (max 90 characters each)
-        3. A call-to-action
+        Generate Google Ads copy that includes:
+        - 3 headlines, each a maximum of 30 characters:
+          - Headline 1: Use one of the target keywords (if too long, use another).
+          - Headline 2: Use one of the selling points or a call to action.
+          - Headline 3: Use the brand name or a call to action.
+          (Ensure only one headline uses a target keyword, one uses a selling point/CTA, and one uses the brand name/CTA.)
 
-        Format your response as JSON:
+        - 2 descriptions, each a maximum of 90 characters:
+          - Description 1: Describe the offering using the target keyword and emphasize a selling point.
+          - Description 2: Add additional selling points and finish with a call to action.
+
+        Output the result in JSON format like:
         {
-            "headline": "Your headline here",
-            "description1": "First description line",
-            "description2": "Second description line",
-            "call_to_action": "Your CTA here"
+            "headlines": ["Headline 1", "Headline 2", "Headline 3"],
+            "descriptions": ["Description 1", "Description 2"]
         }
         `.trim();
 
@@ -610,7 +614,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const end = content.lastIndexOf('}') + 1;
         const jsonStr = content.substring(start, end);
         try {
-          result = JSON.parse(jsonStr);
+          const parsed = JSON.parse(jsonStr);
+          
+          // Handle new format with headlines and descriptions arrays (original format)
+          if (parsed.headlines && parsed.descriptions) {
+            result = {
+              headlines: parsed.headlines.slice(0, 3), // Ensure max 3 headlines
+              descriptions: parsed.descriptions.slice(0, 2), // Ensure max 2 descriptions
+              // For backwards compatibility, also provide single values
+              headline: parsed.headlines[0] || "",
+              description1: parsed.descriptions[0] || "", 
+              description2: parsed.descriptions[1] || "",
+              call_to_action: "Get Started" // Default CTA
+            };
+          }
+          // Handle legacy format (fallback)
+          else if (parsed.headline) {
+            result = parsed;
+          }
         } catch (e) {
           console.error("Failed to parse ad copy response:", e);
         }

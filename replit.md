@@ -14,7 +14,8 @@ This is a dark-mode marketing website and comprehensive subscription-based appli
 - **Exact Original Python Logic Implemented (Latest)**: Preserved the authentic generation methodology from the original Python Ad Copy Generator App while maintaining enhanced UI:
   - **Backend API Endpoints**: Implemented exact prompts, examples, and OpenAI API calls from original Python app (gpt-4o model, identical temperature settings, same language detection and URL fetching logic)
   - **SEO Meta Generator**: Authentic API endpoint mirrors original Python logic exactly - same prompts, character limits, JSON parsing, and language detection
-  - **Google Ads Copy Generator**: Authentic API endpoint preserves original Python methodology - identical prompts, headline/description generation, and response formatting
+  - **Google Ads Copy Generator**: Authentic API endpoint preserves original Python methodology with correct format - **3 headlines and 2 descriptions** using headlines/descriptions arrays (not single headline format)
+  - **Original Format Restored**: Updated Google Ads generator to output exact original format: `{"headlines": ["H1", "H2", "H3"], "descriptions": ["D1", "D2"]}` matching original PHP/Python implementation
   - **Frontend Integration**: Updated both tools to use authentic backend APIs instead of mock data while preserving enhanced UI/UX features like progress tracking, character count validation, and export functionality
   - **OpenAI Integration**: Configured with user's API key using exact model (gpt-4o) and parameters from original Python implementation
 
