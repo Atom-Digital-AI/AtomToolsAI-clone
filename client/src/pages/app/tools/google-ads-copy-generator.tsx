@@ -141,98 +141,77 @@ export default function GoogleAdsCopyGenerator() {
 
       setProgress(75);
 
-      // Check if we have the new format with headlines/descriptions arrays or legacy format
-      if (!response.headlines && !response.headline) {
-        throw new Error("No ad copy generated");
+      // Check if we have the correct format with headlines/descriptions arrays
+      if (!response.headlines || !Array.isArray(response.headlines) || 
+          !response.descriptions || !Array.isArray(response.descriptions)) {
+        throw new Error("Invalid response format from server");
       }
 
       // Initialize variations array
       let variations: GeneratedCopy[] = [];
 
-      // Handle new format with multiple headlines and descriptions (original format)
-      if (response.headlines && response.descriptions) {
-        const formattedHeadlines = response.headlines.map((h: string) => formatText(h, caseType));
-        const formattedDescriptions = response.descriptions.map((d: string) => formatText(d, caseType));
+      // Handle the headlines and descriptions arrays format
+      const formattedHeadlines = response.headlines.map((h: string) => formatText(h, caseType));
+      const formattedDescriptions = response.descriptions.map((d: string) => formatText(d, caseType));
+      
+      // Create variations from the multiple headlines and descriptions
+      const numHeadlines = Math.min(formattedHeadlines.length, 3);
+      const numDescs = Math.min(formattedDescriptions.length, 2);
+      
+      // Create variations by combining different headlines with descriptions
+      for (let i = 0; i < numVariations && i < numHeadlines; i++) {
+        const headlineIndex = i % numHeadlines;
+        const desc1Index = 0; // Always use first description
+        const desc2Index = numDescs > 1 ? 1 : 0; // Use second description if available
         
-        // Create variations from the multiple headlines and descriptions
-        const numHeadlines = Math.min(formattedHeadlines.length, 3);
-        const numDescs = Math.min(formattedDescriptions.length, 2);
-        
-        // Create variations by combining different headlines with descriptions
-        for (let i = 0; i < numVariations && i < numHeadlines; i++) {
-          const headlineIndex = i % numHeadlines;
-          const desc1Index = 0; // Always use first description
-          const desc2Index = numDescs > 1 ? 1 : 0; // Use second description if available
-          
-          variations.push({
-            headline: formattedHeadlines[headlineIndex],
-            description1: formattedDescriptions[desc1Index],
-            description2: formattedDescriptions[desc2Index],
-            callToAction: formatText("Get Started", caseType),
-            headlineLength: formattedHeadlines[headlineIndex].length,
-            description1Length: formattedDescriptions[desc1Index].length,
-            description2Length: formattedDescriptions[desc2Index].length,
-            score: 95 - (i * 3),
-            keywords: keywords.split(',').map(k => k.trim()),
-            language: 'en'
-          });
-        }
-        
-        // If we need more variations than headlines, generate additional API calls
-        if (numVariations > numHeadlines) {
-          for (let i = numHeadlines; i < numVariations; i++) {
-            try {
-              const varResponseObj = await apiRequest("POST", "/api/tools/google-ads/generate", {
-                url: url || undefined,
-                targetKeywords: keywords,
-                brandName: brandName,
-                sellingPoints: sellingPoints
-              });
-              
-              const varResponse = await varResponseObj.json();
-
-              if (varResponse.headlines && varResponse.descriptions) {
-                const varHeadlines = varResponse.headlines.map((h: string) => formatText(h, caseType));
-                const varDescriptions = varResponse.descriptions.map((d: string) => formatText(d, caseType));
-                
-                variations.push({
-                  headline: varHeadlines[0] || "",
-                  description1: varDescriptions[0] || "",
-                  description2: varDescriptions[1] || varDescriptions[0] || "",
-                  callToAction: formatText("Get Started", caseType),
-                  headlineLength: (varHeadlines[0] || "").length,
-                  description1Length: (varDescriptions[0] || "").length,
-                  description2Length: (varDescriptions[1] || varDescriptions[0] || "").length,
-                  score: 90 - (i * 2),
-                  keywords: keywords.split(',').map(k => k.trim()),
-                  language: 'en'
-                });
-              }
-            } catch (varError) {
-              console.warn(`Failed to generate variation ${i + 1}:`, varError);
-            }
-          }
-        }
-      }
-      // Handle legacy format (fallback)
-      else if (response.headline && response.description1) {
-        const formattedHeadline = formatText(response.headline, caseType);
-        const formattedDescription1 = formatText(response.description1, caseType);
-        const formattedDescription2 = formatText(response.description2 || "", caseType);
-        const formattedCTA = formatText(response.call_to_action || "Get Started", caseType);
-
-        variations = [{
-          headline: formattedHeadline,
-          description1: formattedDescription1,
-          description2: formattedDescription2,
-          callToAction: formattedCTA,
-          headlineLength: formattedHeadline.length,
-          description1Length: formattedDescription1.length,
-          description2Length: formattedDescription2.length,
-          score: 92,
+        variations.push({
+          headline: formattedHeadlines[headlineIndex],
+          description1: formattedDescriptions[desc1Index],
+          description2: formattedDescriptions[desc2Index],
+          callToAction: formatText("Get Started", caseType),
+          headlineLength: formattedHeadlines[headlineIndex].length,
+          description1Length: formattedDescriptions[desc1Index].length,
+          description2Length: formattedDescriptions[desc2Index].length,
+          score: 95 - (i * 3),
           keywords: keywords.split(',').map(k => k.trim()),
           language: 'en'
-        }];
+        });
+      }
+      
+      // If we need more variations than headlines, generate additional API calls
+      if (numVariations > numHeadlines) {
+        for (let i = numHeadlines; i < numVariations; i++) {
+          try {
+            const varResponseObj = await apiRequest("POST", "/api/tools/google-ads/generate", {
+              url: url || undefined,
+              targetKeywords: keywords,
+              brandName: brandName,
+              sellingPoints: sellingPoints
+            });
+            
+            const varResponse = await varResponseObj.json();
+
+            if (varResponse.headlines && varResponse.descriptions) {
+              const varHeadlines = varResponse.headlines.map((h: string) => formatText(h, caseType));
+              const varDescriptions = varResponse.descriptions.map((d: string) => formatText(d, caseType));
+              
+              variations.push({
+                headline: varHeadlines[0] || "",
+                description1: varDescriptions[0] || "",
+                description2: varDescriptions[1] || varDescriptions[0] || "",
+                callToAction: formatText("Get Started", caseType),
+                headlineLength: (varHeadlines[0] || "").length,
+                description1Length: (varDescriptions[0] || "").length,
+                description2Length: (varDescriptions[1] || varDescriptions[0] || "").length,
+                score: 90 - (i * 2),
+                keywords: keywords.split(',').map(k => k.trim()),
+                language: 'en'
+              });
+            }
+          } catch (varError) {
+            console.warn(`Failed to generate variation ${i + 1}:`, varError);
+          }
+        }
       }
 
       if (variations.length === 0) {

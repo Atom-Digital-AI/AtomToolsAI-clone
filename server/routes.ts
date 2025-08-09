@@ -564,33 +564,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
 
-      // Build exact prompt from original PHP app
+      // Build exact prompt to match the original PHP processing expectations
       const prompt = `
-        And using these inputs:
-        Target Keywords: ${targetKeywords}
-        Brand Name: ${brandName}
-        Selling Points: ${sellingPoints || "None"}
+        Based on the following content and requirements, generate compelling Google Ads copy:
 
         CONTENT FROM WEBSITE:
         ${urlContent.substring(0, 2000)}...
 
-        LANGUAGE: ${languageInstruction}
+        TARGET KEYWORDS: ${targetKeywords}
+        BRAND NAME: ${brandName}
+        SELLING POINTS: ${sellingPoints || "None"}
 
-        Generate Google Ads copy that includes:
-        - 3 headlines, each a maximum of 30 characters:
-          - Headline 1: Use one of the target keywords (if too long, use another).
-          - Headline 2: Use one of the selling points or a call to action.
-          - Headline 3: Use the brand name or a call to action.
-          (Ensure only one headline uses a target keyword, one uses a selling point/CTA, and one uses the brand name/CTA.)
+        ${languageInstruction}
 
-        - 2 descriptions, each a maximum of 90 characters:
-          - Description 1: Describe the offering using the target keyword and emphasize a selling point.
-          - Description 2: Add additional selling points and finish with a call to action.
+        Generate Google Ads copy with EXACTLY this format:
+        - 3 headlines, each maximum 30 characters
+        - 2 descriptions, each maximum 90 characters
 
-        Output the result in JSON format like:
+        Make the headlines diverse:
+        - Headline 1: Include main keyword if it fits, otherwise use brand name
+        - Headline 2: Focus on selling points or benefits
+        - Headline 3: Include call to action or brand name
+
+        Make the descriptions compelling:
+        - Description 1: Highlight main benefit with keyword
+        - Description 2: Add urgency or call to action
+
+        Format your response as JSON with arrays:
         {
-            "headlines": ["Headline 1", "Headline 2", "Headline 3"],
-            "descriptions": ["Description 1", "Description 2"]
+            "headlines": ["First headline", "Second headline", "Third headline"],
+            "descriptions": ["First description", "Second description"]
         }
         `.trim();
 
@@ -607,7 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const content = response.choices[0].message.content?.trim() || "";
       
-      // Parse JSON response (exact Python logic)
+      // Parse JSON response to extract headlines and descriptions arrays
       let result = null;
       if (content.includes('{') && content.includes('}')) {
         const start = content.indexOf('{');
@@ -616,29 +619,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const parsed = JSON.parse(jsonStr);
           
-          // Handle new format with headlines and descriptions arrays (original format)
-          if (parsed.headlines && parsed.descriptions) {
+          // Ensure we have headlines and descriptions arrays
+          if (parsed.headlines && Array.isArray(parsed.headlines) && 
+              parsed.descriptions && Array.isArray(parsed.descriptions)) {
             result = {
               headlines: parsed.headlines.slice(0, 3), // Ensure max 3 headlines
               descriptions: parsed.descriptions.slice(0, 2), // Ensure max 2 descriptions
-              // For backwards compatibility, also provide single values
-              headline: parsed.headlines[0] || "",
-              description1: parsed.descriptions[0] || "", 
-              description2: parsed.descriptions[1] || "",
-              call_to_action: "Get Started" // Default CTA
             };
-          }
-          // Handle legacy format (fallback)
-          else if (parsed.headline) {
-            result = parsed;
+          } else {
+            console.error("Invalid response format - missing headlines or descriptions arrays");
+            return res.status(500).json({ message: "Invalid response format from AI" });
           }
         } catch (e) {
           console.error("Failed to parse ad copy response:", e);
+          return res.status(500).json({ message: "Failed to parse AI response" });
         }
-      }
-
-      if (!result) {
-        return res.status(500).json({ message: "Failed to generate ad copy" });
+      } else {
+        console.error("No valid JSON found in response");
+        return res.status(500).json({ message: "No valid response from AI" });
       }
 
       res.json(result);
