@@ -130,12 +130,14 @@ export default function GoogleAdsCopyGenerator() {
 
     try {
       // Call the authentic API endpoint with exact original Python logic
-      const response = await apiRequest("POST", "/api/tools/google-ads/generate", {
+      const responseObj = await apiRequest("POST", "/api/tools/google-ads/generate", {
         url: url || undefined,
         targetKeywords: keywords,
         brandName: brandName,
         sellingPoints: sellingPoints
       });
+      
+      const response = await responseObj.json();
 
       setProgress(75);
 
@@ -169,12 +171,14 @@ export default function GoogleAdsCopyGenerator() {
         // Make additional API calls for more variations
         for (let i = 1; i < numVariations; i++) {
           try {
-            const varResponse = await apiRequest("POST", "/api/tools/google-ads/generate", {
+            const varResponseObj = await apiRequest("POST", "/api/tools/google-ads/generate", {
               url: url || undefined,
               targetKeywords: keywords,
               brandName: brandName,
               sellingPoints: sellingPoints
             });
+            
+            const varResponse = await varResponseObj.json();
 
             if (varResponse.headline && varResponse.description1) {
               variations.push({

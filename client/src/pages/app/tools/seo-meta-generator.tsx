@@ -106,7 +106,7 @@ export default function SEOMetaGenerator() {
 
     try {
       // Call the authentic API endpoint with exact original Python logic
-      const response = await apiRequest("POST", "/api/tools/seo-meta/generate", {
+      const responseObj = await apiRequest("POST", "/api/tools/seo-meta/generate", {
         url: url || undefined,
         targetKeywords: keywords,
         brandName: brandName,
@@ -114,6 +114,8 @@ export default function SEOMetaGenerator() {
         numVariations: numVariations,
         contentType: contentType
       });
+      
+      const response = await responseObj.json();
 
       setProgress(75);
 
