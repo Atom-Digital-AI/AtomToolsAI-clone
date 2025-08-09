@@ -42,7 +42,7 @@ export default function GoogleAdsCopyGenerator() {
   const [brandName, setBrandName] = useState("");
   const [sellingPoints, setSellingPoints] = useState("");
   const [tone, setTone] = useState("");
-  const [caseType, setCaseType] = useState<'sentence' | 'title' | 'uppercase'>('sentence');
+  const [caseType, setCaseType] = useState<'sentence' | 'title'>('sentence');
   const [numVariations, setNumVariations] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [adCopy, setAdCopy] = useState<AdCopyVariations | null>(null);
@@ -86,17 +86,9 @@ export default function GoogleAdsCopyGenerator() {
   };
 
   const formatText = (text: string, caseType: string): string => {
-    switch (caseType) {
-      case 'title':
-        return text.replace(/\w\S*/g, (txt) => 
-          txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-        );
-      case 'uppercase':
-        return text.toUpperCase();
-      case 'sentence':
-      default:
-        return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-    }
+    // Note: Actual text formatting is handled by OpenAI with proper grammar rules
+    // This is now primarily for UI display purposes
+    return text; // OpenAI handles formatting with proper grammar, abbreviations, etc.
   };
 
   const handleGenerate = async () => {
@@ -568,14 +560,13 @@ export default function GoogleAdsCopyGenerator() {
                     
                     <div>
                       <Label htmlFor="case-type">Text Case</Label>
-                      <Select value={caseType} onValueChange={(value: 'sentence' | 'title' | 'uppercase') => setCaseType(value)}>
+                      <Select value={caseType} onValueChange={(value: 'sentence' | 'title') => setCaseType(value)}>
                         <SelectTrigger data-testid="select-case-type">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="sentence">Sentence Case</SelectItem>
                           <SelectItem value="title">Title Case</SelectItem>
-                          <SelectItem value="uppercase">UPPERCASE</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

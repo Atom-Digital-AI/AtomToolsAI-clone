@@ -471,9 +471,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Generate ${numVariations} variations.
 
         Requirements:
-        - Titles: 50-60 characters, include primary keywords
-        - Descriptions: 150-160 characters, compelling and informative
-        - Include brand name where appropriate
+        - Titles: 50-60 characters (aim for at least 35 characters - 70% of limit), include primary keywords
+        - Descriptions: 150-160 characters (aim for at least 105 characters - 70% of limit), compelling and informative
+        - Always use the COMPLETE brand name "${brandName}" where appropriate - never shorten it
+        - Use proper grammar with country abbreviations capitalized (UK, US, EU, etc.)
+        - Apply sentence case while preserving proper nouns and technical terms
         - Optimize for search intent
 
         Format your response as JSON:
@@ -566,13 +568,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ${languageInstruction}
 
         Generate Google Ads copy with EXACTLY this format:
-        - 3 headlines, each maximum 30 characters
-        - 2 descriptions, each maximum 90 characters
+        - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)
+        - 2 descriptions, each maximum 90 characters (aim for at least 63 characters - 70% of limit)
+
+        CRITICAL FORMATTING RULES:
+        - Use proper grammar and sentence case formatting
+        - Keep country abbreviations capitalized (UK, US, EU, etc.) regardless of text case
+        - Always use the COMPLETE brand name "${brandName}" - never shorten it
+        - Preserve proper nouns and technical terms in their correct case
+        - Apply the requested text case while respecting grammatical exceptions
 
         Make the headlines diverse:
-        - Headline 1: Include main keyword if it fits, otherwise use brand name
+        - Headline 1: Include main keyword if it fits, otherwise use complete brand name
         - Headline 2: Focus on selling points or benefits
-        - Headline 3: Include call to action or brand name
+        - Headline 3: Include call to action or complete brand name
 
         Make the descriptions compelling:
         - Description 1: Highlight main benefit with keyword
