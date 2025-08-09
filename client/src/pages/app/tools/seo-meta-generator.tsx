@@ -10,6 +10,7 @@ import { Search, Copy, Download, Upload, RefreshCw, AlertCircle, CheckCircle2, G
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface MetaData {
   title: string;
@@ -82,52 +83,47 @@ export default function SEOMetaGenerator() {
   };
 
   const handleGenerate = async () => {
-    if (!url || !keywords || !brandName) {
+    if (!url && !keywords) {
       toast({
         title: "Missing Information",
-        description: "Please fill in URL, keywords, and brand name",
+        description: "Please provide either a URL or target keywords",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!brandName) {
+      toast({
+        title: "Missing Information", 
+        description: "Please provide a brand name",
         variant: "destructive",
       });
       return;
     }
 
     setIsGenerating(true);
-    setProgress(0);
+    setProgress(25);
 
     try {
-      // Simulate progressive generation
-      const progressSteps = [
-        { step: 20, message: "Analyzing URL content..." },
-        { step: 40, message: "Detecting language..." },
-        { step: 60, message: "Generating title variations..." },
-        { step: 80, message: "Creating meta descriptions..." },
-        { step: 100, message: "Optimizing for SEO..." }
-      ];
+      // Call the authentic API endpoint with exact original Python logic
+      const response = await apiRequest("POST", "/api/tools/seo-meta/generate", {
+        url: url || undefined,
+        targetKeywords: keywords,
+        brandName: brandName,
+        sellingPoints: sellingPoints,
+        numVariations: numVariations,
+        contentType: contentType
+      });
 
-      for (const { step, message } of progressSteps) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setProgress(step);
-        toast({
-          title: "Processing",
-          description: message,
-        });
+      setProgress(75);
+
+      if (!response.titles && !response.descriptions) {
+        throw new Error("No content generated");
       }
 
-      // Generate comprehensive meta data with variations
-      const mockTitles = [
-        `${brandName} - Premium ${keywords.split(',')[0].trim()} Solutions | Expert Services`,
-        `Professional ${keywords.split(',')[0].trim()} by ${brandName} | Trusted Experts`,
-        `${brandName}: Leading ${keywords.split(',')[0].trim()} Services & Solutions`
-      ];
-
-      const mockDescriptions = [
-        `Discover top-quality ${keywords.split(',')[0].trim()} services from ${brandName}. Get expert solutions tailored to your business needs with proven results.`,
-        `${brandName} offers premium ${keywords.split(',')[0].trim()} solutions. Transform your business with our professional services and industry expertise.`,
-        `Expert ${keywords.split(',')[0].trim()} services by ${brandName}. Boost your business growth with our comprehensive solutions and dedicated support.`
-      ];
-
-      const primaryTitle = mockTitles[0];
-      const primaryDescription = mockDescriptions[0];
+      // Use the actual results from the authentic API
+      const primaryTitle = response.titles?.[0] || "";
+      const primaryDescription = response.descriptions?.[0] || "";
 
       setMetaData({
         title: primaryTitle,
@@ -137,20 +133,23 @@ export default function SEOMetaGenerator() {
         keywords: keywords.split(',').map(k => k.trim()),
         language: 'en',
         variations: {
-          titles: mockTitles,
-          descriptions: mockDescriptions
+          titles: response.titles || [],
+          descriptions: response.descriptions || []
         }
       });
 
+      setProgress(100);
+
       toast({
         title: "Generation Complete",
-        description: `Generated ${numVariations} variations for ${contentType}`,
+        description: `Generated ${response.titles?.length || 0} titles and ${response.descriptions?.length || 0} descriptions`,
       });
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Generation error:", error);
       toast({
         title: "Generation Failed",
-        description: "An error occurred while generating meta tags",
+        description: error.message || "An error occurred while generating meta tags",
         variant: "destructive",
       });
     } finally {

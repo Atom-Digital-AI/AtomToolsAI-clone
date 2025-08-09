@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface GeneratedCopy {
   headline: string;
@@ -106,91 +107,93 @@ export default function GoogleAdsCopyGenerator() {
   };
 
   const handleGenerate = async () => {
-    if (!url || !keywords || !brandName) {
+    if (!url && !keywords) {
       toast({
         title: "Missing Information",
-        description: "Please fill in URL, keywords, and brand name",
+        description: "Please provide either a URL or target keywords",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!brandName) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a brand name",
         variant: "destructive",
       });
       return;
     }
 
     setIsGenerating(true);
-    setProgress(0);
+    setProgress(25);
 
     try {
-      // Simulate progressive generation
-      const progressSteps = [
-        { step: 15, message: "Analyzing target URL..." },
-        { step: 30, message: "Extracting content insights..." },
-        { step: 45, message: "Detecting language and tone..." },
-        { step: 60, message: "Generating compelling headlines..." },
-        { step: 75, message: "Creating description variations..." },
-        { step: 90, message: "Optimizing call-to-actions..." },
-        { step: 100, message: "Finalizing ad copy variations..." }
-      ];
+      // Call the authentic API endpoint with exact original Python logic
+      const response = await apiRequest("POST", "/api/tools/google-ads/generate", {
+        url: url || undefined,
+        targetKeywords: keywords,
+        brandName: brandName,
+        sellingPoints: sellingPoints
+      });
 
-      for (const { step, message } of progressSteps) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setProgress(step);
-        toast({
-          title: "Processing",
-          description: message,
-        });
+      setProgress(75);
+
+      if (!response.headline || !response.description1) {
+        throw new Error("No ad copy generated");
       }
 
-      // Generate comprehensive ad copy with variations
-      const mockHeadlines = [
-        `${formatText(`${brandName} - ${keywords.split(',')[0].trim()} Solutions`, caseType)}`,
-        `${formatText(`Get Premium ${keywords.split(',')[0].trim()} with ${brandName}`, caseType)}`,
-        `${formatText(`${brandName}: Professional ${keywords.split(',')[0].trim()}`, caseType)}`
-      ];
-
-      const mockDescriptions1 = [
-        `Transform your business with ${brandName}'s proven ${keywords.split(',')[0].trim()} solutions.`,
-        `Discover why businesses choose ${brandName} for ${keywords.split(',')[0].trim()}.`,
-        `Get expert ${keywords.split(',')[0].trim()} services from ${brandName}.`
-      ];
-
-      const mockDescriptions2 = [
-        `${sellingPoints || 'Free trial available. Expert support included.'} Start today!`,
-        `${sellingPoints || '24/7 support. Money-back guarantee.'} Get started now!`,
-        `${sellingPoints || 'Trusted by thousands. Results guaranteed.'} Try it free!`
-      ];
-
-      const mockCTAs = [
-        "Get Started Today",
-        "Try Free Now",
-        "Learn More"
-      ];
+      // Apply case formatting to the authentic API results
+      const formattedHeadline = formatText(response.headline, caseType);
+      const formattedDescription1 = formatText(response.description1, caseType);
+      const formattedDescription2 = formatText(response.description2 || "", caseType);
+      const formattedCTA = formatText(response.call_to_action || "Get Started", caseType);
 
       const primaryCopy: GeneratedCopy = {
-        headline: mockHeadlines[0],
-        description1: mockDescriptions1[0],
-        description2: mockDescriptions2[0],
-        callToAction: mockCTAs[0],
-        headlineLength: mockHeadlines[0].length,
-        description1Length: mockDescriptions1[0].length,
-        description2Length: mockDescriptions2[0].length,
+        headline: formattedHeadline,
+        description1: formattedDescription1,
+        description2: formattedDescription2,
+        callToAction: formattedCTA,
+        headlineLength: formattedHeadline.length,
+        description1Length: formattedDescription1.length,
+        description2Length: formattedDescription2.length,
         score: 92,
         keywords: keywords.split(',').map(k => k.trim()),
         language: 'en'
       };
 
-      const variations: GeneratedCopy[] = [];
-      for (let i = 0; i < Math.min(numVariations, 3); i++) {
-        variations.push({
-          headline: mockHeadlines[i],
-          description1: mockDescriptions1[i],
-          description2: mockDescriptions2[i],
-          callToAction: mockCTAs[i],
-          headlineLength: mockHeadlines[i].length,
-          description1Length: mockDescriptions1[i].length,
-          description2Length: mockDescriptions2[i].length,
-          score: 90 - (i * 3),
-          keywords: keywords.split(',').map(k => k.trim()),
-          language: 'en'
-        });
+      // For multiple variations, we'll generate multiple API calls
+      const variations: GeneratedCopy[] = [primaryCopy];
+      
+      if (numVariations > 1) {
+        // Make additional API calls for more variations
+        for (let i = 1; i < numVariations; i++) {
+          try {
+            const varResponse = await apiRequest("POST", "/api/tools/google-ads/generate", {
+              url: url || undefined,
+              targetKeywords: keywords,
+              brandName: brandName,
+              sellingPoints: sellingPoints
+            });
+
+            if (varResponse.headline && varResponse.description1) {
+              variations.push({
+                headline: formatText(varResponse.headline, caseType),
+                description1: formatText(varResponse.description1, caseType),
+                description2: formatText(varResponse.description2 || "", caseType),
+                callToAction: formatText(varResponse.call_to_action || "Get Started", caseType),
+                headlineLength: varResponse.headline.length,
+                description1Length: varResponse.description1.length,
+                description2Length: (varResponse.description2 || "").length,
+                score: 90 - (i * 2),
+                keywords: keywords.split(',').map(k => k.trim()),
+                language: 'en'
+              });
+            }
+          } catch (varError) {
+            console.warn(`Failed to generate variation ${i + 1}:`, varError);
+          }
+        }
       }
 
       setAdCopy({
@@ -198,9 +201,11 @@ export default function GoogleAdsCopyGenerator() {
         variations
       });
 
+      setProgress(100);
+
       toast({
         title: "Generation Complete",
-        description: `Generated ${variations.length} high-quality ad copy variations`,
+        description: `Generated ${variations.length} authentic ad copy variations`,
       });
 
     } catch (error) {

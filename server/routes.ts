@@ -4,6 +4,76 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
+import OpenAI from "openai";
+import axios from "axios";
+import * as cheerio from "cheerio";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Utility functions from original Python app
+async function fetchUrlContent(url: string): Promise<string | null> {
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      },
+      timeout: 30000
+    });
+    
+    const $ = cheerio.load(response.data);
+    
+    // Remove script and style elements
+    $('script, style').remove();
+    
+    // Extract text from various content elements
+    const texts: string[] = [];
+    $('p, h1, h2, h3, h4, h5, h6, div, span').each((i: number, elem: any) => {
+      const text = $(elem).text().trim();
+      if (text && text.length > 10) {
+        texts.push(text);
+      }
+    });
+    
+    return texts.join(' ').trim();
+  } catch (error) {
+    console.error(`Error fetching URL ${url}:`, error);
+    return null;
+  }
+}
+
+function detectLanguage(text: string): string {
+  // Simple language detection - could be enhanced with langdetect library
+  // For now, default to English
+  return 'en';
+}
+
+function getLanguagePrompt(languageCode: string): string {
+  const languagePrompts: { [key: string]: string } = {
+    'en': "Write in English.",
+    'de': "Write in German (Deutsch).",
+    'fr': "Write in French (Français).",
+    'es': "Write in Spanish (Español).",
+    'it': "Write in Italian (Italiano).",
+    'pt': "Write in Portuguese (Português).",
+    'nl': "Write in Dutch (Nederlands).",
+    'pl': "Write in Polish (Polski).",
+    'ru': "Write in Russian (Русский).",
+    'ja': "Write in Japanese (日本語).",
+    'ko': "Write in Korean (한국어).",
+    'zh': "Write in Chinese (中文).",
+    'ar': "Write in Arabic (العربية).",
+    'hi': "Write in Hindi (हिन्दी).",
+    'tr': "Write in Turkish (Türkçe).",
+    'sv': "Write in Swedish (Svenska).",
+    'da': "Write in Danish (Dansk).",
+    'no': "Write in Norwegian (Norsk).",
+    'fi': "Write in Finnish (Suomi)."
+  };
+  
+  return languagePrompts[languageCode] || "Write in English.";
+}
 
 const contactSchema = z.object({
   name: z.string().min(2),
@@ -363,124 +433,197 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Integration with external Python-powered content generation service
-  const PY_TOOLS_BASE_URL =
-    process.env.PY_TOOLS_BASE_URL || "http://localhost:8080/api";
-
-  // Generate SEO meta (titles/descriptions) via Python service
+  // EXACT ORIGINAL PYTHON LOGIC - SEO Meta Generator
   app.post("/api/tools/seo-meta/generate", requireAuth, async (req, res) => {
     try {
       const {
-        pageContent,
+        url,
         targetKeywords,
-        businessName,
-        sellingPoints,
-        numVariations,
-        caseType,
-        contentType,
-      } = req.body || {};
+        brandName,
+        sellingPoints = "",
+        numVariations = 3,
+        contentType = 'both'
+      } = req.body;
 
-      if (!pageContent || !targetKeywords) {
+      if (!url && !targetKeywords) {
         return res.status(400).json({
-          message: "Missing required fields: pageContent, targetKeywords",
+          message: "Either URL or target keywords are required"
         });
       }
 
-      const payload = {
-        url_content: String(pageContent),
-        target_keywords: String(targetKeywords),
-        brand_name: String(businessName || "Your Business"),
-        selling_points: sellingPoints ? String(sellingPoints) : "",
-        content_type: (contentType as string) || "both",
-        num_variations: Number.isFinite(numVariations)
-          ? Number(numVariations)
-          : 3,
-        case_type: (caseType as string) || "sentence",
-      } as Record<string, unknown>;
-
-      const pyResponse = await fetch(`${PY_TOOLS_BASE_URL}/seo-content`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await pyResponse.json();
-      if (!pyResponse.ok || data?.success === false) {
-        const message =
-          data?.error || data?.message || "Failed to generate SEO content";
-        return res.status(502).json({ message });
+      // Fetch URL content if URL provided (exact Python logic)
+      let urlContent = "";
+      if (url) {
+        urlContent = await fetchUrlContent(url) || "";
       }
 
-      return res.json({
-        titles: Array.isArray(data?.titles) ? data.titles : [],
-        descriptions: Array.isArray(data?.descriptions)
-          ? data.descriptions
-          : [],
-        duration: data?.duration,
-        cached: data?.cached,
+      // Detect language from content (exact Python logic)
+      const contentForDetection = `${urlContent} ${targetKeywords} ${brandName} ${sellingPoints}`;
+      const detectedLang = detectLanguage(contentForDetection);
+      const languageInstruction = getLanguagePrompt(detectedLang);
+
+      // Build exact prompt from original Python app
+      const prompt = `
+        Based on the following content, generate ${contentType === 'titles' ? 'only SEO-optimized page titles' : contentType === 'descriptions' ? 'only meta descriptions' : 'both SEO-optimized page titles and meta descriptions'}:
+
+        CONTENT FROM WEBSITE:
+        ${urlContent.substring(0, 2000)}...
+
+        TARGET KEYWORDS: ${targetKeywords}
+        BRAND NAME: ${brandName}
+        SELLING POINTS: ${sellingPoints}
+        LANGUAGE: ${languageInstruction}
+
+        Generate ${numVariations} variations.
+
+        Requirements:
+        - Titles: 50-60 characters, include primary keywords
+        - Descriptions: 150-160 characters, compelling and informative
+        - Include brand name where appropriate
+        - Optimize for search intent
+
+        Format your response as JSON:
+        {
+            "titles": ["Title 1", "Title 2", "Title 3"],
+            "descriptions": ["Description 1", "Description 2", "Description 3"]
+        }
+        `.trim();
+
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {"role": "system", "content": "You are an expert SEO copywriter."},
+          {"role": "user", "content": prompt}
+        ],
+        max_tokens: 1000,
+        temperature: 0.8
       });
+
+      const content = response.choices[0].message.content?.trim() || "";
+      
+      // Parse JSON response (exact Python logic)
+      let result = null;
+      if (content.includes('{') && content.includes('}')) {
+        const start = content.indexOf('{');
+        const end = content.lastIndexOf('}') + 1;
+        const jsonStr = content.substring(start, end);
+        try {
+          const parsed = JSON.parse(jsonStr);
+          
+          if (contentType === 'titles' && parsed.titles) {
+            result = { titles: parsed.titles, descriptions: [] };
+          } else if (contentType === 'descriptions' && parsed.descriptions) {
+            result = { titles: [], descriptions: parsed.descriptions };
+          } else if (contentType === 'both') {
+            result = {
+              titles: parsed.titles || [],
+              descriptions: parsed.descriptions || []
+            };
+          }
+        } catch (e) {
+          console.error("Failed to parse SEO response:", e);
+        }
+      }
+
+      if (!result) {
+        return res.status(500).json({ message: "Failed to generate SEO content" });
+      }
+
+      res.json(result);
     } catch (error) {
-      console.error("SEO meta generation error:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("SEO generation error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
-  // Generate Google Ads copy via Python service
+  // EXACT ORIGINAL PYTHON LOGIC - Google Ads Copy Generator
   app.post("/api/tools/google-ads/generate", requireAuth, async (req, res) => {
     try {
       const {
-        productName,
-        keywords,
-        brandVoice,
-        productDescription,
-        sellingPoints,
-        caseType,
-      } = req.body || {};
+        url,
+        targetKeywords,
+        brandName,
+        sellingPoints = ""
+      } = req.body;
 
-      // Compose a content string for the Python service
-      const composedContent = [productDescription, productName, keywords]
-        .filter(Boolean)
-        .join(". ");
-
-      if (!productName || !keywords || !composedContent) {
+      if (!url && !targetKeywords) {
         return res.status(400).json({
-          message:
-            "Missing required fields: productName, keywords (and provide productDescription or sufficient details)",
+          message: "Either URL or target keywords are required"
         });
       }
 
-      const payload = {
-        url_content: composedContent,
-        target_keywords: String(keywords),
-        brand_name: String(productName),
-        selling_points: [sellingPoints, brandVoice].filter(Boolean).join(". "),
-        case_type: (caseType as string) || "sentence",
-      } as Record<string, unknown>;
-
-      const pyResponse = await fetch(`${PY_TOOLS_BASE_URL}/ad-copy`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await pyResponse.json();
-      if (!pyResponse.ok || data?.success === false) {
-        const message =
-          data?.error || data?.message || "Failed to generate ad copy";
-        return res.status(502).json({ message });
+      // Fetch URL content if URL provided (exact Python logic)
+      let urlContent = "";
+      if (url) {
+        urlContent = await fetchUrlContent(url) || "";
       }
 
-      return res.json({
-        headline: data?.headline ?? "",
-        description1: data?.description1 ?? "",
-        description2: data?.description2 ?? "",
-        callToAction: data?.call_to_action ?? "",
-        duration: data?.duration,
-        cached: data?.cached,
+      // Detect language from content (exact Python logic)
+      const contentForDetection = `${urlContent} ${targetKeywords} ${brandName} ${sellingPoints}`;
+      const detectedLang = detectLanguage(contentForDetection);
+      const languageInstruction = getLanguagePrompt(detectedLang);
+
+      // Build exact prompt from original Python app
+      const prompt = `
+        Based on the following content and requirements, generate compelling Google Ads copy:
+
+        CONTENT FROM WEBSITE:
+        ${urlContent.substring(0, 2000)}...
+
+        TARGET KEYWORDS: ${targetKeywords}
+        BRAND NAME: ${brandName}
+        SELLING POINTS: ${sellingPoints}
+        LANGUAGE: ${languageInstruction}
+
+        Please generate:
+        1. A compelling headline (max 30 characters)
+        2. Two description lines (max 90 characters each)
+        3. A call-to-action
+
+        Format your response as JSON:
+        {
+            "headline": "Your headline here",
+            "description1": "First description line",
+            "description2": "Second description line",
+            "call_to_action": "Your CTA here"
+        }
+        `.trim();
+
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {"role": "system", "content": "You are an expert copywriter specializing in Google Ads."},
+          {"role": "user", "content": prompt}
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
       });
+
+      const content = response.choices[0].message.content?.trim() || "";
+      
+      // Parse JSON response (exact Python logic)
+      let result = null;
+      if (content.includes('{') && content.includes('}')) {
+        const start = content.indexOf('{');
+        const end = content.lastIndexOf('}') + 1;
+        const jsonStr = content.substring(start, end);
+        try {
+          result = JSON.parse(jsonStr);
+        } catch (e) {
+          console.error("Failed to parse ad copy response:", e);
+        }
+      }
+
+      if (!result) {
+        return res.status(500).json({ message: "Failed to generate ad copy" });
+      }
+
+      res.json(result);
     } catch (error) {
-      console.error("Google Ads generation error:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Ad copy generation error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
