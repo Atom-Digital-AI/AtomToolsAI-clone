@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Generated Ad Copy</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, sans-serif;
+        line-height: 1.6;
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #f5f5f5;
+      }
+
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 2rem;
+        text-align: center;
+      }
+
+      .ad-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .ad-section {
+        margin-bottom: 2rem;
+      }
+
+      .ad-section:last-child {
+        margin-bottom: 0;
+      }
+
+      h2 {
+        color: #2c3e50;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eee;
+      }
+
+      .headlines-list,
+      .descriptions-list {
+        list-style: none;
+      }
+
+      .headlines-list li,
+      .descriptions-list li {
+        background: #f8f9fa;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+        border-left: 4px solid #3498db;
+      }
+
+      .headlines-list li:last-child,
+      .descriptions-list li:last-child {
+        margin-bottom: 0;
+      }
+
+      .back-link {
+        display: inline-block;
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 2rem;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .back-link:hover {
+        background-color: #2980b9;
+      }
+
+      .copy-button {
+        background: none;
+        border: none;
+        color: #3498db;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        margin-left: 0.5rem;
+        font-size: 0.875rem;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+
+      .copy-button:hover {
+        opacity: 1;
+      }
+
+      .copy-success {
+        color: #27ae60;
+        font-size: 0.875rem;
+        margin-left: 0.5rem;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Generated Ad Copy</h1>
+
+    <div class="ad-container">
+      <div class="ad-section">
+        <h2>Headlines</h2>
+        <ul class="headlines-list">
+          {% for headline in ad_copy.headlines %}
+          <li>
+            {{ headline }}
+            <button
+              class="copy-button"
+              onclick="copyText(this, '{{ headline }}')"
+            >
+              Copy
+            </button>
+            <span class="copy-success">Copied!</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="ad-section">
+        <h2>Descriptions</h2>
+        <ul class="descriptions-list">
+          {% for description in ad_copy.descriptions %}
+          <li>
+            {{ description }}
+            <button
+              class="copy-button"
+              onclick="copyText(this, '{{ description }}')"
+            >
+              Copy
+            </button>
+            <span class="copy-success">Copied!</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="back-link">Generate Another Ad</a>
+
+    <script>
+      function copyText(button, text) {
+        // Create a temporary input element
+        const input = document.createElement("input");
+        input.value = text;
+        document.body.appendChild(input);
+
+        // Select and copy the text
+        input.select();
+        document.execCommand("copy");
+
+        // Remove the temporary input
+        document.body.removeChild(input);
+
+        // Show success message
+        const successMessage = button.nextElementSibling;
+        successMessage.style.display = "inline";
+
+        // Hide success message after 2 seconds
+        setTimeout(() => {
+          successMessage.style.display = "none";
+        }, 2000);
+      }
+    </script>
+  </body>
+</html>

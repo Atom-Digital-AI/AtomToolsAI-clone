@@ -19,9 +19,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
+        return res
+          .status(400)
+          .json({ message: "Email and password are required" });
       }
 
       const user = await authenticateUser(email, password);
@@ -30,14 +32,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
-      console.log("Login successful for user:", user.id, "Session ID:", req.sessionID);
-      
-      res.json({ 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email 
-        } 
+      console.log(
+        "Login successful for user:",
+        user.id,
+        "Session ID:",
+        req.sessionID
+      );
+
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+        },
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -47,7 +54,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Logout endpoint
   app.post("/api/auth/logout", (req, res) => {
-    console.log("POST logout - Session ID:", req.sessionID, "User ID:", req.session.userId);
+    console.log(
+      "POST logout - Session ID:",
+      req.sessionID,
+      "User ID:",
+      req.session.userId
+    );
     req.session.destroy((err) => {
       if (err) {
         console.error("Logout error:", err);
@@ -59,7 +71,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/logout", (req, res) => {
-    console.log("GET logout - Session ID:", req.sessionID, "User ID:", req.session.userId);
+    console.log(
+      "GET logout - Session ID:",
+      req.sessionID,
+      "User ID:",
+      req.session.userId
+    );
     req.session.destroy((err) => {
       if (err) {
         console.error("Logout error:", err);
@@ -76,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({
       id: user.id,
       username: user.username,
-      email: user.email
+      email: user.email,
     });
   });
 
@@ -87,17 +104,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { currentPassword, newPassword } = req.body;
 
       if (!currentPassword || !newPassword) {
-        return res.status(400).json({ message: "Current password and new password are required" });
+        return res
+          .status(400)
+          .json({ message: "Current password and new password are required" });
       }
 
       if (newPassword.length < 6) {
-        return res.status(400).json({ message: "New password must be at least 6 characters long" });
+        return res
+          .status(400)
+          .json({ message: "New password must be at least 6 characters long" });
       }
 
       // Get current user to verify password
       const user = await storage.getUser(userId);
       if (!user || user.password !== currentPassword) {
-        return res.status(401).json({ message: "Current password is incorrect" });
+        return res
+          .status(401)
+          .json({ message: "Current password is incorrect" });
       }
 
       // Update password
@@ -113,24 +136,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/account-data", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
-      
+
       // Get user data
       const user = await storage.getUser(userId);
       const subscriptions = await storage.getUserSubscriptions(userId);
-      
+
       const accountData = {
         user: {
           id: user?.id,
           username: user?.username,
           email: user?.email,
-          createdAt: user?.createdAt
+          createdAt: user?.createdAt,
         },
         subscriptions: subscriptions,
-        exportDate: new Date().toISOString()
+        exportDate: new Date().toISOString(),
       };
 
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename="atomtools-account-data-${new Date().toISOString().split('T')[0]}.json"`);
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="atomtools-account-data-${
+          new Date().toISOString().split("T")[0]
+        }.json"`
+      );
       res.json(accountData);
     } catch (error) {
       console.error("Download account data error:", error);
@@ -145,7 +173,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password } = req.body;
 
       if (!password) {
-        return res.status(400).json({ message: "Password confirmation is required" });
+        return res
+          .status(400)
+          .json({ message: "Password confirmation is required" });
       }
 
       // Verify password
@@ -156,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Delete user and related data
       await storage.deleteUser(userId);
-      
+
       // Destroy session
       req.session.destroy((err) => {
         if (err) {
@@ -275,17 +305,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/contact", async (req, res) => {
     try {
       const { name, email, message } = contactSchema.parse(req.body);
-      
+
       // TODO: Implement email sending logic using nodemailer or similar
       // For now, we'll just log the message
       console.log("Contact form submission:", { name, email, message });
-      
+
       res.json({ success: true, message: "Message received successfully" });
     } catch (error) {
       console.error("Contact form error:", error);
-      res.status(400).json({ 
-        success: false, 
-        message: "Invalid form data" 
+      res.status(400).json({
+        success: false,
+        message: "Invalid form data",
       });
     }
   });
@@ -294,32 +324,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Email already exists" 
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists",
         });
       }
-      
+
       // Create new user
       const user = await storage.createUser(userData);
-      
+
       // Auto-login after signup
       req.session.userId = user.id;
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: "Account created successfully",
-        user: { id: user.id, username: user.username, email: user.email }
+        user: { id: user.id, username: user.username, email: user.email },
       });
     } catch (error) {
       console.error("Signup error:", error);
-      res.status(400).json({ 
-        success: false, 
-        message: "Failed to create account" 
+      res.status(400).json({
+        success: false,
+        message: "Failed to create account",
       });
     }
   });
@@ -327,10 +357,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google OAuth placeholder endpoint
   app.get("/api/auth/google", (req, res) => {
     // TODO: Implement Google OAuth flow
-    res.status(501).json({ 
-      success: false, 
-      message: "Google OAuth not yet implemented" 
+    res.status(501).json({
+      success: false,
+      message: "Google OAuth not yet implemented",
     });
+  });
+
+  // Integration with external Python-powered content generation service
+  const PY_TOOLS_BASE_URL =
+    process.env.PY_TOOLS_BASE_URL || "http://localhost:8080/api";
+
+  // Generate SEO meta (titles/descriptions) via Python service
+  app.post("/api/tools/seo-meta/generate", requireAuth, async (req, res) => {
+    try {
+      const {
+        pageContent,
+        targetKeywords,
+        businessName,
+        sellingPoints,
+        numVariations,
+        caseType,
+        contentType,
+      } = req.body || {};
+
+      if (!pageContent || !targetKeywords) {
+        return res.status(400).json({
+          message: "Missing required fields: pageContent, targetKeywords",
+        });
+      }
+
+      const payload = {
+        url_content: String(pageContent),
+        target_keywords: String(targetKeywords),
+        brand_name: String(businessName || "Your Business"),
+        selling_points: sellingPoints ? String(sellingPoints) : "",
+        content_type: (contentType as string) || "both",
+        num_variations: Number.isFinite(numVariations)
+          ? Number(numVariations)
+          : 3,
+        case_type: (caseType as string) || "sentence",
+      } as Record<string, unknown>;
+
+      const pyResponse = await fetch(`${PY_TOOLS_BASE_URL}/seo-content`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await pyResponse.json();
+      if (!pyResponse.ok || data?.success === false) {
+        const message =
+          data?.error || data?.message || "Failed to generate SEO content";
+        return res.status(502).json({ message });
+      }
+
+      return res.json({
+        titles: Array.isArray(data?.titles) ? data.titles : [],
+        descriptions: Array.isArray(data?.descriptions)
+          ? data.descriptions
+          : [],
+        duration: data?.duration,
+        cached: data?.cached,
+      });
+    } catch (error) {
+      console.error("SEO meta generation error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Generate Google Ads copy via Python service
+  app.post("/api/tools/google-ads/generate", requireAuth, async (req, res) => {
+    try {
+      const {
+        productName,
+        keywords,
+        brandVoice,
+        productDescription,
+        sellingPoints,
+        caseType,
+      } = req.body || {};
+
+      // Compose a content string for the Python service
+      const composedContent = [productDescription, productName, keywords]
+        .filter(Boolean)
+        .join(". ");
+
+      if (!productName || !keywords || !composedContent) {
+        return res.status(400).json({
+          message:
+            "Missing required fields: productName, keywords (and provide productDescription or sufficient details)",
+        });
+      }
+
+      const payload = {
+        url_content: composedContent,
+        target_keywords: String(keywords),
+        brand_name: String(productName),
+        selling_points: [sellingPoints, brandVoice].filter(Boolean).join(". "),
+        case_type: (caseType as string) || "sentence",
+      } as Record<string, unknown>;
+
+      const pyResponse = await fetch(`${PY_TOOLS_BASE_URL}/ad-copy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await pyResponse.json();
+      if (!pyResponse.ok || data?.success === false) {
+        const message =
+          data?.error || data?.message || "Failed to generate ad copy";
+        return res.status(502).json({ message });
+      }
+
+      return res.json({
+        headline: data?.headline ?? "",
+        description1: data?.description1 ?? "",
+        description2: data?.description2 ?? "",
+        callToAction: data?.call_to_action ?? "",
+        duration: data?.duration,
+        cached: data?.cached,
+      });
+    } catch (error) {
+      console.error("Google Ads generation error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   const httpServer = createServer(app);

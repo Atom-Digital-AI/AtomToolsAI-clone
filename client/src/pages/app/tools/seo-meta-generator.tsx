@@ -35,44 +35,65 @@ export default function SEOMetaGenerator() {
     }
 
     setIsGenerating(true);
-    
-    // Simulate AI generation
-    setTimeout(() => {
-      const mockMeta: MetaData[] = [
-        {
-          title: `${targetKeywords} - ${businessName || 'Your Business'} | Expert Solutions`,
-          description: `Discover professional ${targetKeywords} services with ${businessName || 'our company'}. Get started today with industry-leading solutions.`,
-          titleLength: 0,
-          descriptionLength: 0,
-        },
-        {
-          title: `Best ${targetKeywords} Services | ${businessName || 'Professional Solutions'}`,
-          description: `Transform your business with our ${targetKeywords} expertise. Trusted by thousands of satisfied customers worldwide.`,
-          titleLength: 0,
-          descriptionLength: 0,
-        },
-        {
-          title: `${businessName || 'Your Business'}: Premium ${targetKeywords} Provider`,
-          description: `Leading ${targetKeywords} solutions designed to drive growth. Contact us today for a personalized consultation.`,
-          titleLength: 0,
-          descriptionLength: 0,
-        },
-      ];
-      
-      // Calculate lengths
-      mockMeta.forEach(meta => {
-        meta.titleLength = meta.title.length;
-        meta.descriptionLength = meta.description.length;
+    try {
+      const response = await fetch("/api/tools/seo-meta/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pageContent,
+          targetKeywords,
+          businessName,
+          numVariations: 3,
+          contentType: "both",
+          caseType: "sentence",
+        }),
+        credentials: "include",
       });
-      
-      setGeneratedMeta(mockMeta);
-      setIsGenerating(false);
-      
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.message || "Failed to generate SEO content");
+      }
+
+      const data = await response.json();
+      const titles: string[] = Array.isArray(data?.titles) ? data.titles : [];
+      const descriptions: string[] = Array.isArray(data?.descriptions)
+        ? data.descriptions
+        : [];
+
+      const metaList: MetaData[] = Array.from({
+        length: Math.max(titles.length, descriptions.length, 1),
+      }).map((_, idx) => {
+        const title =
+          titles[idx] ||
+          titles[0] ||
+          `${targetKeywords} | ${businessName || "Your Business"}`;
+        const description =
+          descriptions[idx] ||
+          descriptions[0] ||
+          `Discover ${targetKeywords} with ${businessName || "our company"}.`;
+        return {
+          title,
+          description,
+          titleLength: title.length,
+          descriptionLength: description.length,
+        };
+      });
+
+      setGeneratedMeta(metaList);
       toast({
         title: "Meta Tags Generated!",
         description: "Your SEO-optimized meta tags are ready.",
       });
-    }, 2000);
+    } catch (e: any) {
+      toast({
+        title: "Generation failed",
+        description: e?.message || "Unexpected error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const copyToClipboard = (meta: MetaData) => {
@@ -84,20 +105,24 @@ export default function SEOMetaGenerator() {
     });
   };
 
-  const getLengthStatus = (length: number, type: 'title' | 'description') => {
-    const limits = type === 'title' ? { min: 30, max: 60 } : { min: 120, max: 160 };
-    
+  const getLengthStatus = (length: number, type: "title" | "description") => {
+    const limits =
+      type === "title" ? { min: 30, max: 60 } : { min: 120, max: 160 };
+
     if (length >= limits.min && length <= limits.max) {
-      return { status: 'good', color: 'text-green-600 dark:text-green-400' };
+      return { status: "good", color: "text-green-600 dark:text-green-400" };
     } else if (length < limits.min) {
-      return { status: 'short', color: 'text-yellow-600 dark:text-yellow-400' };
+      return { status: "short", color: "text-yellow-600 dark:text-yellow-400" };
     } else {
-      return { status: 'long', color: 'text-red-600 dark:text-red-400' };
+      return { status: "long", color: "text-red-600 dark:text-red-400" };
     }
   };
 
   return (
-    <AccessGuard productId="531de90b-12ef-4169-b664-0d55428435a6" productName="SEO Meta Generator">
+    <AccessGuard
+      productId="531de90b-12ef-4169-b664-0d55428435a6"
+      productName="SEO Meta Generator"
+    >
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -106,7 +131,9 @@ export default function SEOMetaGenerator() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">SEO Meta Generator</h1>
-              <p className="text-text-secondary">Generate optimized meta titles and descriptions</p>
+              <p className="text-text-secondary">
+                Generate optimized meta titles and descriptions
+              </p>
             </div>
           </div>
         </div>
@@ -120,7 +147,9 @@ export default function SEOMetaGenerator() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="page-content">Page Content Description *</Label>
+                  <Label htmlFor="page-content">
+                    Page Content Description *
+                  </Label>
                   <Textarea
                     id="page-content"
                     value={pageContent}
@@ -153,9 +182,9 @@ export default function SEOMetaGenerator() {
                   />
                 </div>
 
-                <Button 
-                  onClick={generateMeta} 
-                  className="w-full" 
+                <Button
+                  onClick={generateMeta}
+                  className="w-full"
                   disabled={isGenerating}
                   data-testid="button-generate-meta"
                 >
@@ -204,16 +233,24 @@ export default function SEOMetaGenerator() {
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
-                        
+
                         <div className="space-y-4">
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <Label className="text-xs text-text-secondary">Title Tag:</Label>
+                              <Label className="text-xs text-text-secondary">
+                                Title Tag:
+                              </Label>
                               <div className="flex items-center gap-2">
-                                <span className={`text-xs ${getLengthStatus(meta.titleLength, 'title').color}`}>
+                                <span
+                                  className={`text-xs ${
+                                    getLengthStatus(meta.titleLength, "title")
+                                      .color
+                                  }`}
+                                >
                                   {meta.titleLength}/60
                                 </span>
-                                {getLengthStatus(meta.titleLength, 'title').status === 'good' && (
+                                {getLengthStatus(meta.titleLength, "title")
+                                  .status === "good" && (
                                   <CheckCircle2 className="w-3 h-3 text-green-500" />
                                 )}
                               </div>
@@ -222,15 +259,27 @@ export default function SEOMetaGenerator() {
                               {meta.title}
                             </p>
                           </div>
-                          
+
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <Label className="text-xs text-text-secondary">Meta Description:</Label>
+                              <Label className="text-xs text-text-secondary">
+                                Meta Description:
+                              </Label>
                               <div className="flex items-center gap-2">
-                                <span className={`text-xs ${getLengthStatus(meta.descriptionLength, 'description').color}`}>
+                                <span
+                                  className={`text-xs ${
+                                    getLengthStatus(
+                                      meta.descriptionLength,
+                                      "description"
+                                    ).color
+                                  }`}
+                                >
                                   {meta.descriptionLength}/160
                                 </span>
-                                {getLengthStatus(meta.descriptionLength, 'description').status === 'good' && (
+                                {getLengthStatus(
+                                  meta.descriptionLength,
+                                  "description"
+                                ).status === "good" && (
                                   <CheckCircle2 className="w-3 h-3 text-green-500" />
                                 )}
                               </div>
@@ -243,9 +292,11 @@ export default function SEOMetaGenerator() {
                       </CardContent>
                     </Card>
                   ))}
-                  
+
                   <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
-                    <h4 className="text-sm font-medium mb-2">SEO Best Practices:</h4>
+                    <h4 className="text-sm font-medium mb-2">
+                      SEO Best Practices:
+                    </h4>
                     <ul className="text-xs text-text-secondary space-y-1">
                       <li>• Titles: 30-60 characters optimal</li>
                       <li>• Descriptions: 120-160 characters optimal</li>

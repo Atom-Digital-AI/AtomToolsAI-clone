@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
 import { Sparkles, Copy, RefreshCw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -34,35 +40,53 @@ export default function GoogleAdsCopyGenerator() {
     }
 
     setIsGenerating(true);
-    
-    // Simulate AI generation
-    setTimeout(() => {
-      const mockCopies: GeneratedCopy[] = [
-        {
-          headline: `${productName} - Transform Your Business Today`,
-          description: `Discover the power of ${productName}. Get started with ${keywords} solutions that drive results.`,
-          score: 95,
-        },
-        {
-          headline: `Best ${keywords} Solution - ${productName}`,
-          description: `Join thousands who chose ${productName} for superior ${keywords} results. Start your free trial now.`,
-          score: 88,
-        },
-        {
-          headline: `${productName}: Your ${keywords} Success Partner`,
-          description: `Unlock growth with ${productName}'s advanced ${keywords} features. Trusted by industry leaders.`,
-          score: 92,
-        },
-      ];
-      
-      setGeneratedCopies(mockCopies);
-      setIsGenerating(false);
-      
+    try {
+      const response = await fetch("/api/tools/google-ads/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName,
+          keywords,
+          brandVoice,
+          productDescription: `${productName}. ${keywords}`,
+          caseType: "sentence",
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.message || "Failed to generate ad copy");
+      }
+
+      const data = await response.json();
+      const copies: GeneratedCopy[] = [];
+      const headline = (data?.headline as string) || "";
+      const description1 = (data?.description1 as string) || "";
+      const description2 = (data?.description2 as string) || "";
+
+      if (headline || description1 || description2) {
+        copies.push({
+          headline,
+          description: [description1, description2].filter(Boolean).join(" "),
+          score: 90,
+        });
+      }
+
+      setGeneratedCopies(copies);
       toast({
         title: "Copy Generated!",
         description: "Your Google Ads copy variations are ready.",
       });
-    }, 2000);
+    } catch (e: any) {
+      toast({
+        title: "Generation failed",
+        description: e?.message || "Unexpected error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -74,7 +98,10 @@ export default function GoogleAdsCopyGenerator() {
   };
 
   return (
-    <AccessGuard productId="c5985990-e94e-49b3-a86c-3076fd9d6b3f" productName="Google Ads Copy Generator">
+    <AccessGuard
+      productId="c5985990-e94e-49b3-a86c-3076fd9d6b3f"
+      productName="Google Ads Copy Generator"
+    >
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -83,7 +110,9 @@ export default function GoogleAdsCopyGenerator() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Google Ads Copy Generator</h1>
-              <p className="text-text-secondary">AI-powered ad copy that converts</p>
+              <p className="text-text-secondary">
+                AI-powered ad copy that converts
+              </p>
             </div>
           </div>
         </div>
@@ -127,16 +156,20 @@ export default function GoogleAdsCopyGenerator() {
                     <SelectContent>
                       <SelectItem value="professional">Professional</SelectItem>
                       <SelectItem value="friendly">Friendly</SelectItem>
-                      <SelectItem value="authoritative">Authoritative</SelectItem>
-                      <SelectItem value="conversational">Conversational</SelectItem>
+                      <SelectItem value="authoritative">
+                        Authoritative
+                      </SelectItem>
+                      <SelectItem value="conversational">
+                        Conversational
+                      </SelectItem>
                       <SelectItem value="urgent">Urgent</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <Button 
-                  onClick={generateCopy} 
-                  className="w-full" 
+                <Button
+                  onClick={generateCopy}
+                  className="w-full"
                   disabled={isGenerating}
                   data-testid="button-generate-copy"
                 >
@@ -183,29 +216,45 @@ export default function GoogleAdsCopyGenerator() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => copyToClipboard(`${copy.headline}\n${copy.description}`)}
+                              onClick={() =>
+                                copyToClipboard(
+                                  `${copy.headline}\n${copy.description}`
+                                )
+                              }
                               data-testid={`button-copy-${index}`}
                             >
                               <Copy className="w-3 h-3" />
                             </Button>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <div>
-                            <Label className="text-xs text-text-secondary">Headline:</Label>
-                            <p className="font-medium text-sm">{copy.headline}</p>
+                            <Label className="text-xs text-text-secondary">
+                              Headline:
+                            </Label>
+                            <p className="font-medium text-sm">
+                              {copy.headline}
+                            </p>
                           </div>
                           <div>
-                            <Label className="text-xs text-text-secondary">Description:</Label>
-                            <p className="text-sm text-text-secondary">{copy.description}</p>
+                            <Label className="text-xs text-text-secondary">
+                              Description:
+                            </Label>
+                            <p className="text-sm text-text-secondary">
+                              {copy.description}
+                            </p>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
-                  
-                  <Button variant="outline" className="w-full" data-testid="button-export-all">
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-export-all"
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export All Variations
                   </Button>
