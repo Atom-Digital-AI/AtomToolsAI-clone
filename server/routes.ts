@@ -451,23 +451,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Fetch URL content if URL provided (exact Python logic)
-      let urlContent = "";
-      if (url) {
-        urlContent = await fetchUrlContent(url) || "";
-      }
-
-      // Detect language from content (exact Python logic)
-      const contentForDetection = `${urlContent} ${targetKeywords} ${brandName} ${sellingPoints}`;
+      // Detect language from available text
+      const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
 
-      // Build exact prompt from original Python app
+      // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
-        Based on the following content, generate ${contentType === 'titles' ? 'only SEO-optimized page titles' : contentType === 'descriptions' ? 'only meta descriptions' : 'both SEO-optimized page titles and meta descriptions'}:
+        Generate ${contentType === 'titles' ? 'only SEO-optimized page titles' : contentType === 'descriptions' ? 'only meta descriptions' : 'both SEO-optimized page titles and meta descriptions'} based on the following:
 
-        CONTENT FROM WEBSITE:
-        ${urlContent.substring(0, 2000)}...
+        ${url ? `WEBSITE URL: ${url}
+        Please visit this URL, analyze the website content, and use that context to inform your SEO content creation.` : ''}
 
         TARGET KEYWORDS: ${targetKeywords}
         BRAND NAME: ${brandName}
@@ -553,23 +547,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Fetch URL content if URL provided (exact Python logic)
-      let urlContent = "";
-      if (url) {
-        urlContent = await fetchUrlContent(url) || "";
-      }
-
-      // Detect language from content (exact Python logic)
-      const contentForDetection = `${urlContent} ${targetKeywords} ${brandName} ${sellingPoints}`;
+      // Detect language from available text
+      const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
 
-      // Build exact prompt to match the original PHP processing expectations
+      // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
-        Based on the following content and requirements, generate compelling Google Ads copy:
+        Based on the following requirements, generate compelling Google Ads copy:
 
-        CONTENT FROM WEBSITE:
-        ${urlContent.substring(0, 2000)}...
+        ${url ? `WEBSITE URL: ${url}
+        Please visit this URL, analyze the website content, and use that context to inform your ad creation.` : ''}
 
         TARGET KEYWORDS: ${targetKeywords}
         BRAND NAME: ${brandName}
