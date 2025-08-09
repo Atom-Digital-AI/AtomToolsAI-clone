@@ -14,13 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 interface GeneratedCopy {
-  headline: string;
-  description1: string;
-  description2: string;
-  callToAction: string;
-  headlineLength: number;
-  description1Length: number;
-  description2Length: number;
+  headlines: string[];
+  descriptions: string[];
   score: number;
   keywords: string[];
   language: string;
@@ -35,10 +30,8 @@ interface BulkAdResult {
   url: string;
   keywords: string;
   brandName: string;
-  headline: string;
-  description1: string;
-  description2: string;
-  callToAction: string;
+  headlines: string[];
+  descriptions: string[];
   status: 'success' | 'error';
   error?: string;
 }
@@ -154,63 +147,43 @@ export default function GoogleAdsCopyGenerator() {
       const formattedHeadlines = response.headlines.map((h: string) => formatText(h, caseType));
       const formattedDescriptions = response.descriptions.map((d: string) => formatText(d, caseType));
       
-      // Create variations from the multiple headlines and descriptions
-      const numHeadlines = Math.min(formattedHeadlines.length, 3);
-      const numDescs = Math.min(formattedDescriptions.length, 2);
-      
-      // Create variations by combining different headlines with descriptions
-      for (let i = 0; i < numVariations && i < numHeadlines; i++) {
-        const headlineIndex = i % numHeadlines;
-        const desc1Index = 0; // Always use first description
-        const desc2Index = numDescs > 1 ? 1 : 0; // Use second description if available
-        
-        variations.push({
-          headline: formattedHeadlines[headlineIndex],
-          description1: formattedDescriptions[desc1Index],
-          description2: formattedDescriptions[desc2Index],
-          callToAction: formatText("Get Started", caseType),
-          headlineLength: formattedHeadlines[headlineIndex].length,
-          description1Length: formattedDescriptions[desc1Index].length,
-          description2Length: formattedDescriptions[desc2Index].length,
-          score: 95 - (i * 3),
-          keywords: keywords.split(',').map(k => k.trim()),
-          language: 'en'
-        });
-      }
-      
-      // If we need more variations than headlines, generate additional API calls
-      if (numVariations > numHeadlines) {
-        for (let i = numHeadlines; i < numVariations; i++) {
-          try {
-            const varResponseObj = await apiRequest("POST", "/api/tools/google-ads/generate", {
-              url: url || undefined,
-              targetKeywords: keywords,
-              brandName: brandName,
-              sellingPoints: sellingPoints
-            });
-            
-            const varResponse = await varResponseObj.json();
+      // Create the primary variation using the exact arrays from the API
+      const primaryVariation: GeneratedCopy = {
+        headlines: formattedHeadlines.slice(0, 3), // Ensure max 3 headlines
+        descriptions: formattedDescriptions.slice(0, 2), // Ensure max 2 descriptions
+        score: 95,
+        keywords: keywords.split(',').map(k => k.trim()),
+        language: 'en'
+      };
 
-            if (varResponse.headlines && varResponse.descriptions) {
-              const varHeadlines = varResponse.headlines.map((h: string) => formatText(h, caseType));
-              const varDescriptions = varResponse.descriptions.map((d: string) => formatText(d, caseType));
-              
-              variations.push({
-                headline: varHeadlines[0] || "",
-                description1: varDescriptions[0] || "",
-                description2: varDescriptions[1] || varDescriptions[0] || "",
-                callToAction: formatText("Get Started", caseType),
-                headlineLength: (varHeadlines[0] || "").length,
-                description1Length: (varDescriptions[0] || "").length,
-                description2Length: (varDescriptions[1] || varDescriptions[0] || "").length,
-                score: 90 - (i * 2),
-                keywords: keywords.split(',').map(k => k.trim()),
-                language: 'en'
-              });
-            }
-          } catch (varError) {
-            console.warn(`Failed to generate variation ${i + 1}:`, varError);
+      variations.push(primaryVariation);
+      
+      // Generate additional variations if requested
+      for (let i = 1; i < numVariations; i++) {
+        try {
+          const varResponseObj = await apiRequest("POST", "/api/tools/google-ads/generate", {
+            url: url || undefined,
+            targetKeywords: keywords,
+            brandName: brandName,
+            sellingPoints: sellingPoints
+          });
+          
+          const varResponse = await varResponseObj.json();
+
+          if (varResponse.headlines && varResponse.descriptions) {
+            const varHeadlines = varResponse.headlines.map((h: string) => formatText(h, caseType));
+            const varDescriptions = varResponse.descriptions.map((d: string) => formatText(d, caseType));
+            
+            variations.push({
+              headlines: varHeadlines.slice(0, 3),
+              descriptions: varDescriptions.slice(0, 2),
+              score: 90 - (i * 2),
+              keywords: keywords.split(',').map(k => k.trim()),
+              language: 'en'
+            });
           }
+        } catch (varError) {
+          console.warn(`Failed to generate variation ${i + 1}:`, varError);
         }
       }
 
@@ -256,30 +229,24 @@ export default function GoogleAdsCopyGenerator() {
           url: "https://example1.com",
           keywords: "digital marketing, SEO",
           brandName: "MarketPro",
-          headline: "MarketPro - Digital Marketing Solutions",
-          description1: "Transform your online presence with expert digital marketing.",
-          description2: "Free consultation. Proven results. Get started today!",
-          callToAction: "Get Started",
+          headlines: ["MarketPro - Digital Marketing Solutions", "Expert Digital Marketing Services", "Grow Your Business Online"],
+          descriptions: ["Transform your online presence with expert digital marketing.", "Free consultation. Proven results. Get started today!"],
           status: "success"
         },
         {
           url: "https://example2.com", 
           keywords: "web design, development",
           brandName: "WebCraft",
-          headline: "WebCraft - Professional Web Design",
-          description1: "Custom websites that convert visitors into customers.",
-          description2: "Mobile-responsive. SEO-optimized. Launch in 30 days!",
-          callToAction: "Get Quote",
+          headlines: ["WebCraft - Professional Web Design", "Custom Websites That Convert", "Professional Web Development"],
+          descriptions: ["Custom websites that convert visitors into customers.", "Mobile-responsive. SEO-optimized. Launch in 30 days!"],
           status: "success"
         },
         {
           url: "https://example3.com",
           keywords: "",
           brandName: "",
-          headline: "",
-          description1: "",
-          description2: "",
-          callToAction: "",
+          headlines: [],
+          descriptions: [],
           status: "error",
           error: "Missing required fields"
         }
@@ -346,15 +313,22 @@ export default function GoogleAdsCopyGenerator() {
   const exportToGoogleAds = () => {
     if (!adCopy && bulkResults.length === 0) return;
 
-    let csvContent = "Campaign,Ad Group,Headline,Description Line 1,Description Line 2,Final URL,Call to Action\n";
+    let csvContent = "Campaign,Ad Group,Headline 1,Headline 2,Headline 3,Description 1,Description 2,Final URL\n";
     
     if (mode === 'single' && adCopy) {
       adCopy.variations.forEach((copy, index) => {
-        csvContent += `"${brandName} Campaign","${brandName} Ad Group ${index + 1}","${copy.headline}","${copy.description1}","${copy.description2}","${url}","${copy.callToAction}"\n`;
+        // Export using the original format: 3 headlines and 2 descriptions
+        const headline1 = copy.headlines[0] || '';
+        const headline2 = copy.headlines[1] || '';
+        const headline3 = copy.headlines[2] || '';
+        const description1 = copy.descriptions[0] || '';
+        const description2 = copy.descriptions[1] || '';
+        
+        csvContent += `"${brandName} Campaign","${brandName} Ad Group ${index + 1}","${headline1}","${headline2}","${headline3}","${description1}","${description2}","${url}"\n`;
       });
     } else {
       bulkResults.filter(r => r.status === 'success').forEach((result, index) => {
-        csvContent += `"${result.brandName} Campaign","${result.brandName} Ad Group","${result.headline}","${result.description1}","${result.description2}","${result.url}","${result.callToAction}"\n`;
+        csvContent += `"${result.brandName} Campaign","${result.brandName} Ad Group","${result.headlines[0] || ''}","${result.headlines[1] || ''}","${result.headlines[2] || ''}","${result.descriptions[0] || ''}","${result.descriptions[1] || ''}","${result.url}"\n`;
       });
     }
 
@@ -671,7 +645,7 @@ export default function GoogleAdsCopyGenerator() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => copyToClipboard(`${copy.headline}\n${copy.description1}\n${copy.description2}\n${copy.callToAction}`)}
+                          onClick={() => copyToClipboard(`${copy.headlines.join('\n')}\n${copy.descriptions.join('\n')}`)}
                           data-testid={`button-copy-variation-${index}`}
                         >
                           <Copy className="w-4 h-4" />
@@ -680,60 +654,41 @@ export default function GoogleAdsCopyGenerator() {
                     </div>
                     
                     <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label className="text-sm">Headline ({copy.headlineLength} chars)</Label>
-                          <span className={`text-xs ${getCharacterWarning(copy.headline, 30).color}`}>
-                            {getCharacterWarning(copy.headline, 30).message}
-                          </span>
+                      {/* Display all 3 headlines */}
+                      {copy.headlines.map((headline, headlineIndex) => (
+                        <div key={`headline-${headlineIndex}`}>
+                          <div className="flex justify-between items-center mb-1">
+                            <Label className="text-sm">Headline {headlineIndex + 1} ({headline.length} chars)</Label>
+                            <span className={`text-xs ${getCharacterWarning(headline, 30).color}`}>
+                              {getCharacterWarning(headline, 30).message}
+                            </span>
+                          </div>
+                          <Textarea
+                            value={headline}
+                            readOnly
+                            className="min-h-[40px] font-medium"
+                            data-testid={`output-headline-${index}-${headlineIndex}`}
+                          />
                         </div>
-                        <Textarea
-                          value={copy.headline}
-                          readOnly
-                          className="min-h-[40px] font-medium"
-                          data-testid={`output-headline-${index}`}
-                        />
-                      </div>
+                      ))}
                       
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label className="text-sm">Description 1 ({copy.description1Length} chars)</Label>
-                          <span className={`text-xs ${getCharacterWarning(copy.description1, 90).color}`}>
-                            {getCharacterWarning(copy.description1, 90).message}
-                          </span>
+                      {/* Display all 2 descriptions */}
+                      {copy.descriptions.map((description, descIndex) => (
+                        <div key={`description-${descIndex}`}>
+                          <div className="flex justify-between items-center mb-1">
+                            <Label className="text-sm">Description {descIndex + 1} ({description.length} chars)</Label>
+                            <span className={`text-xs ${getCharacterWarning(description, 90).color}`}>
+                              {getCharacterWarning(description, 90).message}
+                            </span>
+                          </div>
+                          <Textarea
+                            value={description}
+                            readOnly
+                            className="min-h-[50px]"
+                            data-testid={`output-description-${index}-${descIndex}`}
+                          />
                         </div>
-                        <Textarea
-                          value={copy.description1}
-                          readOnly
-                          className="min-h-[50px]"
-                          data-testid={`output-description1-${index}`}
-                        />
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label className="text-sm">Description 2 ({copy.description2Length} chars)</Label>
-                          <span className={`text-xs ${getCharacterWarning(copy.description2, 90).color}`}>
-                            {getCharacterWarning(copy.description2, 90).message}
-                          </span>
-                        </div>
-                        <Textarea
-                          value={copy.description2}
-                          readOnly
-                          className="min-h-[50px]"
-                          data-testid={`output-description2-${index}`}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm">Call to Action</Label>
-                        <Input
-                          value={copy.callToAction}
-                          readOnly
-                          className="font-medium"
-                          data-testid={`output-cta-${index}`}
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -785,22 +740,18 @@ export default function GoogleAdsCopyGenerator() {
                       
                       {result.status === 'success' ? (
                         <div className="space-y-2 text-sm">
-                          <div>
-                            <Label className="text-xs text-text-secondary">Headline:</Label>
-                            <p className="font-medium">{result.headline}</p>
-                          </div>
-                          <div>
-                            <Label className="text-xs text-text-secondary">Description 1:</Label>
-                            <p>{result.description1}</p>
-                          </div>
-                          <div>
-                            <Label className="text-xs text-text-secondary">Description 2:</Label>
-                            <p>{result.description2}</p>
-                          </div>
-                          <div>
-                            <Label className="text-xs text-text-secondary">Call to Action:</Label>
-                            <p className="font-medium">{result.callToAction}</p>
-                          </div>
+                          {result.headlines.map((headline, idx) => (
+                            <div key={`bulk-headline-${idx}`}>
+                              <Label className="text-xs text-text-secondary">Headline {idx + 1}:</Label>
+                              <p className="font-medium">{headline}</p>
+                            </div>
+                          ))}
+                          {result.descriptions.map((description, idx) => (
+                            <div key={`bulk-description-${idx}`}>
+                              <Label className="text-xs text-text-secondary">Description {idx + 1}:</Label>
+                              <p>{description}</p>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <p className="text-sm text-red-600">{result.error}</p>
