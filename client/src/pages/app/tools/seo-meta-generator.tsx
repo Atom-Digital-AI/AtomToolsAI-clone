@@ -276,7 +276,7 @@ export default function SEOMetaGenerator() {
   };
 
   return (
-    <AccessGuard productId="550e8400-e29b-41d4-a716-446655440001" productName="SEO Meta Generator">
+    <AccessGuard productId="531de90b-12ef-4169-b664-0d55428435a6" productName="SEO Meta Generator">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

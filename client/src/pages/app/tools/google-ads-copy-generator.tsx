@@ -355,7 +355,7 @@ export default function GoogleAdsCopyGenerator() {
   };
 
   return (
-    <AccessGuard productId="550e8400-e29b-41d4-a716-446655440002" productName="Google Ads Copy Generator">
+    <AccessGuard productId="c5985990-e94e-49b3-a86c-3076fd9d6b3f" productName="Google Ads Copy Generator">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
