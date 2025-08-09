@@ -40,7 +40,7 @@ export default function SEOMetaGenerator() {
   const [sellingPoints, setSellingPoints] = useState("");
   const [tone, setTone] = useState("");
   const [contentType, setContentType] = useState<'both' | 'titles' | 'descriptions'>('both');
-  const [numVariations, setNumVariations] = useState(2);
+  const [numVariations, setNumVariations] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [metaData, setMetaData] = useState<MetaData | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);

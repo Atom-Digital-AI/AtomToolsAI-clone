@@ -43,7 +43,7 @@ export default function GoogleAdsCopyGenerator() {
   const [sellingPoints, setSellingPoints] = useState("");
   const [tone, setTone] = useState("");
   const [caseType, setCaseType] = useState<'sentence' | 'title' | 'uppercase'>('sentence');
-  const [numVariations, setNumVariations] = useState(2);
+  const [numVariations, setNumVariations] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [adCopy, setAdCopy] = useState<AdCopyVariations | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
