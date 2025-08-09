@@ -223,50 +223,115 @@ export default function GoogleAdsCopyGenerator() {
     setBulkResults([]);
 
     try {
-      // Simulate bulk processing
-      const mockResults: BulkAdResult[] = [
-        {
-          url: "https://example1.com",
-          keywords: "digital marketing, SEO",
-          brandName: "MarketPro",
-          headlines: ["MarketPro - Digital Marketing Solutions", "Expert Digital Marketing Services", "Grow Your Business Online"],
-          descriptions: ["Transform your online presence with expert digital marketing.", "Free consultation. Proven results. Get started today!"],
-          status: "success"
-        },
-        {
-          url: "https://example2.com", 
-          keywords: "web design, development",
-          brandName: "WebCraft",
-          headlines: ["WebCraft - Professional Web Design", "Custom Websites That Convert", "Professional Web Development"],
-          descriptions: ["Custom websites that convert visitors into customers.", "Mobile-responsive. SEO-optimized. Launch in 30 days!"],
-          status: "success"
-        },
-        {
-          url: "https://example3.com",
-          keywords: "",
-          brandName: "",
-          headlines: [],
-          descriptions: [],
-          status: "error",
-          error: "Missing required fields"
-        }
-      ];
-
-      for (let i = 0; i < mockResults.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        setProgress(((i + 1) / mockResults.length) * 100);
-        setBulkResults(prev => [...prev, mockResults[i]]);
+      // Parse CSV file
+      const csvText = await csvFile.text();
+      const lines = csvText.trim().split('\n');
+      
+      if (lines.length < 2) {
+        throw new Error("CSV must contain header row and at least one data row");
       }
 
+      // Parse header and data rows
+      const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+      const dataRows = lines.slice(1);
+
+      // Validate required columns
+      const urlIndex = headers.findIndex(h => h.toLowerCase().includes('url'));
+      const keywordsIndex = headers.findIndex(h => h.toLowerCase().includes('keyword'));
+      const brandIndex = headers.findIndex(h => h.toLowerCase().includes('brand'));
+      const sellingPointsIndex = headers.findIndex(h => h.toLowerCase().includes('selling'));
+
+      if (urlIndex === -1 && keywordsIndex === -1) {
+        throw new Error("CSV must contain either 'URL' or 'Keywords' column");
+      }
+
+      // Process each row with real OpenAI API calls
+      const results: BulkAdResult[] = [];
+      
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i].split(',').map(cell => cell.replace(/"/g, '').trim());
+        
+        const url = urlIndex >= 0 ? row[urlIndex] : '';
+        const keywords = keywordsIndex >= 0 ? row[keywordsIndex] : '';
+        const brandName = brandIndex >= 0 ? row[brandIndex] : '';
+        const sellingPoints = sellingPointsIndex >= 0 ? row[sellingPointsIndex] : '';
+
+        // Skip empty rows
+        if (!url && !keywords && !brandName) {
+          results.push({
+            url,
+            keywords,
+            brandName,
+            headlines: [],
+            descriptions: [],
+            status: "error",
+            error: "Empty row - no data to process"
+          });
+          continue;
+        }
+
+        try {
+          // Call actual OpenAI API for each row
+          const response = await apiRequest("POST", "/api/tools/google-ads/generate", {
+            url,
+            targetKeywords: keywords,
+            brandName,
+            sellingPoints
+          });
+
+          const adCopy = await response.json();
+          
+          if (adCopy.headlines && adCopy.descriptions) {
+            results.push({
+              url,
+              keywords,
+              brandName,
+              headlines: adCopy.headlines,
+              descriptions: adCopy.descriptions,
+              status: "success"
+            });
+          } else {
+            results.push({
+              url,
+              keywords,
+              brandName,
+              headlines: [],
+              descriptions: [],
+              status: "error",
+              error: "Invalid response format from API"
+            });
+          }
+        } catch (error) {
+          results.push({
+            url,
+            keywords,
+            brandName,
+            headlines: [],
+            descriptions: [],
+            status: "error",
+            error: error instanceof Error ? error.message : "Failed to generate ad copy"
+          });
+        }
+
+        // Update progress
+        setProgress(((i + 1) / dataRows.length) * 100);
+        setBulkResults([...results]);
+        
+        // Small delay to prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const successCount = results.filter(r => r.status === 'success').length;
+      
       toast({
         title: "Bulk Processing Complete",
-        description: `Processed ${mockResults.length} campaigns with ${mockResults.filter(r => r.status === 'success').length} successful generations`,
+        description: `Processed ${results.length} campaigns with ${successCount} successful generations`,
       });
 
     } catch (error) {
       toast({
         title: "Bulk Processing Failed",
-        description: "An error occurred during bulk processing",
+        description: error instanceof Error ? error.message : "An error occurred during bulk processing",
         variant: "destructive",
       });
     } finally {
