@@ -39,7 +39,7 @@ export default function SEOMetaGenerator() {
   const [sellingPoints, setSellingPoints] = useState("");
   const [tone, setTone] = useState("");
   const [contentType, setContentType] = useState<'both' | 'titles' | 'descriptions'>('both');
-  const [numVariations, setNumVariations] = useState(3);
+  const [numVariations, setNumVariations] = useState(2);
   const [isGenerating, setIsGenerating] = useState(false);
   const [metaData, setMetaData] = useState<MetaData | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -439,8 +439,8 @@ export default function SEOMetaGenerator() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="1">1 Variation</SelectItem>
+                          <SelectItem value="2">2 Variations</SelectItem>
                           <SelectItem value="3">3 Variations</SelectItem>
-                          <SelectItem value="5">5 Variations</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

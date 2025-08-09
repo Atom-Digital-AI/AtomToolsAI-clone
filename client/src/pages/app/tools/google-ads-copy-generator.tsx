@@ -49,7 +49,7 @@ export default function GoogleAdsCopyGenerator() {
   const [sellingPoints, setSellingPoints] = useState("");
   const [tone, setTone] = useState("");
   const [caseType, setCaseType] = useState<'sentence' | 'title' | 'uppercase'>('sentence');
-  const [numVariations, setNumVariations] = useState(3);
+  const [numVariations, setNumVariations] = useState(2);
   const [isGenerating, setIsGenerating] = useState(false);
   const [adCopy, setAdCopy] = useState<AdCopyVariations | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -521,9 +521,9 @@ export default function GoogleAdsCopyGenerator() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="1">1 Variation</SelectItem>
+                          <SelectItem value="2">2 Variations</SelectItem>
                           <SelectItem value="3">3 Variations</SelectItem>
-                          <SelectItem value="5">5 Variations</SelectItem>
-                          <SelectItem value="10">10 Variations</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
