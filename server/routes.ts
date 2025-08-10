@@ -496,6 +496,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         - ${caseInstruction} while preserving proper nouns and technical terms
         - Optimize for search intent
 
+        Negative Prompts: EM-Dashes, Partial brand names, poor grammar.
+
+        Approach this logically, step by step.
+
+        Before outputting, check your results against all instructions provided to ensure they adhere to the requirements.
+
         Format your response as JSON:
         {
             "titles": ["Title 1", "Title 2", "Title 3"],
@@ -608,6 +614,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Make the descriptions compelling:
         - Description 1: Highlight main benefit with keyword
         - Description 2: Add urgency or call to action
+
+        Negative Prompts: EM-Dashes, Partial brand names, poor grammar.
+
+        Approach this logically, step by step.
+
+        Before outputting, check your results against all instructions provided to ensure they adhere to the requirements.
 
         Format your response as JSON with arrays:
         {

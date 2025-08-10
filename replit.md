@@ -20,6 +20,7 @@ This is a dark-mode marketing website and comprehensive subscription-based appli
   - **Bulk Results UI Enhancement**: Converted bulk campaign results from large blocks to compact table format for improved space efficiency and readability
 - **Grammar and Formatting Rules**: Removed uppercase text option and implemented intelligent formatting with 70% character limit optimization, proper country abbreviations (UK, US, EU), and smart keyword/brand inclusion logic
 - **Smart Keyword Logic**: Updated prompts to include main keyword if it fits, otherwise use complete brand name; for keywords use complete phrase if possible, otherwise grammatically correct shorter version
+- **Quality Control Enhancement**: Added negative prompts (EM-Dashes, Partial brand names, poor grammar) and logical validation instructions to ensure high-quality output that meets professional standards
 - **OpenAI Integration**: Fully operational with user's API key using gpt-4o-mini model and parameters from original Python implementation
 
 ## User Preferences
