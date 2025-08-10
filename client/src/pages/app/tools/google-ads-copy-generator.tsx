@@ -10,6 +10,7 @@ import { Sparkles, Copy, RefreshCw, Download, Upload, AlertCircle, CheckCircle2,
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -775,45 +776,61 @@ export default function GoogleAdsCopyGenerator() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {bulkResults.map((result, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <span className="font-medium text-sm">{result.brandName}</span>
-                          <p className="text-xs text-text-secondary">{result.url}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {result.status === 'success' ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                          )}
-                          <span className={`text-sm ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                            {result.status}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {result.status === 'success' ? (
-                        <div className="space-y-2 text-sm">
-                          {result.headlines.map((headline, idx) => (
-                            <div key={`bulk-headline-${idx}`}>
-                              <Label className="text-xs text-text-secondary">Headline {idx + 1}:</Label>
-                              <p className="font-medium">{headline}</p>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Brand</TableHead>
+                        <TableHead>URL</TableHead>
+                        <TableHead>Headlines</TableHead>
+                        <TableHead>Descriptions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bulkResults.map((result, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {result.status === 'success' ? (
+                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              ) : (
+                                <AlertCircle className="w-4 h-4 text-red-500" />
+                              )}
+                              <span className={`text-sm ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                                {result.status}
+                              </span>
                             </div>
-                          ))}
-                          {result.descriptions.map((description, idx) => (
-                            <div key={`bulk-description-${idx}`}>
-                              <Label className="text-xs text-text-secondary">Description {idx + 1}:</Label>
-                              <p>{description}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-red-600">{result.error}</p>
-                      )}
-                    </div>
-                  ))}
+                          </TableCell>
+                          <TableCell className="font-medium">{result.brandName}</TableCell>
+                          <TableCell className="max-w-[200px] truncate text-text-secondary text-sm">{result.url}</TableCell>
+                          <TableCell>
+                            {result.status === 'success' ? (
+                              <div className="space-y-1">
+                                {result.headlines.map((headline, idx) => (
+                                  <div key={`bulk-headline-${idx}`} className="text-sm">
+                                    <span className="font-mono text-xs text-text-secondary">H{idx + 1}:</span> {headline}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-red-600 text-sm">{result.error}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {result.status === 'success' && (
+                              <div className="space-y-1">
+                                {result.descriptions.map((description, idx) => (
+                                  <div key={`bulk-description-${idx}`} className="text-sm">
+                                    <span className="font-mono text-xs text-text-secondary">D{idx + 1}:</span> {description}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                   
                   <Button onClick={exportToGoogleAds} className="w-full" data-testid="button-export-bulk-google-ads">
                     <Download className="w-4 h-4 mr-2" />

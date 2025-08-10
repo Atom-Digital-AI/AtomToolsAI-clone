@@ -9,6 +9,7 @@ import { AccessGuard } from "@/components/access-guard";
 import { Search, Copy, Download, Upload, RefreshCw, AlertCircle, CheckCircle2, Globe } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -663,38 +664,47 @@ export default function SEOMetaGenerator() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {bulkResults.map((result, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-sm">{result.url}</span>
-                        <div className="flex items-center gap-2">
-                          {result.status === 'success' ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                          )}
-                          <span className={`text-sm ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                            {result.status}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {result.status === 'success' ? (
-                        <div className="space-y-2">
-                          <div>
-                            <Label className="text-xs">Title</Label>
-                            <p className="text-sm">{result.title}</p>
-                          </div>
-                          <div>
-                            <Label className="text-xs">Description</Label>
-                            <p className="text-sm">{result.description}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-red-600">{result.error}</p>
-                      )}
-                    </div>
-                  ))}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Status</TableHead>
+                        <TableHead>URL</TableHead>
+                        <TableHead>SEO Title</TableHead>
+                        <TableHead>Meta Description</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bulkResults.map((result, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {result.status === 'success' ? (
+                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              ) : (
+                                <AlertCircle className="w-4 h-4 text-red-500" />
+                              )}
+                              <span className={`text-sm ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                                {result.status}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate text-text-secondary text-sm">{result.url}</TableCell>
+                          <TableCell>
+                            {result.status === 'success' ? (
+                              <div className="text-sm font-medium">{result.title}</div>
+                            ) : (
+                              <span className="text-red-600 text-sm">{result.error}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {result.status === 'success' && (
+                              <div className="text-sm text-text-secondary max-w-[300px]">{result.description}</div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                   
                   <Button onClick={exportResults} className="w-full" data-testid="button-export-bulk">
                     <Download className="w-4 h-4 mr-2" />
