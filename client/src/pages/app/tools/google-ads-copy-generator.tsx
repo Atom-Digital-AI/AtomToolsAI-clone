@@ -46,6 +46,7 @@ export default function GoogleAdsCopyGenerator() {
   const [brandGuidelines, setBrandGuidelines] = useState('');
   const [regulatoryGuidelines, setRegulatoryGuidelines] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [adCopy, setAdCopy] = useState<AdCopyVariations | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -653,61 +654,161 @@ export default function GoogleAdsCopyGenerator() {
             </div>
           ) : (
             /* Bulk Upload Mode */
-            <Card>
-              <CardHeader>
-                <CardTitle>Bulk Campaign Upload</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="csv-upload">Upload CSV File</Label>
-                  <Input
-                    id="csv-upload"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileUpload}
-                    data-testid="input-csv"
-                  />
-                  <p className="text-sm text-text-secondary mt-1">
-                    CSV should contain columns: URL, Keywords, Brand Name, Selling Points, Tone (optional)
-                  </p>
-                </div>
-                
-                {csvFile && (
-                  <Alert>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertDescription>
-                      File ready: {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {isGenerating && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bulk Campaign Upload</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <Progress value={progress} className="mb-2" />
-                    <p className="text-sm text-text-secondary">Processing bulk campaigns... {progress}%</p>
+                    <Label htmlFor="csv-upload">Upload CSV File</Label>
+                    <Input
+                      id="csv-upload"
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileUpload}
+                      data-testid="input-csv"
+                    />
+                    <p className="text-sm text-text-secondary mt-1">
+                      CSV should contain columns: URL, Keywords, Brand Name, Selling Points
+                    </p>
                   </div>
-                )}
-                
-                <Button 
-                  onClick={handleBulkProcess}
-                  className="w-full" 
-                  disabled={!csvFile || isGenerating}
-                  data-testid="button-process-bulk"
-                >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Processing Campaigns...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Process Bulk Campaigns
-                    </>
+                  
+                  {csvFile && (
+                    <Alert>
+                      <CheckCircle2 className="h-4 w-4" />
+                      <AlertDescription>
+                        File ready: {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
+                      </AlertDescription>
+                    </Alert>
                   )}
-                </Button>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* Advanced Options for Bulk */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Advanced Options</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                      data-testid="button-toggle-advanced-bulk"
+                    >
+                      {showAdvancedOptions ? (
+                        <>
+                          <ChevronUp className="w-4 h-4 mr-2" />
+                          Hide
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 mr-2" />
+                          Show
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+                {showAdvancedOptions && (
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="bulk-brand-guidelines">Brand Guidelines (Optional)</Label>
+                        <Textarea
+                          id="bulk-brand-guidelines"
+                          placeholder="Enter specific brand voice, messaging guidelines, or compliance requirements that must be followed..."
+                          value={brandGuidelines}
+                          onChange={(e) => setBrandGuidelines(e.target.value)}
+                          className="min-h-[80px]"
+                          data-testid="textarea-bulk-brand-guidelines"
+                        />
+                        <p className="text-sm text-text-secondary mt-1">
+                          Critical guidelines that override all other instructions for brand consistency
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="bulk-regulatory-guidelines">Regulatory Guidelines (Optional)</Label>
+                        <Textarea
+                          id="bulk-regulatory-guidelines"
+                          placeholder="Enter industry-specific regulations, legal requirements, or compliance standards..."
+                          value={regulatoryGuidelines}
+                          onChange={(e) => setRegulatoryGuidelines(e.target.value)}
+                          className="min-h-[80px]"
+                          data-testid="textarea-bulk-regulatory-guidelines"
+                        />
+                        <p className="text-sm text-text-secondary mt-1">
+                          Legal or industry compliance requirements that must be strictly followed
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="bulk-case-type">Text Case</Label>
+                          <Select value={caseType} onValueChange={(value: 'sentence' | 'title') => setCaseType(value)}>
+                            <SelectTrigger data-testid="select-bulk-case-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sentence">Sentence Case</SelectItem>
+                              <SelectItem value="title">Title Case</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="bulk-variations">Variations Per Campaign</Label>
+                          <Select value={numVariations.toString()} onValueChange={(value) => setNumVariations(parseInt(value))}>
+                            <SelectTrigger data-testid="select-bulk-variations">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 Variation</SelectItem>
+                              <SelectItem value="2">2 Variations</SelectItem>
+                              <SelectItem value="3">3 Variations</SelectItem>
+                              <SelectItem value="4">4 Variations</SelectItem>
+                              <SelectItem value="5">5 Variations</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+
+              {/* Process Button */}
+              <Card>
+                <CardContent className="pt-6">
+                  {isGenerating && (
+                    <div className="mb-4">
+                      <Progress value={progress} className="mb-2" />
+                      <p className="text-sm text-text-secondary">Processing bulk campaigns... {progress}%</p>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={handleBulkProcess}
+                    className="w-full" 
+                    disabled={!csvFile || isGenerating}
+                    data-testid="button-process-bulk"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Processing Campaigns...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Process Bulk Campaigns
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* Single Campaign Results */}
