@@ -14,8 +14,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Eye, EyeOff } from "lucide-react";
 
 const signUpSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string()
+    .email("Please enter a valid email address")
+    .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Please enter a valid email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
@@ -31,7 +32,6 @@ export default function SignUp() {
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
       terms: false,
@@ -45,7 +45,7 @@ export default function SignUp() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username: data.username, email: data.email, password: data.password }),
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
       
       if (!response.ok) {
@@ -150,26 +150,6 @@ export default function SignUp() {
                   </div>
                 </div>
                 
-                {/* Username Field */}
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-text-primary">Username</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          {...field}
-                          className="bg-surface border-border focus:ring-accent"
-                          data-testid="signup-username"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 {/* Email Field */}
                 <FormField
                   control={form.control}
@@ -218,6 +198,24 @@ export default function SignUp() {
                         </div>
                       </FormControl>
                       <FormMessage />
+                      
+                      {/* Password requirements */}
+                      <div className="mt-2">
+                        <p className="text-xs text-text-secondary">
+                          Password must be at least 8 characters and contain:
+                        </p>
+                        <ul className="text-xs text-text-secondary mt-1 space-y-0.5">
+                          <li className={password && /[a-z]/.test(password) ? "text-success" : ""}>
+                            • At least one lowercase letter
+                          </li>
+                          <li className={password && /[A-Z]/.test(password) ? "text-success" : ""}>
+                            • At least one uppercase letter
+                          </li>
+                          <li className={password && /\d/.test(password) ? "text-success" : ""}>
+                            • At least one number
+                          </li>
+                        </ul>
+                      </div>
                       
                       {/* Password strength indicator */}
                       {password && (
