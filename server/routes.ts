@@ -503,9 +503,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         `.trim();
 
-      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      // Using gpt-4o-mini as requested by the user
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {"role": "system", "content": "You are an expert SEO copywriter."},
           {"role": "user", "content": prompt}
@@ -616,9 +616,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         `.trim();
 
-      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      // Using gpt-4o-mini as requested by the user
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {"role": "system", "content": "You are an expert copywriter specializing in Google Ads."},
           {"role": "user", "content": prompt}
