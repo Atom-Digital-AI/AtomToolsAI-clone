@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Eye, EyeOff } from "lucide-react";
 
 const signUpSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
@@ -30,6 +31,7 @@ export default function SignUp() {
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
+      username: "",
       email: "",
       password: "",
       terms: false,
@@ -43,7 +45,7 @@ export default function SignUp() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: data.email, password: data.password }),
+        body: JSON.stringify({ username: data.username, email: data.email, password: data.password }),
       });
       
       if (!response.ok) {
@@ -148,6 +150,26 @@ export default function SignUp() {
                   </div>
                 </div>
                 
+                {/* Username Field */}
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-text-primary">Username</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          {...field}
+                          className="bg-surface border-border focus:ring-accent"
+                          data-testid="signup-username"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* Email Field */}
                 <FormField
                   control={form.control}
@@ -232,16 +254,12 @@ export default function SignUp() {
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm text-text-secondary cursor-pointer">
                           I agree to the{" "}
-                          <Link href="/terms">
-                            <a className="text-accent hover:text-accent-2 underline">
-                              Terms of Service
-                            </a>
+                          <Link href="/terms" className="text-accent hover:text-accent-2 underline">
+                            Terms of Service
                           </Link>{" "}
                           and{" "}
-                          <Link href="/privacy">
-                            <a className="text-accent hover:text-accent-2 underline">
-                              Privacy Policy
-                            </a>
+                          <Link href="/privacy" className="text-accent hover:text-accent-2 underline">
+                            Privacy Policy
                           </Link>
                         </FormLabel>
                         <FormMessage />
@@ -261,10 +279,8 @@ export default function SignUp() {
                 
                 <p className="text-center text-sm text-text-secondary">
                   Already have an account?{" "}
-                  <Link href="/sign-in">
-                    <a className="text-accent hover:text-accent-2 underline" data-testid="sign-in-link">
-                      Sign in
-                    </a>
+                  <Link href="/sign-in" className="text-accent hover:text-accent-2 underline" data-testid="sign-in-link">
+                    Sign in
                   </Link>
                 </p>
               </form>

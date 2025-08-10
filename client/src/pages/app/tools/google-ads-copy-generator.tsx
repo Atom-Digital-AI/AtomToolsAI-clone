@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Sparkles, Copy, RefreshCw, Download, Upload, AlertCircle, CheckCircle2, Globe, Target } from "lucide-react";
+import { Sparkles, Copy, RefreshCw, Download, Upload, AlertCircle, CheckCircle2, Globe, Target, ChevronUp, ChevronDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
