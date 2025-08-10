@@ -667,7 +667,6 @@ export default function SEOMetaGenerator() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Status</TableHead>
                         <TableHead>URL</TableHead>
                         <TableHead>SEO Title</TableHead>
                         <TableHead>Meta Description</TableHead>
@@ -675,31 +674,24 @@ export default function SEOMetaGenerator() {
                     </TableHeader>
                     <TableBody>
                       {bulkResults.map((result, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
+                        <TableRow key={index} className={result.status === 'error' ? 'bg-red-50 dark:bg-red-950/20' : ''}>
+                          <TableCell className="max-w-[200px] truncate text-text-secondary text-sm">
                             <div className="flex items-center gap-2">
                               {result.status === 'success' ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
                               ) : (
-                                <AlertCircle className="w-4 h-4 text-red-500" />
+                                <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
                               )}
-                              <span className={`text-sm ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                                {result.status}
-                              </span>
+                              {result.url}
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-[200px] truncate text-text-secondary text-sm">{result.url}</TableCell>
-                          <TableCell>
-                            {result.status === 'success' ? (
-                              <div className="text-sm font-medium">{result.title}</div>
-                            ) : (
-                              <span className="text-red-600 text-sm">{result.error}</span>
+                          <TableCell className="text-sm font-medium max-w-[300px]">
+                            {result.status === 'success' ? result.title : (
+                              <span className="text-red-600 text-xs">{result.error}</span>
                             )}
                           </TableCell>
-                          <TableCell>
-                            {result.status === 'success' && (
-                              <div className="text-sm text-text-secondary max-w-[300px]">{result.description}</div>
-                            )}
+                          <TableCell className="text-sm text-text-secondary max-w-[400px]">
+                            {result.status === 'success' ? result.description : '-'}
                           </TableCell>
                         </TableRow>
                       ))}

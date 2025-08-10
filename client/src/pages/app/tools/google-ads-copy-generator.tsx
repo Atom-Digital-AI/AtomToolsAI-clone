@@ -779,53 +779,45 @@ export default function GoogleAdsCopyGenerator() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Status</TableHead>
                         <TableHead>Brand</TableHead>
                         <TableHead>URL</TableHead>
-                        <TableHead>Headlines</TableHead>
-                        <TableHead>Descriptions</TableHead>
+                        <TableHead>Headline 1</TableHead>
+                        <TableHead>Headline 2</TableHead>
+                        <TableHead>Headline 3</TableHead>
+                        <TableHead>Description 1</TableHead>
+                        <TableHead>Description 2</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {bulkResults.map((result, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
+                        <TableRow key={index} className={result.status === 'error' ? 'bg-red-50 dark:bg-red-950/20' : ''}>
+                          <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               {result.status === 'success' ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
                               ) : (
-                                <AlertCircle className="w-4 h-4 text-red-500" />
+                                <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
                               )}
-                              <span className={`text-sm ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                                {result.status}
-                              </span>
+                              {result.brandName}
                             </div>
                           </TableCell>
-                          <TableCell className="font-medium">{result.brandName}</TableCell>
-                          <TableCell className="max-w-[200px] truncate text-text-secondary text-sm">{result.url}</TableCell>
-                          <TableCell>
-                            {result.status === 'success' ? (
-                              <div className="space-y-1">
-                                {result.headlines.map((headline, idx) => (
-                                  <div key={`bulk-headline-${idx}`} className="text-sm">
-                                    <span className="font-mono text-xs text-text-secondary">H{idx + 1}:</span> {headline}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-red-600 text-sm">{result.error}</span>
+                          <TableCell className="max-w-[150px] truncate text-text-secondary text-sm">{result.url}</TableCell>
+                          <TableCell className="text-sm max-w-[200px]">
+                            {result.status === 'success' ? result.headlines[0] || '-' : (
+                              <span className="text-red-600 text-xs">{result.error}</span>
                             )}
                           </TableCell>
-                          <TableCell>
-                            {result.status === 'success' && (
-                              <div className="space-y-1">
-                                {result.descriptions.map((description, idx) => (
-                                  <div key={`bulk-description-${idx}`} className="text-sm">
-                                    <span className="font-mono text-xs text-text-secondary">D{idx + 1}:</span> {description}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                          <TableCell className="text-sm max-w-[200px]">
+                            {result.status === 'success' ? result.headlines[1] || '-' : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm max-w-[200px]">
+                            {result.status === 'success' ? result.headlines[2] || '-' : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm max-w-[250px]">
+                            {result.status === 'success' ? result.descriptions[0] || '-' : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm max-w-[250px]">
+                            {result.status === 'success' ? result.descriptions[1] || '-' : '-'}
                           </TableCell>
                         </TableRow>
                       ))}
