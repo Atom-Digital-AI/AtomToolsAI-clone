@@ -455,7 +455,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sellingPoints = "",
         numVariations = 3,
         contentType = 'both',
-        tone = "",
         caseType = "sentence",
         brandGuidelines = "",
         regulatoryGuidelines = ""
@@ -471,7 +470,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
-      const toneInstruction = getToneInstruction(tone);
       const caseInstruction = getCaseInstruction(caseType);
 
       // Build prompt that instructs OpenAI to visit the URL directly
@@ -485,7 +483,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
-        ${toneInstruction}
         
         ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED: ${brandGuidelines}` : ''}
         ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED: ${regulatoryGuidelines}` : ''}
@@ -576,7 +573,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetKeywords,
         brandName,
         sellingPoints = "",
-        tone = "",
         caseType = "sentence",
         brandGuidelines = "",
         regulatoryGuidelines = ""
@@ -592,7 +588,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
-      const toneInstruction = getToneInstruction(tone);
       const caseInstruction = getCaseInstruction(caseType);
 
       // Build prompt that instructs OpenAI to visit the URL directly
@@ -606,7 +601,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints || "None"}
         ${languageInstruction}
-        ${toneInstruction}
         
         ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED: ${brandGuidelines}` : ''}
         ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED: ${regulatoryGuidelines}` : ''}

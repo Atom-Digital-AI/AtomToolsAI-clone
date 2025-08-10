@@ -41,11 +41,11 @@ export default function GoogleAdsCopyGenerator() {
   const [keywords, setKeywords] = useState("");
   const [brandName, setBrandName] = useState("");
   const [sellingPoints, setSellingPoints] = useState("");
-  const [tone, setTone] = useState("");
   const [caseType, setCaseType] = useState<'sentence' | 'title'>('sentence');
   const [numVariations, setNumVariations] = useState(1);
   const [brandGuidelines, setBrandGuidelines] = useState('');
   const [regulatoryGuidelines, setRegulatoryGuidelines] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [adCopy, setAdCopy] = useState<AdCopyVariations | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -122,7 +122,6 @@ export default function GoogleAdsCopyGenerator() {
         targetKeywords: keywords,
         brandName: brandName,
         sellingPoints: sellingPoints,
-        tone: tone,
         caseType: caseType,
         brandGuidelines: brandGuidelines,
         regulatoryGuidelines: regulatoryGuidelines
@@ -163,7 +162,6 @@ export default function GoogleAdsCopyGenerator() {
             targetKeywords: keywords,
             brandName: brandName,
             sellingPoints: sellingPoints,
-            tone: tone,
             caseType: caseType,
             brandGuidelines: brandGuidelines,
             regulatoryGuidelines: regulatoryGuidelines
@@ -277,7 +275,6 @@ export default function GoogleAdsCopyGenerator() {
             targetKeywords: keywords,
             brandName,
             sellingPoints,
-            tone,
             caseType,
             brandGuidelines,
             regulatoryGuidelines
@@ -545,80 +542,80 @@ export default function GoogleAdsCopyGenerator() {
                     </p>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="brand-guidelines">Brand Guidelines (Optional)</Label>
-                    <Textarea
-                      id="brand-guidelines"
-                      placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
-                      value={brandGuidelines}
-                      onChange={(e) => setBrandGuidelines(e.target.value)}
-                      data-testid="input-brand-guidelines"
-                      className="min-h-[60px]"
-                    />
-                    <p className="text-sm text-text-secondary mt-1">
-                      Specific brand voice, messaging, or style requirements that must be followed
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="regulatory-guidelines">Regulatory Guidelines (Optional)</Label>
-                    <Textarea
-                      id="regulatory-guidelines"
-                      placeholder="e.g., FDA compliance required, no health claims, include disclaimers, follow FTC advertising guidelines, GDPR compliant language..."
-                      value={regulatoryGuidelines}
-                      onChange={(e) => setRegulatoryGuidelines(e.target.value)}
-                      data-testid="input-regulatory-guidelines"
-                      className="min-h-[60px]"
-                    />
-                    <p className="text-sm text-text-secondary mt-1">
-                      Legal, compliance, or regulatory requirements that copy must adhere to
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="tone">Brand Voice</Label>
-                      <Select value={tone} onValueChange={setTone}>
-                        <SelectTrigger data-testid="select-tone">
-                          <SelectValue placeholder="Select tone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="professional">Professional</SelectItem>
-                          <SelectItem value="friendly">Friendly</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                          <SelectItem value="informative">Informative</SelectItem>
-                          <SelectItem value="persuasive">Persuasive</SelectItem>
-                          <SelectItem value="trustworthy">Trustworthy</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {/* Advanced Options */}
+                  <div className="border-t pt-4">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                      className="mb-4 p-0 h-auto font-medium text-primary hover:text-primary/80"
+                      data-testid="toggle-advanced-options"
+                    >
+                      {showAdvanced ? '▼' : '▶'} Advanced Options
+                    </Button>
                     
-                    <div>
-                      <Label htmlFor="case-type">Text Case</Label>
-                      <Select value={caseType} onValueChange={(value: 'sentence' | 'title') => setCaseType(value)}>
-                        <SelectTrigger data-testid="select-case-type">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sentence">Sentence Case</SelectItem>
-                          <SelectItem value="title">Title Case</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="variations">Variations</Label>
-                      <Select value={numVariations.toString()} onValueChange={(value) => setNumVariations(parseInt(value))}>
-                        <SelectTrigger data-testid="select-variations">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 Variation</SelectItem>
-                          <SelectItem value="2">2 Variations</SelectItem>
-                          <SelectItem value="3">3 Variations</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {showAdvanced && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="brand-guidelines">Brand Guidelines (Optional)</Label>
+                          <Textarea
+                            id="brand-guidelines"
+                            placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
+                            value={brandGuidelines}
+                            onChange={(e) => setBrandGuidelines(e.target.value)}
+                            data-testid="input-brand-guidelines"
+                            className="min-h-[60px]"
+                          />
+                          <p className="text-sm text-text-secondary mt-1">
+                            Specific brand voice, messaging, or style requirements that must be followed
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="regulatory-guidelines">Regulatory Guidelines (Optional)</Label>
+                          <Textarea
+                            id="regulatory-guidelines"
+                            placeholder="e.g., FDA compliance required, no health claims, include disclaimers, follow FTC advertising guidelines, GDPR compliant language..."
+                            value={regulatoryGuidelines}
+                            onChange={(e) => setRegulatoryGuidelines(e.target.value)}
+                            data-testid="input-regulatory-guidelines"
+                            className="min-h-[60px]"
+                          />
+                          <p className="text-sm text-text-secondary mt-1">
+                            Legal, compliance, or regulatory requirements that copy must adhere to
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="case-type">Text Case</Label>
+                            <Select value={caseType} onValueChange={(value: 'sentence' | 'title') => setCaseType(value)}>
+                              <SelectTrigger data-testid="select-case-type">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sentence">Sentence Case</SelectItem>
+                                <SelectItem value="title">Title Case</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="variations">Variations</Label>
+                            <Select value={numVariations.toString()} onValueChange={(value) => setNumVariations(parseInt(value))}>
+                              <SelectTrigger data-testid="select-variations">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1">1 Variation</SelectItem>
+                                <SelectItem value="2">2 Variations</SelectItem>
+                                <SelectItem value="3">3 Variations</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
