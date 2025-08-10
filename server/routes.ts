@@ -488,9 +488,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Generate ${numVariations} variations.
 
         Requirements:
-        - Titles: 50-60 characters (aim for at least 35 characters - 70% of limit), include primary keywords
+        - Titles: 50-60 characters (aim for at least 35 characters - 70% of limit)
         - Descriptions: 150-160 characters (aim for at least 105 characters - 70% of limit), compelling and informative
-        - Always use the COMPLETE brand name "${brandName}" where appropriate - never shorten it
+        - Include main keyword if it fits, otherwise use complete brand name "${brandName}"
+        - For keywords: use complete keyword phrase if it fits, otherwise use a shorter, grammatically correct version
         - Use proper grammar with country abbreviations capitalized (UK, US, EU, etc.)
         - ${caseInstruction} while preserving proper nouns and technical terms
         - Optimize for search intent
@@ -595,7 +596,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         CRITICAL FORMATTING RULES:
         - ${caseInstruction}
         - Keep country abbreviations capitalized (UK, US, EU, etc.) regardless of text case
-        - Always use the COMPLETE brand name "${brandName}" - never shorten it
+        - Include main keyword if it fits, otherwise use complete brand name "${brandName}"
+        - For keywords: use complete keyword phrase if it fits, otherwise use a shorter, grammatically correct version
         - Preserve proper nouns and technical terms in their correct case
 
         Make the headlines diverse:
