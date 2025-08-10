@@ -511,7 +511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {"role": "user", "content": prompt}
         ],
         max_tokens: 1000,
-        temperature: 0.8
+        temperature: 0.8,
+        store: true
       });
 
       const content = response.choices[0].message.content?.trim() || "";
@@ -624,7 +625,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {"role": "user", "content": prompt}
         ],
         max_tokens: 1000,
-        temperature: 0.7
+        temperature: 0.7,
+        store: true
       });
 
       const content = response.choices[0].message.content?.trim() || "";
