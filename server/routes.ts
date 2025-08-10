@@ -4,9 +4,14 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { db } from "./db";
 import OpenAI from "openai";
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { sendVerificationEmail } from "./email";
+import { nanoid } from "nanoid";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -416,15 +421,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create new user
-      const user = await storage.createUser(userData);
+      // Generate verification token
+      const verificationToken = nanoid(32);
+      
+      // Create new user with verification token
+      const user = await storage.createUser({
+        ...userData,
+        emailVerificationToken: verificationToken,
+        isEmailVerified: false,
+      });
 
-      // Auto-login after signup
-      req.session.userId = user.id;
+      // Send verification email
+      const emailResult = await sendVerificationEmail(user.email, verificationToken);
+      
+      if (!emailResult.success) {
+        console.error("Failed to send verification email:", emailResult.error);
+      }
 
       res.json({
         success: true,
-        message: "Account created successfully",
+        message: "Account created successfully. Please check your email to verify your account.",
+        requiresVerification: true,
         user: { id: user.id, email: user.email },
       });
     } catch (error) {
@@ -432,6 +449,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({
         success: false,
         message: "Failed to create account",
+      });
+    }
+  });
+
+  // Email verification endpoint
+  app.get("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid verification token",
+        });
+      }
+
+      // Find user by verification token
+      const user = await storage.getUserByVerificationToken(token);
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired verification token",
+        });
+      }
+
+      if (user.isEmailVerified) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is already verified",
+        });
+      }
+
+      // Verify the user's email
+      await storage.verifyUserEmail(user.id);
+
+      // Auto-login after verification
+      req.session.userId = user.id;
+
+      res.json({
+        success: true,
+        message: "Email verified successfully",
+        user: { id: user.id, email: user.email },
+      });
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(400).json({
+        success: false,
+        message: "Failed to verify email",
+      });
+    }
+  });
+
+  // Resend verification email endpoint
+  app.post("/api/auth/resend-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      if (user.isEmailVerified) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is already verified",
+        });
+      }
+
+      // Generate new verification token
+      const verificationToken = nanoid(32);
+      await db.update(users).set({ emailVerificationToken: verificationToken }).where(eq(users.id, user.id));
+
+      // Send verification email
+      const emailResult = await sendVerificationEmail(user.email, verificationToken);
+      
+      if (!emailResult.success) {
+        console.error("Failed to send verification email:", emailResult.error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to send verification email",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Verification email sent successfully",
+      });
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to resend verification email",
       });
     }
   });

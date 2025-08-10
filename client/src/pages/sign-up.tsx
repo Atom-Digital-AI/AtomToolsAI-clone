@@ -55,13 +55,22 @@ export default function SignUp() {
       
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Account created!",
-        description: "Welcome to atomtools.ai. You can now start using our tools.",
-      });
-      // Redirect to dashboard
-      window.location.href = "/app";
+    onSuccess: (data) => {
+      if (data.requiresVerification) {
+        toast({
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
+        });
+        // Redirect to verification page
+        window.location.href = `/email-verification-sent?email=${encodeURIComponent(form.getValues('email'))}`;
+      } else {
+        toast({
+          title: "Account created!",
+          description: "Welcome to atomtools.ai. You can now start using our tools.",
+        });
+        // Redirect to dashboard
+        window.location.href = "/app";
+      }
     },
     onError: (error) => {
       toast({

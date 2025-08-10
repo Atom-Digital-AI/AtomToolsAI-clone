@@ -44,6 +44,14 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       return res.status(401).json({ message: "Unauthorized - User not found" });
     }
 
+    // Check if email is verified for protected routes
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ 
+        message: "Email verification required",
+        requiresVerification: true 
+      });
+    }
+
     (req as any).user = user;
     next();
   } catch (error) {

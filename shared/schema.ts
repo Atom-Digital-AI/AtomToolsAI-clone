@@ -9,6 +9,8 @@ export const users = pgTable("users", {
   username: text("username").unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  isEmailVerified: boolean("is_email_verified").notNull().default(false),
+  emailVerificationToken: text("email_verification_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -42,6 +44,11 @@ export const userSubscriptions = pgTable("user_subscriptions", {
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
+  isEmailVerified: true,
+  emailVerificationToken: true,
+}).partial({
+  isEmailVerified: true,
+  emailVerificationToken: true,
 });
 
 export const insertContactSchema = createInsertSchema(contacts).pick({

@@ -15,6 +15,8 @@ import Pricing from "@/pages/pricing";
 import Contact from "@/pages/contact";
 import SignUp from "@/pages/sign-up";
 import Login from "@/pages/login";
+import VerifyEmail from "@/pages/verify-email";
+import EmailVerificationSent from "@/pages/email-verification-sent";
 import Dashboard from "@/pages/app/dashboard";
 import Account from "@/pages/app/account";
 import MyTools from "@/pages/app/my-tools";
@@ -45,6 +47,8 @@ export default function App() {
             <Route path="/contact" component={Contact} />
             <Route path="/sign-up" component={SignUp} />
             <Route path="/login" component={Login} />
+            <Route path="/verify-email" component={VerifyEmail} />
+            <Route path="/email-verification-sent" component={EmailVerificationSent} />
             <Route path="/app" component={Dashboard} />
             <Route path="/app/account" component={Account} />
             <Route path="/app/my-tools" component={MyTools} />
