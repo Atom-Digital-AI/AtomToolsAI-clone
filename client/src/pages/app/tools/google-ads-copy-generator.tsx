@@ -17,7 +17,6 @@ import { apiRequest } from "@/lib/queryClient";
 interface GeneratedCopy {
   headlines: string[];
   descriptions: string[];
-  score: number;
   keywords: string[];
   language: string;
 }
@@ -146,7 +145,6 @@ export default function GoogleAdsCopyGenerator() {
       const primaryVariation: GeneratedCopy = {
         headlines: formattedHeadlines.slice(0, 3), // Ensure max 3 headlines
         descriptions: formattedDescriptions.slice(0, 2), // Ensure max 2 descriptions
-        score: 95,
         keywords: keywords.split(',').map(k => k.trim()),
         language: 'en'
       };
@@ -174,7 +172,6 @@ export default function GoogleAdsCopyGenerator() {
             variations.push({
               headlines: varHeadlines.slice(0, 3),
               descriptions: varDescriptions.slice(0, 2),
-              score: 90 - (i * 2),
               keywords: keywords.split(',').map(k => k.trim()),
               language: 'en'
             });
@@ -410,14 +407,7 @@ export default function GoogleAdsCopyGenerator() {
     });
   };
 
-  const getCharacterWarning = (text: string, maxLength: number) => {
-    if (text.length > maxLength) {
-      return { color: 'text-red-600', message: 'Too long - will be truncated' };
-    } else if (text.length > maxLength * 0.9) {
-      return { color: 'text-yellow-600', message: 'Close to limit' };
-    }
-    return { color: 'text-green-600', message: 'Good length' };
-  };
+
 
   return (
     <AccessGuard productId="c5985990-e94e-49b3-a86c-3076fd9d6b3f" productName="Google Ads Copy Generator">
@@ -689,42 +679,29 @@ export default function GoogleAdsCopyGenerator() {
           {adCopy && mode === 'single' && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Generated Ad Copy Variations</span>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    Score: {adCopy.primary.score}/100
-                  </Badge>
-                </CardTitle>
+                <CardTitle>Generated Ad Copy Variations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {adCopy.variations.map((copy, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">Variation {index + 1}</h4>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={copy.score >= 90 ? 'default' : copy.score >= 80 ? 'secondary' : 'outline'}>
-                          {copy.score}/100
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(`${copy.headlines.join('\n')}\n${copy.descriptions.join('\n')}`)}
-                          data-testid={`button-copy-variation-${index}`}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(`${copy.headlines.join('\n')}\n${copy.descriptions.join('\n')}`)}
+                        data-testid={`button-copy-variation-${index}`}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
                     </div>
                     
                     <div className="space-y-3">
                       {/* Display all 3 headlines */}
                       {copy.headlines.map((headline, headlineIndex) => (
                         <div key={`headline-${headlineIndex}`}>
-                          <div className="flex justify-between items-center mb-1">
-                            <Label className="text-sm">Headline {headlineIndex + 1} ({headline.length} chars)</Label>
-                            <span className={`text-xs ${getCharacterWarning(headline, 30).color}`}>
-                              {getCharacterWarning(headline, 30).message}
-                            </span>
+                          <div className="mb-1">
+                            <Label className="text-sm">Headline {headlineIndex + 1}</Label>
                           </div>
                           <Textarea
                             value={headline}
@@ -738,11 +715,8 @@ export default function GoogleAdsCopyGenerator() {
                       {/* Display all 2 descriptions */}
                       {copy.descriptions.map((description, descIndex) => (
                         <div key={`description-${descIndex}`}>
-                          <div className="flex justify-between items-center mb-1">
-                            <Label className="text-sm">Description {descIndex + 1} ({description.length} chars)</Label>
-                            <span className={`text-xs ${getCharacterWarning(description, 90).color}`}>
-                              {getCharacterWarning(description, 90).message}
-                            </span>
+                          <div className="mb-1">
+                            <Label className="text-sm">Description {descIndex + 1}</Label>
                           </div>
                           <Textarea
                             value={description}

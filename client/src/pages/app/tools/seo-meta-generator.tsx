@@ -16,8 +16,6 @@ import { apiRequest } from "@/lib/queryClient";
 interface MetaData {
   title: string;
   description: string;
-  titleLength: number;
-  descriptionLength: number;
   keywords: string[];
   language: string;
   variations?: {
@@ -134,8 +132,6 @@ export default function SEOMetaGenerator() {
       setMetaData({
         title: primaryTitle,
         description: primaryDescription,
-        titleLength: primaryTitle.length,
-        descriptionLength: primaryDescription.length,
         keywords: keywords.split(',').map(k => k.trim()),
         language: 'en',
         variations: {
@@ -297,13 +293,13 @@ export default function SEOMetaGenerator() {
   const exportResults = () => {
     if (!metaData && bulkResults.length === 0) return;
 
-    let csvContent = "URL,Title,Description,Title Length,Description Length,Status\n";
+    let csvContent = "URL,Title,Description,Status\n";
     
     if (mode === 'single' && metaData) {
-      csvContent += `"${url}","${metaData.title}","${metaData.description}",${metaData.titleLength},${metaData.descriptionLength},success\n`;
+      csvContent += `"${url}","${metaData.title}","${metaData.description}",success\n`;
     } else {
       bulkResults.forEach(result => {
-        csvContent += `"${result.url}","${result.title}","${result.description}",${result.title.length},${result.description.length},${result.status}\n`;
+        csvContent += `"${result.url}","${result.title}","${result.description}",${result.status}\n`;
       });
     }
 
@@ -605,7 +601,7 @@ export default function SEOMetaGenerator() {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <Label>Title Tag ({metaData.titleLength} characters)</Label>
+                      <Label>Title Tag</Label>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -621,14 +617,12 @@ export default function SEOMetaGenerator() {
                       className="min-h-[60px]"
                       data-testid="output-title"
                     />
-                    <div className={`text-sm mt-1 ${metaData.titleLength > 60 ? 'text-destructive' : 'text-green-600'}`}>
-                      {metaData.titleLength > 60 ? 'Too long - consider shortening' : 'Good length'}
-                    </div>
+
                   </div>
                   
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <Label>Meta Description ({metaData.descriptionLength} characters)</Label>
+                      <Label>Meta Description</Label>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -644,9 +638,7 @@ export default function SEOMetaGenerator() {
                       className="min-h-[80px]"
                       data-testid="output-description"
                     />
-                    <div className={`text-sm mt-1 ${metaData.descriptionLength > 160 ? 'text-destructive' : 'text-green-600'}`}>
-                      {metaData.descriptionLength > 160 ? 'Too long - consider shortening' : 'Good length'}
-                    </div>
+
                   </div>
                 </div>
 
