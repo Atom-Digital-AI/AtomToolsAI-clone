@@ -120,7 +120,9 @@ export default function GoogleAdsCopyGenerator() {
         url: url || undefined,
         targetKeywords: keywords,
         brandName: brandName,
-        sellingPoints: sellingPoints
+        sellingPoints: sellingPoints,
+        tone: tone,
+        caseType: caseType
       });
       
       const response = await responseObj.json();
@@ -158,7 +160,9 @@ export default function GoogleAdsCopyGenerator() {
             url: url || undefined,
             targetKeywords: keywords,
             brandName: brandName,
-            sellingPoints: sellingPoints
+            sellingPoints: sellingPoints,
+            tone: tone,
+            caseType: caseType
           });
           
           const varResponse = await varResponseObj.json();
@@ -269,7 +273,9 @@ export default function GoogleAdsCopyGenerator() {
             url,
             targetKeywords: keywords,
             brandName,
-            sellingPoints
+            sellingPoints,
+            tone,
+            caseType
           });
 
           const adCopy = await response.json();

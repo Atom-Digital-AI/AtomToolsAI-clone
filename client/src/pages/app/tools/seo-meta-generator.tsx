@@ -40,6 +40,7 @@ export default function SEOMetaGenerator() {
   const [brandName, setBrandName] = useState("");
   const [sellingPoints, setSellingPoints] = useState("");
   const [tone, setTone] = useState("");
+  const [caseType, setCaseType] = useState<'sentence' | 'title'>('sentence');
   const [contentType, setContentType] = useState<'both' | 'titles' | 'descriptions'>('both');
   const [numVariations, setNumVariations] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -113,7 +114,9 @@ export default function SEOMetaGenerator() {
         brandName: brandName,
         sellingPoints: sellingPoints,
         numVariations: numVariations,
-        contentType: contentType
+        contentType: contentType,
+        tone: tone,
+        caseType: caseType
       });
       
       const response = await responseObj.json();
@@ -169,38 +172,79 @@ export default function SEOMetaGenerator() {
     setBulkResults([]);
 
     try {
-      // Simulate bulk processing
-      const mockResults: BulkResult[] = [
-        {
-          url: "https://example1.com",
-          title: "Example 1 - Premium SEO Services | Brand Name",
-          description: "Professional SEO services to boost your online presence and drive organic traffic.",
-          status: "success"
-        },
-        {
-          url: "https://example2.com",
-          title: "Example 2 - Digital Marketing Solutions | Brand Name",
-          description: "Comprehensive digital marketing strategies for business growth and success.",
-          status: "success"
-        },
-        {
-          url: "https://example3.com",
-          title: "",
-          description: "",
-          status: "error",
-          error: "Could not access URL"
-        }
-      ];
+      // Parse CSV file
+      const text = await csvFile.text();
+      const rows = text.split('\n').filter(row => row.trim());
+      const header = rows[0];
+      const dataRows = rows.slice(1);
 
-      for (let i = 0; i < mockResults.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setProgress(((i + 1) / mockResults.length) * 100);
-        setBulkResults(prev => [...prev, mockResults[i]]);
+      const results: BulkResult[] = [];
+
+      // Process each row with real API calls
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        const columns = row.split(',').map(col => col.replace(/"/g, '').trim());
+
+        if (columns.length < 4) continue; // Skip invalid rows
+
+        const url = columns[0];
+        const keywords = columns[1];
+        const brandNameFromRow = columns[2];
+        const sellingPointsFromRow = columns[3];
+
+        try {
+          // Call actual OpenAI API for each row
+          const response = await apiRequest("POST", "/api/tools/seo-meta/generate", {
+            url,
+            targetKeywords: keywords,
+            brandName: brandNameFromRow,
+            sellingPoints: sellingPointsFromRow,
+            tone,
+            caseType,
+            contentType: 'both',
+            numVariations: 1
+          });
+
+          const seoData = await response.json();
+          
+          if (seoData.titles && seoData.descriptions) {
+            results.push({
+              url,
+              title: seoData.titles[0] || '',
+              description: seoData.descriptions[0] || '',
+              status: 'success'
+            });
+          } else {
+            results.push({
+              url,
+              title: '',
+              description: '',
+              status: 'error',
+              error: 'Failed to generate SEO content'
+            });
+          }
+
+          // Add small delay between requests to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+        } catch (error) {
+          results.push({
+            url,
+            title: '',
+            description: '',
+            status: 'error',
+            error: 'API call failed'
+          });
+        }
+
+        // Update progress and results
+        setProgress(((i + 1) / dataRows.length) * 100);
+        setBulkResults([...results]);
       }
 
       toast({
         title: "Bulk Processing Complete",
-        description: `Processed ${mockResults.length} URLs with ${mockResults.filter(r => r.status === 'success').length} successful generations`,
+        description: `Processed ${dataRows.length} URLs with ${results.filter(r => r.status === 'success').length} successful generations`,
       });
 
     } catch (error) {
@@ -402,7 +446,7 @@ export default function SEOMetaGenerator() {
                     />
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                       <Label htmlFor="tone">Tone</Label>
                       <Select value={tone} onValueChange={setTone}>
@@ -415,6 +459,19 @@ export default function SEOMetaGenerator() {
                           <SelectItem value="urgent">Urgent</SelectItem>
                           <SelectItem value="informative">Informative</SelectItem>
                           <SelectItem value="persuasive">Persuasive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="case-type">Text Case</Label>
+                      <Select value={caseType} onValueChange={(value: 'sentence' | 'title') => setCaseType(value)}>
+                        <SelectTrigger data-testid="select-case-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sentence">Sentence Case</SelectItem>
+                          <SelectItem value="title">Title Case</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

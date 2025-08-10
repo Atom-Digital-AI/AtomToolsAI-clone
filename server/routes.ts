@@ -75,6 +75,18 @@ function getLanguagePrompt(languageCode: string): string {
   return languagePrompts[languageCode] || "Write in English.";
 }
 
+function getToneInstruction(tone: string): string {
+  if (!tone) return "";
+  return `TONE OF VOICE: ${tone} - Ensure the copy reflects this tone throughout all headlines and descriptions.`;
+}
+
+function getCaseInstruction(caseType: string): string {
+  if (caseType === 'title') {
+    return "Use Title Case formatting (capitalize the first letter of each major word)";
+  }
+  return "Use sentence case formatting (capitalize only the first letter and proper nouns)";
+}
+
 const contactSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
@@ -442,7 +454,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brandName,
         sellingPoints = "",
         numVariations = 3,
-        contentType = 'both'
+        contentType = 'both',
+        tone = "",
+        caseType = "sentence"
       } = req.body;
 
       if (!url && !targetKeywords) {
@@ -455,6 +469,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
+      const toneInstruction = getToneInstruction(tone);
+      const caseInstruction = getCaseInstruction(caseType);
 
       // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
@@ -467,6 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
+        ${toneInstruction}
 
         Generate ${numVariations} variations.
 
@@ -475,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         - Descriptions: 150-160 characters (aim for at least 105 characters - 70% of limit), compelling and informative
         - Always use the COMPLETE brand name "${brandName}" where appropriate - never shorten it
         - Use proper grammar with country abbreviations capitalized (UK, US, EU, etc.)
-        - Apply sentence case while preserving proper nouns and technical terms
+        - ${caseInstruction} while preserving proper nouns and technical terms
         - Optimize for search intent
 
         Format your response as JSON:
@@ -540,7 +557,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         url,
         targetKeywords,
         brandName,
-        sellingPoints = ""
+        sellingPoints = "",
+        tone = "",
+        caseType = "sentence"
       } = req.body;
 
       if (!url && !targetKeywords) {
@@ -553,6 +572,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
       const languageInstruction = getLanguagePrompt(detectedLang);
+      const toneInstruction = getToneInstruction(tone);
+      const caseInstruction = getCaseInstruction(caseType);
 
       // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
@@ -564,19 +585,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         TARGET KEYWORDS: ${targetKeywords}
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints || "None"}
-
         ${languageInstruction}
+        ${toneInstruction}
 
         Generate Google Ads copy with EXACTLY this format:
         - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)
         - 2 descriptions, each maximum 90 characters (aim for at least 63 characters - 70% of limit)
 
         CRITICAL FORMATTING RULES:
-        - Use proper grammar and sentence case formatting
+        - ${caseInstruction}
         - Keep country abbreviations capitalized (UK, US, EU, etc.) regardless of text case
         - Always use the COMPLETE brand name "${brandName}" - never shorten it
         - Preserve proper nouns and technical terms in their correct case
-        - Apply the requested text case while respecting grammatical exceptions
 
         Make the headlines diverse:
         - Headline 1: Include main keyword if it fits, otherwise use complete brand name
