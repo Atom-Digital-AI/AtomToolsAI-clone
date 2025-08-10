@@ -41,6 +41,8 @@ export default function SEOMetaGenerator() {
   const [caseType, setCaseType] = useState<'sentence' | 'title'>('sentence');
   const [contentType, setContentType] = useState<'both' | 'titles' | 'descriptions'>('both');
   const [numVariations, setNumVariations] = useState(1);
+  const [brandGuidelines, setBrandGuidelines] = useState('');
+  const [regulatoryGuidelines, setRegulatoryGuidelines] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [metaData, setMetaData] = useState<MetaData | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -114,7 +116,9 @@ export default function SEOMetaGenerator() {
         numVariations: numVariations,
         contentType: contentType,
         tone: tone,
-        caseType: caseType
+        caseType: caseType,
+        brandGuidelines: brandGuidelines,
+        regulatoryGuidelines: regulatoryGuidelines
       });
       
       const response = await responseObj.json();
@@ -198,7 +202,9 @@ export default function SEOMetaGenerator() {
             tone,
             caseType,
             contentType: 'both',
-            numVariations: 1
+            numVariations: 1,
+            brandGuidelines,
+            regulatoryGuidelines
           });
 
           const seoData = await response.json();
@@ -440,6 +446,36 @@ export default function SEOMetaGenerator() {
                       onChange={(e) => setSellingPoints(e.target.value)}
                       data-testid="input-selling-points"
                     />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="brand-guidelines">Brand Guidelines (Optional)</Label>
+                    <Textarea
+                      id="brand-guidelines"
+                      placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
+                      value={brandGuidelines}
+                      onChange={(e) => setBrandGuidelines(e.target.value)}
+                      data-testid="input-brand-guidelines"
+                      className="min-h-[60px]"
+                    />
+                    <p className="text-sm text-text-secondary mt-1">
+                      Specific brand voice, messaging, or style requirements that must be followed
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="regulatory-guidelines">Regulatory Guidelines (Optional)</Label>
+                    <Textarea
+                      id="regulatory-guidelines"
+                      placeholder="e.g., FDA compliance required, no health claims, include disclaimers, follow FTC advertising guidelines, GDPR compliant language..."
+                      value={regulatoryGuidelines}
+                      onChange={(e) => setRegulatoryGuidelines(e.target.value)}
+                      data-testid="input-regulatory-guidelines"
+                      className="min-h-[60px]"
+                    />
+                    <p className="text-sm text-text-secondary mt-1">
+                      Legal, compliance, or regulatory requirements that content must adhere to
+                    </p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

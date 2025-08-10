@@ -22,6 +22,12 @@ This is a dark-mode marketing website and comprehensive subscription-based appli
 - **Smart Keyword Logic**: Updated prompts to include main keyword if it fits, otherwise use complete brand name; for keywords use complete phrase if possible, otherwise grammatically correct shorter version
 - **Quality Control Enhancement**: Added negative prompts (EM-Dashes, Partial brand names, poor grammar) and logical validation instructions to ensure high-quality output that meets professional standards
 - **OpenAI Integration**: Fully operational with user's API key using gpt-4o-mini model and parameters from original Python implementation
+- **Compliance Guidelines Support (August 2025)**: Enhanced both Google Ads Copy Generator and SEO Meta Generator tools with critical compliance features:
+  - **Brand Guidelines Field**: Optional brand guidelines input that becomes critical compliance factor in AI prompts
+  - **Regulatory Guidelines Field**: Optional regulatory compliance input for meeting industry-specific requirements
+  - **Critical Pre-Output Review**: Added 4-point compliance checklist in prompts ensuring brand/regulatory guidelines are strictly followed before content generation
+  - **Bulk Processing Compliance**: Extended guidelines support to bulk CSV processing for consistent compliance across all generated content
+  - **Professional Quality Control**: Removed scoring badges and character warnings for cleaner output displays, focusing purely on content quality and compliance
 
 ## User Preferences
 

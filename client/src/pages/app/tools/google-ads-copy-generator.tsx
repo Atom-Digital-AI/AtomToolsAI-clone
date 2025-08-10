@@ -44,6 +44,8 @@ export default function GoogleAdsCopyGenerator() {
   const [tone, setTone] = useState("");
   const [caseType, setCaseType] = useState<'sentence' | 'title'>('sentence');
   const [numVariations, setNumVariations] = useState(1);
+  const [brandGuidelines, setBrandGuidelines] = useState('');
+  const [regulatoryGuidelines, setRegulatoryGuidelines] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [adCopy, setAdCopy] = useState<AdCopyVariations | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -121,7 +123,9 @@ export default function GoogleAdsCopyGenerator() {
         brandName: brandName,
         sellingPoints: sellingPoints,
         tone: tone,
-        caseType: caseType
+        caseType: caseType,
+        brandGuidelines: brandGuidelines,
+        regulatoryGuidelines: regulatoryGuidelines
       });
       
       const response = await responseObj.json();
@@ -160,7 +164,9 @@ export default function GoogleAdsCopyGenerator() {
             brandName: brandName,
             sellingPoints: sellingPoints,
             tone: tone,
-            caseType: caseType
+            caseType: caseType,
+            brandGuidelines: brandGuidelines,
+            regulatoryGuidelines: regulatoryGuidelines
           });
           
           const varResponse = await varResponseObj.json();
@@ -272,7 +278,9 @@ export default function GoogleAdsCopyGenerator() {
             brandName,
             sellingPoints,
             tone,
-            caseType
+            caseType,
+            brandGuidelines,
+            regulatoryGuidelines
           });
 
           const adCopy = await response.json();
@@ -534,6 +542,36 @@ export default function GoogleAdsCopyGenerator() {
                     />
                     <p className="text-sm text-text-secondary mt-1">
                       What makes your product/service unique?
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="brand-guidelines">Brand Guidelines (Optional)</Label>
+                    <Textarea
+                      id="brand-guidelines"
+                      placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
+                      value={brandGuidelines}
+                      onChange={(e) => setBrandGuidelines(e.target.value)}
+                      data-testid="input-brand-guidelines"
+                      className="min-h-[60px]"
+                    />
+                    <p className="text-sm text-text-secondary mt-1">
+                      Specific brand voice, messaging, or style requirements that must be followed
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="regulatory-guidelines">Regulatory Guidelines (Optional)</Label>
+                    <Textarea
+                      id="regulatory-guidelines"
+                      placeholder="e.g., FDA compliance required, no health claims, include disclaimers, follow FTC advertising guidelines, GDPR compliant language..."
+                      value={regulatoryGuidelines}
+                      onChange={(e) => setRegulatoryGuidelines(e.target.value)}
+                      data-testid="input-regulatory-guidelines"
+                      className="min-h-[60px]"
+                    />
+                    <p className="text-sm text-text-secondary mt-1">
+                      Legal, compliance, or regulatory requirements that copy must adhere to
                     </p>
                   </div>
                   

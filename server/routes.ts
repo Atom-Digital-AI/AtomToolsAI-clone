@@ -456,7 +456,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         numVariations = 3,
         contentType = 'both',
         tone = "",
-        caseType = "sentence"
+        caseType = "sentence",
+        brandGuidelines = "",
+        regulatoryGuidelines = ""
       } = req.body;
 
       if (!url && !targetKeywords) {
@@ -484,6 +486,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
         ${toneInstruction}
+        
+        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED: ${brandGuidelines}` : ''}
+        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED: ${regulatoryGuidelines}` : ''}
 
         Generate ${numVariations} variations.
 
@@ -500,7 +505,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         Approach this logically, step by step.
 
-        Before outputting, check your results against all instructions provided to ensure they adhere to the requirements.
+        CRITICAL PRE-OUTPUT REVIEW CHECKLIST:
+        1. ✅ All brand guidelines have been strictly followed
+        2. ✅ All regulatory requirements have been met  
+        3. ✅ Content adheres to all formatting and character requirements
+        4. ✅ No negative prompts appear in the content
+        
+        Before outputting, thoroughly review your results against ALL instructions provided, with special emphasis on brand and regulatory compliance.
 
         Format your response as JSON:
         {
@@ -566,7 +577,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brandName,
         sellingPoints = "",
         tone = "",
-        caseType = "sentence"
+        caseType = "sentence",
+        brandGuidelines = "",
+        regulatoryGuidelines = ""
       } = req.body;
 
       if (!url && !targetKeywords) {
@@ -594,6 +607,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints || "None"}
         ${languageInstruction}
         ${toneInstruction}
+        
+        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED: ${brandGuidelines}` : ''}
+        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED: ${regulatoryGuidelines}` : ''}
 
         Generate Google Ads copy with EXACTLY this format:
         - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)
@@ -619,7 +635,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         Approach this logically, step by step.
 
-        Before outputting, check your results against all instructions provided to ensure they adhere to the requirements.
+        CRITICAL PRE-OUTPUT REVIEW CHECKLIST:
+        1. ✅ All brand guidelines have been strictly followed
+        2. ✅ All regulatory requirements have been met  
+        3. ✅ Content adheres to all formatting and character requirements
+        4. ✅ No negative prompts appear in the content
+        
+        Before outputting, thoroughly review your results against ALL instructions provided, with special emphasis on brand and regulatory compliance.
 
         Format your response as JSON with arrays:
         {
