@@ -48,16 +48,51 @@ export default function LoginPage() {
       
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log("Login successful, user data:", data);
-      toast({
-        title: "Welcome back!",
-        description: "You have been successfully logged in.",
-      });
-      // Force reload to ensure session is properly set
-      setTimeout(() => {
-        window.location.href = "/app";
-      }, 500);
+      
+      // Check if user needs email verification
+      try {
+        const authResponse = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+        
+        if (authResponse.status === 403) {
+          const authData = await authResponse.json();
+          if (authData.requiresVerification) {
+            toast({
+              title: "Email verification required",
+              description: "Please check your email to verify your account.",
+              variant: "destructive",
+            });
+            // Redirect to verification page
+            setTimeout(() => {
+              window.location.href = `/email-verification-sent?email=${encodeURIComponent(data.user.email)}`;
+            }, 1000);
+            return;
+          }
+        }
+        
+        if (authResponse.ok) {
+          toast({
+            title: "Welcome back!",
+            description: "You have been successfully logged in.",
+          });
+          // Redirect to dashboard
+          setTimeout(() => {
+            window.location.href = "/app";
+          }, 500);
+        }
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        toast({
+          title: "Login successful",
+          description: "Redirecting to dashboard...",
+        });
+        setTimeout(() => {
+          window.location.href = "/app";
+        }, 500);
+      }
     },
     onError: (error: any) => {
       toast({
