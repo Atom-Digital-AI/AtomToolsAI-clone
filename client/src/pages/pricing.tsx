@@ -68,15 +68,41 @@ const faqs = [
 export default function Pricing() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
   
-  const { data: packages, isLoading } = useQuery<PackageWithTiers[]>({
+  const { data: packages, isLoading, error } = useQuery<PackageWithTiers[]>({
     queryKey: ["/api/packages"],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Debug logging
+  console.log("Pricing page - packages:", packages);
+  console.log("Pricing page - loading:", isLoading);
+  console.log("Pricing page - error:", error);
+  
+  if (error) {
+    console.error("Full error details:", error);
+  }
+  
+  // Show raw packages data for debugging
+  if (packages) {
+    console.log("Package count:", packages.length);
+    console.log("First package:", packages[0]);
+  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400">Error loading pricing data</p>
+          <p className="text-gray-400 mt-2">{error.toString()}</p>
+        </div>
       </div>
     );
   }
