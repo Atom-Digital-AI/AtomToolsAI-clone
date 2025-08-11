@@ -153,22 +153,41 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
   };
 
   const addColumn = (rowId: string) => {
-    const newBlocks = blocks.map(row => {
-      if (row.id === rowId) {
-        const newColumn: BlockColumn = {
-          id: crypto.randomUUID(),
-          content: "New column content...",
-          width: "6",
-          padding: "p-4",
-          margin: "",
-          alignItems: "start",
-          justifyContent: "start"
-        };
-        return { ...row, columns: [...row.columns, newColumn] };
-      }
-      return row;
-    });
-    updateContent(newBlocks);
+    try {
+      const newBlocks = blocks.map(row => {
+        if (row.id === rowId) {
+          // Calculate width for equal distribution
+          const currentColumnCount = row.columns.length;
+          const newColumnCount = currentColumnCount + 1;
+          const newWidth = Math.floor(12 / newColumnCount).toString();
+          
+          // Update existing columns to new width
+          const updatedColumns = row.columns.map(col => ({
+            ...col,
+            width: newWidth
+          }));
+          
+          const newColumn: BlockColumn = {
+            id: crypto.randomUUID(),
+            content: `# Column ${newColumnCount}\n\nEdit this content...`,
+            width: newWidth,
+            padding: "p-4",
+            margin: "",
+            alignItems: "start",
+            justifyContent: "start"
+          };
+          
+          return { 
+            ...row, 
+            columns: [...updatedColumns, newColumn]
+          };
+        }
+        return row;
+      });
+      updateContent(newBlocks);
+    } catch (error) {
+      console.error('Error adding column:', error);
+    }
   };
 
   const deleteColumn = (rowId: string, columnId: string) => {
