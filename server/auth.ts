@@ -75,6 +75,11 @@ export const authenticateUser = async (email: string, password: string) => {
     return null;
   }
   
+  // Check if user has a password (OAuth users might not have passwords)
+  if (!user.password) {
+    return null;
+  }
+  
   // Compare the provided password with the hashed password
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {

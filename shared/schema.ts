@@ -63,6 +63,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   isEmailVerified: true,
   emailVerificationToken: true,
+}).extend({
+  password: z.string().min(8, "Password must be at least 8 characters"),
 }).partial({
   isEmailVerified: true,
   emailVerificationToken: true,
