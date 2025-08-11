@@ -980,6 +980,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin middleware
+  const requireAdmin = async (req: any, res: any, next: any) => {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const isAdmin = await storage.isUserAdmin(req.user.id);
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    
+    next();
+  };
+
+  // Admin routes
+  app.get("/api/admin/packages", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const packages = await storage.getAllPackages();
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  app.post("/api/admin/packages", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const packageData = req.body;
+      const newPackage = await storage.createPackage(packageData);
+      res.json(newPackage);
+    } catch (error) {
+      console.error("Error creating package:", error);
+      res.status(500).json({ message: "Failed to create package" });
+    }
+  });
+
+  app.put("/api/admin/packages/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const updatedPackage = await storage.updatePackage(req.params.id, req.body);
+      if (!updatedPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      res.json(updatedPackage);
+    } catch (error) {
+      console.error("Error updating package:", error);
+      res.status(500).json({ message: "Failed to update package" });
+    }
+  });
+
+  app.delete("/api/admin/packages/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const success = await storage.deletePackage(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting package:", error);
+      res.status(500).json({ message: "Failed to delete package" });
+    }
+  });
+
+  app.get("/api/admin/products", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const products = await storage.getProductsWithPackages();
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  app.get("/api/admin/products/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const product = await storage.getProductWithPackage(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({ message: "Failed to fetch product" });
+    }
+  });
+
+  app.put("/api/admin/products/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const product = await storage.updateProduct(req.params.id, req.body);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.put("/api/admin/users/:id/admin", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { isAdmin } = req.body;
+      await storage.updateUserAdminStatus(req.params.id, isAdmin);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating user admin status:", error);
+      res.status(500).json({ message: "Failed to update user admin status" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

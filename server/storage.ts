@@ -13,7 +13,7 @@ import {
   type CompleteProfile,
   type ProductWithSubscriptionStatus
 } from "@shared/schema";
-import { users, products, userSubscriptions, guidelineProfiles } from "@shared/schema";
+import { users, products, packages, userSubscriptions, guidelineProfiles } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -61,6 +61,24 @@ export interface IStorage {
   createGuidelineProfile(profile: InsertGuidelineProfile & { userId: string }): Promise<GuidelineProfile>;
   updateGuidelineProfile(id: string, userId: string, profile: UpdateGuidelineProfile): Promise<GuidelineProfile | undefined>;
   deleteGuidelineProfile(id: string, userId: string): Promise<boolean>;
+
+  // Admin operations
+  isUserAdmin(userId: string): Promise<boolean>;
+  
+  // Package management
+  getAllPackages(): Promise<any[]>;
+  getPackage(id: string): Promise<any | undefined>;
+  createPackage(packageData: any): Promise<any>;
+  updatePackage(id: string, packageData: any): Promise<any | undefined>;
+  deletePackage(id: string): Promise<boolean>;
+  
+  // Enhanced product management
+  getProductsWithPackages(): Promise<any[]>;
+  getProductWithPackage(id: string): Promise<any | undefined>;
+  
+  // User management
+  getAllUsers(): Promise<User[]>;
+  updateUserAdminStatus(id: string, isAdmin: boolean): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -365,6 +383,120 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Admin operations
+  async isUserAdmin(userId: string): Promise<boolean> {
+    const [user] = await db.select({ isAdmin: users.isAdmin })
+      .from(users)
+      .where(eq(users.id, userId));
+    return user?.isAdmin || false;
+  }
+
+  // Package management - graceful fallback for schema migration
+  async getAllPackages(): Promise<any[]> {
+    try {
+      return await db.select().from(packages).orderBy(packages.name);
+    } catch (error) {
+      console.log("Packages table not yet created");
+      return [];
+    }
+  }
+
+  async getPackage(id: string): Promise<any | undefined> {
+    try {
+      const [pkg] = await db.select().from(packages).where(eq(packages.id, id));
+      return pkg;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async createPackage(packageData: any): Promise<any> {
+    const [pkg] = await db.insert(packages).values(packageData).returning();
+    return pkg;
+  }
+
+  async updatePackage(id: string, packageData: any): Promise<any | undefined> {
+    const [pkg] = await db.update(packages)
+      .set({ ...packageData, updatedAt: new Date() })
+      .where(eq(packages.id, id))
+      .returning();
+    return pkg;
+  }
+
+  async deletePackage(id: string): Promise<boolean> {
+    const result = await db.delete(packages).where(eq(packages.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Enhanced product management
+  async getProductsWithPackages(): Promise<any[]> {
+    try {
+      return await db.select({
+        id: products.id,
+        name: products.name,
+        description: products.description,
+        price: products.price,
+        currency: products.currency,
+        billingType: products.billingType,
+        isActive: products.isActive,
+        routePath: products.routePath,
+        marketingPath: products.marketingPath,
+        package: {
+          id: packages.id,
+          name: packages.name,
+        }
+      })
+      .from(products)
+      .leftJoin(packages, eq(products.packageId, packages.id))
+      .orderBy(products.name);
+    } catch (error) {
+      console.log("Enhanced products query failed, using basic products");
+      return await this.getAllProducts();
+    }
+  }
+
+  async getProductWithPackage(id: string): Promise<any | undefined> {
+    try {
+      const [product] = await db.select({
+        id: products.id,
+        packageId: products.packageId,
+        name: products.name,
+        description: products.description,
+        shortDescription: products.shortDescription,
+        features: products.features,
+        price: products.price,
+        currency: products.currency,
+        billingType: products.billingType,
+        isActive: products.isActive,
+        routePath: products.routePath,
+        marketingPath: products.marketingPath,
+        iconName: products.iconName,
+        tags: products.tags,
+        package: {
+          id: packages.id,
+          name: packages.name,
+        }
+      })
+      .from(products)
+      .leftJoin(packages, eq(products.packageId, packages.id))
+      .where(eq(products.id, id));
+      return product;
+    } catch (error) {
+      return await this.getProduct(id);
+    }
+  }
+
+  // User management
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.email);
+  }
+
+  async updateUserAdminStatus(id: string, isAdmin: boolean): Promise<void> {
+    await db.update(users)
+      .set({ isAdmin, updatedAt: new Date() })
+      .where(eq(users.id, id));
   }
 }
 
