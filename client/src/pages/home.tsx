@@ -450,7 +450,7 @@ export default function Home() {
           </video>
           
           {/* Dark overlay for better text readability */}
-          <div className="absolute inset-0 bg-black/60"></div>
+          <div className="absolute inset-0 bg-black/70"></div>
           
           {/* Subtle gradient overlay to blend with the site theme */}
           <div className="absolute inset-0 bg-gradient-to-br from-background/20 via-transparent to-surface/30"></div>
