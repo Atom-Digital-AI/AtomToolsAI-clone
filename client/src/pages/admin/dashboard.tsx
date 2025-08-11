@@ -12,8 +12,39 @@ import { Plus, Package, ShoppingCart, Users, Settings } from "lucide-react";
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Test authentication status
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(res => {
+        console.log("Auth check response:", res.status, res.statusText);
+        if (!res.ok) {
+          return res.text().then(text => {
+            console.log("Auth check error:", text);
+            // If not authenticated, redirect to login
+            if (res.status === 401) {
+              console.log("User not authenticated, redirecting to login");
+              window.location.href = "/login";
+            }
+            throw new Error(`${res.status}: ${text}`);
+          });
+        }
+        return res.json();
+      })
+      .then(data => {
+        console.log("Auth check success:", data);
+        // Only fetch admin data if user is authenticated and admin
+        if (data && data.isAdmin) {
+          fetch('/api/admin/stats', { credentials: 'include' })
+            .then(res => res.json())
+            .then(stats => console.log("Admin stats success:", stats))
+            .catch(err => console.log("Admin stats error:", err));
+        }
+      })
+      .catch(err => console.log("Auth check failed:", err));
+  }, []);
+
   // Fetch admin overview data
-  const { data: stats, isLoading: statsLoading } = useQuery<{
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<{
     packageCount: number;
     productCount: number;
     userCount: number;
@@ -23,20 +54,32 @@ export default function AdminDashboard() {
     retry: false,
   });
 
-  const { data: packages, isLoading: packagesLoading } = useQuery({
+  // Debug logging
+  console.log("AdminDashboard - Stats data:", stats);
+  console.log("AdminDashboard - Stats loading:", statsLoading);
+  console.log("AdminDashboard - Stats error:", statsError);
+  if (statsError) {
+    console.log("AdminDashboard - Full stats error:", JSON.stringify(statsError, null, 2));
+  }
+
+  const { data: packages, isLoading: packagesLoading, error: packagesError } = useQuery({
     queryKey: ["/api/admin/packages"],
     retry: false,
   });
 
-  const { data: products, isLoading: productsLoading } = useQuery({
+  const { data: products, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ["/api/admin/products"],
     retry: false,
   });
 
-  const { data: users, isLoading: usersLoading } = useQuery({
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ["/api/admin/users"],
     retry: false,
   });
+
+  console.log("AdminDashboard - Packages data:", packages, "Error:", packagesError);
+  console.log("AdminDashboard - Products data:", products, "Error:", productsError);
+  console.log("AdminDashboard - Users data:", users, "Error:", usersError);
 
   return (
     <div className="min-h-screen bg-black text-white">
