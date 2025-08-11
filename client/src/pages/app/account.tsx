@@ -1,26 +1,62 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { User, Mail, Package, CreditCard, X, Star, Settings } from "lucide-react";
+import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
+interface TierSubscription {
+  id: string;
+  tierId: string;
+  subscribedAt: string;
+  tier?: {
+    id: string;
+    name: string;
+    promotionalTag?: string;
+    prices: Array<{
+      amountMinor: number;
+      interval: string;
+    }>;
+    package?: {
+      name: string;
+      description: string;
+    };
+  };
+}
+
+interface PackageWithTiers {
+  id: string;
+  name: string;
+  description: string;
+  tiers: Array<{
+    id: string;
+    name: string;
+    promotionalTag?: string;
+    prices: Array<{
+      amountMinor: number;
+      interval: string;
+    }>;
+  }>;
+}
+
 export default function Account() {
   const { user, isLoading: userLoading } = useAuth();
   const { toast } = useToast();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Get tier subscriptions (new system)
-  const { data: tierSubscriptions, isLoading: tierSubscriptionsLoading } = useQuery({
+  const { data: tierSubscriptions = [], isLoading: tierSubscriptionsLoading } = useQuery<TierSubscription[]>({
     queryKey: ["/api/user/tier-subscriptions"],
     enabled: !!user,
     retry: false,
   });
 
   // Get available packages for subscription
-  const { data: packages, isLoading: packagesLoading } = useQuery({
+  const { data: packages = [], isLoading: packagesLoading } = useQuery<PackageWithTiers[]>({
     queryKey: ["/api/packages"],
     enabled: !!user,
     retry: false,
@@ -64,6 +100,27 @@ export default function Account() {
       toast({
         title: "Error",
         description: error.message || "Failed to unsubscribe",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete account mutation
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", "/api/auth/account");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted",
+      });
+      window.location.href = "/";
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete account",
         variant: "destructive",
       });
     }
@@ -114,16 +171,24 @@ export default function Account() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-text-secondary">Username</label>
-                  <div className="mt-1 p-3 border border-border rounded-lg bg-surface">
-                    {user.username}
+                  <label className="text-sm font-medium text-text-secondary">Name</label>
+                  <div className="mt-1 p-3 border border-border rounded-lg bg-surface flex items-center justify-between">
+                    <span>{user.firstName} {user.lastName}</span>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-text-secondary">Email</label>
-                  <div className="mt-1 p-3 border border-border rounded-lg bg-surface flex items-center space-x-2">
-                    <Mail className="w-4 h-4 text-text-secondary" />
-                    <span>{user.email}</span>
+                  <div className="mt-1 p-3 border border-border rounded-lg bg-surface flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Mail className="w-4 h-4 text-text-secondary" />
+                      <span>{user.email}</span>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -163,7 +228,7 @@ export default function Account() {
                   {tierSubscriptions.map((subscription: any) => (
                     <div
                       key={subscription.id}
-                      className="flex items-center justify-between p-4 border border-green-200 dark:border-green-800 rounded-lg bg-green-50 dark:bg-green-900/10"
+                      className="flex items-center justify-between p-4 border border-success/30 rounded-lg bg-success/5"
                     >
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
@@ -173,7 +238,7 @@ export default function Account() {
                           <h4 className="font-semibold text-text-primary">
                             {subscription.tier?.name}
                           </h4>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                          <Badge className="bg-success/20 text-success border-success/30">
                             Active
                           </Badge>
                         </div>
@@ -186,7 +251,10 @@ export default function Account() {
                           </span>
                           <span>•</span>
                           <span>
-                            ${subscription.tier?.price}/{subscription.tier?.billingCycle}
+                            {subscription.tier?.prices?.[0] ? 
+                              `$${(subscription.tier.prices[0].amountMinor / 100).toFixed(2)}/${subscription.tier.prices[0].interval}` : 
+                              'Free'
+                            }
                           </span>
                         </div>
                       </div>
@@ -230,7 +298,10 @@ export default function Account() {
                                       </span>
                                     </div>
                                     <div className="text-xs text-text-secondary">
-                                      ${tier.price}/{tier.billingCycle}
+                                      {tier.prices?.[0] ? 
+                                        `$${(tier.prices[0].amountMinor / 100).toFixed(2)}/${tier.prices[0].interval}` : 
+                                        'Free'
+                                      }
                                     </div>
                                   </div>
                                   <Button
@@ -285,11 +356,47 @@ export default function Account() {
                   <h4 className="font-medium text-text-primary">Logout</h4>
                   <p className="text-sm text-text-secondary">Sign out of your account</p>
                 </div>
-                <a href="/api/logout">
+                <a href="/api/auth/logout">
                   <Button variant="outline" data-testid="logout-button">
                     Logout
                   </Button>
                 </a>
+              </div>
+              <div className="flex items-center justify-between p-4 border border-danger/30 rounded-lg bg-danger/5">
+                <div>
+                  <h4 className="font-medium text-text-primary">Delete Account</h4>
+                  <p className="text-sm text-text-secondary">Permanently delete your account and all data</p>
+                </div>
+                {showDeleteConfirm ? (
+                  <div className="space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => deleteAccountMutation.mutate()}
+                      disabled={deleteAccountMutation.isPending}
+                      data-testid="confirm-delete-account-button"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {deleteAccountMutation.isPending ? "Deleting..." : "Confirm Delete"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    data-testid="delete-account-button"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Account
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

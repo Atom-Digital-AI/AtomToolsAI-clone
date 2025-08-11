@@ -159,6 +159,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Delete account endpoint
+  app.delete("/api/auth/account", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      
+      // Delete user account and all associated data
+      const success = await storage.deleteUser(userId);
+      
+      if (success) {
+        // Clear the session after successful deletion
+        req.session.destroy((err) => {
+          if (err) {
+            console.error("Session clear error after account deletion:", err);
+          }
+          res.clearCookie("connect.sid");
+          res.json({ message: "Account deleted successfully" });
+        });
+      } else {
+        res.status(404).json({ message: "User account not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting user account:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   app.get("/api/auth/logout", (req, res) => {
     console.log(
       "GET logout - Session ID:",

@@ -39,7 +39,7 @@ export interface IStorage {
   updateUserPassword(id: string, password: string): Promise<void>;
   verifyUserEmail(id: string): Promise<void>;
   completeUserProfile(id: string, profile: CompleteProfile): Promise<void>;
-  deleteUser(id: string): Promise<void>;
+  deleteUser(id: string): Promise<boolean>;
   createUserFromGoogle(googleUser: {
     email: string;
     firstName: string;
@@ -186,8 +186,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    // Delete user subscriptions first (foreign key constraint)
+    // Delete user tier subscriptions first (foreign key constraint)
+    await db.delete(userTierSubscriptions).where(eq(userTierSubscriptions.userId, id));
+    // Delete user subscriptions (legacy)
     await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, id));
+    // Delete guideline profiles
+    await db.delete(guidelineProfiles).where(eq(guidelineProfiles.userId, id));
     // Delete user
     const result = await db.delete(users).where(eq(users.id, id));
     return (result.rowCount ?? 0) > 0;

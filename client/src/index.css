@@ -34,6 +34,10 @@
     --accent-foreground: hsl(0, 0%, 100%);
     --destructive: hsl(0, 84%, 60%);
     --destructive-foreground: hsl(0, 0%, 100%);
+    --success: hsl(142, 76%, 36%);
+    --success-foreground: hsl(0, 0%, 100%);
+    --danger: hsl(0, 84%, 60%);
+    --danger-foreground: hsl(0, 0%, 100%);
     --input: hsl(215, 28%, 17%);
     --ring: hsl(239, 84%, 67%);
     --radius: 0.75rem;
