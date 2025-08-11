@@ -75,7 +75,7 @@ function DashboardContent() {
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-border bg-surface overflow-hidden">
+          <Card className="border-border bg-surface">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary flex items-center">
                 <BarChart3 className="h-4 w-4 mr-2" />
@@ -88,7 +88,7 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-surface overflow-hidden">
+          <Card className="border-border bg-surface">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary flex items-center">
                 <Users className="h-4 w-4 mr-2" />
@@ -101,7 +101,7 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-surface overflow-hidden">
+          <Card className="border-border bg-surface">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary flex items-center">
                 <Zap className="h-4 w-4 mr-2" />
