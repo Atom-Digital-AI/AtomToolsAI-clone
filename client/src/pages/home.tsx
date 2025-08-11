@@ -1,9 +1,19 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Section from "@/components/ui/section";
-import { Check, ArrowRight, Rocket, Cog, Star, Plug, Bolt, Shield, ChartBar } from "lucide-react";
+import { Check, ArrowRight, Rocket, Cog, Star, Plug, Bolt, Shield, ChartBar, Mail, User } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { insertUserSchema } from "@shared/schema";
+import { z } from "zod";
 
 const trustIndicators = [
   { icon: Rocket, text: "Build and launch campaigns faster" },
@@ -90,6 +100,188 @@ const tools = [
   },
 ];
 
+const signUpFormSchema = insertUserSchema.extend({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type SignUpFormData = z.infer<typeof signUpFormSchema>;
+
+function SignUpFormCard() {
+  const { toast } = useToast();
+  const [showSuccess, setShowSuccess] = useState(false);
+  
+  const form = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpFormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const signUpMutation = useMutation({
+    mutationFn: async (data: SignUpFormData) => {
+      return await apiRequest("POST", "/api/auth/register", data);
+    },
+    onSuccess: () => {
+      setShowSuccess(true);
+      form.reset();
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Sign Up Failed",
+        description: error.message || "Failed to create account",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const onSubmit = (data: SignUpFormData) => {
+    signUpMutation.mutate(data);
+  };
+
+  if (showSuccess) {
+    return (
+      <Card className="bg-surface border-border shadow-2xl max-w-md w-full">
+        <CardHeader className="text-center">
+          <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Mail className="w-8 h-8 text-accent" />
+          </div>
+          <CardTitle className="text-xl font-semibold text-text-primary">
+            Check Your Email
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-text-secondary mb-6">
+            We've sent you a verification link. Click it to activate your account and start using atomtools.ai.
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowSuccess(false)}
+            className="w-full"
+            data-testid="back-to-signup-button"
+          >
+            Back to Sign Up
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-surface border-border shadow-2xl max-w-md w-full">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold text-text-primary">
+          Start for Free
+        </CardTitle>
+        <p className="text-text-secondary">
+          Join thousands of marketers automating their workflows
+        </p>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email Address
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      data-testid="signup-email-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Password
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Minimum 8 characters"
+                      data-testid="signup-password-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              className="w-full bg-accent hover:bg-accent-2 text-white"
+              disabled={signUpMutation.isPending}
+              data-testid="signup-submit-button"
+            >
+              {signUpMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  Creating Account...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Create Free Account
+                </div>
+              )}
+            </Button>
+          </form>
+        </Form>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-text-secondary">
+            Already have an account?{" "}
+            <Link href="/login">
+              <Button variant="link" className="p-0 h-auto text-accent hover:text-accent-2" data-testid="login-link">
+                Sign in
+              </Button>
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-text-secondary">
+            By signing up, you agree to our{" "}
+            <Link href="/terms">
+              <Button variant="link" className="p-0 h-auto text-xs text-accent hover:text-accent-2">
+                Terms
+              </Button>
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy">
+              <Button variant="link" className="p-0 h-auto text-xs text-accent hover:text-accent-2">
+                Privacy Policy
+              </Button>
+            </Link>
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Home() {
   const getBadgeColors = (color: string) => {
     const colors = {
@@ -156,46 +348,9 @@ export default function Home() {
               </div>
             </div>
             
-            {/* Hero Visual */}
+            {/* Sign Up Form */}
             <div className="relative animate-fade-in">
-              <Card className="bg-surface border-border shadow-2xl">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {/* Tool grid mockup */}
-                    <div className="bg-surface-2 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-2 h-2 bg-accent rounded-full"></div>
-                        <span className="text-xs text-text-secondary">Tools Dashboard</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-background rounded-lg p-3">
-                          <i className="fab fa-facebook text-accent mb-1"></i>
-                          <div className="text-xs text-text-primary">Facebook Ads</div>
-                        </div>
-                        <div className="bg-background rounded-lg p-3">
-                          <i className="fas fa-search text-accent mb-1"></i>
-                          <div className="text-xs text-text-primary">SEO Meta</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Generator form mockup */}
-                    <div className="bg-surface-2 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-2 h-2 bg-success rounded-full"></div>
-                        <span className="text-xs text-text-secondary">AI Generator</span>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-background rounded h-3"></div>
-                        <div className="bg-background rounded h-3 w-3/4"></div>
-                        <div className="bg-accent/20 rounded h-6 flex items-center px-2">
-                          <span className="text-xs text-accent">Generate</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <SignUpFormCard />
             </div>
           </div>
         </div>
