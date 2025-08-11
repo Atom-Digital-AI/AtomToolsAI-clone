@@ -140,11 +140,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id));
   }
 
-  async deleteUser(id: string): Promise<void> {
+  async deleteUser(id: string): Promise<boolean> {
     // Delete user subscriptions first (foreign key constraint)
     await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, id));
     // Delete user
-    await db.delete(users).where(eq(users.id, id));
+    const result = await db.delete(users).where(eq(users.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async createUserFromGoogle(googleUser: {

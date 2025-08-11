@@ -1,16 +1,26 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, ShoppingCart, Users, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit } from "lucide-react";
 // import { PackageManager } from "@/components/admin/PackageManager";
 // import { ProductManager } from "@/components/admin/ProductManager";
 // import { UserManager } from "@/components/admin/UserManager";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    type: 'package' | 'product' | 'user';
+    item: any;
+  }>({ open: false, type: 'package', item: null });
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
 
 
@@ -77,7 +87,58 @@ export default function AdminDashboard() {
     retry: false,
   });
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async ({ type, id }: { type: string; id: string }) => {
+      const response = await fetch(`/api/admin/${type}s/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`${response.status}: ${text}`);
+      }
+      return response.json();
+    },
+    onSuccess: (_, { type }) => {
+      toast({
+        title: "Success",
+        description: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully`,
+      });
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/${type}s`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      setDeleteDialog({ open: false, type: 'package', item: null });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
+  const handleDelete = (type: 'package' | 'product' | 'user', item: any) => {
+    setDeleteDialog({ open: true, type, item });
+  };
+
+  const confirmDelete = () => {
+    if (deleteDialog.item) {
+      deleteMutation.mutate({
+        type: deleteDialog.type,
+        id: deleteDialog.item.id,
+      });
+    }
+  };
+
+  const handleEdit = (type: 'package' | 'product' | 'user', item: any) => {
+    // TODO: Implement edit functionality with modal forms
+    toast({
+      title: "Feature Coming Soon",
+      description: `Edit ${type} functionality will be implemented next`,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -275,10 +336,22 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" data-testid={`button-edit-package-${pkg.id}`}>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleEdit('package', pkg)}
+                              data-testid={`button-edit-package-${pkg.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
                               Edit
                             </Button>
-                            <Button variant="destructive" size="sm" data-testid={`button-delete-package-${pkg.id}`}>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDelete('package', pkg)}
+                              data-testid={`button-delete-package-${pkg.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
                               Delete
                             </Button>
                           </div>
@@ -343,10 +416,22 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" data-testid={`button-edit-product-${product.id}`}>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEdit('product', product)}
+                              data-testid={`button-edit-product-${product.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
                               Edit
                             </Button>
-                            <Button variant="destructive" size="sm" data-testid={`button-delete-product-${product.id}`}>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDelete('product', product)}
+                              data-testid={`button-delete-product-${product.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
                               Delete
                             </Button>
                           </div>
@@ -425,10 +510,22 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" data-testid={`button-edit-user-${user.id}`}>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEdit('user', user)}
+                              data-testid={`button-edit-user-${user.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
                               Edit
                             </Button>
-                            <Button variant="destructive" size="sm" data-testid={`button-delete-user-${user.id}`}>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDelete('user', user)}
+                              data-testid={`button-delete-user-${user.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
                               Delete
                             </Button>
                           </div>
@@ -448,6 +545,38 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <DialogContent className="bg-gray-900 border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              Delete {deleteDialog.type.charAt(0).toUpperCase() + deleteDialog.type.slice(1)}
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to delete "{deleteDialog.item?.name || deleteDialog.item?.email}"? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialog({ ...deleteDialog, open: false })}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
