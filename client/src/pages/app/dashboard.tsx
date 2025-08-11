@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, Zap, Settings, LogOut } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { type User } from "@shared/schema";
 import AuthGuard from "@/components/auth-guard";
 
@@ -73,47 +73,7 @@ function DashboardContent() {
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-border bg-surface">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-text-secondary flex items-center">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Active Campaigns
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-text-primary">12</div>
-              <p className="text-xs text-text-secondary">+2 from last month</p>
-            </CardContent>
-          </Card>
 
-          <Card className="border-border bg-surface">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-text-secondary flex items-center">
-                <Users className="h-4 w-4 mr-2" />
-                Total Leads
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-text-primary">1,247</div>
-              <p className="text-xs text-text-secondary">+18% from last month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border bg-surface">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-text-secondary flex items-center">
-                <Zap className="h-4 w-4 mr-2" />
-                Automations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-text-primary">8</div>
-              <p className="text-xs text-text-secondary">3 running now</p>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-6">
