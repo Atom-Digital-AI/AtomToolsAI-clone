@@ -241,5 +241,4 @@ export async function migrateExistingPages() {
   console.log("Migration completed!");
 }
 
-// Export for use in routes
-export { migrateExistingPages };
+// Function is already exported above
