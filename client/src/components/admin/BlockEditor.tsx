@@ -227,16 +227,23 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
     try {
       console.log("Requesting upload URL...");
       const response = await apiRequest("POST", "/api/images/upload");
-      const data = await response.json();
-      console.log("Upload URL response:", data);
+      console.log("Raw response status:", response.status);
+      console.log("Raw response headers:", Object.fromEntries(response.headers.entries()));
       
-      if (!data.uploadURL) {
+      const data = await response.json();
+      console.log("Parsed JSON data:", data);
+      console.log("uploadURL value:", data.uploadURL);
+      console.log("uploadURL type:", typeof data.uploadURL);
+      
+      if (!data || !data.uploadURL) {
+        console.error("Invalid response structure:", data);
         throw new Error("No upload URL received from server");
       }
       
       return { method: "PUT", url: data.uploadURL };
     } catch (error) {
       console.error("Failed to get upload URL:", error);
+      console.error("Error details:", error);
       throw error;
     }
   };
