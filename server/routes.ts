@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import express from "express";
+import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema } from "@shared/schema";
@@ -1478,6 +1480,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
+
+  // Serve attached assets (videos, images, etc.)
+  app.use('/attached_assets', express.static(path.resolve(process.cwd(), 'attached_assets')));
 
   // Register CMS routes
   const { registerCmsRoutes } = await import("./cms-routes");

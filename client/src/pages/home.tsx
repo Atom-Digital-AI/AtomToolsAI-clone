@@ -436,46 +436,30 @@ export default function Home() {
     <div id="main">
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
-        {/* Animated Video Background */}
+        {/* Video Background */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-surface"></div>
+          <video
+            className="absolute inset-0 w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster=""
+          >
+            <source src="/attached_assets/Dark_Mode_Tech_Background_Video_1754950245602.mp4" type="video/mp4" />
+          </video>
           
-          {/* Animated particles and geometric shapes */}
+          {/* Dark overlay for better text readability */}
+          <div className="absolute inset-0 bg-black/60"></div>
+          
+          {/* Subtle gradient overlay to blend with the site theme */}
+          <div className="absolute inset-0 bg-gradient-to-br from-background/20 via-transparent to-surface/30"></div>
+          
+          {/* Keep some subtle animated particles for extra visual interest */}
           <div className="absolute inset-0">
-            {/* Floating orbs */}
-            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-accent/10 rounded-full blur-xl animate-pulse"></div>
-            <div className="absolute top-3/4 right-1/4 w-24 h-24 bg-accent-2/15 rounded-full blur-lg animate-pulse" style={{animationDelay: '1s'}}></div>
-            <div className="absolute top-1/2 left-3/4 w-16 h-16 bg-accent/20 rounded-full blur-md animate-pulse" style={{animationDelay: '2s'}}></div>
-            
-            {/* Moving geometric lines */}
-            <div className="absolute inset-0">
-              <svg className="w-full h-full opacity-30" viewBox="0 0 1000 600" fill="none">
-                <g className="animate-[drift_20s_ease-in-out_infinite]">
-                  <path d="M0,300 Q250,100 500,300 T1000,300" stroke="url(#gradient1)" strokeWidth="2" fill="none" opacity="0.6"/>
-                  <path d="M0,350 Q300,150 600,350 T1200,350" stroke="url(#gradient2)" strokeWidth="1.5" fill="none" opacity="0.4"/>
-                </g>
-                <g className="animate-[drift_25s_ease-in-out_infinite_reverse]">
-                  <path d="M0,250 Q400,50 800,250 T1600,250" stroke="url(#gradient3)" strokeWidth="1" fill="none" opacity="0.3"/>
-                </g>
-                <defs>
-                  <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#6366F1" stopOpacity="0"/>
-                    <stop offset="50%" stopColor="#6366F1" stopOpacity="0.8"/>
-                    <stop offset="100%" stopColor="#6366F1" stopOpacity="0"/>
-                  </linearGradient>
-                  <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0"/>
-                    <stop offset="50%" stopColor="#8B5CF6" stopOpacity="0.6"/>
-                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0"/>
-                  </linearGradient>
-                  <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#06B6D4" stopOpacity="0"/>
-                    <stop offset="50%" stopColor="#06B6D4" stopOpacity="0.4"/>
-                    <stop offset="100%" stopColor="#06B6D4" stopOpacity="0"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
+            {/* Subtle floating orbs to complement the video */}
+            <div className="absolute top-1/4 left-1/4 w-20 h-20 bg-accent/5 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute top-3/4 right-1/4 w-16 h-16 bg-accent-2/8 rounded-full blur-lg animate-pulse" style={{animationDelay: '1s'}}></div>
             
             {/* Floating code/tech elements */}
             <div className="absolute top-1/3 left-1/6 text-accent/20 font-mono text-sm animate-[float_6s_ease-in-out_infinite]">
