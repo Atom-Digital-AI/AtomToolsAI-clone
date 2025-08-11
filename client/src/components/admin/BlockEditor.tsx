@@ -450,12 +450,12 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
                       <Label>Padding</Label>
-                      <Select value={row.padding || "py-8"} onValueChange={(value) => updateRow(row.id, { padding: value })}>
+                      <Select value={row.padding === "" ? "none" : (row.padding || "py-8")} onValueChange={(value) => updateRow(row.id, { padding: value === "none" ? "" : value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           <SelectItem value="p-2">Small</SelectItem>
                           <SelectItem value="p-4">Medium</SelectItem>
                           <SelectItem value="p-6">Large</SelectItem>
@@ -466,12 +466,12 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                     </div>
                     <div>
                       <Label>Gap</Label>
-                      <Select value={row.gap || "gap-6"} onValueChange={(value) => updateRow(row.id, { gap: value })}>
+                      <Select value={row.gap === "" ? "none" : (row.gap || "gap-6")} onValueChange={(value) => updateRow(row.id, { gap: value === "none" ? "" : value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           <SelectItem value="gap-2">Small</SelectItem>
                           <SelectItem value="gap-4">Medium</SelectItem>
                           <SelectItem value="gap-6">Large</SelectItem>
@@ -563,12 +563,12 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                           </div>
                           <div>
                             <Label className="text-xs">Padding</Label>
-                            <Select value={column.padding || "p-6"} onValueChange={(value) => updateColumn(row.id, column.id, { padding: value })}>
+                            <Select value={column.padding === "" ? "none" : (column.padding || "p-6")} onValueChange={(value) => updateColumn(row.id, column.id, { padding: value === "none" ? "" : value })}>
                               <SelectTrigger className="h-8">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">None</SelectItem>
+                                <SelectItem value="none">None</SelectItem>
                                 <SelectItem value="p-2">Small</SelectItem>
                                 <SelectItem value="p-4">Medium</SelectItem>
                                 <SelectItem value="p-6">Large</SelectItem>
