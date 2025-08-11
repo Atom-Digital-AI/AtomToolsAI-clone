@@ -514,9 +514,9 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
               )}
 
               <CardContent className="pt-0">
-                <div className={`grid grid-cols-12 gap-4`}>
+                <div className={`grid gap-6`} style={{gridTemplateColumns: `repeat(${row.columns.length}, 1fr)`}}>
                   {row.columns.map((column, columnIndex) => (
-                    <div key={column.id} className={`col-span-${column.width} space-y-2`}>
+                    <div key={column.id} className="space-y-2 min-w-0">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs text-gray-400">Column {columnIndex + 1}</Label>
                         <div className="flex gap-1">
