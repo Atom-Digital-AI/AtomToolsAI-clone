@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 
 interface GeneratedCopy {
   headlines: string[];
@@ -557,35 +558,21 @@ export default function GoogleAdsCopyGenerator() {
                     
                     {showAdvanced && (
                       <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="brand-guidelines">Brand Guidelines (Optional)</Label>
-                          <Textarea
-                            id="brand-guidelines"
-                            placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
-                            value={brandGuidelines}
-                            onChange={(e) => setBrandGuidelines(e.target.value)}
-                            data-testid="input-brand-guidelines"
-                            className="min-h-[60px]"
-                          />
-                          <p className="text-sm text-text-secondary mt-1">
-                            Specific brand voice, messaging, or style requirements that must be followed
-                          </p>
-                        </div>
+                        <GuidelineProfileSelector
+                          type="brand"
+                          value={brandGuidelines}
+                          onChange={setBrandGuidelines}
+                          placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
+                          label="Brand Guidelines (Optional)"
+                        />
                         
-                        <div>
-                          <Label htmlFor="regulatory-guidelines">Regulatory Guidelines (Optional)</Label>
-                          <Textarea
-                            id="regulatory-guidelines"
-                            placeholder="e.g., FDA compliance required, no health claims, include disclaimers, follow FTC advertising guidelines, GDPR compliant language..."
-                            value={regulatoryGuidelines}
-                            onChange={(e) => setRegulatoryGuidelines(e.target.value)}
-                            data-testid="input-regulatory-guidelines"
-                            className="min-h-[60px]"
-                          />
-                          <p className="text-sm text-text-secondary mt-1">
-                            Legal, compliance, or regulatory requirements that copy must adhere to
-                          </p>
-                        </div>
+                        <GuidelineProfileSelector
+                          type="regulatory"
+                          value={regulatoryGuidelines}
+                          onChange={setRegulatoryGuidelines}
+                          placeholder="e.g., FDA compliance required, no health claims, include disclaimers, follow FTC advertising guidelines, GDPR compliant language..."
+                          label="Regulatory Guidelines (Optional)"
+                        />
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
@@ -713,35 +700,21 @@ export default function GoogleAdsCopyGenerator() {
                 {showAdvancedOptions && (
                   <CardContent>
                     <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="bulk-brand-guidelines">Brand Guidelines (Optional)</Label>
-                        <Textarea
-                          id="bulk-brand-guidelines"
-                          placeholder="Enter specific brand voice, messaging guidelines, or compliance requirements that must be followed..."
-                          value={brandGuidelines}
-                          onChange={(e) => setBrandGuidelines(e.target.value)}
-                          className="min-h-[80px]"
-                          data-testid="textarea-bulk-brand-guidelines"
-                        />
-                        <p className="text-sm text-text-secondary mt-1">
-                          Critical guidelines that override all other instructions for brand consistency
-                        </p>
-                      </div>
+                      <GuidelineProfileSelector
+                        type="brand"
+                        value={brandGuidelines}
+                        onChange={setBrandGuidelines}
+                        placeholder="Enter specific brand voice, messaging guidelines, or compliance requirements that must be followed..."
+                        label="Brand Guidelines (Optional)"
+                      />
                       
-                      <div>
-                        <Label htmlFor="bulk-regulatory-guidelines">Regulatory Guidelines (Optional)</Label>
-                        <Textarea
-                          id="bulk-regulatory-guidelines"
-                          placeholder="Enter industry-specific regulations, legal requirements, or compliance standards..."
-                          value={regulatoryGuidelines}
-                          onChange={(e) => setRegulatoryGuidelines(e.target.value)}
-                          className="min-h-[80px]"
-                          data-testid="textarea-bulk-regulatory-guidelines"
-                        />
-                        <p className="text-sm text-text-secondary mt-1">
-                          Legal or industry compliance requirements that must be strictly followed
-                        </p>
-                      </div>
+                      <GuidelineProfileSelector
+                        type="regulatory"
+                        value={regulatoryGuidelines}
+                        onChange={setRegulatoryGuidelines}
+                        placeholder="Enter industry-specific regulations, legal requirements, or compliance standards..."
+                        label="Regulatory Guidelines (Optional)"
+                      />
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>

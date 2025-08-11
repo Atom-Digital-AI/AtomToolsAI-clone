@@ -2,12 +2,12 @@ import {
   type User, 
   type InsertUser,
   type Product,
-  type InsertProduct,
   type UserSubscription,
-  type InsertUserSubscription,
-  type ProductWithSubscriptionStatus,
+  type GuidelineProfile,
+  type InsertGuidelineProfile,
+  type UpdateGuidelineProfile,
 } from "@shared/schema";
-import { users, products, userSubscriptions } from "@shared/schema";
+import { users, products, userSubscriptions, guidelineProfiles } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -32,13 +32,14 @@ export interface IStorage {
   
   // Subscription operations
   getUserSubscriptions(userId: string): Promise<UserSubscription[]>;
-  getProductsWithSubscriptionStatus(userId: string): Promise<ProductWithSubscriptionStatus[]>;
   isUserSubscribed(userId: string, productId: string): Promise<boolean>;
-  subscribeUser(subscription: InsertUserSubscription): Promise<UserSubscription>;
-  unsubscribeUser(userId: string, productId: string): Promise<boolean>;
   
-  // Admin operations
-  getAllUsersWithSubscriptions(): Promise<Array<User & { subscriptionCount: number }>>;
+  // Guideline Profile operations
+  getUserGuidelineProfiles(userId: string, type?: 'brand' | 'regulatory'): Promise<GuidelineProfile[]>;
+  getGuidelineProfile(id: string, userId: string): Promise<GuidelineProfile | undefined>;
+  createGuidelineProfile(profile: InsertGuidelineProfile & { userId: string }): Promise<GuidelineProfile>;
+  updateGuidelineProfile(id: string, userId: string, profile: UpdateGuidelineProfile): Promise<GuidelineProfile | undefined>;
+  deleteGuidelineProfile(id: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -216,20 +217,69 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  // Admin operations
-  async getAllUsersWithSubscriptions(): Promise<Array<User & { subscriptionCount: number }>> {
-    const allUsers = await db.select().from(users);
-    const result = [];
-
-    for (const user of allUsers) {
-      const subs = await this.getUserSubscriptions(user.id);
-      result.push({
-        ...user,
-        subscriptionCount: subs.length,
-      });
+  // Guideline Profile operations
+  async getUserGuidelineProfiles(userId: string, type?: 'brand' | 'regulatory'): Promise<GuidelineProfile[]> {
+    let query = db.select().from(guidelineProfiles).where(eq(guidelineProfiles.userId, userId));
+    
+    if (type) {
+      query = query.where(and(eq(guidelineProfiles.userId, userId), eq(guidelineProfiles.type, type)));
     }
+    
+    return await query.orderBy(guidelineProfiles.createdAt);
+  }
 
-    return result;
+  async getGuidelineProfile(id: string, userId: string): Promise<GuidelineProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(guidelineProfiles)
+      .where(
+        and(
+          eq(guidelineProfiles.id, id),
+          eq(guidelineProfiles.userId, userId)
+        )
+      );
+    return profile || undefined;
+  }
+
+  async createGuidelineProfile(profile: InsertGuidelineProfile & { userId: string }): Promise<GuidelineProfile> {
+    const [newProfile] = await db
+      .insert(guidelineProfiles)
+      .values({
+        ...profile,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return newProfile;
+  }
+
+  async updateGuidelineProfile(id: string, userId: string, profile: UpdateGuidelineProfile): Promise<GuidelineProfile | undefined> {
+    const [updated] = await db
+      .update(guidelineProfiles)
+      .set({
+        ...profile,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(guidelineProfiles.id, id),
+          eq(guidelineProfiles.userId, userId)
+        )
+      )
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteGuidelineProfile(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(guidelineProfiles)
+      .where(
+        and(
+          eq(guidelineProfiles.id, id),
+          eq(guidelineProfiles.userId, userId)
+        )
+      );
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

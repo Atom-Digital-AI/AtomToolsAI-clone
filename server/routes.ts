@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -814,6 +814,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Ad copy generation error:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Guideline Profile Management Endpoints
+  
+  // Get user's guideline profiles
+  app.get("/api/guideline-profiles", requireAuth, async (req: any, res) => {
+    try {
+      const type = req.query.type as 'brand' | 'regulatory' | undefined;
+      const profiles = await storage.getUserGuidelineProfiles(req.user.id, type);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching guideline profiles:", error);
+      res.status(500).json({ message: "Failed to fetch guideline profiles" });
+    }
+  });
+
+  // Create new guideline profile
+  app.post("/api/guideline-profiles", requireAuth, async (req: any, res) => {
+    try {
+      const profileData = insertGuidelineProfileSchema.parse(req.body);
+      const profile = await storage.createGuidelineProfile({
+        ...profileData,
+        userId: req.user.id,
+      });
+      res.json(profile);
+    } catch (error) {
+      console.error("Error creating guideline profile:", error);
+      res.status(400).json({ message: "Failed to create guideline profile" });
+    }
+  });
+
+  // Update guideline profile
+  app.put("/api/guideline-profiles/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const profileData = updateGuidelineProfileSchema.parse(req.body);
+      const profile = await storage.updateGuidelineProfile(id, req.user.id, profileData);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Guideline profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating guideline profile:", error);
+      res.status(400).json({ message: "Failed to update guideline profile" });
+    }
+  });
+
+  // Delete guideline profile
+  app.delete("/api/guideline-profiles/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteGuidelineProfile(id, req.user.id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Guideline profile not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting guideline profile:", error);
+      res.status(500).json({ message: "Failed to delete guideline profile" });
     }
   });
 

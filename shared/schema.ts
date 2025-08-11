@@ -41,6 +41,16 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   pk: primaryKey({ columns: [table.userId, table.productId] }),
 }));
 
+export const guidelineProfiles = pgTable("guideline_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'brand' or 'regulatory'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -57,13 +67,43 @@ export const insertContactSchema = createInsertSchema(contacts).pick({
   message: true,
 });
 
+export const insertGuidelineProfileSchema = createInsertSchema(guidelineProfiles).pick({
+  name: true,
+  type: true,
+  content: true,
+});
+
+export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles).pick({
+  name: true,
+  content: true,
+}).partial();
+
+// Type exports
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof insertUserSchema._type;
+export type Contact = typeof contacts.$inferSelect;
+export type InsertContact = typeof insertContactSchema._type;
+export type Product = typeof products.$inferSelect;
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type GuidelineProfile = typeof guidelineProfiles.$inferSelect;
+export type InsertGuidelineProfile = typeof insertGuidelineProfileSchema._type;
+export type UpdateGuidelineProfile = typeof updateGuidelineProfileSchema._type;
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(userSubscriptions),
+  guidelineProfiles: many(guidelineProfiles),
 }));
 
 export const productsRelations = relations(products, ({ many }) => ({
   subscriptions: many(userSubscriptions),
+}));
+
+export const guidelineProfilesRelations = relations(guidelineProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [guidelineProfiles.userId],
+    references: [users.id],
+  }),
 }));
 
 export const userSubscriptionsRelations = relations(userSubscriptions, ({ one }) => ({

@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Download, Trash2, Lock, Settings, CreditCard, X, Plus } from "lucide-react";
+import { User, Mail, Download, Trash2, Lock, Settings, CreditCard, X, Plus, FileText } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { type User as UserType, type ProductWithSubscriptionStatus } from "@shared/schema";
+import { Link } from "wouter";
 
 export default function Account() {
   const { data: user, isLoading, error } = useQuery<UserType>({
@@ -270,7 +271,13 @@ export default function Account() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                <Link href="/app/profile-settings">
+                  <Button data-testid="button-profile-settings" variant="outline">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Guideline Profiles
+                  </Button>
+                </Link>
                 <Button variant="outline" disabled>
                   <Settings className="w-4 h-4 mr-2" />
                   Edit Profile

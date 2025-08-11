@@ -20,6 +20,7 @@ import EmailVerificationSent from "@/pages/email-verification-sent";
 import Dashboard from "@/pages/app/dashboard";
 import Account from "@/pages/app/account";
 import MyTools from "@/pages/app/my-tools";
+import ProfileSettings from "@/pages/profile-settings";
 import FacebookAdsConnector from "@/pages/app/tools/facebook-ads-connector";
 import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generator";
 import SEOMetaGeneratorApp from "@/pages/app/tools/seo-meta-generator";
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/email-verification-sent" component={EmailVerificationSent} />
             <Route path="/app" component={Dashboard} />
             <Route path="/app/account" component={Account} />
+            <Route path="/app/profile-settings" component={ProfileSettings} />
             <Route path="/app/my-tools" component={MyTools} />
             <Route path="/app/tools/facebook-ads-connector" component={FacebookAdsConnector} />
             <Route path="/app/tools/google-ads-copy-generator" component={GoogleAdsCopyGeneratorApp} />
