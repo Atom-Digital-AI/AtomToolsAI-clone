@@ -8,14 +8,17 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").unique(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
   firstName: text("first_name"),
   lastName: text("last_name"),
   companyName: text("company_name"),
+  profileImageUrl: text("profile_image_url"),
+  googleId: text("google_id").unique(),
   isProfileComplete: boolean("is_profile_complete").notNull().default(false),
   isEmailVerified: boolean("is_email_verified").notNull().default(false),
   emailVerificationToken: text("email_verification_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const contacts = pgTable("contacts", {

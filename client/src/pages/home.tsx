@@ -150,7 +150,15 @@ function SignUpFormCard() {
 
   const googleSignUpMutation = useMutation({
     mutationFn: async () => {
+      // Redirect to Google OAuth
       window.location.href = "/api/auth/google";
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Google Sign Up Error",
+        description: "Unable to connect to Google. Please try email/password signup.",
+        variant: "destructive",
+      });
     },
   });
 

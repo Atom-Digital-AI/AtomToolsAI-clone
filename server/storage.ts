@@ -28,6 +28,20 @@ export interface IStorage {
   verifyUserEmail(id: string): Promise<void>;
   completeUserProfile(id: string, profile: CompleteProfile): Promise<void>;
   deleteUser(id: string): Promise<void>;
+  createUserFromGoogle(googleUser: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string;
+    isEmailVerified: boolean;
+    googleId: string;
+  }): Promise<User>;
+  updateUserFromGoogle(id: string, googleData: {
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string;
+    isEmailVerified: boolean;
+  }): Promise<User>;
   
   // Product operations
   getAllProducts(): Promise<Product[]>;
@@ -113,6 +127,52 @@ export class DatabaseStorage implements IStorage {
     await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, id));
     // Delete user
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  async createUserFromGoogle(googleUser: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string;
+    isEmailVerified: boolean;
+    googleId: string;
+  }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: googleUser.email,
+        firstName: googleUser.firstName,
+        lastName: googleUser.lastName,
+        profileImageUrl: googleUser.profileImageUrl,
+        isEmailVerified: googleUser.isEmailVerified,
+        googleId: googleUser.googleId,
+        // No password for Google OAuth users
+        password: null,
+        emailVerificationToken: null,
+        isProfileComplete: false,
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUserFromGoogle(id: string, googleData: {
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string;
+    isEmailVerified: boolean;
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        firstName: googleData.firstName,
+        lastName: googleData.lastName,
+        profileImageUrl: googleData.profileImageUrl,
+        isEmailVerified: googleData.isEmailVerified,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
   }
 
   // Product operations
@@ -238,13 +298,19 @@ export class DatabaseStorage implements IStorage {
 
   // Guideline Profile operations
   async getUserGuidelineProfiles(userId: string, type?: 'brand' | 'regulatory'): Promise<GuidelineProfile[]> {
-    let query = db.select().from(guidelineProfiles).where(eq(guidelineProfiles.userId, userId));
-    
     if (type) {
-      query = query.where(and(eq(guidelineProfiles.userId, userId), eq(guidelineProfiles.type, type)));
+      return await db
+        .select()
+        .from(guidelineProfiles)
+        .where(and(eq(guidelineProfiles.userId, userId), eq(guidelineProfiles.type, type)))
+        .orderBy(guidelineProfiles.createdAt);
     }
     
-    return await query.orderBy(guidelineProfiles.createdAt);
+    return await db
+      .select()
+      .from(guidelineProfiles)
+      .where(eq(guidelineProfiles.userId, userId))
+      .orderBy(guidelineProfiles.createdAt);
   }
 
   async getGuidelineProfile(id: string, userId: string): Promise<GuidelineProfile | undefined> {

@@ -13,6 +13,7 @@ import * as cheerio from "cheerio";
 import { sendVerificationEmail } from "./email";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
+import { getGoogleAuthUrl, verifyGoogleToken } from "./oauth";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -423,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Hash the password before storing
-      const hashedPassword = await bcrypt.hash(userData.password, 12);
+      const hashedPassword = await bcrypt.hash(userData.password!, 12);
       
       // Generate verification token
       const verificationToken = nanoid(32);
@@ -561,14 +562,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Google OAuth placeholder endpoint
+  // Google OAuth initiation endpoint
   app.get("/api/auth/google", (req, res) => {
-    // TODO: Implement Google OAuth flow with proper OAuth2 provider setup
-    res.status(501).json({
-      success: false,
-      message: "Google OAuth authentication is not yet implemented. Please use email/password signup instead.",
-      alternative: "Use the email and password form to create your account",
-    });
+    try {
+      const authUrl = getGoogleAuthUrl();
+      res.redirect(authUrl);
+    } catch (error) {
+      console.error("Google OAuth initiation error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to initiate Google authentication",
+      });
+    }
+  });
+
+  // Google OAuth callback endpoint
+  app.get("/api/auth/google/callback", async (req, res) => {
+    try {
+      const { code } = req.query;
+
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: "No authorization code provided",
+        });
+      }
+
+      // Verify the Google OAuth token and get user info
+      const googleUser = await verifyGoogleToken(code);
+
+      if (!googleUser.email) {
+        return res.redirect("/login?error=oauth_no_email");
+      }
+
+      // Check if user already exists
+      let user = await storage.getUserByEmail(googleUser.email);
+
+      if (user) {
+        // User exists, update their info from Google and log them in
+        user = await storage.updateUserFromGoogle(user.id, {
+          firstName: googleUser.firstName,
+          lastName: googleUser.lastName,
+          profileImageUrl: googleUser.profileImageUrl,
+          isEmailVerified: true, // Google emails are always verified
+        });
+      } else {
+        // Create new user from Google OAuth
+        user = await storage.createUserFromGoogle({
+          email: googleUser.email,
+          firstName: googleUser.firstName,
+          lastName: googleUser.lastName,
+          profileImageUrl: googleUser.profileImageUrl,
+          isEmailVerified: true, // Google emails are always verified
+          googleId: googleUser.id,
+        });
+      }
+
+      // Log the user in
+      req.session.userId = user.id;
+
+      // Check if user needs to complete profile
+      if (!user.companyName) {
+        // Redirect to profile completion page
+        res.redirect("/complete-profile");
+      } else {
+        // Redirect to app
+        res.redirect("/app");
+      }
+    } catch (error) {
+      console.error("Google OAuth callback error:", error);
+      res.redirect("/login?error=oauth_failed");
+    }
   });
 
   // EXACT ORIGINAL PYTHON LOGIC - SEO Meta Generator
