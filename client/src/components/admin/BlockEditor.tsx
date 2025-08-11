@@ -227,13 +227,14 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
     try {
       console.log("Requesting upload URL...");
       const response = await apiRequest("POST", "/api/images/upload");
-      console.log("Upload URL response:", response);
+      const data = await response.json();
+      console.log("Upload URL response:", data);
       
-      if (!response.uploadURL) {
+      if (!data.uploadURL) {
         throw new Error("No upload URL received from server");
       }
       
-      return { method: "PUT", url: response.uploadURL };
+      return { method: "PUT", url: data.uploadURL };
     } catch (error) {
       console.error("Failed to get upload URL:", error);
       throw error;
@@ -247,8 +248,9 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
       
       // Confirm the upload and get the serving URL
       apiRequest("PUT", "/api/images/confirm", { uploadURL })
-        .then((response: any) => {
-          const imagePath = response.imagePath;
+        .then(async (response) => {
+          const data = await response.json();
+          const imagePath = data.imagePath;
           const currentColumn = blocks
             .find(row => row.id === rowId)
             ?.columns.find(col => col.id === columnId);
@@ -439,30 +441,50 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                   </div>
                   <div className="flex gap-1">
                     <Button
+                      type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => addColumn(row.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addColumn(row.id);
+                      }}
                     >
                       <Plus className="w-3 h-3" />
                     </Button>
                     <Button
+                      type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => duplicateRow(row.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        duplicateRow(row.id);
+                      }}
                     >
                       <Copy className="w-3 h-3" />
                     </Button>
                     <Button
+                      type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => setSelectedBlock(selectedBlock === row.id ? null : row.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedBlock(selectedBlock === row.id ? null : row.id);
+                      }}
                     >
                       <Settings className="w-3 h-3" />
                     </Button>
                     <Button
+                      type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => deleteRow(row.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        deleteRow(row.id);
+                      }}
                       disabled={blocks.length === 1}
                     >
                       <Trash2 className="w-3 h-3" />
@@ -555,16 +577,26 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                             <Image className="w-3 h-3" />
                           </ObjectUploader>
                           <Button
+                            type="button"
                             size="sm"
                             variant="ghost"
-                            onClick={() => setSelectedColumn(selectedColumn === column.id ? null : column.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedColumn(selectedColumn === column.id ? null : column.id);
+                            }}
                           >
                             <Settings className="w-3 h-3" />
                           </Button>
                           <Button
+                            type="button"
                             size="sm"
                             variant="ghost"
-                            onClick={() => deleteColumn(row.id, column.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              deleteColumn(row.id, column.id);
+                            }}
                             disabled={row.columns.length === 1}
                           >
                             <Trash2 className="w-3 h-3" />
