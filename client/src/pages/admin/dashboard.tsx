@@ -5,30 +5,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Package, ShoppingCart, Users, Settings } from "lucide-react";
-import { PackageManager } from "@/components/admin/PackageManager";
-import { ProductManager } from "@/components/admin/ProductManager";
-import { UserManager } from "@/components/admin/UserManager";
+// import { PackageManager } from "@/components/admin/PackageManager";
+// import { ProductManager } from "@/components/admin/ProductManager";
+// import { UserManager } from "@/components/admin/UserManager";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch admin overview data
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<{
+    packageCount: number;
+    productCount: number;
+    userCount: number;
+    activeSubscriptions: number;
+  }>({
     queryKey: ["/api/admin/stats"],
     retry: false,
   });
 
-  const { data: packages } = useQuery({
+  const { data: packages, isLoading: packagesLoading } = useQuery({
     queryKey: ["/api/admin/packages"],
     retry: false,
   });
 
-  const { data: products } = useQuery({
+  const { data: products, isLoading: productsLoading } = useQuery({
     queryKey: ["/api/admin/products"],
     retry: false,
   });
 
-  const { data: users } = useQuery({
+  const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["/api/admin/users"],
     retry: false,
   });
@@ -90,7 +95,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-packages">
-                    {stats?.packageCount || packages?.length || 0}
+                    {statsLoading ? "..." : (stats?.packageCount || (packages && Array.isArray(packages) ? packages.length : 0))}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Product categories available
@@ -105,7 +110,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-products">
-                    {stats?.productCount || products?.length || 0}
+                    {statsLoading ? "..." : (stats?.productCount || (products && Array.isArray(products) ? products.length : 0))}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Active tools and services
@@ -120,7 +125,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-users">
-                    {stats?.userCount || users?.length || 0}
+                    {statsLoading ? "..." : (stats?.userCount || (users && Array.isArray(users) ? users.length : 0))}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Registered users
@@ -137,17 +142,21 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {packages?.slice(0, 5).map((pkg: any) => (
-                      <div key={pkg.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{pkg.name}</p>
-                          <p className="text-sm text-gray-400">{pkg.category}</p>
+                    {packages && Array.isArray(packages) && packages.length > 0 ? (
+                      packages.slice(0, 5).map((pkg: any) => (
+                        <div key={pkg.id} className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{pkg.name}</p>
+                            <p className="text-sm text-gray-400">{pkg.category}</p>
+                          </div>
+                          <Badge variant={pkg.isActive ? "default" : "secondary"}>
+                            {pkg.isActive ? "Active" : "Inactive"}
+                          </Badge>
                         </div>
-                        <Badge variant={pkg.isActive ? "default" : "secondary"}>
-                          {pkg.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    )) || (
+                      ))
+                    ) : packagesLoading ? (
+                      <p className="text-gray-400 text-sm">Loading...</p>
+                    ) : (
                       <p className="text-gray-400 text-sm">No packages yet</p>
                     )}
                   </div>
@@ -161,19 +170,23 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {products?.slice(0, 5).map((product: any) => (
-                      <div key={product.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-gray-400">
-                            £{product.price} - {product.billingType}
-                          </p>
+                    {products && Array.isArray(products) && products.length > 0 ? (
+                      products.slice(0, 5).map((product: any) => (
+                        <div key={product.id} className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-gray-400">
+                              £{product.price} - {product.billingType}
+                            </p>
+                          </div>
+                          <Badge variant={product.isActive ? "default" : "secondary"}>
+                            {product.isActive ? "Active" : "Inactive"}
+                          </Badge>
                         </div>
-                        <Badge variant={product.isActive ? "default" : "secondary"}>
-                          {product.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    )) || (
+                      ))
+                    ) : productsLoading ? (
+                      <p className="text-gray-400 text-sm">Loading...</p>
+                    ) : (
                       <p className="text-gray-400 text-sm">No products yet</p>
                     )}
                   </div>
@@ -183,15 +196,21 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="packages">
-            <PackageManager />
+            <div className="text-center py-8 text-gray-400">
+              Package management coming soon
+            </div>
           </TabsContent>
 
           <TabsContent value="products">
-            <ProductManager />
+            <div className="text-center py-8 text-gray-400">
+              Product management coming soon
+            </div>
           </TabsContent>
 
           <TabsContent value="users">
-            <UserManager />
+            <div className="text-center py-8 text-gray-400">
+              User management coming soon
+            </div>
           </TabsContent>
         </Tabs>
       </div>
