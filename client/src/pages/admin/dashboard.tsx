@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit } from "lucide-react";
+import { PackageCard } from "@/components/admin/PackageCard";
+import { PackageForm } from "@/components/admin/PackageForm";
+import type { PackageWithTiers } from "@shared/schema";
 // import { PackageManager } from "@/components/admin/PackageManager";
 // import { ProductManager } from "@/components/admin/ProductManager";
 // import { UserManager } from "@/components/admin/UserManager";
@@ -28,6 +31,9 @@ export default function AdminDashboard() {
     type: 'package' | 'product' | 'user';
     item: any;
   }>({ open: false, type: 'package', item: null });
+
+  const [packageFormOpen, setPackageFormOpen] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<PackageWithTiers | undefined>(undefined);
 
   const [editForm, setEditForm] = useState<any>({});
   
@@ -385,76 +391,69 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="packages" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Package Management</h2>
-              <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-add-package">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Package
-              </Button>
-            </div>
-            
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle>All Packages</CardTitle>
-                <CardDescription>Manage product categories and package definitions</CardDescription>
-              </CardHeader>
-              <CardContent>
+            {packageFormOpen ? (
+              <PackageForm
+                packageData={editingPackage}
+                onSuccess={() => {
+                  setPackageFormOpen(false);
+                  setEditingPackage(undefined);
+                }}
+                onCancel={() => {
+                  setPackageFormOpen(false);
+                  setEditingPackage(undefined);
+                }}
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-white">Package Management</h2>
+                  <Button 
+                    className="bg-indigo-600 hover:bg-indigo-700" 
+                    onClick={() => setPackageFormOpen(true)}
+                    data-testid="button-add-package"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Package
+                  </Button>
+                </div>
+                
                 {packagesLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto"></div>
                     <p className="text-gray-400 mt-2">Loading packages...</p>
                   </div>
                 ) : packages && Array.isArray(packages) && packages.length > 0 ? (
-                  <div className="space-y-4">
-                    {packages.map((pkg: any) => (
-                      <div key={pkg.id} className="border border-gray-700 rounded-lg p-4 bg-gray-800" data-testid={`package-item-${pkg.id}`}>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{pkg.name}</h3>
-                            <p className="text-gray-400 mt-1">{pkg.description}</p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <Badge variant="outline">{pkg.category}</Badge>
-                              <Badge variant={pkg.isActive ? "default" : "secondary"}>
-                                {pkg.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                              <span className="text-sm text-gray-500">
-                                Created: {new Date(pkg.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleEdit('package', pkg)}
-                              data-testid={`button-edit-package-${pkg.id}`}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDelete('package', pkg)}
-                              data-testid={`button-delete-package-${pkg.id}`}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {packages.map((pkg: PackageWithTiers) => (
+                      <PackageCard
+                        key={pkg.id}
+                        packageData={pkg}
+                        onEdit={(pkg) => {
+                          setEditingPackage(pkg);
+                          setPackageFormOpen(true);
+                        }}
+                        onDelete={(id) => handleDelete('package', { id })}
+                      />
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No packages found</p>
-                    <p className="text-sm mt-1">Create your first package to get started</p>
-                  </div>
+                  <Card className="bg-gray-900 border-gray-800">
+                    <CardContent className="text-center py-12">
+                      <Package className="h-16 w-16 mx-auto mb-4 text-gray-600" />
+                      <h3 className="text-xl font-semibold text-white mb-2">No packages yet</h3>
+                      <p className="text-gray-400 mb-6">Create your first package with tiers and product limits</p>
+                      <Button 
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                        onClick={() => setPackageFormOpen(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Package
+                      </Button>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="products" className="space-y-6">

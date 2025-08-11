@@ -3,6 +3,16 @@ import {
   type InsertUser,
   type Product,
   type InsertProduct,
+  type Package,
+  type InsertPackage,
+  type Tier,
+  type InsertTier,
+  type TierPrice,
+  type InsertTierPrice,
+  type TierLimit,
+  type InsertTierLimit,
+  type PackageProduct,
+  type PackageWithTiers,
   type UserSubscription,
   type InsertUserSubscription,
   type Contact,
@@ -13,7 +23,7 @@ import {
   type CompleteProfile,
   type ProductWithSubscriptionStatus
 } from "@shared/schema";
-import { users, products, packages, userSubscriptions, guidelineProfiles } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, guidelineProfiles } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -65,12 +75,35 @@ export interface IStorage {
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
   
-  // Package management
-  getAllPackages(): Promise<any[]>;
-  getPackage(id: string): Promise<any | undefined>;
-  createPackage(packageData: any): Promise<any>;
-  updatePackage(id: string, packageData: any): Promise<any | undefined>;
+  // Package management with tiers
+  getAllPackages(): Promise<Package[]>;
+  getPackage(id: string): Promise<Package | undefined>;
+  getPackageWithTiers(id: string): Promise<PackageWithTiers | undefined>;
+  getAllPackagesWithTiers(): Promise<PackageWithTiers[]>;
+  createPackage(packageData: InsertPackage): Promise<Package>;
+  updatePackage(id: string, packageData: Partial<InsertPackage>): Promise<Package | undefined>;
   deletePackage(id: string): Promise<boolean>;
+  
+  // Package-Product relationships
+  addProductToPackage(packageId: string, productId: string): Promise<PackageProduct>;
+  removeProductFromPackage(packageId: string, productId: string): Promise<boolean>;
+  getPackageProducts(packageId: string): Promise<Product[]>;
+  
+  // Tier management
+  createTier(tierData: InsertTier): Promise<Tier>;
+  updateTier(id: string, tierData: Partial<InsertTier>): Promise<Tier | undefined>;
+  deleteTier(id: string): Promise<boolean>;
+  getTiersByPackage(packageId: string): Promise<Tier[]>;
+  
+  // Tier pricing
+  createTierPrice(priceData: InsertTierPrice): Promise<TierPrice>;
+  updateTierPrice(id: string, priceData: Partial<InsertTierPrice>): Promise<TierPrice | undefined>;
+  deleteTierPrice(id: string): Promise<boolean>;
+  
+  // Tier limits
+  createTierLimit(limitData: InsertTierLimit): Promise<TierLimit>;
+  updateTierLimit(id: string, limitData: Partial<InsertTierLimit>): Promise<TierLimit | undefined>;
+  deleteTierLimit(id: string): Promise<boolean>;
   
   // Enhanced product management
   getProductsWithPackages(): Promise<any[]>;
@@ -394,31 +427,84 @@ export class DatabaseStorage implements IStorage {
     return user?.isAdmin || false;
   }
 
-  // Package management - graceful fallback for schema migration
-  async getAllPackages(): Promise<any[]> {
-    try {
-      return await db.select().from(packages).orderBy(packages.name);
-    } catch (error) {
-      console.log("Packages table not yet created");
-      return [];
-    }
+  // Package management with tiers
+  async getAllPackages(): Promise<Package[]> {
+    return await db.select().from(packages).orderBy(packages.name);
   }
 
-  async getPackage(id: string): Promise<any | undefined> {
-    try {
-      const [pkg] = await db.select().from(packages).where(eq(packages.id, id));
-      return pkg;
-    } catch (error) {
-      return undefined;
-    }
+  async getPackage(id: string): Promise<Package | undefined> {
+    const [pkg] = await db.select().from(packages).where(eq(packages.id, id));
+    return pkg;
   }
 
-  async createPackage(packageData: any): Promise<any> {
+  async getPackageWithTiers(id: string): Promise<PackageWithTiers | undefined> {
+    const pkg = await this.getPackage(id);
+    if (!pkg) return undefined;
+
+    const packageTiers = await db
+      .select()
+      .from(tiers)
+      .where(eq(tiers.packageId, id));
+
+    const tierIds = packageTiers.map(t => t.id);
+    
+    const tierPricesList = tierIds.length > 0 
+      ? await db.select().from(tierPrices).where(sql`${tierPrices.tierId} = ANY(${tierIds})`)
+      : [];
+
+    const tierLimitsList = tierIds.length > 0
+      ? await db
+          .select({
+            id: tierLimits.id,
+            tierId: tierLimits.tierId,
+            productId: tierLimits.productId,
+            includedInTier: tierLimits.includedInTier,
+            periodicity: tierLimits.periodicity,
+            quantity: tierLimits.quantity,
+            subfeatures: tierLimits.subfeatures,
+            createdAt: tierLimits.createdAt,
+            product: products
+          })
+          .from(tierLimits)
+          .innerJoin(products, eq(tierLimits.productId, products.id))
+          .where(sql`${tierLimits.tierId} = ANY(${tierIds})`)
+      : [];
+
+    const packageProductsList = await db
+      .select({
+        product: products
+      })
+      .from(packageProducts)
+      .innerJoin(products, eq(packageProducts.productId, products.id))
+      .where(eq(packageProducts.packageId, id));
+
+    const tiersWithDetails = packageTiers.map(tier => ({
+      ...tier,
+      prices: tierPricesList.filter(p => p.tierId === tier.id),
+      limits: tierLimitsList.filter(l => l.tierId === tier.id)
+    }));
+
+    return {
+      ...pkg,
+      tiers: tiersWithDetails,
+      products: packageProductsList.map(p => p.product)
+    };
+  }
+
+  async getAllPackagesWithTiers(): Promise<PackageWithTiers[]> {
+    const allPackages = await this.getAllPackages();
+    const packagesWithTiers = await Promise.all(
+      allPackages.map(pkg => this.getPackageWithTiers(pkg.id))
+    );
+    return packagesWithTiers.filter((pkg): pkg is PackageWithTiers => pkg !== undefined);
+  }
+
+  async createPackage(packageData: InsertPackage): Promise<Package> {
     const [pkg] = await db.insert(packages).values(packageData).returning();
     return pkg;
   }
 
-  async updatePackage(id: string, packageData: any): Promise<any | undefined> {
+  async updatePackage(id: string, packageData: Partial<InsertPackage>): Promise<Package | undefined> {
     const [pkg] = await db.update(packages)
       .set({ ...packageData, updatedAt: new Date() })
       .where(eq(packages.id, id))
@@ -428,6 +514,98 @@ export class DatabaseStorage implements IStorage {
 
   async deletePackage(id: string): Promise<boolean> {
     const result = await db.delete(packages).where(eq(packages.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Package-Product relationships
+  async addProductToPackage(packageId: string, productId: string): Promise<PackageProduct> {
+    const [relationship] = await db.insert(packageProducts).values({
+      packageId,
+      productId
+    }).returning();
+    return relationship;
+  }
+
+  async removeProductFromPackage(packageId: string, productId: string): Promise<boolean> {
+    const result = await db
+      .delete(packageProducts)
+      .where(and(
+        eq(packageProducts.packageId, packageId),
+        eq(packageProducts.productId, productId)
+      ));
+    return result.rowCount > 0;
+  }
+
+  async getPackageProducts(packageId: string): Promise<Product[]> {
+    const results = await db
+      .select({ product: products })
+      .from(packageProducts)
+      .innerJoin(products, eq(packageProducts.productId, products.id))
+      .where(eq(packageProducts.packageId, packageId));
+    return results.map(r => r.product);
+  }
+
+  // Tier management
+  async createTier(tierData: InsertTier): Promise<Tier> {
+    const [tier] = await db.insert(tiers).values(tierData).returning();
+    return tier;
+  }
+
+  async updateTier(id: string, tierData: Partial<InsertTier>): Promise<Tier | undefined> {
+    const [tier] = await db
+      .update(tiers)
+      .set({ ...tierData, updatedAt: new Date() })
+      .where(eq(tiers.id, id))
+      .returning();
+    return tier;
+  }
+
+  async deleteTier(id: string): Promise<boolean> {
+    const result = await db.delete(tiers).where(eq(tiers.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getTiersByPackage(packageId: string): Promise<Tier[]> {
+    return await db.select().from(tiers).where(eq(tiers.packageId, packageId));
+  }
+
+  // Tier pricing
+  async createTierPrice(priceData: InsertTierPrice): Promise<TierPrice> {
+    const [price] = await db.insert(tierPrices).values(priceData).returning();
+    return price;
+  }
+
+  async updateTierPrice(id: string, priceData: Partial<InsertTierPrice>): Promise<TierPrice | undefined> {
+    const [price] = await db
+      .update(tierPrices)
+      .set(priceData)
+      .where(eq(tierPrices.id, id))
+      .returning();
+    return price;
+  }
+
+  async deleteTierPrice(id: string): Promise<boolean> {
+    const result = await db.delete(tierPrices).where(eq(tierPrices.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Tier limits
+  async createTierLimit(limitData: InsertTierLimit): Promise<TierLimit> {
+    const [limit] = await db.insert(tierLimits).values(limitData).returning();
+    return limit;
+  }
+
+  async updateTierLimit(id: string, limitData: Partial<InsertTierLimit>): Promise<TierLimit | undefined> {
+    const [limit] = await db
+      .update(tierLimits)
+      .set(limitData)
+      .where(eq(tierLimits.id, id))
+      .returning();
+    return limit;
+  }
+
+  async deleteTierLimit(id: string): Promise<boolean> {
+    const result = await db.delete(tierLimits).where(eq(tierLimits.id, id));
     return result.rowCount > 0;
   }
 

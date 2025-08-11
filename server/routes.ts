@@ -1013,13 +1013,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin package routes with tier support
   app.get("/api/admin/packages", requireAuth, requireAdmin, async (req: any, res) => {
     try {
-      const packages = await storage.getAllPackages();
+      const packages = await storage.getAllPackagesWithTiers();
       res.json(packages);
     } catch (error) {
       console.error("Error fetching packages:", error);
       res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  app.get("/api/admin/packages/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const packageData = await storage.getPackageWithTiers(req.params.id);
+      if (!packageData) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      res.json(packageData);
+    } catch (error) {
+      console.error("Error fetching package:", error);
+      res.status(500).json({ message: "Failed to fetch package" });
     }
   });
 
@@ -1031,6 +1045,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating package:", error);
       res.status(500).json({ message: "Failed to create package" });
+    }
+  });
+
+  app.post("/api/admin/packages/with-tiers", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { package: packageData, productIds, tiers } = req.body;
+      
+      // Create the package
+      const newPackage = await storage.createPackage(packageData);
+      
+      // Add products to package
+      for (const productId of productIds) {
+        await storage.addProductToPackage(newPackage.id, productId);
+      }
+      
+      // Create tiers with pricing and limits
+      for (const tierData of tiers) {
+        const tier = await storage.createTier({
+          packageId: newPackage.id,
+          name: tierData.name,
+          promotionalTag: tierData.promotionalTag,
+          isActive: tierData.isActive,
+        });
+        
+        // Add tier prices
+        for (const priceData of tierData.prices) {
+          await storage.createTierPrice({
+            tierId: tier.id,
+            interval: priceData.interval,
+            amountMinor: priceData.amountMinor,
+            currency: priceData.currency,
+          });
+        }
+        
+        // Add tier limits
+        for (const limitData of tierData.limits) {
+          await storage.createTierLimit({
+            tierId: tier.id,
+            productId: limitData.productId,
+            includedInTier: limitData.includedInTier,
+            periodicity: limitData.periodicity,
+            quantity: limitData.quantity,
+            subfeatures: limitData.subfeatures,
+          });
+        }
+      }
+      
+      // Return the complete package with tiers
+      const completePackage = await storage.getPackageWithTiers(newPackage.id);
+      res.status(201).json(completePackage);
+    } catch (error) {
+      console.error("Error creating package with tiers:", error);
+      res.status(500).json({ message: "Failed to create package with tiers" });
     }
   });
 

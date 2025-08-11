@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey, integer, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -30,21 +30,63 @@ export const contacts = pgTable("contacts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Package Definitions - Categories of products/tools
+// Package Definitions - Categories of products/tools with tiers
 export const packages = pgTable("packages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(), // e.g., "Marketing Tools", "Analytics", "Automation"
+  version: integer("version").default(1),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Products - Individual tools/services within packages
-export const products = pgTable("products", {
+// Package Products - Many-to-many relationship between packages and products
+export const packageProducts = pgTable("package_products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   packageId: varchar("package_id").notNull().references(() => packages.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Tiers - Pricing tiers within packages
+export const tiers = pgTable("tiers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  packageId: varchar("package_id").notNull().references(() => packages.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  promotionalTag: text("promotional_tag"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tier Prices - Pricing options for each tier
+export const tierPrices = pgTable("tier_prices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tierId: varchar("tier_id").notNull().references(() => tiers.id, { onDelete: "cascade" }),
+  interval: varchar("interval").notNull(), // 'month', 'year', 'lifetime'
+  amountMinor: integer("amount_minor").notNull(), // Amount in pence/cents
+  currency: varchar("currency").default("GBP"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Tier Limits - Product usage limits within each tier
+export const tierLimits = pgTable("tier_limits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tierId: varchar("tier_id").notNull().references(() => tiers.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  includedInTier: boolean("included_in_tier").notNull().default(true),
+  periodicity: varchar("periodicity").notNull(), // 'day', 'month', 'year', 'lifetime'
+  quantity: integer("quantity"), // null means unlimited
+  // Subfeatures stored as JSON
+  subfeatures: jsonb("subfeatures").default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Products - Individual tools/services (now independent of packages)
+export const products = pgTable("products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description").notNull(),
   shortDescription: text("short_description"),
@@ -122,18 +164,42 @@ export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles
   content: true,
 }).partial();
 
+// Tier schemas
+export const insertTierSchema = createInsertSchema(tiers).pick({
+  packageId: true,
+  name: true,
+  promotionalTag: true,
+  isActive: true,
+});
+
+export const insertTierPriceSchema = createInsertSchema(tierPrices).pick({
+  tierId: true,
+  interval: true,
+  amountMinor: true,
+  currency: true,
+});
+
+export const insertTierLimitSchema = createInsertSchema(tierLimits).pick({
+  tierId: true,
+  productId: true,
+  includedInTier: true,
+  periodicity: true,
+  quantity: true,
+  subfeatures: true,
+});
+
 // Admin schemas
 export const insertPackageSchema = createInsertSchema(packages).pick({
   name: true,
   description: true,
   category: true,
+  version: true,
   isActive: true,
 });
 
 export const updatePackageSchema = insertPackageSchema.partial();
 
 export const insertProductSchema = createInsertSchema(products).pick({
-  packageId: true,
   name: true,
   description: true,
   shortDescription: true,
@@ -162,10 +228,26 @@ export type UpdatePackage = z.infer<typeof updatePackageSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type UpdateProduct = z.infer<typeof updateProductSchema>;
+export type Tier = typeof tiers.$inferSelect;
+export type InsertTier = z.infer<typeof insertTierSchema>;
+export type TierPrice = typeof tierPrices.$inferSelect;
+export type InsertTierPrice = z.infer<typeof insertTierPriceSchema>;
+export type TierLimit = typeof tierLimits.$inferSelect;
+export type InsertTierLimit = z.infer<typeof insertTierLimitSchema>;
+export type PackageProduct = typeof packageProducts.$inferSelect;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type GuidelineProfile = typeof guidelineProfiles.$inferSelect;
 export type InsertGuidelineProfile = z.infer<typeof insertGuidelineProfileSchema>;
 export type UpdateGuidelineProfile = z.infer<typeof updateGuidelineProfileSchema>;
+
+// Enhanced package type with tiers and products
+export type PackageWithTiers = Package & {
+  tiers: (Tier & {
+    prices: TierPrice[];
+    limits: (TierLimit & { product: Product })[];
+  })[];
+  products: Product[];
+};
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -174,14 +256,51 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 export const packagesRelations = relations(packages, ({ many }) => ({
-  products: many(products),
+  packageProducts: many(packageProducts),
+  tiers: many(tiers),
 }));
 
-export const productsRelations = relations(products, ({ one, many }) => ({
+export const packageProductsRelations = relations(packageProducts, ({ one }) => ({
   package: one(packages, {
-    fields: [products.packageId],
+    fields: [packageProducts.packageId],
     references: [packages.id],
   }),
+  product: one(products, {
+    fields: [packageProducts.productId],
+    references: [products.id],
+  }),
+}));
+
+export const tiersRelations = relations(tiers, ({ one, many }) => ({
+  package: one(packages, {
+    fields: [tiers.packageId],
+    references: [packages.id],
+  }),
+  prices: many(tierPrices),
+  limits: many(tierLimits),
+}));
+
+export const tierPricesRelations = relations(tierPrices, ({ one }) => ({
+  tier: one(tiers, {
+    fields: [tierPrices.tierId],
+    references: [tiers.id],
+  }),
+}));
+
+export const tierLimitsRelations = relations(tierLimits, ({ one }) => ({
+  tier: one(tiers, {
+    fields: [tierLimits.tierId],
+    references: [tiers.id],
+  }),
+  product: one(products, {
+    fields: [tierLimits.productId],
+    references: [products.id],
+  }),
+}));
+
+export const productsRelations = relations(products, ({ many }) => ({
+  packageProducts: many(packageProducts),
+  tierLimits: many(tierLimits),
   subscriptions: many(userSubscriptions),
 }));
 
