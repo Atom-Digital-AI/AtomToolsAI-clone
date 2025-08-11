@@ -122,7 +122,7 @@ export default function ProfileSettings() {
                   <div>
                     <Label htmlFor="profile-type">Type</Label>
                     <Select value={newProfile.type} onValueChange={(value: "brand" | "regulatory") => setNewProfile({ ...newProfile, type: value })}>
-                      <SelectTrigger data-testid="select-profile-type" className="bg-gray-800 border-gray-700">
+                      <SelectTrigger data-testid="select-profile-type" className="bg-gray-800 border-gray-700 text-[#ffffff]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
