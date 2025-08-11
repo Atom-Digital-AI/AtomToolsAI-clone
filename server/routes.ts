@@ -12,6 +12,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { sendVerificationEmail } from "./email";
 import { nanoid } from "nanoid";
+import bcrypt from "bcryptjs";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
