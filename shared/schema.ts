@@ -85,14 +85,13 @@ export const tierLimits = pgTable("tier_limits", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Products - Individual tools/services (now independent of packages)
+// Products - Individual tools/services (independent of packages, linked via package_products)
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description").notNull(),
   shortDescription: text("short_description"),
   features: text("features").array().notNull().default(sql`'{}'::text[]`),
-  // Pricing removed - now handled at tier level
   isActive: boolean("is_active").notNull().default(true),
   routePath: text("route_path").notNull().unique(), // e.g., "/app/tools/facebook-ads-connector"
   marketingPath: text("marketing_path"), // e.g., "/tools/facebook-ads-looker-studio-connector"

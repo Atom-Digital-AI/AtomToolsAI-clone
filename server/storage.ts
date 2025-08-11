@@ -288,15 +288,25 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(userSubscriptions.userId, userId), eq(userSubscriptions.isActive, true)));
   }
 
+  // Legacy method - now superseded by tier-based access checking
   async getProductsWithSubscriptionStatus(userId: string): Promise<ProductWithSubscriptionStatus[]> {
     const allProducts = await this.getAllProducts();
-    const userSubs = await this.getUserSubscriptions(userId);
-    const subscribedProductIds = new Set(userSubs.map(sub => sub.productId));
-
-    return allProducts.map(product => ({
-      ...product,
-      isSubscribed: subscribedProductIds.has(product.id),
-    }));
+    
+    // Check access via tier subscriptions (new system)
+    const productAccessPromises = allProducts.map(async (product) => {
+      const accessInfo = await this.getUserProductAccess(userId, product.id);
+      const usageInfo = await this.checkTierUsage(userId, product.id);
+      
+      return {
+        ...product,
+        isSubscribed: accessInfo.hasAccess,
+        canUse: usageInfo.canUse,
+        currentUsage: usageInfo.currentUsage,
+        limit: usageInfo.limit,
+      };
+    });
+    
+    return await Promise.all(productAccessPromises);
   }
 
   async isUserSubscribed(userId: string, productId: string): Promise<boolean> {
