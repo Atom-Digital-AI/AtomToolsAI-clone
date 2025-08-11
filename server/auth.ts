@@ -69,6 +69,24 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  // First require basic authentication
+  await new Promise<void>((resolve, reject) => {
+    requireAuth(req, res, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+
+  // Check if user is admin
+  const user = (req as any).user;
+  if (!user?.isAdmin) {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+
+  next();
+};
+
 export const authenticateUser = async (email: string, password: string) => {
   const user = await storage.getUserByEmail(email);
   if (!user) {

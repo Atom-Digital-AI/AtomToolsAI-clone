@@ -58,7 +58,8 @@ A PostgreSQL database with a pure tier-based subscription system:
 - **No Individual Subscriptions**: System completely moved away from individual product subscriptions - users only subscribe to package tiers which grant access to multiple products with usage limits and tracking.
 - **Tier Reordering**: Admin interface includes drag-and-drop style tier reordering with persistent sort order stored in database.
 - **Legacy Code Removal**: All individual subscription buttons and deprecated handling completely removed (August 2025).
-- **Comprehensive CMS System**: Full content management system with rich text editor, SEO metadata management, publishing workflow (draft → published → archived), content type organization (static, blog, resource), and dynamic page serving at custom URLs.
+- **Advanced CMS with Block Builder**: Sophisticated content management system evolved from simple text editor to powerful block-based builder with row/column layouts, flexbox controls, drag-and-drop interface, real-time preview, and backward compatibility for existing markdown content.
+- **Cloud Image Upload Integration**: Direct image upload functionality within CMS using Google Cloud Storage and Uppy integration, eliminating external URL dependencies with admin-authenticated upload endpoints.
 - **Performance Optimizations**: Code splitting, tree shaking, privacy-focused analytics, font loading optimization, image optimization, and SEO.
 
 ## External Dependencies

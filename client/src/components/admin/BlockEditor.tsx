@@ -6,7 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, GripVertical, Settings, Copy, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, GripVertical, Settings, Copy, Eye, EyeOff, Image } from "lucide-react";
+import { ObjectUploader } from "./ObjectUploader";
+import type { UploadResult } from "@uppy/core";
+import { apiRequest } from "@/lib/queryClient";
 
 export interface BlockColumn {
   id: string;
@@ -166,6 +169,43 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
       return row;
     });
     updateContent(newBlocks);
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (): Promise<{ method: "PUT"; url: string }> => {
+    try {
+      const response = await apiRequest("POST", "/api/images/upload");
+      return { method: "PUT", url: response.uploadURL };
+    } catch (error) {
+      console.error("Failed to get upload URL:", error);
+      throw error;
+    }
+  };
+
+  const handleImageUploadComplete = (rowId: string, columnId: string) => (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadedFile = result.successful[0];
+      const uploadURL = uploadedFile.uploadURL;
+      
+      // Confirm the upload and get the serving URL
+      apiRequest("PUT", "/api/images/confirm", { uploadURL })
+        .then((response: any) => {
+          const imagePath = response.imagePath;
+          const currentColumn = blocks
+            .find(row => row.id === rowId)
+            ?.columns.find(col => col.id === columnId);
+          
+          if (currentColumn) {
+            const imageMarkdown = `![Uploaded Image](${imagePath})\n\n`;
+            updateColumn(rowId, columnId, { 
+              content: currentColumn.content + imageMarkdown 
+            });
+          }
+        })
+        .catch((error: any) => {
+          console.error("Failed to confirm image upload:", error);
+        });
+    }
   };
 
   const getColumnClass = (column: BlockColumn) => {
@@ -376,6 +416,14 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                       <div className="flex items-center justify-between">
                         <Label className="text-xs text-gray-400">Column {columnIndex + 1}</Label>
                         <div className="flex gap-1">
+                          <ObjectUploader
+                            onGetUploadParameters={handleImageUpload}
+                            onComplete={handleImageUploadComplete(row.id, column.id)}
+                            maxNumberOfFiles={1}
+                            buttonClassName="h-6 w-6 p-0"
+                          >
+                            <Image className="w-3 h-3" />
+                          </ObjectUploader>
                           <Button
                             size="sm"
                             variant="ghost"

@@ -1481,7 +1481,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register CMS routes
   const { registerCmsRoutes } = await import("./cms-routes");
+  const { registerObjectStorageRoutes } = await import("./object-storage-routes");
   registerCmsRoutes(app);
+  registerObjectStorageRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;
