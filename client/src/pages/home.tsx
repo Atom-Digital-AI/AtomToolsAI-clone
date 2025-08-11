@@ -296,10 +296,76 @@ export default function Home() {
     <div id="main">
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
-        {/* Background glow effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/20 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-accent-2/10 rounded-full blur-2xl"></div>
+        {/* Animated Video Background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-surface"></div>
+          
+          {/* Animated particles and geometric shapes */}
+          <div className="absolute inset-0">
+            {/* Floating orbs */}
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-accent/10 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute top-3/4 right-1/4 w-24 h-24 bg-accent-2/15 rounded-full blur-lg animate-pulse" style={{animationDelay: '1s'}}></div>
+            <div className="absolute top-1/2 left-3/4 w-16 h-16 bg-accent/20 rounded-full blur-md animate-pulse" style={{animationDelay: '2s'}}></div>
+            
+            {/* Moving geometric lines */}
+            <div className="absolute inset-0">
+              <svg className="w-full h-full opacity-30" viewBox="0 0 1000 600" fill="none">
+                <g className="animate-[drift_20s_ease-in-out_infinite]">
+                  <path d="M0,300 Q250,100 500,300 T1000,300" stroke="url(#gradient1)" strokeWidth="2" fill="none" opacity="0.6"/>
+                  <path d="M0,350 Q300,150 600,350 T1200,350" stroke="url(#gradient2)" strokeWidth="1.5" fill="none" opacity="0.4"/>
+                </g>
+                <g className="animate-[drift_25s_ease-in-out_infinite_reverse]">
+                  <path d="M0,250 Q400,50 800,250 T1600,250" stroke="url(#gradient3)" strokeWidth="1" fill="none" opacity="0.3"/>
+                </g>
+                <defs>
+                  <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#6366F1" stopOpacity="0"/>
+                    <stop offset="50%" stopColor="#6366F1" stopOpacity="0.8"/>
+                    <stop offset="100%" stopColor="#6366F1" stopOpacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0"/>
+                    <stop offset="50%" stopColor="#8B5CF6" stopOpacity="0.6"/>
+                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#06B6D4" stopOpacity="0"/>
+                    <stop offset="50%" stopColor="#06B6D4" stopOpacity="0.4"/>
+                    <stop offset="100%" stopColor="#06B6D4" stopOpacity="0"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            
+            {/* Floating code/tech elements */}
+            <div className="absolute top-1/3 left-1/6 text-accent/20 font-mono text-sm animate-[float_6s_ease-in-out_infinite]">
+              &lt;automation/&gt;
+            </div>
+            <div className="absolute top-2/3 right-1/5 text-accent-2/20 font-mono text-xs animate-[float_8s_ease-in-out_infinite]" style={{animationDelay: '2s'}}>
+              AI()
+            </div>
+            <div className="absolute top-1/2 left-1/12 text-accent/15 font-mono text-xs animate-[float_7s_ease-in-out_infinite]" style={{animationDelay: '4s'}}>
+              scale++
+            </div>
+            
+            {/* Additional floating elements for richness */}
+            <div className="absolute top-1/5 right-1/3 w-2 h-2 bg-accent/30 rounded-full animate-[float_10s_ease-in-out_infinite]" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-accent-2/25 rounded-full animate-[float_12s_ease-in-out_infinite]" style={{animationDelay: '3s'}}></div>
+            <div className="absolute top-3/5 right-1/6 w-1.5 h-1.5 bg-success/40 rounded-full animate-[float_9s_ease-in-out_infinite]" style={{animationDelay: '5s'}}></div>
+            
+            {/* Subtle grid overlay */}
+            <div className="absolute inset-0 opacity-5" style={{
+              backgroundImage: `
+                linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+                linear-gradient(180deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '60px 60px'
+            }}></div>
+          </div>
+          
+          {/* Enhanced glow effects */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-[glow_4s_ease-in-out_infinite_alternate]"></div>
+          <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-accent-2/10 rounded-full blur-2xl animate-[glow_6s_ease-in-out_infinite_alternate]" style={{animationDelay: '2s'}}></div>
         </div>
         
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
