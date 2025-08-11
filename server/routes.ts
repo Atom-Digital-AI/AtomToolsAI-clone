@@ -955,6 +955,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public packages endpoint for pricing page
+  app.get("/api/packages", async (req: any, res) => {
+    try {
+      const packages = await storage.getAllPackagesWithTiers();
+      // Filter to only active packages for public consumption
+      const activePackages = packages.filter(pkg => pkg.isActive);
+      res.json(activePackages);
+    } catch (error) {
+      console.error("Error fetching public packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
   // Complete profile route (must be after login but before requireAuth)
   app.post("/api/auth/complete-profile", async (req, res) => {
     try {
