@@ -1,9 +1,11 @@
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import CookieBanner from "@/components/layout/cookie-banner";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 import Home from "@/pages/home";
 import ToolsIndex from "@/pages/tools/index";
@@ -32,10 +34,34 @@ import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
+function AuthRedirect() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    // If user is authenticated and on home/login/signup, redirect to app
+    if (isAuthenticated && (location === "/" || location === "/login" || location === "/sign-up")) {
+      setLocation("/app");
+      return;
+    }
+
+    // If user is not authenticated and trying to access protected routes, redirect to login
+    if (!isAuthenticated && location.startsWith("/app")) {
+      setLocation("/login");
+      return;
+    }
+  }, [isAuthenticated, isLoading, location, setLocation]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background text-text-primary flex flex-col">
+        <AuthRedirect />
         <Header />
         <main className="flex-1">
           <Switch>
