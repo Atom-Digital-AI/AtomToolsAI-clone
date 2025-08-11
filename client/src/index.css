@@ -73,6 +73,19 @@
 }
 
 @layer utilities {
+  /* Remove any debugging outlines */
+  * {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Override any debug borders */
+  *::before,
+  *::after {
+    border: none !important;
+    outline: none !important;
+  }
+
   /* Custom animations for video background */
   @keyframes drift {
     0%, 100% { transform: translateX(0) translateY(0); }
