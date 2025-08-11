@@ -462,16 +462,7 @@ export default function Home() {
             <div className="absolute top-1/4 left-1/4 w-20 h-20 bg-accent/5 rounded-full blur-xl animate-pulse"></div>
             <div className="absolute top-3/4 right-1/4 w-16 h-16 bg-accent-2/8 rounded-full blur-lg animate-pulse" style={{animationDelay: '1s'}}></div>
             
-            {/* Floating code/tech elements */}
-            <div className="absolute top-1/3 left-1/6 text-accent/20 font-mono text-sm animate-[float_6s_ease-in-out_infinite]">
-              &lt;automation/&gt;
-            </div>
-            <div className="absolute top-2/3 right-1/5 text-accent-2/20 font-mono text-xs animate-[float_8s_ease-in-out_infinite]" style={{animationDelay: '2s'}}>
-              AI()
-            </div>
-            <div className="absolute top-1/2 left-1/12 text-accent/15 font-mono text-xs animate-[float_7s_ease-in-out_infinite]" style={{animationDelay: '4s'}}>
-              scale++
-            </div>
+
             
             {/* Additional floating elements for richness */}
             <div className="absolute top-1/5 right-1/3 w-2 h-2 bg-accent/30 rounded-full animate-[float_10s_ease-in-out_infinite]" style={{animationDelay: '1s'}}></div>
