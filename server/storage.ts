@@ -569,6 +569,23 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(tiers).where(eq(tiers.packageId, packageId));
   }
 
+  async deletePackageTiers(packageId: string): Promise<boolean> {
+    // Delete all tier limits for tiers in this package
+    const packageTiers = await this.getTiersByPackage(packageId);
+    const tierIds = packageTiers.map(t => t.id);
+    
+    if (tierIds.length > 0) {
+      // Delete tier limits
+      await db.delete(tierLimits).where(inArray(tierLimits.tierId, tierIds));
+      // Delete tier prices
+      await db.delete(tierPrices).where(inArray(tierPrices.tierId, tierIds));
+    }
+    
+    // Delete tiers
+    const result = await db.delete(tiers).where(eq(tiers.packageId, packageId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
   // Tier pricing
   async createTierPrice(priceData: InsertTierPrice): Promise<TierPrice> {
     const [price] = await db.insert(tierPrices).values(priceData).returning();

@@ -1116,14 +1116,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/admin/packages/:id", requireAuth, requireAdmin, async (req: any, res) => {
     try {
-      const updatedPackage = await storage.updatePackage(req.params.id, req.body);
+      const packageId = req.params.id;
+      const packageData = req.body;
+      
+      // Update basic package info
+      const updatedPackage = await storage.updatePackage(packageId, packageData);
       if (!updatedPackage) {
         return res.status(404).json({ message: "Package not found" });
       }
-      res.json(updatedPackage);
+      
+      // Return the complete package with tiers
+      const completePackage = await storage.getPackageWithTiers(packageId);
+      res.json(completePackage);
     } catch (error) {
       console.error("Error updating package:", error);
       res.status(500).json({ message: "Failed to update package" });
+    }
+  });
+
+  app.put("/api/admin/packages/with-tiers/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const packageId = req.params.id;
+      const { package: packageData, productIds, tiers } = req.body;
+      
+      // Update basic package info
+      const updatedPackage = await storage.updatePackage(packageId, packageData);
+      if (!updatedPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      // Remove existing package-product relationships and re-add them
+      const existingProducts = await storage.getPackageProducts(packageId);
+      for (const product of existingProducts) {
+        await storage.removeProductFromPackage(packageId, product.id);
+      }
+      
+      // Add new products to package
+      for (const productId of productIds) {
+        await storage.addProductToPackage(packageId, productId);
+      }
+      
+      // Delete existing tiers and their associated data
+      await storage.deletePackageTiers(packageId);
+      
+      // Create new tiers with pricing and limits
+      for (const tierData of tiers) {
+        const tier = await storage.createTier({
+          packageId: packageId,
+          name: tierData.name,
+          promotionalTag: tierData.promotionalTag,
+          isActive: tierData.isActive,
+        });
+        
+        // Add tier prices
+        for (const priceData of tierData.prices) {
+          await storage.createTierPrice({
+            tierId: tier.id,
+            interval: priceData.interval,
+            amountMinor: priceData.amountMinor,
+            currency: priceData.currency,
+          });
+        }
+        
+        // Add tier limits
+        for (const limitData of tierData.limits) {
+          await storage.createTierLimit({
+            tierId: tier.id,
+            productId: limitData.productId,
+            includedInTier: limitData.includedInTier,
+            periodicity: limitData.periodicity,
+            quantity: limitData.quantity,
+            subfeatures: limitData.subfeatures,
+          });
+        }
+      }
+      
+      // Return the complete package with tiers
+      const completePackage = await storage.getPackageWithTiers(packageId);
+      res.json(completePackage);
+    } catch (error) {
+      console.error("Error updating package with tiers:", error);
+      res.status(500).json({ message: "Failed to update package with tiers" });
     }
   });
 

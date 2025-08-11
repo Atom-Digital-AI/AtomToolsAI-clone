@@ -118,7 +118,12 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       };
 
       if (packageData) {
-        return apiRequest('PUT', `/api/admin/packages/${packageData.id}`, packagePayload);
+        // For updates, send the complete package data with tiers
+        return apiRequest('PUT', `/api/admin/packages/with-tiers/${packageData.id}`, {
+          package: packagePayload,
+          productIds: data.productIds,
+          tiers: data.tiers,
+        });
       } else {
         return apiRequest('POST', '/api/admin/packages/with-tiers', {
           package: packagePayload,
