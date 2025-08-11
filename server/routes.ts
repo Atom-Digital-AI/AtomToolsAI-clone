@@ -472,7 +472,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentUsage: usageInfo.currentUsage,
         limit: usageInfo.limit,
         tierSubscription: accessInfo.tierSubscription,
-        tierLimit: accessInfo.tierLimit
+        tierLimit: accessInfo.tierLimit,
+        subfeatures: accessInfo.tierLimit?.subfeatures || {}
       });
     } catch (error) {
       console.error("Error checking product access:", error);
@@ -728,6 +729,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // EXACT ORIGINAL PYTHON LOGIC - SEO Meta Generator
   app.post("/api/tools/seo-meta/generate", requireAuth, async (req, res) => {
     try {
+      const userId = (req as any).user.id;
+      const productId = "531de90b-12ef-4169-b664-0d55428435a6"; // SEO Meta Generator product ID
+      
       const {
         url,
         targetKeywords,
@@ -739,6 +743,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brandGuidelines = "",
         regulatoryGuidelines = ""
       } = req.body;
+
+      // Check user's product access and tier limits
+      const accessInfo = await storage.getUserProductAccess(userId, productId);
+      if (!accessInfo.hasAccess) {
+        return res.status(403).json({
+          message: "Access denied. This feature requires an active subscription."
+        });
+      }
+
+      // Check subfeature permissions
+      const subfeatures = accessInfo.tierLimit?.subfeatures as any || {};
+      
+      // Validate brand guidelines usage
+      if (brandGuidelines && !subfeatures.brand_guidelines) {
+        return res.status(403).json({
+          message: "Brand guidelines feature is not available in your current plan."
+        });
+      }
+      
+      // Validate variations usage  
+      if (numVariations > 1 && !subfeatures.variations) {
+        return res.status(403).json({
+          message: "Multiple variations feature is not available in your current plan."
+        });
+      }
 
       if (!url && !targetKeywords) {
         return res.status(400).json({
@@ -848,6 +877,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // EXACT ORIGINAL PYTHON LOGIC - Google Ads Copy Generator
   app.post("/api/tools/google-ads/generate", requireAuth, async (req, res) => {
     try {
+      const userId = (req as any).user.id;
+      const productId = "c5985990-e94e-49b3-a86c-3076fd9d6b3f"; // Google Ads Copy Generator product ID
+      
       const {
         url,
         targetKeywords,
@@ -855,8 +887,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sellingPoints = "",
         caseType = "sentence",
         brandGuidelines = "",
-        regulatoryGuidelines = ""
+        regulatoryGuidelines = "",
+        numVariations = 1
       } = req.body;
+
+      // Check user's product access and tier limits
+      const accessInfo = await storage.getUserProductAccess(userId, productId);
+      if (!accessInfo.hasAccess) {
+        return res.status(403).json({
+          message: "Access denied. This feature requires an active subscription."
+        });
+      }
+
+      // Check subfeature permissions
+      const subfeatures = accessInfo.tierLimit?.subfeatures as any || {};
+      
+      // Validate brand guidelines usage
+      if (brandGuidelines && !subfeatures.brand_guidelines) {
+        return res.status(403).json({
+          message: "Brand guidelines feature is not available in your current plan."
+        });
+      }
+      
+      // Validate variations usage
+      if (numVariations > 1 && !subfeatures.variations) {
+        return res.status(403).json({
+          message: "Multiple variations feature is not available in your current plan."
+        });
+      }
 
       if (!url && !targetKeywords) {
         return res.status(400).json({

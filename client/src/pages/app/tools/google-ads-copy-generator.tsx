@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Sparkles, Copy, RefreshCw, Download, Upload, AlertCircle, CheckCircle2, Globe, Target, ChevronUp, ChevronDown } from "lucide-react";
+import { Sparkles, Copy, RefreshCw, Download, Upload, AlertCircle, CheckCircle2, Globe, Target, ChevronUp, ChevronDown, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 
 interface GeneratedCopy {
@@ -57,6 +58,38 @@ export default function GoogleAdsCopyGenerator() {
   const [urlContent, setUrlContent] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+
+  const productId = "c5985990-e94e-49b3-a86c-3076fd9d6b3f";
+
+  // Get user's tier permissions for this product
+  const { data: accessInfo } = useQuery({
+    queryKey: [`/api/products/${productId}/access`],
+    retry: false,
+  });
+
+  const subfeatures = accessInfo?.subfeatures || {};
+  const canUseBulk = subfeatures.bulk === true;
+  const canUseVariations = subfeatures.variations === true;  
+  const canUseBrandGuidelines = subfeatures.brand_guidelines === true;
+
+  // Reset features to allowed values when tier permissions change
+  useEffect(() => {
+    if (!canUseVariations && numVariations > 1) {
+      setNumVariations(1);
+    }
+  }, [canUseVariations, numVariations]);
+
+  useEffect(() => {
+    if (!canUseBrandGuidelines && brandGuidelines) {
+      setBrandGuidelines('');
+    }
+  }, [canUseBrandGuidelines, brandGuidelines]);
+
+  useEffect(() => {
+    if (!canUseBulk && mode === 'bulk') {
+      setMode('single');
+    }
+  }, [canUseBulk, mode]);
 
   const analyzeUrl = async () => {
     if (!url) return;
@@ -125,7 +158,8 @@ export default function GoogleAdsCopyGenerator() {
         brandName: brandName,
         sellingPoints: sellingPoints,
         caseType: caseType,
-        brandGuidelines: brandGuidelines,
+        numVariations: canUseVariations ? numVariations : 1,
+        brandGuidelines: canUseBrandGuidelines ? brandGuidelines : "",
         regulatoryGuidelines: regulatoryGuidelines
       });
       
@@ -156,8 +190,9 @@ export default function GoogleAdsCopyGenerator() {
 
       variations.push(primaryVariation);
       
-      // Generate additional variations if requested
-      for (let i = 1; i < numVariations; i++) {
+      // Generate additional variations if requested and allowed
+      const actualVariations = canUseVariations ? numVariations : 1;
+      for (let i = 1; i < actualVariations; i++) {
         try {
           const varResponseObj = await apiRequest("POST", "/api/tools/google-ads/generate", {
             url: url || undefined,
@@ -165,7 +200,7 @@ export default function GoogleAdsCopyGenerator() {
             brandName: brandName,
             sellingPoints: sellingPoints,
             caseType: caseType,
-            brandGuidelines: brandGuidelines,
+            brandGuidelines: canUseBrandGuidelines ? brandGuidelines : "",
             regulatoryGuidelines: regulatoryGuidelines
           });
           
@@ -271,14 +306,14 @@ export default function GoogleAdsCopyGenerator() {
         }
 
         try {
-          // Call actual OpenAI API for each row
+          // Call actual OpenAI API for each row with tier restrictions
           const response = await apiRequest("POST", "/api/tools/google-ads/generate", {
             url,
             targetKeywords: keywords,
             brandName,
             sellingPoints,
             caseType,
-            brandGuidelines,
+            brandGuidelines: canUseBrandGuidelines ? brandGuidelines : "",
             regulatoryGuidelines
           });
 
@@ -447,15 +482,35 @@ export default function GoogleAdsCopyGenerator() {
                   <Globe className="w-4 h-4 mr-2" />
                   Single Campaign
                 </Button>
-                <Button
-                  variant={mode === 'bulk' ? 'default' : 'outline'}
-                  onClick={() => setMode('bulk')}
-                  data-testid="button-bulk-mode"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Bulk Campaigns
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant={mode === 'bulk' ? 'default' : 'outline'}
+                    onClick={() => canUseBulk ? setMode('bulk') : null}
+                    data-testid="button-bulk-mode"
+                    disabled={!canUseBulk}
+                    className={!canUseBulk ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {!canUseBulk && <Lock className="w-4 h-4 mr-2" />}
+                    <Upload className="w-4 h-4 mr-2" />
+                    Bulk Campaigns
+                  </Button>
+                  {!canUseBulk && (
+                    <div className="absolute -top-2 -right-2">
+                      <Badge variant="destructive" className="text-xs px-2 py-1">
+                        Pro
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </div>
+              {!canUseBulk && (
+                <Alert className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Bulk processing is available in Pro and Enterprise plans. <a href="/pricing" className="text-primary hover:underline">Upgrade now</a> to process multiple campaigns at once.
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
 
@@ -558,13 +613,37 @@ export default function GoogleAdsCopyGenerator() {
                     
                     {showAdvanced && (
                       <div className="space-y-4">
-                        <GuidelineProfileSelector
-                          type="brand"
-                          value={brandGuidelines}
-                          onChange={setBrandGuidelines}
-                          placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
-                          label="Brand Guidelines (Optional)"
-                        />
+                        <div className="relative">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Label className="flex items-center gap-2">
+                              Brand Guidelines (Optional)
+                              {!canUseBrandGuidelines && (
+                                <Badge variant="destructive" className="text-xs px-2 py-1">
+                                  Pro
+                                </Badge>
+                              )}
+                            </Label>
+                          </div>
+                          {canUseBrandGuidelines ? (
+                            <GuidelineProfileSelector
+                              type="brand"
+                              value={brandGuidelines}
+                              onChange={setBrandGuidelines}
+                              placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
+                              label=""
+                            />
+                          ) : (
+                            <div className="relative">
+                              <div className="min-h-[80px] border border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center opacity-50">
+                                <div className="text-center">
+                                  <Lock className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                                  <p className="text-sm text-gray-500">Brand guidelines available in Pro plan</p>
+                                  <a href="/pricing" className="text-xs text-primary hover:underline">Upgrade now</a>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         
                         <GuidelineProfileSelector
                           type="regulatory"
@@ -588,18 +667,38 @@ export default function GoogleAdsCopyGenerator() {
                             </Select>
                           </div>
                           
-                          <div>
-                            <Label htmlFor="variations">Variations</Label>
-                            <Select value={numVariations.toString()} onValueChange={(value) => setNumVariations(parseInt(value))}>
-                              <SelectTrigger data-testid="select-variations">
+                          <div className="relative">
+                            <Label htmlFor="variations" className="flex items-center gap-2">
+                              Variations
+                              {!canUseVariations && (
+                                <Badge variant="destructive" className="text-xs px-2 py-1">
+                                  Pro
+                                </Badge>
+                              )}
+                            </Label>
+                            <Select 
+                              value={canUseVariations ? numVariations.toString() : "1"} 
+                              onValueChange={(value) => canUseVariations && setNumVariations(parseInt(value))}
+                              disabled={!canUseVariations}
+                            >
+                              <SelectTrigger data-testid="select-variations" className={!canUseVariations ? "opacity-50" : ""}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="1">1 Variation</SelectItem>
-                                <SelectItem value="2">2 Variations</SelectItem>
-                                <SelectItem value="3">3 Variations</SelectItem>
+                                {canUseVariations && (
+                                  <>
+                                    <SelectItem value="2">2 Variations</SelectItem>
+                                    <SelectItem value="3">3 Variations</SelectItem>
+                                  </>
+                                )}
                               </SelectContent>
                             </Select>
+                            {!canUseVariations && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Multiple variations available in Pro plan. <a href="/pricing" className="text-primary hover:underline">Upgrade now</a>
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -700,13 +799,37 @@ export default function GoogleAdsCopyGenerator() {
                 {showAdvancedOptions && (
                   <CardContent>
                     <div className="space-y-4">
-                      <GuidelineProfileSelector
-                        type="brand"
-                        value={brandGuidelines}
-                        onChange={setBrandGuidelines}
-                        placeholder="Enter specific brand voice, messaging guidelines, or compliance requirements that must be followed..."
-                        label="Brand Guidelines (Optional)"
-                      />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label className="flex items-center gap-2">
+                            Brand Guidelines (Optional)
+                            {!canUseBrandGuidelines && (
+                              <Badge variant="destructive" className="text-xs px-2 py-1">
+                                Pro
+                              </Badge>
+                            )}
+                          </Label>
+                        </div>
+                        {canUseBrandGuidelines ? (
+                          <GuidelineProfileSelector
+                            type="brand"
+                            value={brandGuidelines}
+                            onChange={setBrandGuidelines}
+                            placeholder="Enter specific brand voice, messaging guidelines, or compliance requirements that must be followed..."
+                            label=""
+                          />
+                        ) : (
+                          <div className="relative">
+                            <div className="min-h-[80px] border border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center opacity-50">
+                              <div className="text-center">
+                                <Lock className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                                <p className="text-sm text-gray-500">Brand guidelines available in Pro plan</p>
+                                <a href="/pricing" className="text-xs text-primary hover:underline">Upgrade now</a>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       
                       <GuidelineProfileSelector
                         type="regulatory"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,12 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Search, Copy, Download, Upload, RefreshCw, AlertCircle, CheckCircle2, Globe, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Copy, Download, Upload, RefreshCw, AlertCircle, CheckCircle2, Globe, ChevronUp, ChevronDown, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 
 interface MetaData {
@@ -54,6 +56,38 @@ export default function SEOMetaGenerator() {
   const [urlContent, setUrlContent] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+
+  const productId = "531de90b-12ef-4169-b664-0d55428435a6";
+
+  // Get user's tier permissions for this product
+  const { data: accessInfo } = useQuery({
+    queryKey: [`/api/products/${productId}/access`],
+    retry: false,
+  });
+
+  const subfeatures = accessInfo?.subfeatures || {};
+  const canUseBulk = subfeatures.bulk === true;
+  const canUseVariations = subfeatures.variations === true;  
+  const canUseBrandGuidelines = subfeatures.brand_guidelines === true;
+
+  // Reset features to allowed values when tier permissions change
+  useEffect(() => {
+    if (!canUseVariations && numVariations > 1) {
+      setNumVariations(1);
+    }
+  }, [canUseVariations, numVariations]);
+
+  useEffect(() => {
+    if (!canUseBrandGuidelines && brandGuidelines) {
+      setBrandGuidelines('');
+    }
+  }, [canUseBrandGuidelines, brandGuidelines]);
+
+  useEffect(() => {
+    if (!canUseBulk && mode === 'bulk') {
+      setMode('single');
+    }
+  }, [canUseBulk, mode]);
 
   const analyzeUrl = async () => {
     if (!url) return;
