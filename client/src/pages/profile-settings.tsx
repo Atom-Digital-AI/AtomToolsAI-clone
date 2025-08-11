@@ -103,36 +103,36 @@ export default function ProfileSettings() {
                   Create New Profile
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-gray-900 border-gray-700">
+              <DialogContent className="bg-gray-900 border-gray-700 text-white">
                 <DialogHeader>
-                  <DialogTitle>Create Guideline Profile</DialogTitle>
+                  <DialogTitle className="text-white">Create Guideline Profile</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="profile-name">Profile Name</Label>
+                    <Label htmlFor="profile-name" className="text-white">Profile Name</Label>
                     <Input
                       id="profile-name"
                       data-testid="input-profile-name"
                       value={newProfile.name}
                       onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
                       placeholder="Enter profile name"
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="profile-type">Type</Label>
+                    <Label htmlFor="profile-type" className="text-white">Type</Label>
                     <Select value={newProfile.type} onValueChange={(value: "brand" | "regulatory") => setNewProfile({ ...newProfile, type: value })}>
                       <SelectTrigger data-testid="select-profile-type" className="bg-gray-800 border-gray-700 text-[#ffffff]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
-                        <SelectItem value="brand">Brand Guidelines</SelectItem>
-                        <SelectItem value="regulatory">Regulatory Guidelines</SelectItem>
+                        <SelectItem value="brand" className="text-white">Brand Guidelines</SelectItem>
+                        <SelectItem value="regulatory" className="text-white">Regulatory Guidelines</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="profile-content">Guidelines Content</Label>
+                    <Label htmlFor="profile-content" className="text-white">Guidelines Content</Label>
                     <Textarea
                       id="profile-content"
                       data-testid="textarea-profile-content"
@@ -140,7 +140,7 @@ export default function ProfileSettings() {
                       onChange={(e) => setNewProfile({ ...newProfile, content: e.target.value })}
                       placeholder="Enter your guidelines..."
                       rows={6}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
                   <div className="flex gap-2">

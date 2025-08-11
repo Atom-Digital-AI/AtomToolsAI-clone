@@ -28,6 +28,12 @@ This is a dark-mode marketing website and comprehensive subscription-based appli
   - **Critical Pre-Output Review**: Added 4-point compliance checklist in prompts ensuring brand/regulatory guidelines are strictly followed before content generation
   - **Bulk Processing Compliance**: Extended guidelines support to bulk CSV processing for consistent compliance across all generated content
   - **Professional Quality Control**: Removed scoring badges and character warnings for cleaner output displays, focusing purely on content quality and compliance
+- **Saved Brand & Regulatory Guideline Profiles Feature (August 2025)**: Implemented comprehensive profile management system to streamline user workflow:
+  - **Profile Management Page**: Dedicated /app/profile-settings page accessible from account navigation for creating, editing, and deleting saved profiles
+  - **Smart Profile Selector Component**: Reusable GuidelineProfileSelector component with dropdown selection, save functionality, and instant profile loading
+  - **Integrated Tool Enhancement**: Both Google Ads Copy Generator and SEO Meta Generator now use saved profiles with seamless switching between manual entry and saved profiles
+  - **Database-Backed Storage**: Full CRUD operations for guideline profiles with proper user association and type categorization (brand/regulatory)
+  - **Enhanced User Experience**: Users can save frequently used guidelines once and reuse across all tools, reducing repetitive data entry and ensuring consistency
 
 ## User Preferences
 
