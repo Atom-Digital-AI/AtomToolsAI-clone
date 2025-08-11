@@ -91,14 +91,14 @@ export const products = pgTable("products", {
   description: text("description").notNull(),
   shortDescription: text("short_description"),
   features: text("features").array().notNull().default(sql`'{}'::text[]`),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  currency: text("currency").notNull().default("GBP"),
-  billingType: text("billing_type").notNull().default("one-time"), // "one-time", "monthly", "yearly"
+  // Pricing removed - now handled at tier level
   isActive: boolean("is_active").notNull().default(true),
   routePath: text("route_path").notNull().unique(), // e.g., "/app/tools/facebook-ads-connector"
   marketingPath: text("marketing_path"), // e.g., "/tools/facebook-ads-looker-studio-connector"
   iconName: text("icon_name"), // Lucide icon name
   tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+  // Subfeatures that can be enabled/disabled in tiers
+  availableSubfeatures: jsonb("available_subfeatures").default(sql`'{"bulk": true, "variations": true, "brand_guidelines": true}'::jsonb`),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -204,14 +204,12 @@ export const insertProductSchema = createInsertSchema(products).pick({
   description: true,
   shortDescription: true,
   features: true,
-  price: true,
-  currency: true,
-  billingType: true,
   isActive: true,
   routePath: true,
   marketingPath: true,
   iconName: true,
   tags: true,
+  availableSubfeatures: true,
 });
 
 export const updateProductSchema = insertProductSchema.partial();

@@ -485,12 +485,6 @@ export default function AdminDashboard() {
                             <h3 className="font-semibold text-lg">{product.name}</h3>
                             <p className="text-gray-400 mt-1 line-clamp-2">{product.description}</p>
                             <div className="flex items-center gap-4 mt-3">
-                              <div className="text-lg font-bold text-green-400">
-                                £{product.price}
-                              </div>
-                              <Badge variant="outline" className="capitalize">
-                                {product.billingType.replace('-', ' ')}
-                              </Badge>
                               <Badge variant={product.isActive ? "default" : "secondary"}>
                                 {product.isActive ? "Active" : "Inactive"}
                               </Badge>
@@ -499,7 +493,22 @@ export default function AdminDashboard() {
                                   Route: {product.routePath}
                                 </span>
                               )}
+                              {product.availableSubfeatures && (
+                                <div className="flex gap-1">
+                                  {Object.entries(product.availableSubfeatures as Record<string, boolean>)
+                                    .filter(([, enabled]) => enabled)
+                                    .map(([feature]) => (
+                                      <Badge key={feature} variant="outline" className="text-xs">
+                                        {feature.replace('_', ' ')}
+                                      </Badge>
+                                    ))
+                                  }
+                                </div>
+                              )}
                             </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Pricing configured at package tier level
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button 
