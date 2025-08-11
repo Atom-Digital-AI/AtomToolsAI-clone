@@ -494,6 +494,15 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(users.email);
   }
 
+  async updateUser(id: string, updates: Partial<typeof users.$inferInsert>): Promise<User | null> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user || null;
+  }
+
   async updateUserAdminStatus(id: string, isAdmin: boolean): Promise<void> {
     await db.update(users)
       .set({ isAdmin, updatedAt: new Date() })

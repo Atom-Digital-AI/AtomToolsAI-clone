@@ -1119,6 +1119,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/admin/users/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const user = await storage.updateUser(req.params.id, req.body);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   app.put("/api/admin/users/:id/admin", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const { isAdmin } = req.body;
