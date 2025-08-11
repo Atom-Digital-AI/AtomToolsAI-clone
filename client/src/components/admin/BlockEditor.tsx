@@ -581,7 +581,7 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                       <Textarea
                         value={column.content}
                         onChange={(e) => updateColumn(row.id, column.id, { content: e.target.value })}
-                        className="min-h-[120px] bg-gray-900 border-gray-600 text-white"
+                        className="min-h-[200px] bg-gray-900 border-gray-600 text-white resize-vertical"
                         placeholder="Enter content (Markdown supported)..."
                       />
                     </div>
