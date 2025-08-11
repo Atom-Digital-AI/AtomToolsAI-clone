@@ -138,25 +138,25 @@ export default function GuidelineProfileSelector({
                   Save
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-gray-900 border-gray-700">
+              <DialogContent className="bg-gray-900 border-gray-700 text-white">
                 <DialogHeader>
-                  <DialogTitle>Save {label} Profile</DialogTitle>
+                  <DialogTitle className="text-white">Save {label} Profile</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="profile-name">Profile Name</Label>
+                    <Label htmlFor="profile-name" className="text-white">Profile Name</Label>
                     <Input
                       id="profile-name"
                       value={profileName}
                       onChange={(e) => setProfileName(e.target.value)}
                       placeholder="Enter profile name"
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-gray-800 border-gray-700 text-white"
                       data-testid="input-save-profile-name"
                     />
                   </div>
                   <div>
-                    <Label>Content Preview</Label>
-                    <div className="p-3 bg-gray-800 border border-gray-700 rounded-md text-sm max-h-32 overflow-y-auto">
+                    <Label className="text-white">Content Preview</Label>
+                    <div className="p-3 bg-gray-800 border border-gray-700 rounded-md text-sm max-h-32 overflow-y-auto text-white">
                       {value}
                     </div>
                   </div>

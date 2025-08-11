@@ -34,6 +34,7 @@ This is a dark-mode marketing website and comprehensive subscription-based appli
   - **Integrated Tool Enhancement**: Both Google Ads Copy Generator and SEO Meta Generator now use saved profiles with seamless switching between manual entry and saved profiles
   - **Database-Backed Storage**: Full CRUD operations for guideline profiles with proper user association and type categorization (brand/regulatory)
   - **Enhanced User Experience**: Users can save frequently used guidelines once and reuse across all tools, reducing repetitive data entry and ensuring consistency
+  - **UI/UX Fixes**: Resolved data fetching issues with proper TypeScript typing, fixed modal text readability with white text styling for dark theme consistency
 
 ## User Preferences
 
