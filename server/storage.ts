@@ -15,7 +15,7 @@ import {
 } from "@shared/schema";
 import { users, products, packages, userSubscriptions, guidelineProfiles } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -497,6 +497,27 @@ export class DatabaseStorage implements IStorage {
     await db.update(users)
       .set({ isAdmin, updatedAt: new Date() })
       .where(eq(users.id, id));
+  }
+
+  async getAdminStats(): Promise<{
+    packageCount: number;
+    productCount: number;
+    userCount: number;
+    activeSubscriptions: number;
+  }> {
+    const [stats] = await db.select({
+      packageCount: sql<number>`(SELECT COUNT(*) FROM ${packages})`,
+      productCount: sql<number>`(SELECT COUNT(*) FROM ${products})`,
+      userCount: sql<number>`(SELECT COUNT(*) FROM ${users})`,
+      activeSubscriptions: sql<number>`(SELECT COUNT(*) FROM ${userSubscriptions} WHERE status = 'active')`
+    }).from(packages).limit(1);
+
+    return {
+      packageCount: Number(stats.packageCount),
+      productCount: Number(stats.productCount), 
+      userCount: Number(stats.userCount),
+      activeSubscriptions: Number(stats.activeSubscriptions)
+    };
   }
 }
 
