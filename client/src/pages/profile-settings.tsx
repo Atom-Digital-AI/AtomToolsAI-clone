@@ -20,8 +20,17 @@ export default function ProfileSettings() {
   const { toast } = useToast();
 
   // Fetch guideline profiles
-  const { data: profiles, isLoading } = useQuery({
+  const { data: profiles, isLoading } = useQuery<GuidelineProfile[]>({
     queryKey: ["/api/guideline-profiles"],
+    queryFn: async () => {
+      const response = await fetch("/api/guideline-profiles", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch profiles");
+      }
+      return response.json();
+    },
   });
 
   // Create profile mutation
@@ -86,8 +95,8 @@ export default function ProfileSettings() {
     });
   };
 
-  const brandProfiles = profiles?.filter((p: GuidelineProfile) => p.type === "brand") || [];
-  const regulatoryProfiles = profiles?.filter((p: GuidelineProfile) => p.type === "regulatory") || [];
+  const brandProfiles = profiles?.filter(p => p.type === "brand") || [];
+  const regulatoryProfiles = profiles?.filter(p => p.type === "regulatory") || [];
 
   return (
     <div className="min-h-screen bg-black text-white">
