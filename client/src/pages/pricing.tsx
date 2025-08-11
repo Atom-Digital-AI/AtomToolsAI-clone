@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Section from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Loader2 } from "lucide-react";
 import type { PackageWithTiers } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 // Helper function to format pricing
 const formatPrice = (amountMinor: number, currency: string = 'GBP') => {
@@ -67,11 +70,71 @@ const faqs = [
 
 export default function Pricing() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   
   const { data: packages, isLoading, error } = useQuery<PackageWithTiers[]>({
     queryKey: ["/api/packages"],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Get user's current tier subscriptions
+  const { data: tierSubscriptions } = useQuery({
+    queryKey: ["/api/user/tier-subscriptions"],
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
+  // Subscription mutation
+  const subscribeMutation = useMutation({
+    mutationFn: async (tierId: string) => {
+      return apiRequest("POST", "/api/tier-subscriptions", { tierId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/tier-subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
+      toast({
+        title: "Success",
+        description: "Successfully subscribed to package tier!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to subscribe to package",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleGetStarted = (tier: any, relevantPrice: any) => {
+    if (!isAuthenticated) {
+      // Redirect to login
+      window.location.href = "/api/login";
+      return;
+    }
+
+    // Check if user is already subscribed to this tier
+    const isSubscribed = tierSubscriptions?.some((sub: any) => sub.tierId === tier.id);
+    if (isSubscribed) {
+      toast({
+        title: "Already Subscribed",
+        description: "You're already subscribed to this package tier.",
+      });
+      return;
+    }
+
+    // For free tiers, subscribe immediately
+    if (relevantPrice?.amountMinor === 0) {
+      subscribeMutation.mutate(tier.id);
+    } else {
+      // For paid tiers, show a confirmation or redirect to payment
+      toast({
+        title: "Coming Soon",
+        description: "Payment integration is being finalized. Please contact support for now.",
+      });
+    }
+  };
 
 
 
@@ -208,8 +271,21 @@ export default function Pricing() {
                             <Button 
                               className="w-full bg-indigo-600 hover:bg-indigo-700"
                               data-testid={`button-select-${tier.name.toLowerCase()}`}
+                              onClick={() => handleGetStarted(tier, relevantPrice)}
+                              disabled={subscribeMutation.isPending || (isAuthenticated && tierSubscriptions?.some((sub: any) => sub.tierId === tier.id))}
                             >
-                              {relevantPrice?.amountMinor === 0 ? 'Start Free' : 'Get Started'}
+                              {subscribeMutation.isPending ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : isAuthenticated && tierSubscriptions?.some((sub: any) => sub.tierId === tier.id) ? (
+                                'Subscribed ✓'
+                              ) : relevantPrice?.amountMinor === 0 ? (
+                                'Start Free'
+                              ) : (
+                                'Get Started'
+                              )}
                             </Button>
                           </div>
                         );
