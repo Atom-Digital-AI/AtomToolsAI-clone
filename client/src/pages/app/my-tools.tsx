@@ -68,28 +68,28 @@ export default function MyTools() {
         </div>
 
         {/* Active Package Subscriptions */}
-        {tierSubscriptions?.length > 0 ? (
+        {tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.length > 0 ? (
           <div className="mb-12">
             <h2 className="text-xl font-semibold text-text-primary mb-6 flex items-center">
               <Package className="w-5 h-5 mr-2" />
               Your Active Packages
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {tierSubscriptions.map((subscription: any) => (
-                <Card key={subscription.id} className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
+              {(tierSubscriptions as any[]).map((subscription: any) => (
+                <Card key={subscription.id} className="border-green-500/30 bg-green-500/5 dark:border-green-400/30 dark:bg-green-400/5">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center">
+                      <CardTitle className="text-lg flex items-center text-text-primary">
                         {subscription.tier?.promotionalTag && (
                           <Star className="w-4 h-4 mr-2 text-yellow-500" />
                         )}
                         {subscription.tier?.name}
                       </CardTitle>
-                      <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                      <Badge variant="default" className="bg-green-600 text-white dark:bg-green-500 dark:text-white">
                         Active
                       </Badge>
                     </div>
-                    <CardDescription>
+                    <CardDescription className="text-text-secondary">
                       {subscription.tier?.package?.name} - {subscription.tier?.package?.description}
                     </CardDescription>
                   </CardHeader>
