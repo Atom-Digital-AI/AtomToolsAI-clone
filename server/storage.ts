@@ -70,6 +70,7 @@ export interface IStorage {
   unsubscribeUser(userId: string, productId: string): Promise<boolean>;
   
   // Tier subscription operations
+  getTier(id: string): Promise<Tier | undefined>;
   getUserTierSubscriptions(userId: string): Promise<UserTierSubscription[]>;
   getUserTierSubscriptionsWithDetails(userId: string): Promise<any[]>;
   isUserSubscribedToTier(userId: string, tierId: string): Promise<boolean>;
@@ -495,6 +496,11 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async getTier(id: string): Promise<Tier | undefined> {
+    const [tier] = await db.select().from(tiers).where(eq(tiers.id, id));
+    return tier || undefined;
   }
 
   async checkTierUsage(userId: string, productId: string): Promise<{ canUse: boolean; currentUsage: number; limit: number | null }> {

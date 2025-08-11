@@ -115,7 +115,7 @@ export default function Pricing() {
     }
 
     // Check if user is already subscribed to this tier
-    const isSubscribed = tierSubscriptions?.some((sub: any) => sub.tierId === tier.id);
+    const isSubscribed = tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.some((sub: any) => sub.tierId === tier.id);
     if (isSubscribed) {
       toast({
         title: "Already Subscribed",
@@ -272,14 +272,14 @@ export default function Pricing() {
                               className="w-full bg-indigo-600 hover:bg-indigo-700"
                               data-testid={`button-select-${tier.name.toLowerCase()}`}
                               onClick={() => handleGetStarted(tier, relevantPrice)}
-                              disabled={subscribeMutation.isPending || (isAuthenticated && tierSubscriptions?.some((sub: any) => sub.tierId === tier.id))}
+                              disabled={subscribeMutation.isPending || (isAuthenticated && tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.some((sub: any) => sub.tierId === tier.id))}
                             >
                               {subscribeMutation.isPending ? (
                                 <>
                                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                   Processing...
                                 </>
-                              ) : isAuthenticated && tierSubscriptions?.some((sub: any) => sub.tierId === tier.id) ? (
+                              ) : isAuthenticated && tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.some((sub: any) => sub.tierId === tier.id) ? (
                                 'Subscribed ✓'
                               ) : relevantPrice?.amountMinor === 0 ? (
                                 'Start Free'
