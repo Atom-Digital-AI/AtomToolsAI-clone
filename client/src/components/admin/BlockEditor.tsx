@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,13 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, GripVertical, Settings, Copy, Eye, EyeOff, Image, Columns, Grid3X3 } from "lucide-react";
 import { ObjectUploader } from "./ObjectUploader";
+import { RichTextEditor } from "./RichTextEditor";
 import type { UploadResult } from "@uppy/core";
 import { apiRequest } from "@/lib/queryClient";
 
 export interface BlockColumn {
   id: string;
   content: string;
-  width: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12";
+  width: string;
   padding?: string;
   margin?: string;
   alignItems?: "start" | "center" | "end" | "stretch";
@@ -225,25 +225,16 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
   // Handle image upload
   const handleImageUpload = async (): Promise<{ method: "PUT"; url: string }> => {
     try {
-      console.log("Requesting upload URL...");
       const response = await apiRequest("POST", "/api/images/upload");
-      console.log("Raw response status:", response.status);
-      console.log("Raw response headers:", Object.fromEntries(response.headers.entries()));
-      
       const data = await response.json();
-      console.log("Parsed JSON data:", data);
-      console.log("uploadURL value:", data.uploadURL);
-      console.log("uploadURL type:", typeof data.uploadURL);
       
       if (!data || !data.uploadURL) {
-        console.error("Invalid response structure:", data);
         throw new Error("No upload URL received from server");
       }
       
       return { method: "PUT", url: data.uploadURL };
     } catch (error) {
       console.error("Failed to get upload URL:", error);
-      console.error("Error details:", error);
       throw error;
     }
   };
@@ -263,10 +254,15 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
             ?.columns.find(col => col.id === columnId);
           
           if (currentColumn) {
-            const imageMarkdown = `![Uploaded Image](${imagePath})\n\n`;
-            updateColumn(rowId, columnId, { 
-              content: currentColumn.content + imageMarkdown 
-            });
+            // Extract filename from path for alt text
+            const filename = imagePath.split('/').pop()?.split('.')[0] || 'image';
+            const imageMarkdown = `![${filename}](${imagePath})`;
+            
+            // Add image at end of content with proper spacing
+            const newContent = currentColumn.content 
+              ? currentColumn.content + '\n\n' + imageMarkdown 
+              : imageMarkdown;
+            updateColumn(rowId, columnId, { content: newContent });
           }
         })
         .catch((error: any) => {
@@ -643,10 +639,10 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
                         </div>
                       )}
 
-                      <Textarea
+                      <RichTextEditor
                         value={column.content}
-                        onChange={(e) => updateColumn(row.id, column.id, { content: e.target.value })}
-                        className="min-h-[200px] bg-gray-900 border-gray-600 text-white resize-vertical"
+                        onChange={(content) => updateColumn(row.id, column.id, { content })}
+                        className="mt-2"
                         placeholder="Enter content (Markdown supported)..."
                       />
                     </div>
