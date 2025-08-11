@@ -505,19 +505,35 @@ export class DatabaseStorage implements IStorage {
     userCount: number;
     activeSubscriptions: number;
   }> {
-    const [stats] = await db.select({
-      packageCount: sql<number>`(SELECT COUNT(*) FROM ${packages})`,
-      productCount: sql<number>`(SELECT COUNT(*) FROM ${products})`,
-      userCount: sql<number>`(SELECT COUNT(*) FROM ${users})`,
-      activeSubscriptions: sql<number>`(SELECT COUNT(*) FROM ${userSubscriptions} WHERE status = 'active')`
-    }).from(packages).limit(1);
+    try {
+      const [stats] = await db.select({
+        packageCount: sql<number>`(SELECT COUNT(*) FROM ${packages})`,
+        productCount: sql<number>`(SELECT COUNT(*) FROM ${products})`,
+        userCount: sql<number>`(SELECT COUNT(*) FROM ${users})`,
+        activeSubscriptions: sql<number>`(SELECT COUNT(*) FROM ${userSubscriptions} WHERE status = 'active')`
+      }).from(packages).limit(1);
 
-    return {
-      packageCount: Number(stats.packageCount),
-      productCount: Number(stats.productCount), 
-      userCount: Number(stats.userCount),
-      activeSubscriptions: Number(stats.activeSubscriptions)
-    };
+      return {
+        packageCount: Number(stats.packageCount),
+        productCount: Number(stats.productCount), 
+        userCount: Number(stats.userCount),
+        activeSubscriptions: Number(stats.activeSubscriptions)
+      };
+    } catch (error) {
+      // Fallback to basic counts without complex joins
+      console.error("Error with full stats query, using fallback:", error);
+      
+      const [packageCount] = await db.select({ count: sql<number>`count(*)` }).from(packages);
+      const [productCount] = await db.select({ count: sql<number>`count(*)` }).from(products);
+      const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
+      
+      return {
+        packageCount: Number(packageCount.count),
+        productCount: Number(productCount.count),
+        userCount: Number(userCount.count),
+        activeSubscriptions: 0
+      };
+    }
   }
 }
 

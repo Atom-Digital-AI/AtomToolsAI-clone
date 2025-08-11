@@ -13,6 +13,11 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch admin overview data
+  const { data: stats } = useQuery({
+    queryKey: ["/api/admin/stats"],
+    retry: false,
+  });
+
   const { data: packages } = useQuery({
     queryKey: ["/api/admin/packages"],
     retry: false,
@@ -85,7 +90,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-packages">
-                    {packages?.length || 0}
+                    {stats?.packageCount || packages?.length || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Product categories available
@@ -100,7 +105,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-products">
-                    {products?.length || 0}
+                    {stats?.productCount || products?.length || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Active tools and services
@@ -115,7 +120,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-users">
-                    {users?.length || 0}
+                    {stats?.userCount || users?.length || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Registered users
