@@ -281,25 +281,54 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {products.map((product) => (
-                  <div key={product.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={selectedProducts.includes(product.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedProducts([...selectedProducts, product.id]);
-                        } else {
-                          setSelectedProducts(selectedProducts.filter(id => id !== product.id));
-                        }
-                        form.setValue('productIds', selectedProducts);
-                      }}
-                      data-testid={`checkbox-product-${product.id}`}
-                    />
-                    <Label className="text-gray-300 text-sm">{product.name}</Label>
+              {products.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                  <p className="text-gray-400 mb-2">No products available</p>
+                  <p className="text-gray-500 text-sm">Create products first before assigning them to packages</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <p className="text-gray-400 text-sm">
+                      Select which products should be included in this package:
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products.map((product) => (
+                      <div key={product.id} className="flex items-center space-x-2 p-3 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors">
+                        <Checkbox
+                          checked={selectedProducts.includes(product.id)}
+                          onCheckedChange={(checked) => {
+                            let newSelectedProducts;
+                            if (checked) {
+                              newSelectedProducts = [...selectedProducts, product.id];
+                            } else {
+                              newSelectedProducts = selectedProducts.filter(id => id !== product.id);
+                            }
+                            setSelectedProducts(newSelectedProducts);
+                            form.setValue('productIds', newSelectedProducts);
+                          }}
+                          data-testid={`checkbox-product-${product.id}`}
+                        />
+                        <div className="flex-1">
+                          <Label className="text-gray-300 text-sm font-medium cursor-pointer">{product.name}</Label>
+                          {product.description && (
+                            <p className="text-gray-400 text-xs mt-1 line-clamp-2">{product.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedProducts.length > 0 && (
+                    <div className="mt-4 p-3 bg-indigo-900/20 border border-indigo-800 rounded-lg">
+                      <p className="text-indigo-300 text-sm">
+                        Selected products: {selectedProducts.length}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
