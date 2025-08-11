@@ -115,7 +115,7 @@ export default function MyTools() {
                     <CardDescription>{product.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Link href={`/app/tools/${product.routePath}`}>
+                    <Link href={product.routePath}>
                       <Button className="w-full gap-2" data-testid={`access-${product.id}`}>
                         Access Tool
                         <ArrowRight className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function MyTools() {
                 </CardHeader>
                 <CardContent>
                   {product.isSubscribed ? (
-                    <Link href={`/app/tools/${product.routePath}`}>
+                    <Link href={product.routePath}>
                       <Button className="w-full gap-2" data-testid={`access-${product.id}`}>
                         Access Tool
                         <ArrowRight className="w-4 h-4" />
