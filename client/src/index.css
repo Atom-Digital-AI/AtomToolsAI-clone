@@ -73,21 +73,53 @@
 }
 
 @layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-in-out;
+  /* Custom animations for video background */
+  @keyframes drift {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(20px) translateY(-10px); }
+    50% { transform: translateX(-10px) translateY(20px); }
+    75% { transform: translateX(30px) translateY(-5px); }
   }
-
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
+    50% { transform: translateY(-20px) rotate(2deg); opacity: 1; }
+  }
+  
+  @keyframes glow {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+    100% { transform: scale(1.1) rotate(1deg); opacity: 0.9; }
+  }
+  
+  /* Enhanced slide animations */
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
   .animate-slide-up {
-    animation: slideUp 0.5s ease-out;
+    animation: slide-up 0.8s ease-out forwards;
   }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+  
+  .animate-fade-in {
+    animation: fade-in 1s ease-out 0.3s forwards;
+    opacity: 0;
   }
 }

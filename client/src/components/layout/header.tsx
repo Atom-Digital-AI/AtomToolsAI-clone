@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -137,6 +137,18 @@ export default function Header() {
                     <span>Account</span>
                   </Button>
                 </Link>
+                {user?.isAdmin && (
+                  <Link href="/admin">
+                    <Button 
+                      variant="ghost" 
+                      className="text-orange-400 hover:text-orange-300 flex items-center space-x-2"
+                      data-testid="admin-button"
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>Admin</span>
+                    </Button>
+                  </Link>
+                )}
                 <Button 
                   variant="ghost" 
                   className="text-text-secondary hover:text-text-primary flex items-center space-x-2"

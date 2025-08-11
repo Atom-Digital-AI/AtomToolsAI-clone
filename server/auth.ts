@@ -3,6 +3,7 @@ import connectPgSimple from "connect-pg-simple";
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { pool } from "./db";
+import bcrypt from "bcryptjs";
 
 declare module "express-session" {
   interface SessionData {
@@ -44,6 +45,22 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       return res.status(401).json({ message: "Unauthorized - User not found" });
     }
 
+    // Check if email is verified for protected routes
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ 
+        message: "Email verification required",
+        requiresVerification: true 
+      });
+    }
+
+    // Check if profile is complete (first name, last name, company name)
+    if (!user.isProfileComplete || !user.firstName || !user.lastName || !user.companyName) {
+      return res.status(403).json({ 
+        message: "Profile completion required",
+        requiresProfileCompletion: true 
+      });
+    }
+
     (req as any).user = user;
     next();
   } catch (error) {
@@ -54,8 +71,20 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
 export const authenticateUser = async (email: string, password: string) => {
   const user = await storage.getUserByEmail(email);
-  if (!user || user.password !== password) {
+  if (!user) {
     return null;
   }
+  
+  // Check if user has a password (OAuth users might not have passwords)
+  if (!user.password) {
+    return null;
+  }
+  
+  // Compare the provided password with the hashed password
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return null;
+  }
+  
   return user;
 };

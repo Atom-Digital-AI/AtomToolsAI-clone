@@ -16,7 +16,7 @@ export function AccessGuard({
   productId, 
   productName, 
   children, 
-  fallbackRoute = "/app/subscriptions" 
+  fallbackRoute = "/app/my-tools" 
 }: AccessGuardProps) {
   const { hasAccess, isLoading, error } = useProductAccess(productId);
   const { toast } = useToast();

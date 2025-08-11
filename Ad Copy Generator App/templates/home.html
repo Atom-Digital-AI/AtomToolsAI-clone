@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Digital Marketing Tools</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, sans-serif;
+        line-height: 1.6;
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #f5f5f5;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 600px;
+        text-align: center;
+      }
+
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+      }
+
+      .tools-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .tool-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .tool-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      .tool-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #3498db;
+      }
+
+      .tool-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+      }
+
+      .tool-description {
+        font-size: 0.9rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Digital Marketing Tools</h1>
+
+      <div class="tools-container">
+        <a href="{{ url_for('ad_copy.index') }}" class="tool-card">
+          <div class="tool-icon">📝</div>
+          <div class="tool-title">Ad Copy Generator</div>
+          <div class="tool-description">
+            Generate optimized ad copy for Google Ads campaigns
+          </div>
+        </a>
+
+        <a href="{{ url_for('keyword_research.index') }}" class="tool-card">
+          <div class="tool-icon">🔍</div>
+          <div class="tool-title">Keyword Research</div>
+          <div class="tool-description">
+            Analyze URLs and discover relevant keywords
+          </div>
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,179 @@
+import { MailService } from '@sendgrid/mail';
+
+// Email configuration using SendGrid
+const mailService = new MailService();
+
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+  console.warn('SENDGRID_API_KEY not found. Email sending will fail.');
+}
+
+export async function sendVerificationEmail(
+  email: string, 
+  verificationToken: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.error('SENDGRID_API_KEY not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
+  
+  // Get the base URL from environment or default to localhost
+  const baseUrl = process.env.REPLIT_DOMAIN 
+    ? `https://${process.env.REPLIT_DOMAIN}`
+    : 'http://localhost:5000';
+  
+  const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
+  
+  const emailData = {
+    to: email,
+    from: {
+      email: 'noreply@atomtools.ai',
+      name: 'atomtools.ai'
+    },
+    subject: 'Verify your atomtools.ai account',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email - atomtools.ai</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: #f8fafc;
+            }
+            .container {
+              background-color: #ffffff;
+              border-radius: 8px;
+              padding: 40px;
+              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #6366f1;
+              margin-bottom: 10px;
+            }
+            .title {
+              font-size: 24px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 20px;
+            }
+            .button {
+              display: inline-block;
+              background-color: #6366f1;
+              color: white;
+              padding: 16px 32px;
+              text-decoration: none;
+              border-radius: 6px;
+              font-weight: 600;
+              margin: 20px 0;
+              text-align: center;
+            }
+            .button:hover {
+              background-color: #5855eb;
+            }
+            .text {
+              color: #6b7280;
+              margin-bottom: 20px;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #e5e7eb;
+              text-align: center;
+              color: #9ca3af;
+              font-size: 14px;
+            }
+            .security-note {
+              background-color: #f3f4f6;
+              padding: 16px;
+              border-radius: 6px;
+              margin: 20px 0;
+              font-size: 14px;
+              color: #6b7280;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">atomtools.ai</div>
+              <h1 class="title">Verify Your Email Address</h1>
+            </div>
+            
+            <p class="text">
+              Thank you for signing up for atomtools.ai! To complete your account setup and start using our AI-powered marketing tools, please verify your email address.
+            </p>
+            
+            <div style="text-align: center;">
+              <a href="${verificationUrl}" class="button">Verify Email Address</a>
+            </div>
+            
+            <p class="text">
+              If the button above doesn't work, you can also copy and paste this link into your browser:
+            </p>
+            
+            <p style="word-break: break-all; background-color: #f3f4f6; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 14px;">
+              ${verificationUrl}
+            </p>
+            
+            <div class="security-note">
+              <strong>Security Notice:</strong> This verification link will expire for security reasons. If you didn't create an account with atomtools.ai, you can safely ignore this email.
+            </div>
+            
+            <div class="footer">
+              <p>
+                This email was sent to ${email}.<br>
+                If you have any questions, contact our support team.
+              </p>
+              <p>
+                © 2025 atomtools.ai. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+    text: `
+      Welcome to atomtools.ai!
+      
+      Thank you for signing up. To complete your account setup and start using our AI-powered marketing tools, please verify your email address by clicking the link below:
+      
+      ${verificationUrl}
+      
+      If the link doesn't work, copy and paste it into your browser.
+      
+      This verification link will expire for security reasons. If you didn't create an account with atomtools.ai, you can safely ignore this email.
+      
+      Best regards,
+      The atomtools.ai Team
+      
+      ---
+      This email was sent to ${email}.
+      © 2025 atomtools.ai. All rights reserved.
+    `,
+  };
+
+  try {
+    const [response] = await mailService.send(emailData);
+    console.log('Verification email sent successfully:', response.headers['x-message-id']);
+    
+    return { success: true, messageId: response.headers['x-message-id'] };
+  } catch (error) {
+    console.error('Failed to send verification email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}

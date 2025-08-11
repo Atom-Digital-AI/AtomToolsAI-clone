@@ -14,7 +14,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Eye, EyeOff } from "lucide-react";
 
 const signUpSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string()
+    .email("Please enter a valid email address")
+    .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Please enter a valid email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
@@ -53,13 +55,22 @@ export default function SignUp() {
       
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Account created!",
-        description: "Welcome to atomtools.ai. You can now start using our tools.",
-      });
-      // Redirect to dashboard
-      window.location.href = "/app";
+    onSuccess: (data) => {
+      if (data.requiresVerification) {
+        toast({
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
+        });
+        // Redirect to verification page
+        window.location.href = `/email-verification-sent?email=${encodeURIComponent(form.getValues('email'))}`;
+      } else {
+        toast({
+          title: "Account created!",
+          description: "Welcome to atomtools.ai. You can now start using our tools.",
+        });
+        // Redirect to dashboard
+        window.location.href = "/app";
+      }
     },
     onError: (error) => {
       toast({
@@ -197,6 +208,24 @@ export default function SignUp() {
                       </FormControl>
                       <FormMessage />
                       
+                      {/* Password requirements */}
+                      <div className="mt-2">
+                        <p className="text-xs text-text-secondary">
+                          Password must be at least 8 characters and contain:
+                        </p>
+                        <ul className="text-xs text-text-secondary mt-1 space-y-0.5">
+                          <li className={password && /[a-z]/.test(password) ? "text-success" : ""}>
+                            • At least one lowercase letter
+                          </li>
+                          <li className={password && /[A-Z]/.test(password) ? "text-success" : ""}>
+                            • At least one uppercase letter
+                          </li>
+                          <li className={password && /\d/.test(password) ? "text-success" : ""}>
+                            • At least one number
+                          </li>
+                        </ul>
+                      </div>
+                      
                       {/* Password strength indicator */}
                       {password && (
                         <div className="mt-2">
@@ -232,16 +261,12 @@ export default function SignUp() {
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm text-text-secondary cursor-pointer">
                           I agree to the{" "}
-                          <Link href="/terms">
-                            <a className="text-accent hover:text-accent-2 underline">
-                              Terms of Service
-                            </a>
+                          <Link href="/terms" className="text-accent hover:text-accent-2 underline">
+                            Terms of Service
                           </Link>{" "}
                           and{" "}
-                          <Link href="/privacy">
-                            <a className="text-accent hover:text-accent-2 underline">
-                              Privacy Policy
-                            </a>
+                          <Link href="/privacy" className="text-accent hover:text-accent-2 underline">
+                            Privacy Policy
                           </Link>
                         </FormLabel>
                         <FormMessage />
@@ -261,10 +286,8 @@ export default function SignUp() {
                 
                 <p className="text-center text-sm text-text-secondary">
                   Already have an account?{" "}
-                  <Link href="/sign-in">
-                    <a className="text-accent hover:text-accent-2 underline" data-testid="sign-in-link">
-                      Sign in
-                    </a>
+                  <Link href="/sign-in" className="text-accent hover:text-accent-2 underline" data-testid="sign-in-link">
+                    Sign in
                   </Link>
                 </p>
               </form>

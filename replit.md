@@ -1,98 +1,94 @@
 # atomtools.ai
 
 ## Overview
-
-This is a dark-mode marketing website and comprehensive subscription-based application for atomtools.ai, a platform selling digital marketing and automation tools. The application features a complete subscription system with product access control, allowing users to subscribe to different marketing tools and restricting access based on active subscriptions. Built as a full-stack web application with React frontend, Express backend, and PostgreSQL database, it includes modern UI/UX with focus on marketing automation including connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses.
-
-## Recent Changes (August 2025)
-
-- **Session Authentication Fixed**: Resolved session cookie naming mismatch between frontend ("atomtools.sid") and backend ("connect.sid") that was causing authentication failures across the application.
-- **Navigation Issues Resolved**: Fixed My Tools → Access Tool → My Tools navigation loop by correcting product route paths from marketing pages (/tools/) to app tool pages (/app/tools/).
-- **Subscription Management**: Enhanced account page with full subscription management functionality, allowing users to view active subscriptions and available products.
-- **Database Schema Updates**: Updated product route paths to point to authenticated app tools rather than public marketing pages for proper access control.
-- **Facebook Ads Connector Repositioning**: Updated Facebook Ads Looker Studio Connector from software service to educational guide (£499 one-time fee) emphasizing no monthly subscriptions, no data storage costs, and full user control versus black box middleware.
+atomtools.ai is a platform offering digital marketing and automation tools through a subscription-based web application. It features a dark-mode marketing website and a comprehensive application with a full subscription system, enabling restricted access to tools based on active subscriptions. The platform aims to provide connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses, focusing on marketing automation.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript using Vite as the build tool
-- **Routing**: Wouter for lightweight client-side routing
-- **UI Library**: Shadcn/ui components with Radix UI primitives for accessibility
-- **Styling**: Tailwind CSS with custom dark-mode design tokens matching the atomtools.ai brand
-- **State Management**: React Query for server state management
-- **Forms**: React Hook Form with Zod validation for type-safe form handling
-- **Typography**: Inter for UI text, Space Grotesk for headlines via Google Fonts
+- **Framework**: React 18 with TypeScript, using Vite.
+- **Routing**: Wouter.
+- **UI Library**: Shadcn/ui components with Radix UI primitives.
+- **Styling**: Tailwind CSS with custom dark-mode design tokens.
+- **State Management**: React Query.
+- **Forms**: React Hook Form with Zod validation.
+- **Typography**: Inter (UI text), Space Grotesk (headlines).
 
 ### Backend Architecture
-- **Runtime**: Node.js with Express.js server
-- **Database ORM**: Drizzle ORM with PostgreSQL dialect
-- **Database Provider**: Neon Database (serverless PostgreSQL)
-- **API Structure**: RESTful endpoints under `/api` prefix
-- **Session Storage**: PostgreSQL-based session storage using connect-pg-simple
-- **Development**: Hot module replacement via Vite integration in development mode
+- **Runtime**: Node.js with Express.js.
+- **Database ORM**: Drizzle ORM with PostgreSQL dialect.
+- **Database Provider**: Neon Database (serverless PostgreSQL).
+- **API Structure**: RESTful endpoints under `/api`.
+- **Session Storage**: PostgreSQL-based session storage using connect-pg-simple.
 
 ### Database Schema
-The application uses PostgreSQL with a comprehensive subscription system:
-- **Users**: Stores user accounts with username, email, password, and timestamps
-- **Products**: Stores available tools with name, description, price, route path, and active status
-- **User Subscriptions**: Junction table managing user-product relationships with subscription status
-- **Contacts**: Stores contact form submissions with name, email, message, and timestamps
-- **Sessions**: Stores user session data for authentication persistence
-- **Schema Management**: Drizzle Kit for migrations with TypeScript schema definitions and relations
+A PostgreSQL database with a pure tier-based subscription system:
+- **Users**: User accounts, Google OAuth integration (stores google_id, profile_image_url).
+- **Products**: Available marketing tools (optimized: removed redundant package_id column).
+- **User Tier Subscriptions**: Pure tier-based subscription system with usage tracking and limits management.
+- **Contacts**: Contact form submissions.
+- **Sessions**: User session data.
+- **Guideline Profiles**: Stores saved brand and regulatory guideline profiles for tools.
+- **Packages, Tiers, Tier Prices, Tier Limits, Package Products**: Comprehensive tier-based package system supporting flexible pricing, product assignment, and usage limits (e.g., quantity restrictions, periodicity, subfeature toggles).
+- **Schema Management**: Drizzle Kit for migrations.
+- **Database Optimization**: Removed redundant constraints, unused columns, and legacy individual subscription handling (August 2025).
 
 ### Authentication & Security
-- **User Registration**: Basic username/email/password signup with validation
-- **Session Management**: Server-side sessions stored in PostgreSQL
-- **Input Validation**: Zod schemas for both client and server-side validation
-- **CORS**: Configured for cross-origin requests in development
+- **Authentication**: Google OAuth 2.0 and traditional email/password signup.
+- **Session Management**: Server-side sessions in PostgreSQL.
+- **Input Validation**: Zod schemas for client and server-side validation.
 
 ### UI/UX Design System
-- **Color Scheme**: Custom dark-mode palette with electric indigo accent (#6366F1)
-- **Accessibility**: WCAG 2.2 AA compliant components with proper ARIA labels
-- **Responsive Design**: Mobile-first approach with breakpoint-based layouts
-- **Typography Scale**: Tailwind's default spacing with custom font stacks
-- **Component Architecture**: Atomic design with reusable UI primitives
+- **Color Scheme**: Custom dark-mode palette with electric indigo accent (#6366F1).
+- **Accessibility**: WCAG 2.2 AA compliant components.
+- **Responsive Design**: Mobile-first approach.
+- **Component Architecture**: Atomic design principles.
+- **Admin Panel**: Comprehensive admin dashboard for managing packages, products, and users with full CRUD operations.
 
-### Performance Optimizations
-- **Code Splitting**: Vite-based bundling with tree shaking
-- **Pricing Model**: Free to start, pay-once-own-forever for individual tools
-- **No Google Analytics**: Uses privacy-focused analytics only
-- **Font Loading**: Preconnected Google Fonts with fallback stacks
-- **Image Optimization**: Lazy loading and responsive images
-- **SEO**: Meta tags, structured data (JSON-LD), and semantic HTML
+### Key Features and Technical Implementations
+- **Marketing Tools**: Includes Ad Copy Generators (Google Ads, SEO Meta) mirroring original Python logic (prompts, OpenAI model, temperature, language detection).
+- **Compliance Guidelines Support**: Optional brand and regulatory guidelines input in AI prompts with pre-output review.
+- **Saved Guideline Profiles**: Users can save and reuse brand/regulatory guideline profiles across tools.
+- **Pure Tier-Based System**: Complete tier-based package subscription system (Free, Pro, Enterprise) with individual pricing and granular product usage limits, including subfeature controls (bulk processing, variations, brand guidelines).
+- **No Individual Subscriptions**: System completely moved away from individual product subscriptions - users only subscribe to package tiers which grant access to multiple products with usage limits and tracking.
+- **Tier Reordering**: Admin interface includes drag-and-drop style tier reordering with persistent sort order stored in database.
+- **Legacy Code Removal**: All individual subscription buttons and deprecated handling completely removed (August 2025).
+- **Performance Optimizations**: Code splitting, tree shaking, privacy-focused analytics, font loading optimization, image optimization, and SEO.
 
 ## External Dependencies
 
 ### Database Services
-- **Neon Database**: Serverless PostgreSQL hosting with connection pooling
-- **Drizzle ORM**: Type-safe database queries and schema management
+- **Neon Database**: Serverless PostgreSQL hosting.
+- **Drizzle ORM**: Type-safe database queries and schema management.
+
+### AI/API Services
+- **OpenAI API**: For content generation in tools (e.g., gpt-4o-mini).
+- **Google OAuth 2.0**: For user authentication.
 
 ### UI & Styling
-- **Tailwind CSS**: Utility-first CSS framework
-- **Radix UI**: Headless UI primitives for accessibility
-- **Lucide React**: Icon library for consistent iconography
-- **Google Fonts**: Web font delivery for Inter and Space Grotesk
+- **Tailwind CSS**: Utility-first CSS framework.
+- **Radix UI**: Headless UI primitives.
+- **Lucide React**: Icon library.
+- **Google Fonts**: Web font delivery.
 
 ### Development Tools
-- **Vite**: Build tool and development server
-- **TypeScript**: Type checking and enhanced developer experience
-- **ESBuild**: Fast JavaScript bundler for production builds
-- **TSX**: TypeScript execution for development server
+- **Vite**: Build tool and development server.
+- **TypeScript**: Type checking.
+- **ESBuild**: Fast JavaScript bundler.
+- **TSX**: TypeScript execution for development server.
 
 ### Form & Validation
-- **React Hook Form**: Form state management and validation
-- **Zod**: Schema validation for type safety
-- **Hookform Resolvers**: Integration between React Hook Form and Zod
+- **React Hook Form**: Form state management and validation.
+- **Zod**: Schema validation.
+- **Hookform Resolvers**: Integration between React Hook Form and Zod.
 
 ### Utility Libraries
-- **Date-fns**: Date manipulation and formatting
-- **Class Variance Authority**: Utility for creating variant-based component APIs
-- **CLSX & Tailwind Merge**: Conditional class name composition
+- **Date-fns**: Date manipulation.
+- **Class Variance Authority**: For variant-based component APIs.
+- **CLSX & Tailwind Merge**: Conditional class name composition.
 
-### Development & Replit Integration
-- **Replit Vite Plugins**: Runtime error overlay and cartographer for Replit-specific features
-- **Connect-PG-Simple**: PostgreSQL session store for Express sessions
+### Session Management
+- **Connect-PG-Simple**: PostgreSQL session store for Express sessions.
