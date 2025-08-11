@@ -64,7 +64,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
   );
 
   const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ['/api/admin/products'],
+    queryKey: ['/api/product-admin/products'],
   });
 
   const form = useForm<PackageFormData>({
@@ -125,7 +125,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
           tiers: data.tiers,
         });
       } else {
-        return apiRequest('POST', '/api/admin/packages/with-tiers', {
+        return apiRequest('POST', '/api/product-admin/packages/with-tiers', {
           package: packagePayload,
           productIds: data.productIds,
           tiers: data.tiers,
@@ -137,7 +137,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
         title: 'Success',
         description: `Package ${packageData ? 'updated' : 'created'} successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/packages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/product-admin/packages'] });
       onSuccess();
     },
     onError: (error: Error) => {

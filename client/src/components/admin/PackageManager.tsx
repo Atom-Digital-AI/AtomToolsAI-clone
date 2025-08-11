@@ -36,16 +36,16 @@ export function PackageManager() {
   });
 
   const { data: packages, isLoading } = useQuery({
-    queryKey: ["/api/admin/packages"],
+    queryKey: ["/api/product-admin/packages"],
     retry: false,
   });
 
   const createMutation = useMutation({
     mutationFn: async (packageData: typeof formData) => {
-      return await apiRequest("POST", "/api/admin/packages", packageData);
+      return await apiRequest("POST", "/api/product-admin/packages", packageData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/packages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/product-admin/packages"] });
       toast({
         title: "Success",
         description: "Package created successfully",
@@ -64,10 +64,10 @@ export function PackageManager() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & typeof formData) => {
-      return await apiRequest("PUT", `/api/admin/packages/${id}`, data);
+      return await apiRequest("PUT", `/api/product-admin/packages/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/packages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/product-admin/packages"] });
       toast({
         title: "Success",
         description: "Package updated successfully",
@@ -86,10 +86,10 @@ export function PackageManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/admin/packages/${id}`);
+      return await apiRequest("DELETE", `/api/product-admin/packages/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/packages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/product-admin/packages"] });
       toast({
         title: "Success",
         description: "Package deleted successfully",
