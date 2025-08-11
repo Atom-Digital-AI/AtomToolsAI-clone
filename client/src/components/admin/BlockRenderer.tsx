@@ -24,24 +24,23 @@ export function BlockRenderer({ content }: BlockRendererProps) {
   }
 
   const getColumnClass = (column: BlockColumn) => {
-    const widthClass = `col-span-${column.width}`;
     const paddingClass = column.padding || "";
     const marginClass = column.margin || "";
     const alignClass = column.alignItems ? `items-${column.alignItems}` : "";
     const justifyClass = column.justifyContent ? `justify-${column.justifyContent}` : "";
     
-    return `${widthClass} ${paddingClass} ${marginClass} ${alignClass} ${justifyClass} flex flex-col`.trim();
+    return `${paddingClass} ${marginClass} ${alignClass} ${justifyClass} flex flex-col min-w-0`.trim();
   };
 
   const getRowClass = (row: BlockRow) => {
     const paddingClass = row.padding || "";
     const marginClass = row.margin || "";
-    const gapClass = row.gap || "";
+    const gapClass = row.gap || "gap-6";
     const alignClass = row.alignItems ? `items-${row.alignItems}` : "";
     const justifyClass = row.justifyContent ? `justify-${row.justifyContent}` : "";
     const minHeightClass = row.minHeight || "";
     
-    return `grid grid-cols-12 ${gapClass} ${paddingClass} ${marginClass} ${alignClass} ${justifyClass} ${minHeightClass}`.trim();
+    return `${gapClass} ${paddingClass} ${marginClass} ${alignClass} ${justifyClass} ${minHeightClass}`.trim();
   };
 
   if (blocks.length === 0) {
@@ -57,10 +56,11 @@ export function BlockRenderer({ content }: BlockRendererProps) {
       {blocks.map((row) => (
         <div
           key={row.id}
-          className={getRowClass(row)}
+          className={`grid ${getRowClass(row)}`}
           style={{
             backgroundColor: row.backgroundColor,
-            minHeight: row.minHeight
+            minHeight: row.minHeight,
+            gridTemplateColumns: `repeat(${row.columns.length}, 1fr)`
           }}
         >
           {row.columns.map((column) => (
@@ -118,6 +118,15 @@ export function BlockRenderer({ content }: BlockRendererProps) {
                       >
                         {children}
                       </a>
+                    ),
+                    img: ({ src, alt, ...props }) => (
+                      <img 
+                        src={src} 
+                        alt={alt || ''}
+                        className="max-w-full h-auto rounded-lg my-4" 
+                        loading="lazy"
+                        {...props}
+                      />
                     ),
                     code: ({ children, ...props }) => (
                       <code className="bg-gray-800 text-indigo-300 px-2 py-1 rounded text-sm font-mono" {...props}>
