@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, Eye, Globe, Search, Image as ImageIcon, FileText, Twitter } from "lucide-react";
 import { insertCmsPageSchema, type CmsPage } from "@shared/schema";
 import { z } from "zod";
+import { BlockEditor } from "./BlockEditor";
 
 const editorSchema = insertCmsPageSchema.extend({
   metaTitle: z.string().optional(),
@@ -364,24 +365,7 @@ export function CmsPageEditor({ page, onSave, onCancel }: CmsPageEditorProps) {
               />
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-gray-300">Content</FormLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {toolbarButtons.map((button, index) => (
-                      <Button
-                        key={index}
-                        type="button"
-                        onClick={button.action}
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs px-2 py-1 h-7 text-gray-400 hover:text-white hover:bg-gray-700"
-                        title={button.label}
-                      >
-                        {button.icon}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+                <FormLabel className="text-gray-300">Content Builder</FormLabel>
 
                 <FormField
                   control={form.control}
@@ -389,12 +373,9 @@ export function CmsPageEditor({ page, onSave, onCancel }: CmsPageEditorProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Textarea
-                          {...field}
-                          ref={contentRef}
-                          className="bg-gray-700 border-gray-600 text-white min-h-[400px] font-mono text-sm"
-                          placeholder="Write your content here. You can use Markdown syntax."
-                          data-testid="textarea-content"
+                        <BlockEditor 
+                          content={field.value} 
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />

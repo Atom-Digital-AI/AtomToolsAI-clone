@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Tag } from "lucide-react";
 import type { CmsPage } from "@shared/schema";
 import ReactMarkdown from "react-markdown";
+import { BlockRenderer } from "@/components/admin/BlockRenderer";
 
 interface CmsPageDisplayProps {
   slug: string;
@@ -186,70 +187,8 @@ function CmsPageDisplay({ slug }: CmsPageDisplayProps) {
         {/* Page Content */}
         <main className="px-4 md:px-0">
           <Card className="bg-gray-900 border-gray-800 max-w-4xl mx-auto">
-            <CardContent className="p-6 md:p-8">
-              <div className="prose prose-invert prose-lg max-w-none">
-                <ReactMarkdown
-                  components={{
-                    h1: ({ children, ...props }) => (
-                      <h1 {...props} className="text-3xl font-bold mb-6 mt-8 first:mt-0 text-white">{children}</h1>
-                    ),
-                    h2: ({ children, ...props }) => (
-                      <h2 {...props} className="text-2xl font-semibold mb-4 mt-8 first:mt-0 text-white">{children}</h2>
-                    ),
-                    h3: ({ children, ...props }) => (
-                      <h3 {...props} className="text-xl font-semibold mb-3 mt-6 first:mt-0 text-white">{children}</h3>
-                    ),
-                    p: ({ children, ...props }) => (
-                      <p {...props} className="mb-4 text-gray-300 leading-relaxed">{children}</p>
-                    ),
-                    ul: ({ children, ...props }) => (
-                      <ul {...props} className="mb-4 pl-6 space-y-2 text-gray-300">{children}</ul>
-                    ),
-                    ol: ({ children, ...props }) => (
-                      <ol {...props} className="mb-4 pl-6 space-y-2 text-gray-300">{children}</ol>
-                    ),
-                    li: ({ children, ...props }) => (
-                      <li {...props} className="marker:text-indigo-400">{children}</li>
-                    ),
-                    blockquote: ({ children, ...props }) => (
-                      <blockquote {...props} className="border-l-4 border-indigo-600 pl-6 my-6 text-gray-300 italic">
-                        {children}
-                      </blockquote>
-                    ),
-                    code: ({ children, ...props }) => (
-                      <code {...props} className="bg-gray-800 px-2 py-1 rounded text-sm font-mono text-indigo-400">
-                        {children}
-                      </code>
-                    ),
-                    pre: ({ children, ...props }) => (
-                      <pre {...props} className="bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4">
-                        <code className="text-gray-300 text-sm font-mono">{children}</code>
-                      </pre>
-                    ),
-                    a: ({ children, href, ...props }) => (
-                      <a
-                        {...props}
-                        href={href}
-                        className="text-indigo-400 hover:text-indigo-300 underline"
-                        target={href?.startsWith('http') ? '_blank' : undefined}
-                        rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-                      >
-                        {children}
-                      </a>
-                    ),
-                    img: ({ src, alt, ...props }) => (
-                      <img
-                        {...props}
-                        src={src}
-                        alt={alt}
-                        className="rounded-lg max-w-full h-auto mb-4"
-                      />
-                    ),
-                  }}
-                >
-                  {page.content}
-                </ReactMarkdown>
-              </div>
+            <CardContent className="p-0">
+              <BlockRenderer content={page.content} />
             </CardContent>
           </Card>
         </main>
