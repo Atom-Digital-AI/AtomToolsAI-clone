@@ -109,7 +109,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
 
   const createPackageMutation = useMutation({
     mutationFn: async (data: PackageFormData) => {
-      const packageData = {
+      const packagePayload = {
         name: data.name,
         description: data.description,
         category: data.category,
@@ -118,10 +118,10 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       };
 
       if (packageData) {
-        return apiRequest('PUT', `/api/admin/packages/${packageData?.id}`, packageData);
+        return apiRequest('PUT', `/api/admin/packages/${packageData.id}`, packagePayload);
       } else {
         return apiRequest('POST', '/api/admin/packages/with-tiers', {
-          package: packageData,
+          package: packagePayload,
           productIds: data.productIds,
           tiers: data.tiers,
         });
