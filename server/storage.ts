@@ -25,7 +25,7 @@ import {
 } from "@shared/schema";
 import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, guidelineProfiles } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -449,7 +449,7 @@ export class DatabaseStorage implements IStorage {
     const tierIds = packageTiers.map(t => t.id);
     
     const tierPricesList = tierIds.length > 0 
-      ? await db.select().from(tierPrices).where(sql`${tierPrices.tierId} = ANY(${tierIds})`)
+      ? await db.select().from(tierPrices).where(inArray(tierPrices.tierId, tierIds))
       : [];
 
     const tierLimitsList = tierIds.length > 0
@@ -467,7 +467,7 @@ export class DatabaseStorage implements IStorage {
           })
           .from(tierLimits)
           .innerJoin(products, eq(tierLimits.productId, products.id))
-          .where(sql`${tierLimits.tierId} = ANY(${tierIds})`)
+          .where(inArray(tierLimits.tierId, tierIds))
       : [];
 
     const packageProductsList = await db
