@@ -562,10 +562,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Google OAuth placeholder endpoint
   app.get("/api/auth/google", (req, res) => {
-    // TODO: Implement Google OAuth flow
+    // TODO: Implement Google OAuth flow with proper OAuth2 provider setup
     res.status(501).json({
       success: false,
-      message: "Google OAuth not yet implemented",
+      message: "Google OAuth authentication is not yet implemented. Please use email/password signup instead.",
+      alternative: "Use the email and password form to create your account",
     });
   });
 
