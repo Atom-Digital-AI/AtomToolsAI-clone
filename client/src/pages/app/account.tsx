@@ -19,6 +19,21 @@ export default function Account() {
     retry: false,
   });
 
+  // Get user's tier subscriptions (new system)
+  const { data: tierSubscriptions, isLoading: tiersLoading } = useQuery({
+    queryKey: ["/api/user/tier-subscriptions"],
+    enabled: !!user,
+    retry: false,
+  });
+
+  // Get available packages for subscription
+  const { data: packages, isLoading: packagesLoading } = useQuery({
+    queryKey: ["/api/packages"],
+    enabled: !!user,
+    retry: false,
+  });
+
+  // Legacy products query for backward compatibility
   const { data: products, isLoading: productsLoading, error: productsError } = useQuery<ProductWithSubscriptionStatus[]>({
     queryKey: ["/api/products/with-status"],
     enabled: !!user,
@@ -168,7 +183,50 @@ export default function Account() {
     deleteAccountMutation.mutate(deletePassword);
   };
 
-  // Subscribe mutation
+  // Tier subscription mutations (new system)
+  const subscribeTierMutation = useMutation({
+    mutationFn: async (tierId: string) => {
+      return apiRequest("POST", "/api/tier-subscriptions", { tierId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/tier-subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
+      toast({
+        title: "Success",
+        description: "Successfully subscribed to tier package",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to subscribe",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const unsubscribeTierMutation = useMutation({
+    mutationFn: async (tierId: string) => {
+      return apiRequest("DELETE", `/api/tier-subscriptions/${tierId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/tier-subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
+      toast({
+        title: "Success",
+        description: "Successfully unsubscribed from tier package",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unsubscribe",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Legacy subscription mutations (backward compatibility)
   const subscribeMutation = useMutation({
     mutationFn: async (productId: string) => {
       return apiRequest("POST", "/api/subscriptions", { productId });
@@ -189,7 +247,6 @@ export default function Account() {
     }
   });
 
-  // Unsubscribe mutation
   const unsubscribeMutation = useMutation({
     mutationFn: async (productId: string) => {
       return apiRequest("DELETE", `/api/subscriptions/${productId}`);
@@ -310,49 +367,55 @@ export default function Account() {
             </CardContent>
           </Card>
 
-          {/* My Subscriptions */}
+          {/* My Subscriptions - Updated for Tier-Based System */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <CreditCard className="w-5 h-5" />
-                <span>My Subscriptions</span>
+                <span>My Package Subscriptions</span>
               </CardTitle>
               <CardDescription>
-                Manage your active subscriptions and discover new tools
+                Manage your active tier subscriptions and explore available packages
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Active Subscriptions */}
+                {/* Active Tier Subscriptions */}
                 <div>
-                  <h3 className="text-sm font-semibold text-text-secondary mb-3">Active Subscriptions</h3>
-                  {productsLoading ? (
+                  <h3 className="text-sm font-semibold text-text-secondary mb-3">Active Package Tiers</h3>
+                  {tiersLoading ? (
                     <div className="space-y-2">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-16 bg-surface animate-pulse rounded-lg" />
+                      {[1, 2].map((i) => (
+                        <div key={i} className="h-20 bg-surface animate-pulse rounded-lg" />
                       ))}
                     </div>
-                  ) : subscribedProducts.length > 0 ? (
-                    <div className="space-y-2">
-                      {subscribedProducts.map((product) => (
+                  ) : tierSubscriptions?.length > 0 ? (
+                    <div className="space-y-3">
+                      {tierSubscriptions.map((subscription: any) => (
                         <div
-                          key={product.id}
-                          className="flex items-center justify-between p-3 border border-border rounded-lg bg-surface"
+                          key={subscription.id}
+                          className="flex items-center justify-between p-4 border border-border rounded-lg bg-surface"
                         >
                           <div className="flex-1">
-                            <h4 className="font-medium text-text-primary">{product.name}</h4>
-                            <p className="text-sm text-text-secondary">{product.description}</p>
+                            <h4 className="font-medium text-text-primary">{subscription.tier?.name}</h4>
+                            <p className="text-sm text-text-secondary mb-1">{subscription.tier?.package?.name}</p>
+                            <div className="flex items-center space-x-2 text-xs text-text-secondary">
+                              <span>Subscribed: {new Date(subscription.subscribedAt).toLocaleDateString()}</span>
+                              {subscription.expiresAt && (
+                                <span>• Expires: {new Date(subscription.expiresAt).toLocaleDateString()}</span>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                              Active
+                              {subscription.isActive ? 'Active' : 'Inactive'}
                             </Badge>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => unsubscribeMutation.mutate(product.id)}
-                              disabled={unsubscribeMutation.isPending}
-                              data-testid={`unsubscribe-${product.id}`}
+                              onClick={() => unsubscribeTierMutation.mutate(subscription.tierId)}
+                              disabled={unsubscribeTierMutation.isPending}
+                              data-testid={`unsubscribe-tier-${subscription.tierId}`}
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -363,38 +426,46 @@ export default function Account() {
                   ) : (
                     <div className="text-center py-8 text-text-secondary">
                       <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No active subscriptions</p>
-                      <p className="text-sm">Subscribe to tools to get started</p>
+                      <p>No active tier subscriptions</p>
+                      <p className="text-sm">Subscribe to package tiers to access tools</p>
+                      <Link href="/pricing">
+                        <Button className="mt-3" data-testid="button-view-pricing">
+                          View Available Packages
+                        </Button>
+                      </Link>
                     </div>
                   )}
                 </div>
 
-                {/* Available Products */}
-                {availableProducts.length > 0 && (
+                {/* Legacy Individual Product Subscriptions (if any exist) */}
+                {subscribedProducts?.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Available Tools</h3>
+                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Legacy Individual Subscriptions</h3>
                     <div className="space-y-2">
-                      {availableProducts.map((product) => (
+                      {subscribedProducts.map((product) => (
                         <div
                           key={product.id}
-                          className="flex items-center justify-between p-3 border border-border rounded-lg"
+                          className="flex items-center justify-between p-3 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/10"
                         >
                           <div className="flex-1">
                             <h4 className="font-medium text-text-primary">{product.name}</h4>
                             <p className="text-sm text-text-secondary">{product.description}</p>
+                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                              ⚠️ Legacy subscription - consider upgrading to a package tier
+                            </p>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-primary">
-                              ${product.price}
-                            </span>
+                            <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+                              Legacy
+                            </Badge>
                             <Button
+                              variant="ghost"
                               size="sm"
-                              onClick={() => subscribeMutation.mutate(product.id)}
-                              disabled={subscribeMutation.isPending}
-                              data-testid={`subscribe-${product.id}`}
+                              onClick={() => unsubscribeMutation.mutate(product.id)}
+                              disabled={unsubscribeMutation.isPending}
+                              data-testid={`unsubscribe-legacy-${product.id}`}
                             >
-                              <Plus className="w-4 h-4 mr-1" />
-                              {subscribeMutation.isPending ? "Adding..." : "Subscribe"}
+                              <X className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>

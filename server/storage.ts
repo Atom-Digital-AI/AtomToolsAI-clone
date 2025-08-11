@@ -71,6 +71,7 @@ export interface IStorage {
   
   // Tier subscription operations
   getUserTierSubscriptions(userId: string): Promise<UserTierSubscription[]>;
+  getUserTierSubscriptionsWithDetails(userId: string): Promise<any[]>;
   isUserSubscribedToTier(userId: string, tierId: string): Promise<boolean>;
   getUserProductAccess(userId: string, productId: string): Promise<{ hasAccess: boolean; tierSubscription?: UserTierSubscription; tierLimit?: TierLimit }>;
   subscribeTierUser(subscription: InsertUserTierSubscription): Promise<UserTierSubscription>;
@@ -376,6 +377,36 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(userTierSubscriptions)
+      .where(and(eq(userTierSubscriptions.userId, userId), eq(userTierSubscriptions.isActive, true)));
+  }
+
+  async getUserTierSubscriptionsWithDetails(userId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: userTierSubscriptions.id,
+        userId: userTierSubscriptions.userId,
+        tierId: userTierSubscriptions.tierId,
+        subscribedAt: userTierSubscriptions.subscribedAt,
+        expiresAt: userTierSubscriptions.expiresAt,
+        isActive: userTierSubscriptions.isActive,
+        paymentReference: userTierSubscriptions.paymentReference,
+        currentUsage: userTierSubscriptions.currentUsage,
+        lastResetAt: userTierSubscriptions.lastResetAt,
+        tier: {
+          id: tiers.id,
+          name: tiers.name,
+          promotionalTag: tiers.promotionalTag,
+          package: {
+            id: packages.id,
+            name: packages.name,
+            description: packages.description,
+            category: packages.category,
+          }
+        }
+      })
+      .from(userTierSubscriptions)
+      .leftJoin(tiers, eq(userTierSubscriptions.tierId, tiers.id))
+      .leftJoin(packages, eq(tiers.packageId, packages.id))
       .where(and(eq(userTierSubscriptions.userId, userId), eq(userTierSubscriptions.isActive, true)));
   }
 

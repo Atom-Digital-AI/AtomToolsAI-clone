@@ -130,7 +130,7 @@ function DashboardContent() {
                 data-testid="manage-subscriptions-button"
                 onClick={() => window.location.href = "/app/account"}
               >
-                Manage Subscriptions
+                Manage Package Subscriptions
               </Button>
               <Button 
                 variant="outline"

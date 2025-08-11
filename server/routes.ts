@@ -344,6 +344,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user tier subscriptions with full details
+  app.get("/api/user/tier-subscriptions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const subscriptions = await storage.getUserTierSubscriptionsWithDetails(userId);
+      res.json(subscriptions);
+    } catch (error) {
+      console.error("Error fetching tier subscriptions:", error);
+      res.status(500).json({ message: "Failed to fetch tier subscriptions" });
+    }
+  });
+
   // Subscribe to tier
   app.post("/api/tier-subscriptions", requireAuth, async (req, res) => {
     try {
