@@ -3,6 +3,7 @@ import connectPgSimple from "connect-pg-simple";
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { pool } from "./db";
+import bcrypt from "bcryptjs";
 
 declare module "express-session" {
   interface SessionData {
@@ -62,8 +63,15 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
 export const authenticateUser = async (email: string, password: string) => {
   const user = await storage.getUserByEmail(email);
-  if (!user || user.password !== password) {
+  if (!user) {
     return null;
   }
+  
+  // Compare the provided password with the hashed password
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return null;
+  }
+  
   return user;
 };

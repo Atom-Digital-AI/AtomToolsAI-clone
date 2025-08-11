@@ -421,12 +421,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Hash the password before storing
+      const hashedPassword = await bcrypt.hash(userData.password, 12);
+      
       // Generate verification token
       const verificationToken = nanoid(32);
       
-      // Create new user with verification token
+      // Create new user with hashed password and verification token
       const user = await storage.createUser({
         ...userData,
+        password: hashedPassword,
         emailVerificationToken: verificationToken,
         isEmailVerified: false,
       });
