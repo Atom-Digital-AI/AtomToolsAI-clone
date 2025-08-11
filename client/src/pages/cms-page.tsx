@@ -184,9 +184,9 @@ function CmsPageDisplay({ slug }: CmsPageDisplayProps) {
         </header>
 
         {/* Page Content */}
-        <main>
-          <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="p-8">
+        <main className="px-4 md:px-0">
+          <Card className="bg-gray-900 border-gray-800 max-w-4xl mx-auto">
+            <CardContent className="p-6 md:p-8">
               <div className="prose prose-invert prose-lg max-w-none">
                 <ReactMarkdown
                   components={{

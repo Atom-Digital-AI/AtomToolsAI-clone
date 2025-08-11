@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Eye, FileText, Globe, Settings, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, FileText, Globe, Settings, Calendar, Download } from "lucide-react";
 import type { CmsPage } from "@shared/schema";
 import { CmsPageEditor } from "@/components/admin/CmsPageEditor";
 
@@ -36,6 +36,24 @@ export default function CmsManagement() {
     onError: (error: Error) => {
       toast({
         title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const migrationMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/cms/migrate-pages"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/pages"] });
+      toast({
+        title: "Success",
+        description: "Marketing pages have been migrated to CMS successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Migration Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -128,14 +146,29 @@ export default function CmsManagement() {
             Manage static pages, blog posts, and SEO metadata
           </p>
         </div>
-        <Button
-          onClick={handleCreateNew}
-          className="bg-indigo-600 hover:bg-indigo-700"
-          data-testid="button-create-page"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Page
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => migrationMutation.mutate()}
+            disabled={migrationMutation.isPending}
+            variant="outline"
+            data-testid="button-migrate-pages"
+          >
+            {migrationMutation.isPending ? (
+              <Calendar className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Migrate Marketing Pages
+          </Button>
+          <Button
+            onClick={handleCreateNew}
+            className="bg-indigo-600 hover:bg-indigo-700"
+            data-testid="button-create-page"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Page
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

@@ -21,6 +21,19 @@ const isAdmin = async (req: any, res: any, next: any) => {
 };
 
 export function registerCmsRoutes(app: Express) {
+  // Admin endpoint to migrate existing pages
+  app.post("/api/cms/migrate-pages", isAdmin, async (req, res) => {
+    try {
+      // Import the migration function
+      const { migrateExistingPages } = await import("./migrate-existing-pages");
+      await migrateExistingPages();
+      res.json({ message: "Migration completed successfully" });
+    } catch (error: any) {
+      console.error("Error migrating pages:", error);
+      res.status(500).json({ message: "Migration failed", error: error?.message || "Unknown error" });
+    }
+  });
+
   // Public endpoint to get published pages by slug
   app.get("/api/public/pages/:slug*", async (req, res) => {
     try {
