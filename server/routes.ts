@@ -131,8 +131,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         user: {
           id: user.id,
-          username: user.username,
           email: user.email,
+          firstName: user.firstName,
         },
       });
     } catch (error) {
@@ -241,8 +241,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const accountData = {
         user: {
           id: user?.id,
-          username: user?.username,
           email: user?.email,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
           createdAt: user?.createdAt,
         },
         subscriptions: subscriptions,

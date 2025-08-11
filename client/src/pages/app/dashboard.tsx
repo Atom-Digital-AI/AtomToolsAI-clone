@@ -66,7 +66,7 @@ function DashboardContent() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text-primary mb-2">
-            Welcome back, {user.firstName || user.username}!
+            Welcome back, {user.firstName}!
           </h1>
           <p className="text-text-secondary">
             Manage your marketing automation tools and campaigns from your dashboard.
@@ -130,8 +130,8 @@ function DashboardContent() {
               </div>
               <div className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
                 <div>
-                  <div className="font-medium text-text-primary">Username</div>
-                  <div className="text-sm text-text-secondary">{user.username}</div>
+                  <div className="font-medium text-text-primary">Name</div>
+                  <div className="text-sm text-text-secondary">{user.firstName} {user.lastName}</div>
                 </div>
                 <Button variant="ghost" size="sm">
                   <Settings className="h-4 w-4" />

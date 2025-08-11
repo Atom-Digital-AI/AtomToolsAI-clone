@@ -6,7 +6,6 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").unique(),
   email: text("email").notNull().unique(),
   password: text("password"),
   firstName: text("first_name"),
@@ -187,6 +186,7 @@ export const insertTierSchema = createInsertSchema(tiers).pick({
   packageId: true,
   name: true,
   promotionalTag: true,
+  sortOrder: true,
   isActive: true,
 });
 
@@ -382,4 +382,4 @@ export type PackageWithProducts = Package & {
   products: Product[];
 };
 
-export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+
