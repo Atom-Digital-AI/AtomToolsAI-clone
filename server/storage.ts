@@ -23,9 +23,12 @@ import {
   type InsertGuidelineProfile,
   type UpdateGuidelineProfile,
   type CompleteProfile,
-  type ProductWithSubscriptionStatus
+  type ProductWithSubscriptionStatus,
+  type CmsPage,
+  type InsertCmsPage,
+  type UpdateCmsPage
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray } from "drizzle-orm";
 
@@ -103,6 +106,15 @@ export interface IStorage {
   addProductToPackage(packageId: string, productId: string): Promise<PackageProduct>;
   removeProductFromPackage(packageId: string, productId: string): Promise<boolean>;
   getPackageProducts(packageId: string): Promise<Product[]>;
+
+  // CMS operations
+  getCmsPages(type?: string): Promise<CmsPage[]>;
+  getCmsPage(id: string): Promise<CmsPage | undefined>;
+  getCmsPageBySlug(slug: string): Promise<CmsPage | undefined>;
+  createCmsPage(authorId: string, page: InsertCmsPage): Promise<CmsPage>;
+  updateCmsPage(id: string, page: UpdateCmsPage): Promise<CmsPage>;
+  deleteCmsPage(id: string): Promise<boolean>;
+  publishCmsPage(id: string): Promise<CmsPage>;
   
   // Tier management
   createTier(tierData: InsertTier): Promise<Tier>;
@@ -952,6 +964,63 @@ export class DatabaseStorage implements IStorage {
         activeSubscriptions: 0
       };
     }
+  }
+
+  // CMS operations
+  async getCmsPages(type?: string): Promise<CmsPage[]> {
+    const query = db.select().from(cmsPages);
+    if (type) {
+      return await query.where(eq(cmsPages.type, type));
+    }
+    return await query;
+  }
+
+  async getCmsPage(id: string): Promise<CmsPage | undefined> {
+    const [page] = await db.select().from(cmsPages).where(eq(cmsPages.id, id));
+    return page;
+  }
+
+  async getCmsPageBySlug(slug: string): Promise<CmsPage | undefined> {
+    const [page] = await db.select().from(cmsPages).where(eq(cmsPages.slug, slug));
+    return page;
+  }
+
+  async createCmsPage(authorId: string, page: InsertCmsPage): Promise<CmsPage> {
+    const [createdPage] = await db.insert(cmsPages)
+      .values({
+        ...page,
+        authorId,
+      })
+      .returning();
+    return createdPage;
+  }
+
+  async updateCmsPage(id: string, page: UpdateCmsPage): Promise<CmsPage> {
+    const [updatedPage] = await db.update(cmsPages)
+      .set({
+        ...page,
+        updatedAt: new Date(),
+      })
+      .where(eq(cmsPages.id, id))
+      .returning();
+    return updatedPage;
+  }
+
+  async deleteCmsPage(id: string): Promise<boolean> {
+    const result = await db.delete(cmsPages).where(eq(cmsPages.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async publishCmsPage(id: string): Promise<CmsPage> {
+    const [publishedPage] = await db.update(cmsPages)
+      .set({
+        status: 'published',
+        publishedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(cmsPages.id, id))
+      .returning();
+    return publishedPage;
   }
 }
 

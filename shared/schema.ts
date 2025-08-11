@@ -142,6 +142,54 @@ export const guidelineProfiles = pgTable("guideline_profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// CMS Pages - For managing static pages and blog content
+export const cmsPages = pgTable("cms_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(), // URL path like "/about" or "/blog/post-title"
+  type: varchar("type").notNull(), // 'static', 'blog', 'resource'
+  status: varchar("status").notNull().default("draft"), // 'draft', 'published', 'archived'
+  content: text("content").notNull(), // Main content in HTML
+  excerpt: text("excerpt"), // Short description for listings
+  featuredImage: text("featured_image"), // URL to featured image
+  authorId: varchar("author_id").references(() => users.id),
+  
+  // SEO Fields
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  canonicalUrl: text("canonical_url"),
+  robotsMeta: text("robots_meta").default("index,follow"),
+  
+  // Open Graph fields
+  ogTitle: text("og_title"),
+  ogDescription: text("og_description"),
+  ogImage: text("og_image"),
+  ogType: text("og_type").default("article"),
+  
+  // Twitter Card fields
+  twitterCard: text("twitter_card").default("summary_large_image"),
+  twitterTitle: text("twitter_title"),
+  twitterDescription: text("twitter_description"),
+  twitterImage: text("twitter_image"),
+  
+  // Publishing
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// CMS Navigation - For managing site navigation
+export const cmsNavigation = pgTable("cms_navigation", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  label: text("label").notNull(),
+  url: text("url").notNull(),
+  parentId: varchar("parent_id").references(() => cmsNavigation.id),
+  sortOrder: integer("sort_order").default(0),
+  isExternal: boolean("is_external").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -180,6 +228,52 @@ export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles
   name: true,
   content: true,
 }).partial();
+
+// CMS Page schemas
+export const insertCmsPageSchema = createInsertSchema(cmsPages).pick({
+  title: true,
+  slug: true,
+  type: true,
+  status: true,
+  content: true,
+  excerpt: true,
+  featuredImage: true,
+  metaTitle: true,
+  metaDescription: true,
+  canonicalUrl: true,
+  robotsMeta: true,
+  ogTitle: true,
+  ogDescription: true,
+  ogImage: true,
+  ogType: true,
+  twitterCard: true,
+  twitterTitle: true,
+  twitterDescription: true,
+  twitterImage: true,
+}).extend({
+  title: z.string().min(1, "Title is required"),
+  slug: z.string().min(1, "Slug is required").regex(/^\/[a-z0-9-\/]*$/, "Slug must start with / and contain only lowercase letters, numbers, and hyphens"),
+  type: z.enum(["static", "blog", "resource"]),
+  status: z.enum(["draft", "published", "archived"]),
+  content: z.string().min(1, "Content is required"),
+}).partial({
+  excerpt: true,
+  featuredImage: true,
+  metaTitle: true,
+  metaDescription: true,
+  canonicalUrl: true,
+  robotsMeta: true,
+  ogTitle: true,
+  ogDescription: true,
+  ogImage: true,
+  ogType: true,
+  twitterCard: true,
+  twitterTitle: true,
+  twitterDescription: true,
+  twitterImage: true,
+});
+
+export const updateCmsPageSchema = insertCmsPageSchema.partial();
 
 // Tier schemas
 export const insertTierSchema = createInsertSchema(tiers).pick({
@@ -262,6 +356,12 @@ export type GuidelineProfile = typeof guidelineProfiles.$inferSelect;
 export type InsertGuidelineProfile = z.infer<typeof insertGuidelineProfileSchema>;
 export type UpdateGuidelineProfile = z.infer<typeof updateGuidelineProfileSchema>;
 
+// CMS Types
+export type CmsPage = typeof cmsPages.$inferSelect;
+export type InsertCmsPage = z.infer<typeof insertCmsPageSchema>;
+export type UpdateCmsPage = z.infer<typeof updateCmsPageSchema>;
+export type CmsNavigation = typeof cmsNavigation.$inferSelect;
+
 // Enhanced package type with tiers and products
 export type PackageWithTiers = Package & {
   tiers: (Tier & {
@@ -276,6 +376,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(userSubscriptions),
   tierSubscriptions: many(userTierSubscriptions),
   guidelineProfiles: many(guidelineProfiles),
+  cmsPages: many(cmsPages),
 }));
 
 export const packagesRelations = relations(packages, ({ many }) => ({
@@ -326,6 +427,21 @@ export const productsRelations = relations(products, ({ many }) => ({
   packageProducts: many(packageProducts),
   tierLimits: many(tierLimits),
   subscriptions: many(userSubscriptions),
+}));
+
+export const cmsPagesRelations = relations(cmsPages, ({ one }) => ({
+  author: one(users, {
+    fields: [cmsPages.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const cmsNavigationRelations = relations(cmsNavigation, ({ one, many }) => ({
+  parent: one(cmsNavigation, {
+    fields: [cmsNavigation.parentId],
+    references: [cmsNavigation.id],
+  }),
+  children: many(cmsNavigation),
 }));
 
 export const guidelineProfilesRelations = relations(guidelineProfiles, ({ one }) => ({

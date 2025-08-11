@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit } from "lucide-react";
+import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit, FileText } from "lucide-react";
+import { Link } from "wouter";
 import { PackageCard } from "@/components/admin/PackageCard";
 import { PackageForm } from "@/components/admin/PackageForm";
 import type { PackageWithTiers } from "@shared/schema";
@@ -237,12 +238,22 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2" data-testid="heading-admin-dashboard">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-400">
-            Manage packages, products, and users for atomtools.ai
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2" data-testid="heading-admin-dashboard">
+                Admin Dashboard
+              </h1>
+              <p className="text-gray-400">
+                Manage packages, products, and users for atomtools.ai
+              </p>
+            </div>
+            <Link href="/admin/cms">
+              <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-cms-management">
+                <FileText className="w-4 h-4 mr-2" />
+                CMS Management
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" defaultValue="overview">

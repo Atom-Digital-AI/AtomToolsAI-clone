@@ -1479,6 +1479,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register CMS routes
+  const { registerCmsRoutes } = await import("./cms-routes");
+  registerCmsRoutes(app);
+
   const httpServer = createServer(app);
   return httpServer;
 }

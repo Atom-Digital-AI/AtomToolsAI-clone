@@ -29,6 +29,7 @@ import FacebookAdsConnector from "@/pages/app/tools/facebook-ads-connector";
 import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generator";
 import SEOMetaGeneratorApp from "@/pages/app/tools/seo-meta-generator";
 import AdminDashboard from "@/pages/admin/dashboard";
+import CmsManagement from "@/pages/admin/cms";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import Cookies from "@/pages/cookies";
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="/app/tools/google-ads-copy-generator" component={GoogleAdsCopyGeneratorApp} />
             <Route path="/app/tools/seo-meta-generator" component={SEOMetaGeneratorApp} />
             <Route path="/admin" component={AdminDashboard} />
+            <Route path="/admin/cms" component={CmsManagement} />
             <Route path="/terms" component={Terms} />
             <Route path="/privacy" component={Privacy} />
             <Route path="/cookies" component={Cookies} />
