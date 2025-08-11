@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, GripVertical, Settings, Copy, Eye, EyeOff, Image } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Trash2, GripVertical, Settings, Copy, Eye, EyeOff, Image, Columns, Grid3X3 } from "lucide-react";
 import { ObjectUploader } from "./ObjectUploader";
 import type { UploadResult } from "@uppy/core";
 import { apiRequest } from "@/lib/queryClient";
@@ -71,16 +72,18 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
+  const [showColumnDialog, setShowColumnDialog] = useState(false);
 
   const updateContent = (newBlocks: BlockRow[]) => {
     setBlocks(newBlocks);
     onChange(JSON.stringify(newBlocks, null, 2));
   };
 
-  const addRow = () => {
-    const newRow: BlockRow = {
-      id: crypto.randomUUID(),
-      columns: [{
+  const addRow = (columnCount: 1 | 2 = 1) => {
+    const columns: BlockColumn[] = [];
+    
+    if (columnCount === 1) {
+      columns.push({
         id: crypto.randomUUID(),
         content: "# New Content\n\nEdit this content...",
         width: "12",
@@ -88,14 +91,43 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
         margin: "",
         alignItems: "start",
         justifyContent: "start"
-      }],
+      });
+    } else {
+      // Two columns with equal width
+      columns.push(
+        {
+          id: crypto.randomUUID(),
+          content: "# Left Column\n\nEdit this content...",
+          width: "6",
+          padding: "p-6",
+          margin: "",
+          alignItems: "start",
+          justifyContent: "start"
+        },
+        {
+          id: crypto.randomUUID(),
+          content: "# Right Column\n\nEdit this content...",
+          width: "6",
+          padding: "p-6",
+          margin: "",
+          alignItems: "start",
+          justifyContent: "start"
+        }
+      );
+    }
+
+    const newRow: BlockRow = {
+      id: crypto.randomUUID(),
+      columns,
       padding: "py-8",
       margin: "",
       gap: "gap-6",
       alignItems: "stretch",
       justifyContent: "start"
     };
+    
     updateContent([...blocks, newRow]);
+    setShowColumnDialog(false);
   };
 
   const duplicateRow = (rowId: string) => {
@@ -282,10 +314,46 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
             <Eye className="w-4 h-4 mr-2" />
             Preview
           </Button>
-          <Button onClick={addRow} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Row
-          </Button>
+          <Dialog open={showColumnDialog} onOpenChange={setShowColumnDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Row
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-800 border-gray-700 text-white">
+              <DialogHeader>
+                <DialogTitle>Choose Column Layout</DialogTitle>
+                <DialogDescription className="text-gray-300">
+                  Select how many columns you want in your new row.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 py-6">
+                <Button
+                  onClick={() => addRow(1)}
+                  variant="outline"
+                  className="h-32 flex flex-col items-center justify-center gap-3 border-gray-600 hover:border-indigo-500 hover:bg-indigo-500/10"
+                >
+                  <Columns className="w-8 h-8" />
+                  <div className="text-center">
+                    <div className="font-semibold">Single Column</div>
+                    <div className="text-xs text-gray-400">Full width content</div>
+                  </div>
+                </Button>
+                <Button
+                  onClick={() => addRow(2)}
+                  variant="outline"
+                  className="h-32 flex flex-col items-center justify-center gap-3 border-gray-600 hover:border-indigo-500 hover:bg-indigo-500/10"
+                >
+                  <Grid3X3 className="w-8 h-8" />
+                  <div className="text-center">
+                    <div className="font-semibold">Two Columns</div>
+                    <div className="text-xs text-gray-400">Side by side layout</div>
+                  </div>
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -293,10 +361,46 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
         {blocks.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <p>No content blocks yet.</p>
-            <Button onClick={addRow} className="mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Your First Row
-            </Button>
+            <Dialog open={showColumnDialog} onOpenChange={setShowColumnDialog}>
+              <DialogTrigger asChild>
+                <Button className="mt-4">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Row
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-gray-800 border-gray-700 text-white">
+                <DialogHeader>
+                  <DialogTitle>Choose Column Layout</DialogTitle>
+                  <DialogDescription className="text-gray-300">
+                    Select how many columns you want in your new row.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4 py-6">
+                  <Button
+                    onClick={() => addRow(1)}
+                    variant="outline"
+                    className="h-32 flex flex-col items-center justify-center gap-3 border-gray-600 hover:border-indigo-500 hover:bg-indigo-500/10"
+                  >
+                    <Columns className="w-8 h-8" />
+                    <div className="text-center">
+                      <div className="font-semibold">Single Column</div>
+                      <div className="text-xs text-gray-400">Full width content</div>
+                    </div>
+                  </Button>
+                  <Button
+                    onClick={() => addRow(2)}
+                    variant="outline"
+                    className="h-32 flex flex-col items-center justify-center gap-3 border-gray-600 hover:border-indigo-500 hover:bg-indigo-500/10"
+                  >
+                    <Grid3X3 className="w-8 h-8" />
+                    <div className="text-center">
+                      <div className="font-semibold">Two Columns</div>
+                      <div className="text-xs text-gray-400">Side by side layout</div>
+                    </div>
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         ) : (
           blocks.map((row, rowIndex) => (
