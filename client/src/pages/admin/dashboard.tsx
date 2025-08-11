@@ -563,6 +563,7 @@ export default function AdminDashboard() {
               variant="outline" 
               onClick={() => setDeleteDialog({ ...deleteDialog, open: false })}
               disabled={deleteMutation.isPending}
+              className="border-gray-600 text-white hover:bg-gray-700 hover:text-white"
             >
               Cancel
             </Button>
