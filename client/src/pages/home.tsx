@@ -662,12 +662,12 @@ export default function Home() {
                     <li key={featureIndex}>• {feature}</li>
                   ))}
                 </ul>
-                <Link href={tool.href}>
+                <Link href="/pricing">
                   <Button 
                     className="w-full bg-accent hover:bg-accent-2 text-white" 
                     data-testid={`tool-card-${index}`}
                   >
-                    {tool.title.includes('Facebook Ads') ? 'Buy guide - £499' : 'Start for free'}
+                    View Packages
                   </Button>
                 </Link>
               </CardContent>

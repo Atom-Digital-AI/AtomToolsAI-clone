@@ -53,14 +53,19 @@ export default function ToolCard({
           ))}
         </ul>
         
-        <Link href={href}>
-          <Button 
-            className="w-full bg-accent hover:bg-accent-2 text-white" 
-            data-testid={`button-start-tool-${name.toLowerCase().replace(/\s+/g, '-')}`}
-          >
-            Start for free
-          </Button>
-        </Link>
+        <div className="space-y-3">
+          <p className="text-xs text-text-secondary text-center">
+            Available in package subscriptions
+          </p>
+          <Link href="/pricing">
+            <Button 
+              className="w-full bg-accent hover:bg-accent-2 text-white" 
+              data-testid={`button-view-packages-${name.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              View Packages
+            </Button>
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
