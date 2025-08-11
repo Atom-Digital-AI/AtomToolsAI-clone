@@ -1,26 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Download, Trash2, Lock, Settings, CreditCard, X, Plus, FileText } from "lucide-react";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { type User as UserType, type ProductWithSubscriptionStatus } from "@shared/schema";
 import { Link } from "wouter";
+import { User, Mail, Package, CreditCard, X, Star, Settings } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 export default function Account() {
-  const { data: user, isLoading, error } = useQuery<UserType>({
-    queryKey: ["/api/auth/me"],
-    retry: false,
-  });
+  const { user, isLoading: userLoading } = useAuth();
+  const { toast } = useToast();
 
-  // Get user's tier subscriptions (new system)
-  const { data: tierSubscriptions, isLoading: tiersLoading } = useQuery({
+  // Get tier subscriptions (new system)
+  const { data: tierSubscriptions, isLoading: tierSubscriptionsLoading } = useQuery({
     queryKey: ["/api/user/tier-subscriptions"],
     enabled: !!user,
     retry: false,
@@ -33,157 +26,7 @@ export default function Account() {
     retry: false,
   });
 
-  // Legacy products query for backward compatibility
-  const { data: products, isLoading: productsLoading, error: productsError } = useQuery<ProductWithSubscriptionStatus[]>({
-    queryKey: ["/api/products/with-status"],
-    enabled: !!user,
-    retry: false,
-    queryFn: async () => {
-      const response = await fetch("/api/products/with-status", {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error(`${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    },
-  });
-
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
-  });
-  const [deletePassword, setDeletePassword] = useState("");
-
-  // Change password mutation
-  const changePasswordMutation = useMutation({
-    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-      return apiRequest("POST", "/api/auth/change-password", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Password changed successfully",
-      });
-      setShowPasswordDialog(false);
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to change password",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Download account data mutation
-  const downloadDataMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/auth/account-data", {
-        method: "GET",
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to download data");
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = `atomtools-account-data-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Account data downloaded successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to download account data",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Delete account mutation
-  const deleteAccountMutation = useMutation({
-    mutationFn: async (password: string) => {
-      return apiRequest("DELETE", "/api/auth/account", { password });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Account Deleted",
-        description: "Your account has been permanently deleted",
-      });
-      // Redirect to home page
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete account",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const handlePasswordChange = () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords don't match",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (passwordData.newPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "New password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    changePasswordMutation.mutate({
-      currentPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword
-    });
-  };
-
-  const handleDeleteAccount = () => {
-    if (!deletePassword) {
-      toast({
-        title: "Error",
-        description: "Please enter your password to confirm account deletion",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    deleteAccountMutation.mutate(deletePassword);
-  };
-
-  // Tier subscription mutations (new system)
+  // Tier subscription mutations
   const subscribeTierMutation = useMutation({
     mutationFn: async (tierId: string) => {
       return apiRequest("POST", "/api/tier-subscriptions", { tierId });
@@ -193,7 +36,7 @@ export default function Account() {
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
       toast({
         title: "Success",
-        description: "Successfully subscribed to tier package",
+        description: "Successfully subscribed to package tier",
       });
     },
     onError: (error: any) => {
@@ -226,53 +69,9 @@ export default function Account() {
     }
   });
 
-  // Legacy subscription mutations (backward compatibility)
-  const subscribeMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      return apiRequest("POST", "/api/subscriptions", { productId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
-      toast({
-        title: "Success",
-        description: "Successfully subscribed to product",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to subscribe",
-        variant: "destructive",
-      });
-    }
-  });
+  const loading = userLoading || tierSubscriptionsLoading || packagesLoading;
 
-  const unsubscribeMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      return apiRequest("DELETE", `/api/subscriptions/${productId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
-      toast({
-        title: "Success",
-        description: "Successfully unsubscribed from product",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to unsubscribe",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const subscribedProducts = products?.filter(p => p.isSubscribed) || [];
-  const availableProducts = products?.filter(p => !p.isSubscribed) || [];
-  
-
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
@@ -280,7 +79,7 @@ export default function Account() {
     );
   }
 
-  if (error || !user) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-text-secondary">
@@ -296,7 +95,7 @@ export default function Account() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text-primary mb-2">Account Settings</h1>
           <p className="text-text-secondary">
-            Manage your account information and preferences.
+            Manage your account information and package subscriptions.
           </p>
         </div>
 
@@ -328,288 +127,173 @@ export default function Account() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" disabled>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
+              <div>
+                <label className="text-sm font-medium text-text-secondary">Account Created</label>
+                <div className="mt-1 p-3 border border-border rounded-lg bg-surface">
+                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Brand Guidelines */}
+          {/* Package Subscriptions */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="w-5 h-5" />
-                <span>Brand Guidelines</span>
-              </CardTitle>
-              <CardDescription>
-                Manage saved brand and regulatory guideline profiles for consistent content generation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 mx-auto mb-4 text-text-secondary opacity-50" />
-                <h3 className="text-lg font-medium text-text-primary mb-2">
-                  Streamline Your Content Creation
-                </h3>
-                <p className="text-text-secondary mb-4 max-w-md mx-auto">
-                  Save brand guidelines and regulatory requirements to maintain consistency across all your generated content.
-                </p>
-                <Link href="/app/profile-settings">
-                  <Button data-testid="button-profile-settings" className="bg-indigo-600 hover:bg-indigo-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Manage Guideline Profiles
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Package className="w-5 h-5" />
+                  <span>Package Subscriptions</span>
+                </div>
+                <Link href="/pricing">
+                  <Button variant="outline" size="sm" data-testid="view-all-packages">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    View All Packages
                   </Button>
                 </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* My Subscriptions - Updated for Tier-Based System */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <CreditCard className="w-5 h-5" />
-                <span>My Package Subscriptions</span>
               </CardTitle>
               <CardDescription>
-                Manage your active tier subscriptions and explore available packages
+                Your active package tier subscriptions
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Active Tier Subscriptions */}
-                <div>
-                  <h3 className="text-sm font-semibold text-text-secondary mb-3">Active Package Tiers</h3>
-                  {tiersLoading ? (
-                    <div className="space-y-2">
-                      {[1, 2].map((i) => (
-                        <div key={i} className="h-20 bg-surface animate-pulse rounded-lg" />
-                      ))}
-                    </div>
-                  ) : tierSubscriptions?.length > 0 ? (
-                    <div className="space-y-3">
-                      {tierSubscriptions.map((subscription: any) => (
-                        <div
-                          key={subscription.id}
-                          className="flex items-center justify-between p-4 border border-border rounded-lg bg-surface"
+            <CardContent className="space-y-6">
+              {/* Active Package Subscriptions */}
+              {tierSubscriptions?.length > 0 ? (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-text-primary">Active Subscriptions</h3>
+                  {tierSubscriptions.map((subscription: any) => (
+                    <div
+                      key={subscription.id}
+                      className="flex items-center justify-between p-4 border border-green-200 dark:border-green-800 rounded-lg bg-green-50 dark:bg-green-900/10"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          {subscription.tier?.promotionalTag && (
+                            <Star className="w-4 h-4 text-yellow-500" />
+                          )}
+                          <h4 className="font-semibold text-text-primary">
+                            {subscription.tier?.name}
+                          </h4>
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                            Active
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-text-secondary mb-2">
+                          {subscription.tier?.package?.name} - {subscription.tier?.package?.description}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-text-secondary">
+                          <span>
+                            Subscribed: {new Date(subscription.subscribedAt).toLocaleDateString()}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            ${subscription.tier?.price}/{subscription.tier?.billingCycle}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => unsubscribeTierMutation.mutate(subscription.tierId)}
+                          disabled={unsubscribeTierMutation.isPending}
+                          data-testid={`unsubscribe-tier-${subscription.tierId}`}
                         >
-                          <div className="flex-1">
-                            <h4 className="font-medium text-text-primary">{subscription.tier?.name}</h4>
-                            <p className="text-sm text-text-secondary mb-1">{subscription.tier?.package?.name}</p>
-                            <div className="flex items-center space-x-2 text-xs text-text-secondary">
-                              <span>Subscribed: {new Date(subscription.subscribedAt).toLocaleDateString()}</span>
-                              {subscription.expiresAt && (
-                                <span>• Expires: {new Date(subscription.expiresAt).toLocaleDateString()}</span>
-                              )}
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Available Package Tiers to Subscribe To */}
+                  {packages?.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-text-primary mb-3">Available Packages</h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {packages.map((packageItem: any) => (
+                          <div key={packageItem.id}>
+                            <h4 className="font-medium text-text-primary mb-2">{packageItem.name}</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {packageItem.tiers
+                                ?.filter((tier: any) => !tierSubscriptions?.some((sub: any) => sub.tierId === tier.id))
+                                .map((tier: any) => (
+                                <div
+                                  key={tier.id}
+                                  className="flex items-center justify-between p-3 border border-border rounded-lg bg-surface hover:border-accent/50 transition-colors"
+                                >
+                                  <div>
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      {tier.promotionalTag && (
+                                        <Star className="w-3 h-3 text-yellow-500" />
+                                      )}
+                                      <span className="font-medium text-text-primary text-sm">
+                                        {tier.name}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-text-secondary">
+                                      ${tier.price}/{tier.billingCycle}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => subscribeTierMutation.mutate(tier.id)}
+                                    disabled={subscribeTierMutation.isPending}
+                                    data-testid={`subscribe-tier-${tier.id}`}
+                                  >
+                                    Subscribe
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                              {subscription.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => unsubscribeTierMutation.mutate(subscription.tierId)}
-                              disabled={unsubscribeTierMutation.isPending}
-                              data-testid={`unsubscribe-tier-${subscription.tierId}`}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-text-secondary">
-                      <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No active tier subscriptions</p>
-                      <p className="text-sm">Subscribe to package tiers to access tools</p>
-                      <Link href="/pricing">
-                        <Button className="mt-3" data-testid="button-view-pricing">
-                          View Available Packages
-                        </Button>
-                      </Link>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
-
-                {/* Legacy Individual Product Subscriptions (if any exist) */}
-                {subscribedProducts?.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Legacy Individual Subscriptions</h3>
-                    <div className="space-y-2">
-                      {subscribedProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="flex items-center justify-between p-3 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/10"
-                        >
-                          <div className="flex-1">
-                            <h4 className="font-medium text-text-primary">{product.name}</h4>
-                            <p className="text-sm text-text-secondary">{product.description}</p>
-                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                              ⚠️ Legacy subscription - consider upgrading to a package tier
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
-                              Legacy
-                            </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => unsubscribeMutation.mutate(product.id)}
-                              disabled={unsubscribeMutation.isPending}
-                              data-testid={`unsubscribe-legacy-${product.id}`}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="w-16 h-16 text-text-secondary opacity-50 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-text-primary mb-2">No Active Package Subscriptions</h3>
+                  <p className="text-text-secondary mb-6">
+                    Subscribe to a package tier to access marketing tools and automation features.
+                  </p>
+                  <Link href="/pricing">
+                    <Button data-testid="browse-packages-button">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Browse Packages
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Account Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Account Actions</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="w-5 h-5" />
+                <span>Account Actions</span>
+              </CardTitle>
               <CardDescription>
-                Manage your account and data
+                Manage your account settings
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col space-y-3">
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowPasswordDialog(true)}
-                  data-testid="change-password-button"
-                >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Change Password
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => downloadDataMutation.mutate()}
-                  disabled={downloadDataMutation.isPending}
-                  data-testid="download-data-button"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {downloadDataMutation.isPending ? "Downloading..." : "Download Account Data"}
-                </Button>
-                <Button 
-                  variant="destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                  data-testid="delete-account-button"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Account
-                </Button>
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div>
+                  <h4 className="font-medium text-text-primary">Logout</h4>
+                  <p className="text-sm text-text-secondary">Sign out of your account</p>
+                </div>
+                <a href="/api/logout">
+                  <Button variant="outline" data-testid="logout-button">
+                    Logout
+                  </Button>
+                </a>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Change Password Dialog */}
-        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Change Password</DialogTitle>
-              <DialogDescription>
-                Enter your current password and choose a new one.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  data-testid="current-password-input"
-                />
-              </div>
-              <div>
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  data-testid="new-password-input"
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  data-testid="confirm-password-input"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowPasswordDialog(false)}
-                data-testid="cancel-password-change"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handlePasswordChange}
-                disabled={changePasswordMutation.isPending}
-                data-testid="confirm-password-change"
-              >
-                {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Account Dialog */}
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Account</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="my-4">
-              <Label htmlFor="delete-password">Enter your password to confirm</Label>
-              <Input
-                id="delete-password"
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                placeholder="Your password"
-                data-testid="delete-password-input"
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel data-testid="cancel-delete-account">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteAccount}
-                className="bg-destructive hover:bg-destructive/90"
-                disabled={deleteAccountMutation.isPending}
-                data-testid="confirm-delete-account"
-              >
-                {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </main>
     </div>
   );
