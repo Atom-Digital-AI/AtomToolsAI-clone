@@ -25,10 +25,11 @@ Preferred communication style: Simple, everyday language.
 - **Session Storage**: PostgreSQL-based session storage using connect-pg-simple.
 
 ### Database Schema
-A PostgreSQL database with a comprehensive subscription system:
+A PostgreSQL database with a comprehensive tier-based subscription system:
 - **Users**: User accounts, Google OAuth integration (stores google_id, profile_image_url).
 - **Products**: Available marketing tools with name, description, price, and route path.
-- **User Subscriptions**: Manages user-product relationships and subscription status.
+- **User Subscriptions**: Legacy table for backward compatibility.
+- **User Tier Subscriptions**: New tier-based subscription system with usage tracking and limits management.
 - **Contacts**: Contact form submissions.
 - **Sessions**: User session data.
 - **Guideline Profiles**: Stores saved brand and regulatory guideline profiles for tools.
@@ -52,6 +53,8 @@ A PostgreSQL database with a comprehensive subscription system:
 - **Compliance Guidelines Support**: Optional brand and regulatory guidelines input in AI prompts with pre-output review.
 - **Saved Guideline Profiles**: Users can save and reuse brand/regulatory guideline profiles across tools.
 - **Tier-Based Package System**: Supports multiple tiers (Free, Pro, Enterprise) with individual pricing and granular product usage limits, including subfeature controls (bulk processing, variations, brand guidelines).
+- **Tier-Based Subscriptions**: Migrated from product-based to tier-based subscriptions. Users now subscribe to package tiers which grant access to multiple products with usage limits and tracking.
+- **Tier Reordering**: Admin interface includes drag-and-drop style tier reordering with persistent sort order stored in database.
 - **Performance Optimizations**: Code splitting, tree shaking, privacy-focused analytics, font loading optimization, image optimization, and SEO.
 
 ## External Dependencies

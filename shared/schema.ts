@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey, integer, jsonb, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -104,7 +104,25 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// User Subscriptions - Track which products users have access to
+// User Tier Subscriptions - Track which package tiers users have access to
+export const userTierSubscriptions = pgTable("user_tier_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tierId: varchar("tier_id").notNull().references(() => tiers.id, { onDelete: "cascade" }),
+  subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"), // For timed subscriptions
+  isActive: boolean("is_active").notNull().default(true),
+  paymentReference: text("payment_reference"), // Reference to payment/order
+  // Usage tracking for tier limits
+  currentUsage: jsonb("current_usage").default(sql`'{}'::jsonb`), // { "productId": { "monthly": 5, "daily": 1 } }
+  lastResetAt: timestamp("last_reset_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userTierUnique: unique().on(table.userId, table.tierId),
+}));
+
+// Legacy table for backward compatibility - will be migrated
 export const userSubscriptions = pgTable("user_subscriptions", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
@@ -235,6 +253,12 @@ export type TierLimit = typeof tierLimits.$inferSelect;
 export type InsertTierLimit = z.infer<typeof insertTierLimitSchema>;
 export type PackageProduct = typeof packageProducts.$inferSelect;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type InsertUserSubscription = typeof userSubscriptions.$inferInsert;
+
+// Tier subscription types
+export type UserTierSubscription = typeof userTierSubscriptions.$inferSelect;
+export type InsertUserTierSubscription = typeof userTierSubscriptions.$inferInsert;
+
 export type GuidelineProfile = typeof guidelineProfiles.$inferSelect;
 export type InsertGuidelineProfile = z.infer<typeof insertGuidelineProfileSchema>;
 export type UpdateGuidelineProfile = z.infer<typeof updateGuidelineProfileSchema>;
@@ -251,6 +275,7 @@ export type PackageWithTiers = Package & {
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(userSubscriptions),
+  tierSubscriptions: many(userTierSubscriptions),
   guidelineProfiles: many(guidelineProfiles),
 }));
 
@@ -277,6 +302,7 @@ export const tiersRelations = relations(tiers, ({ one, many }) => ({
   }),
   prices: many(tierPrices),
   limits: many(tierLimits),
+  userSubscriptions: many(userTierSubscriptions),
 }));
 
 export const tierPricesRelations = relations(tierPrices, ({ one }) => ({
@@ -318,6 +344,17 @@ export const userSubscriptionsRelations = relations(userSubscriptions, ({ one })
   product: one(products, {
     fields: [userSubscriptions.productId],
     references: [products.id],
+  }),
+}));
+
+export const userTierSubscriptionsRelations = relations(userTierSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [userTierSubscriptions.userId],
+    references: [users.id],
+  }),
+  tier: one(tiers, {
+    fields: [userTierSubscriptions.tierId],
+    references: [tiers.id],
   }),
 }));
 

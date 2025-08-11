@@ -332,6 +332,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subscription routes
+  // Get tier subscriptions
+  app.get("/api/tier-subscriptions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const tierSubscriptions = await storage.getUserTierSubscriptions(userId);
+      res.json(tierSubscriptions);
+    } catch (error) {
+      console.error("Error fetching tier subscriptions:", error);
+      res.status(500).json({ message: "Failed to fetch tier subscriptions" });
+    }
+  });
+
+  // Subscribe to tier
+  app.post("/api/tier-subscriptions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { tierId, paymentReference } = req.body;
+
+      if (!tierId) {
+        return res.status(400).json({ message: "Tier ID is required" });
+      }
+
+      // Check if tier exists
+      const tier = await storage.getTier(tierId);
+      if (!tier) {
+        return res.status(404).json({ message: "Tier not found" });
+      }
+
+      // Subscribe user
+      const subscription = await storage.subscribeTierUser({ 
+        userId, 
+        tierId, 
+        paymentReference 
+      });
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error creating tier subscription:", error);
+      res.status(500).json({ message: "Failed to create tier subscription" });
+    }
+  });
+
+  // Unsubscribe from tier
+  app.delete("/api/tier-subscriptions/:tierId", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { tierId } = req.params;
+
+      const success = await storage.unsubscribeTierUser(userId, tierId);
+      if (success) {
+        res.json({ message: "Unsubscribed successfully" });
+      } else {
+        res.status(404).json({ message: "Tier subscription not found" });
+      }
+    } catch (error) {
+      console.error("Error removing tier subscription:", error);
+      res.status(500).json({ message: "Failed to remove tier subscription" });
+    }
+  });
+
+  // Legacy subscription endpoint (backward compatibility)
   app.get("/api/subscriptions", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
@@ -384,14 +444,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check product access
+  // Check product access (tier-based)
   app.get("/api/products/:productId/access", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
       const { productId } = req.params;
 
-      const isSubscribed = await storage.isUserSubscribed(userId, productId);
-      res.json({ hasAccess: isSubscribed });
+      const accessInfo = await storage.getUserProductAccess(userId, productId);
+      const usageInfo = await storage.checkTierUsage(userId, productId);
+      
+      res.json({ 
+        hasAccess: accessInfo.hasAccess,
+        canUse: usageInfo.canUse,
+        currentUsage: usageInfo.currentUsage,
+        limit: usageInfo.limit,
+        tierSubscription: accessInfo.tierSubscription,
+        tierLimit: accessInfo.tierLimit
+      });
     } catch (error) {
       console.error("Error checking product access:", error);
       res.status(500).json({ message: "Failed to check access" });

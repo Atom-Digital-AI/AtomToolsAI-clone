@@ -15,6 +15,8 @@ import {
   type PackageWithTiers,
   type UserSubscription,
   type InsertUserSubscription,
+  type UserTierSubscription,
+  type InsertUserTierSubscription,
   type Contact,
   type InsertContact,
   type GuidelineProfile,
@@ -23,7 +25,7 @@ import {
   type CompleteProfile,
   type ProductWithSubscriptionStatus
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, guidelineProfiles } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray } from "drizzle-orm";
 
@@ -61,9 +63,20 @@ export interface IStorage {
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
   
-  // Subscription operations
+  // Legacy subscription operations (will be deprecated)
   getUserSubscriptions(userId: string): Promise<UserSubscription[]>;
   isUserSubscribed(userId: string, productId: string): Promise<boolean>;
+  subscribeUser(subscription: InsertUserSubscription): Promise<UserSubscription>;
+  unsubscribeUser(userId: string, productId: string): Promise<boolean>;
+  
+  // Tier subscription operations
+  getUserTierSubscriptions(userId: string): Promise<UserTierSubscription[]>;
+  isUserSubscribedToTier(userId: string, tierId: string): Promise<boolean>;
+  getUserProductAccess(userId: string, productId: string): Promise<{ hasAccess: boolean; tierSubscription?: UserTierSubscription; tierLimit?: TierLimit }>;
+  subscribeTierUser(subscription: InsertUserTierSubscription): Promise<UserTierSubscription>;
+  unsubscribeTierUser(userId: string, tierId: string): Promise<boolean>;
+  checkTierUsage(userId: string, productId: string): Promise<{ canUse: boolean; currentUsage: number; limit: number | null }>;
+  updateTierUsage(userId: string, productId: string, incrementBy?: number): Promise<void>;
   
   // Guideline Profile operations
   getUserGuidelineProfiles(userId: string, type?: 'brand' | 'regulatory'): Promise<GuidelineProfile[]>;
@@ -346,6 +359,149 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Tier subscription implementations
+  async getUserTierSubscriptions(userId: string): Promise<UserTierSubscription[]> {
+    return await db
+      .select()
+      .from(userTierSubscriptions)
+      .where(and(eq(userTierSubscriptions.userId, userId), eq(userTierSubscriptions.isActive, true)));
+  }
+
+  async isUserSubscribedToTier(userId: string, tierId: string): Promise<boolean> {
+    const [subscription] = await db
+      .select()
+      .from(userTierSubscriptions)
+      .where(
+        and(
+          eq(userTierSubscriptions.userId, userId),
+          eq(userTierSubscriptions.tierId, tierId),
+          eq(userTierSubscriptions.isActive, true)
+        )
+      );
+    return !!subscription;
+  }
+
+  async getUserProductAccess(userId: string, productId: string): Promise<{ hasAccess: boolean; tierSubscription?: UserTierSubscription; tierLimit?: TierLimit }> {
+    // Get all active tier subscriptions for the user
+    const tierSubscriptions = await this.getUserTierSubscriptions(userId);
+    
+    for (const tierSubscription of tierSubscriptions) {
+      // Check if this tier includes the product
+      const [tierLimit] = await db
+        .select()
+        .from(tierLimits)
+        .where(
+          and(
+            eq(tierLimits.tierId, tierSubscription.tierId),
+            eq(tierLimits.productId, productId),
+            eq(tierLimits.includedInTier, true)
+          )
+        );
+      
+      if (tierLimit) {
+        return { hasAccess: true, tierSubscription, tierLimit };
+      }
+    }
+    
+    return { hasAccess: false };
+  }
+
+  async subscribeTierUser(subscription: InsertUserTierSubscription): Promise<UserTierSubscription> {
+    // Check if already subscribed to this tier
+    const existing = await db
+      .select()
+      .from(userTierSubscriptions)
+      .where(
+        and(
+          eq(userTierSubscriptions.userId, subscription.userId),
+          eq(userTierSubscriptions.tierId, subscription.tierId)
+        )
+      );
+
+    if (existing.length > 0) {
+      // Reactivate if exists
+      const [updated] = await db
+        .update(userTierSubscriptions)
+        .set({ isActive: true, subscribedAt: new Date(), updatedAt: new Date() })
+        .where(
+          and(
+            eq(userTierSubscriptions.userId, subscription.userId),
+            eq(userTierSubscriptions.tierId, subscription.tierId)
+          )
+        )
+        .returning();
+      return updated;
+    } else {
+      // Create new subscription
+      const [newSubscription] = await db
+        .insert(userTierSubscriptions)
+        .values(subscription)
+        .returning();
+      return newSubscription;
+    }
+  }
+
+  async unsubscribeTierUser(userId: string, tierId: string): Promise<boolean> {
+    const result = await db
+      .update(userTierSubscriptions)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(
+        and(
+          eq(userTierSubscriptions.userId, userId),
+          eq(userTierSubscriptions.tierId, tierId)
+        )
+      );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async checkTierUsage(userId: string, productId: string): Promise<{ canUse: boolean; currentUsage: number; limit: number | null }> {
+    const accessInfo = await this.getUserProductAccess(userId, productId);
+    
+    if (!accessInfo.hasAccess || !accessInfo.tierSubscription || !accessInfo.tierLimit) {
+      return { canUse: false, currentUsage: 0, limit: null };
+    }
+
+    const { tierSubscription, tierLimit } = accessInfo;
+    const currentUsage = (tierSubscription.currentUsage as any)?.[productId]?.[tierLimit.periodicity] || 0;
+    const limit = tierLimit.quantity;
+
+    // If no limit (unlimited), allow usage
+    if (limit === null) {
+      return { canUse: true, currentUsage, limit: null };
+    }
+
+    return { canUse: currentUsage < limit, currentUsage, limit };
+  }
+
+  async updateTierUsage(userId: string, productId: string, incrementBy: number = 1): Promise<void> {
+    const accessInfo = await this.getUserProductAccess(userId, productId);
+    
+    if (!accessInfo.hasAccess || !accessInfo.tierSubscription || !accessInfo.tierLimit) {
+      throw new Error("User does not have access to this product");
+    }
+
+    const { tierSubscription, tierLimit } = accessInfo;
+    
+    // Get current usage object
+    const currentUsageObj = (tierSubscription.currentUsage as any) || {};
+    if (!currentUsageObj[productId]) {
+      currentUsageObj[productId] = {};
+    }
+    
+    // Update usage for the specific periodicity
+    currentUsageObj[productId][tierLimit.periodicity] = 
+      (currentUsageObj[productId][tierLimit.periodicity] || 0) + incrementBy;
+
+    // Update the subscription record
+    await db
+      .update(userTierSubscriptions)
+      .set({ 
+        currentUsage: currentUsageObj,
+        updatedAt: new Date()
+      })
+      .where(eq(userTierSubscriptions.id, tierSubscription.id));
   }
 
   // Guideline Profile operations
