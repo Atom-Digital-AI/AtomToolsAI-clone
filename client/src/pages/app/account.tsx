@@ -272,16 +272,40 @@ export default function Account() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Link href="/app/profile-settings">
-                  <Button data-testid="button-profile-settings" variant="outline">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Guideline Profiles
-                  </Button>
-                </Link>
                 <Button variant="outline" disabled>
                   <Settings className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Brand Guidelines */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="w-5 h-5" />
+                <span>Brand Guidelines</span>
+              </CardTitle>
+              <CardDescription>
+                Manage saved brand and regulatory guideline profiles for consistent content generation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 mx-auto mb-4 text-text-secondary opacity-50" />
+                <h3 className="text-lg font-medium text-text-primary mb-2">
+                  Streamline Your Content Creation
+                </h3>
+                <p className="text-text-secondary mb-4 max-w-md mx-auto">
+                  Save brand guidelines and regulatory requirements to maintain consistency across all your generated content.
+                </p>
+                <Link href="/app/profile-settings">
+                  <Button data-testid="button-profile-settings" className="bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Manage Guideline Profiles
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
