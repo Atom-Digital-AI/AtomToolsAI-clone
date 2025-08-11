@@ -47,8 +47,16 @@
     border-color: hsl(var(--border));
   }
 
-  body {
+  html,
+  body,
+  #root {
+    width: 100%;
+    margin: 0;
+    padding: 0;
     background-color: hsl(var(--background));
+  }
+
+  body {
     color: hsl(var(--text-primary));
     font-family: var(--font-sans);
   }

@@ -62,10 +62,10 @@ function AuthRedirect() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background text-text-primary flex flex-col">
+      <div className="min-h-screen bg-background text-text-primary flex flex-col w-full">
         <AuthRedirect />
         <Header />
-        <main className="flex-1">
+        <main className="flex-1 w-full">
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/tools" component={ToolsIndex} />

@@ -59,12 +59,12 @@ function DashboardContent() {
   }
 
   return (
-    <div className="bg-background">{/* Removed duplicate header - using main Header component instead */}
+    <div className="bg-background min-h-screen w-full">{/* Removed duplicate header - using main Header component instead */}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
+        <div className="mb-8 max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-text-primary mb-2">
             Welcome back, {user.firstName}!
           </h1>
@@ -76,7 +76,7 @@ function DashboardContent() {
 
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 max-w-7xl mx-auto">
           <Card className="border-border bg-surface">
             <CardHeader>
               <CardTitle className="text-text-primary">Quick Actions</CardTitle>
