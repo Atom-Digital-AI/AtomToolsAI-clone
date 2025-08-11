@@ -445,18 +445,19 @@ export default function Home() {
             loop
             playsInline
             poster=""
+            key="hero-video"
           >
             <source src="/attached_assets/Dark_Mode_Tech_Background_Video_1754950245602.mp4" type="video/mp4" />
           </video>
           
           {/* Dark overlay for better text readability */}
-          <div className="absolute inset-0 bg-black/70"></div>
+          <div className="absolute inset-0 bg-black/70 z-10"></div>
           
           {/* Subtle gradient overlay to blend with the site theme */}
-          <div className="absolute inset-0 bg-gradient-to-br from-background/20 via-transparent to-surface/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-background/20 via-transparent to-surface/30 z-20"></div>
           
           {/* Keep some subtle animated particles for extra visual interest */}
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 z-30">
             {/* Subtle floating orbs to complement the video */}
             <div className="absolute top-1/4 left-1/4 w-20 h-20 bg-accent/5 rounded-full blur-xl animate-pulse"></div>
             <div className="absolute top-3/4 right-1/4 w-16 h-16 bg-accent-2/8 rounded-full blur-lg animate-pulse" style={{animationDelay: '1s'}}></div>
@@ -488,11 +489,11 @@ export default function Home() {
           </div>
           
           {/* Enhanced glow effects */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-[glow_4s_ease-in-out_infinite_alternate]"></div>
-          <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-accent-2/10 rounded-full blur-2xl animate-[glow_6s_ease-in-out_infinite_alternate]" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-[glow_4s_ease-in-out_infinite_alternate] z-5"></div>
+          <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-accent-2/10 rounded-full blur-2xl animate-[glow_6s_ease-in-out_infinite_alternate] z-5" style={{animationDelay: '2s'}}></div>
         </div>
         
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-50 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Hero Content */}
             <div className="max-w-2xl animate-slide-up">
