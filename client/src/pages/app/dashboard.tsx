@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { BarChart3, Users, Zap, Settings, LogOut } from "lucide-react";
 import { type User } from "@shared/schema";
+import AuthGuard from "@/components/auth-guard";
 
-export default function Dashboard() {
+function DashboardContent() {
   const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["user"],
     queryFn: async () => {
@@ -181,5 +182,13 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <AuthGuard requiresAuth={true}>
+      <DashboardContent />
+    </AuthGuard>
   );
 }

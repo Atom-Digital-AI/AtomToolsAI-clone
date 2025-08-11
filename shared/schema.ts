@@ -9,6 +9,10 @@ export const users = pgTable("users", {
   username: text("username").unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  companyName: text("company_name"),
+  isProfileComplete: boolean("is_profile_complete").notNull().default(false),
   isEmailVerified: boolean("is_email_verified").notNull().default(false),
   emailVerificationToken: text("email_verification_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -61,6 +65,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
   emailVerificationToken: true,
 });
 
+export const completeProfileSchema = createInsertSchema(users).pick({
+  firstName: true,
+  lastName: true,
+  companyName: true,
+}).extend({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"), 
+  companyName: z.string().min(1, "Company name is required"),
+});
+
 export const insertContactSchema = createInsertSchema(contacts).pick({
   name: true,
   email: true,
@@ -80,14 +94,15 @@ export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles
 
 // Type exports
 export type User = typeof users.$inferSelect;
-export type InsertUser = typeof insertUserSchema._type;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type CompleteProfile = z.infer<typeof completeProfileSchema>;
 export type Contact = typeof contacts.$inferSelect;
-export type InsertContact = typeof insertContactSchema._type;
+export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Product = typeof products.$inferSelect;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type GuidelineProfile = typeof guidelineProfiles.$inferSelect;
-export type InsertGuidelineProfile = typeof insertGuidelineProfileSchema._type;
-export type UpdateGuidelineProfile = typeof updateGuidelineProfileSchema._type;
+export type InsertGuidelineProfile = z.infer<typeof insertGuidelineProfileSchema>;
+export type UpdateGuidelineProfile = z.infer<typeof updateGuidelineProfileSchema>;
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -130,15 +145,9 @@ export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions
   productId: true,
 });
 
-// Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type InsertContact = z.infer<typeof insertContactSchema>;
-export type Contact = typeof contacts.$inferSelect;
+// Additional types
 export type InsertProduct = z.infer<typeof insertProductSchema>;
-export type Product = typeof products.$inferSelect;
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
-export type UserSubscription = typeof userSubscriptions.$inferSelect;
 
 // Extended types for joins
 export type UserWithSubscriptions = User & {

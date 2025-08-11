@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -878,6 +878,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting guideline profile:", error);
       res.status(500).json({ message: "Failed to delete guideline profile" });
+    }
+  });
+
+  // Complete profile route (must be after login but before requireAuth)
+  app.post("/api/auth/complete-profile", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const validation = completeProfileSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid profile data",
+          errors: validation.error.errors
+        });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!user.isEmailVerified) {
+        return res.status(403).json({ message: "Email verification required" });
+      }
+
+      await storage.completeUserProfile(req.session.userId, validation.data);
+      
+      res.json({ message: "Profile completed successfully" });
+    } catch (error) {
+      console.error("Complete profile error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 

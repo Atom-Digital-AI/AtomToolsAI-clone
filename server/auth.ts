@@ -53,6 +53,14 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       });
     }
 
+    // Check if profile is complete (first name, last name, company name)
+    if (!user.isProfileComplete || !user.firstName || !user.lastName || !user.companyName) {
+      return res.status(403).json({ 
+        message: "Profile completion required",
+        requiresProfileCompletion: true 
+      });
+    }
+
     (req as any).user = user;
     next();
   } catch (error) {

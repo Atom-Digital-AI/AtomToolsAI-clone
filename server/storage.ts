@@ -2,10 +2,16 @@ import {
   type User, 
   type InsertUser,
   type Product,
+  type InsertProduct,
   type UserSubscription,
+  type InsertUserSubscription,
+  type Contact,
+  type InsertContact,
   type GuidelineProfile,
   type InsertGuidelineProfile,
   type UpdateGuidelineProfile,
+  type CompleteProfile,
+  type ProductWithSubscriptionStatus
 } from "@shared/schema";
 import { users, products, userSubscriptions, guidelineProfiles } from "@shared/schema";
 import { db } from "./db";
@@ -20,6 +26,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(id: string, password: string): Promise<void>;
   verifyUserEmail(id: string): Promise<void>;
+  completeUserProfile(id: string, profile: CompleteProfile): Promise<void>;
   deleteUser(id: string): Promise<void>;
   
   // Product operations
@@ -86,6 +93,18 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(users)
       .set({ password })
+      .where(eq(users.id, id));
+  }
+
+  async completeUserProfile(id: string, profile: CompleteProfile): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        companyName: profile.companyName,
+        isProfileComplete: true
+      })
       .where(eq(users.id, id));
   }
 
