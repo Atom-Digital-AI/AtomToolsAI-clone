@@ -51,7 +51,7 @@ export default function LoginPage() {
     onSuccess: async (data) => {
       console.log("Login successful, user data:", data);
       
-      // Check if user needs email verification
+      // Check if user needs email verification or profile completion
       try {
         const authResponse = await fetch("/api/auth/me", {
           credentials: "include",
@@ -59,16 +59,27 @@ export default function LoginPage() {
         
         if (authResponse.status === 403) {
           const authData = await authResponse.json();
+          
           if (authData.requiresVerification) {
             toast({
               title: "Email verification required",
               description: "Please check your email to verify your account.",
               variant: "destructive",
             });
-            // Redirect to verification page
             setTimeout(() => {
               window.location.href = `/email-verification-sent?email=${encodeURIComponent(data.user.email)}`;
             }, 1000);
+            return;
+          }
+          
+          if (authData.requiresProfileCompletion) {
+            toast({
+              title: "Profile completion required",
+              description: "Please complete your profile to continue.",
+            });
+            setTimeout(() => {
+              window.location.href = "/complete-profile";
+            }, 500);
             return;
           }
         }
@@ -78,7 +89,6 @@ export default function LoginPage() {
             title: "Welcome back!",
             description: "You have been successfully logged in.",
           });
-          // Redirect to dashboard
           setTimeout(() => {
             window.location.href = "/app";
           }, 500);
@@ -87,7 +97,7 @@ export default function LoginPage() {
         console.error("Authentication check failed:", error);
         toast({
           title: "Login successful",
-          description: "Redirecting to dashboard...",
+          description: "Redirecting...",
         });
         setTimeout(() => {
           window.location.href = "/app";
