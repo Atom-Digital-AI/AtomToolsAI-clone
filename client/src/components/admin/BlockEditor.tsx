@@ -225,7 +225,14 @@ export function BlockEditor({ content, onChange }: BlockEditorProps) {
   // Handle image upload
   const handleImageUpload = async (): Promise<{ method: "PUT"; url: string }> => {
     try {
+      console.log("Requesting upload URL...");
       const response = await apiRequest("POST", "/api/images/upload");
+      console.log("Upload URL response:", response);
+      
+      if (!response.uploadURL) {
+        throw new Error("No upload URL received from server");
+      }
+      
       return { method: "PUT", url: response.uploadURL };
     } catch (error) {
       console.error("Failed to get upload URL:", error);
