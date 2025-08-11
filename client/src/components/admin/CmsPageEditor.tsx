@@ -174,7 +174,7 @@ export function CmsPageEditor({ page, onSave, onCancel }: CmsPageEditorProps) {
   ];
 
   return (
-    <div className="space-y-6" data-testid="cms-page-editor">
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6" data-testid="cms-page-editor">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
