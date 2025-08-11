@@ -30,6 +30,7 @@ import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generat
 import SEOMetaGeneratorApp from "@/pages/app/tools/seo-meta-generator";
 import AdminDashboard from "@/pages/admin/dashboard";
 import CmsManagement from "@/pages/admin/cms";
+import DynamicCmsPage from "@/pages/cms-page";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import Cookies from "@/pages/cookies";
@@ -93,6 +94,8 @@ export default function App() {
             <Route path="/terms" component={Terms} />
             <Route path="/privacy" component={Privacy} />
             <Route path="/cookies" component={Cookies} />
+            {/* Dynamic CMS pages - must be last before NotFound */}
+            <Route path="/:slug*" component={DynamicCmsPage} />
             <Route component={NotFound} />
           </Switch>
         </main>

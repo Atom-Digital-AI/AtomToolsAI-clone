@@ -32,6 +32,8 @@ A PostgreSQL database with a pure tier-based subscription system:
 - **Contacts**: Contact form submissions.
 - **Sessions**: User session data.
 - **Guideline Profiles**: Stores saved brand and regulatory guideline profiles for tools.
+- **CMS Pages**: Content management system pages with SEO metadata, publishing workflow, and rich content support.
+- **CMS Navigation**: Navigation structure for CMS content organization.
 - **Packages, Tiers, Tier Prices, Tier Limits, Package Products**: Comprehensive tier-based package system supporting flexible pricing, product assignment, and usage limits (e.g., quantity restrictions, periodicity, subfeature toggles).
 - **Schema Management**: Drizzle Kit for migrations.
 - **Database Optimization**: Removed redundant constraints, unused columns, and legacy individual subscription handling (August 2025).
@@ -56,6 +58,7 @@ A PostgreSQL database with a pure tier-based subscription system:
 - **No Individual Subscriptions**: System completely moved away from individual product subscriptions - users only subscribe to package tiers which grant access to multiple products with usage limits and tracking.
 - **Tier Reordering**: Admin interface includes drag-and-drop style tier reordering with persistent sort order stored in database.
 - **Legacy Code Removal**: All individual subscription buttons and deprecated handling completely removed (August 2025).
+- **Comprehensive CMS System**: Full content management system with rich text editor, SEO metadata management, publishing workflow (draft → published → archived), content type organization (static, blog, resource), and dynamic page serving at custom URLs.
 - **Performance Optimizations**: Code splitting, tree shaking, privacy-focused analytics, font loading optimization, image optimization, and SEO.
 
 ## External Dependencies

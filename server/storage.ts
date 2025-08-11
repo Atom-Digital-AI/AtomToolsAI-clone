@@ -139,6 +139,7 @@ export interface IStorage {
   // User management
   getAllUsers(): Promise<User[]>;
   updateUserAdminStatus(id: string, isAdmin: boolean): Promise<void>;
+  
 }
 
 export class DatabaseStorage implements IStorage {

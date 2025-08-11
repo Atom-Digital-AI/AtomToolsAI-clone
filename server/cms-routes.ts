@@ -21,6 +21,23 @@ const isAdmin = async (req: any, res: any, next: any) => {
 };
 
 export function registerCmsRoutes(app: Express) {
+  // Public endpoint to get published pages by slug
+  app.get("/api/public/pages/:slug*", async (req, res) => {
+    try {
+      const slug = req.params.slug || req.params["0"];
+      const normalizedSlug = slug.startsWith('/') ? slug : `/${slug}`;
+      
+      const page = await storage.getCmsPageBySlug(normalizedSlug);
+      if (!page || page.status !== "published") {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      
+      res.json(page);
+    } catch (error: any) {
+      console.error("Error fetching CMS page:", error);
+      res.status(500).json({ message: "Failed to fetch page", error: error?.message || "Unknown error" });
+    }
+  });
   // Admin-only CMS routes
   
   // Get all CMS pages
@@ -100,21 +117,7 @@ export function registerCmsRoutes(app: Express) {
     }
   });
 
-  // Public routes for fetching published content
-  
-  // Get published page by slug
-  app.get("/api/public/pages/:slug", async (req, res) => {
-    try {
-      const page = await storage.getCmsPageBySlug(req.params.slug);
-      if (!page || page.status !== 'published') {
-        return res.status(404).json({ message: "Page not found" });
-      }
-      res.json(page);
-    } catch (error) {
-      console.error("Error fetching public page:", error);
-      res.status(500).json({ message: "Failed to fetch page" });
-    }
-  });
+
 
   // Get published pages by type
   app.get("/api/public/pages", async (req, res) => {
