@@ -1074,11 +1074,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create tiers with pricing and limits
-      for (const tierData of tiers) {
+      for (let index = 0; index < tiers.length; index++) {
+        const tierData = tiers[index];
         const tier = await storage.createTier({
           packageId: newPackage.id,
           name: tierData.name,
           promotionalTag: tierData.promotionalTag,
+          sortOrder: index,
           isActive: tierData.isActive,
         });
         
@@ -1160,11 +1162,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deletePackageTiers(packageId);
       
       // Create new tiers with pricing and limits
-      for (const tierData of tiers) {
+      for (let index = 0; index < tiers.length; index++) {
+        const tierData = tiers[index];
         const tier = await storage.createTier({
           packageId: packageId,
           name: tierData.name,
           promotionalTag: tierData.promotionalTag,
+          sortOrder: index,
           isActive: tierData.isActive,
         });
         

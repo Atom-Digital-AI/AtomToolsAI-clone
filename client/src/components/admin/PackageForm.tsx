@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Trash2, Package, DollarSign, Settings } from 'lucide-react';
+import { Plus, Trash2, Package, DollarSign, Settings, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, PackageWithTiers } from '@shared/schema';
 
@@ -329,18 +329,62 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
                       <Badge variant="outline" className="text-indigo-400 border-indigo-400">
                         Tier {tierIndex + 1}
                       </Badge>
-                      {tierFields.length > 1 && (
-                        <Button
-                          type="button"
-                          onClick={() => removeTier(tierIndex)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400 hover:text-red-300"
-                          data-testid={`button-remove-tier-${tierIndex}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {/* Tier reordering buttons */}
+                        {tierFields.length > 1 && (
+                          <>
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                if (tierIndex > 0) {
+                                  const tiers = form.getValues('tiers');
+                                  const newTiers = [...tiers];
+                                  [newTiers[tierIndex - 1], newTiers[tierIndex]] = [newTiers[tierIndex], newTiers[tierIndex - 1]];
+                                  form.setValue('tiers', newTiers);
+                                }
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              disabled={tierIndex === 0}
+                              className="text-gray-400 hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                              data-testid={`button-move-tier-up-${tierIndex}`}
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                if (tierIndex < tierFields.length - 1) {
+                                  const tiers = form.getValues('tiers');
+                                  const newTiers = [...tiers];
+                                  [newTiers[tierIndex], newTiers[tierIndex + 1]] = [newTiers[tierIndex + 1], newTiers[tierIndex]];
+                                  form.setValue('tiers', newTiers);
+                                }
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              disabled={tierIndex === tierFields.length - 1}
+                              className="text-gray-400 hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                              data-testid={`button-move-tier-down-${tierIndex}`}
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                            <div className="w-px h-4 bg-gray-600 mx-1" />
+                          </>
+                        )}
+                        {tierFields.length > 1 && (
+                          <Button
+                            type="button"
+                            onClick={() => removeTier(tierIndex)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300"
+                            data-testid={`button-remove-tier-${tierIndex}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">

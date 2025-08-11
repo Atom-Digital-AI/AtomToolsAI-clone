@@ -56,6 +56,7 @@ export const tiers = pgTable("tiers", {
   packageId: varchar("package_id").notNull().references(() => packages.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   promotionalTag: text("promotional_tag"),
+  sortOrder: integer("sort_order").default(0),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

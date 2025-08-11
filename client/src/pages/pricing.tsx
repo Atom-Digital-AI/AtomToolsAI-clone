@@ -73,20 +73,7 @@ export default function Pricing() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Debug logging
-  console.log("Pricing page - packages:", packages);
-  console.log("Pricing page - loading:", isLoading);
-  console.log("Pricing page - error:", error);
-  
-  if (error) {
-    console.error("Full error details:", error);
-  }
-  
-  // Show raw packages data for debugging
-  if (packages) {
-    console.log("Package count:", packages.length);
-    console.log("First package:", packages[0]);
-  }
+
 
   if (isLoading) {
     return (

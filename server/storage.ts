@@ -566,7 +566,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTiersByPackage(packageId: string): Promise<Tier[]> {
-    return await db.select().from(tiers).where(eq(tiers.packageId, packageId));
+    return await db.select().from(tiers)
+      .where(eq(tiers.packageId, packageId))
+      .orderBy(tiers.sortOrder);
   }
 
   async deletePackageTiers(packageId: string): Promise<boolean> {
