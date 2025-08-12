@@ -30,6 +30,7 @@ import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generat
 import SEOMetaGeneratorApp from "@/pages/app/tools/seo-meta-generator";
 import ContentGenerator from "@/pages/content-generator";
 import ContentDisplay from "@/pages/content-display";
+import ContentHistory from "@/pages/content-history";
 import AdminDashboard from "@/pages/admin/dashboard";
 import CmsManagement from "@/pages/admin/cms";
 import DynamicCmsPage, { CmsHomePage } from "@/pages/cms-page";
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="/app/tools/seo-meta-generator" component={SEOMetaGeneratorApp} />
             <Route path="/app/tools/content-generator" component={ContentGenerator} />
             <Route path="/app/content/:requestId" component={ContentDisplay} />
+            <Route path="/app/content-history" component={ContentHistory} />
             <Route path="/admin" component={AdminDashboard} />
             <Route path="/admin/cms" component={CmsManagement} />
             <Route path="/terms" component={Terms} />

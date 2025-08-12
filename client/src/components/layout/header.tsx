@@ -25,6 +25,7 @@ export default function Header() {
   const authenticatedNavItems = [
     { href: "/app", label: "Dashboard" },
     { href: "/app/my-tools", label: "My Tools" },
+    { href: "/app/content-history", label: "Content History" },
     { href: "/resources", label: "Resources" },
   ];
 

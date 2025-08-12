@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, type InsertContentRequest } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -895,6 +895,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Failed to generate SEO content" });
       }
 
+      // Save the generated content to history
+      try {
+        await db.insert(generatedContent).values({
+          userId: req.user.id,
+          toolType: 'seo-meta',
+          title: `SEO Meta - ${url || targetKeywords}`,
+          inputData: {
+            url,
+            targetKeywords,
+            brandName,
+            sellingPoints,
+            additionalContext,
+            contentType,
+            brandGuidelines,
+            regulatoryGuidelines
+          },
+          outputData: result
+        });
+      } catch (error) {
+        console.error("Error saving generated content:", error);
+      }
+
       res.json(result);
     } catch (error) {
       console.error("SEO generation error:", error);
@@ -1050,6 +1072,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         console.error("No valid JSON found in response");
         return res.status(500).json({ message: "No valid response from AI" });
+      }
+
+      // Save the generated content to history
+      try {
+        await db.insert(generatedContent).values({
+          userId: req.user.id,
+          toolType: 'google-ads',
+          title: `Google Ads - ${brandName || targetKeywords}`,
+          inputData: {
+            url,
+            targetKeywords,
+            brandName,
+            sellingPoints,
+            caseType,
+            numVariations,
+            brandGuidelines,
+            regulatoryGuidelines
+          },
+          outputData: result
+        });
+      } catch (error) {
+        console.error("Error saving generated content:", error);
       }
 
       res.json(result);
@@ -1578,11 +1622,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedRequest) {
         return res.status(404).json({ message: "Content request not found" });
       }
+
+      // Also save to generated content history for easy access
+      try {
+        await db.insert(generatedContent).values({
+          userId: updatedRequest.userId,
+          toolType: 'content-generator',
+          title: updatedRequest.title,
+          inputData: {
+            title: updatedRequest.title,
+            wordCount: updatedRequest.wordCount,
+            primaryKeyword: updatedRequest.primaryKeyword,
+            secondaryKeywords: updatedRequest.secondaryKeywords,
+            internalLinks: updatedRequest.internalLinks,
+            externalLinks: updatedRequest.externalLinks,
+            additionalInstructions: updatedRequest.additionalInstructions
+          },
+          outputData: { content }
+        });
+      } catch (error) {
+        console.error("Error saving completed content to history:", error);
+      }
       
       res.json({ success: true, message: "Content updated successfully" });
     } catch (error) {
       console.error("Error updating content request:", error);
       res.status(500).json({ message: "Failed to update content request" });
+    }
+  });
+
+  // Generated Content History Routes
+  app.get("/api/generated-content", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const toolType = req.query.toolType as string | undefined;
+      
+      let query = db
+        .select()
+        .from(generatedContent)
+        .where(eq(generatedContent.userId, userId));
+      
+      if (toolType) {
+        query = query.where(eq(generatedContent.toolType, toolType));
+      }
+      
+      const contents = await query.orderBy(sql`${generatedContent.createdAt} DESC`);
+      res.json(contents);
+    } catch (error) {
+      console.error("Error fetching generated content:", error);
+      res.status(500).json({ message: "Failed to fetch generated content" });
+    }
+  });
+
+  app.get("/api/generated-content/:id", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      const [content] = await db
+        .select()
+        .from(generatedContent)
+        .where(eq(generatedContent.id, id) && eq(generatedContent.userId, userId));
+      
+      if (!content) {
+        return res.status(404).json({ message: "Generated content not found" });
+      }
+      
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching generated content:", error);
+      res.status(500).json({ message: "Failed to fetch generated content" });
+    }
+  });
+
+  app.delete("/api/generated-content/:id", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      const [deletedContent] = await db
+        .delete(generatedContent)
+        .where(eq(generatedContent.id, id) && eq(generatedContent.userId, userId))
+        .returning();
+      
+      if (!deletedContent) {
+        return res.status(404).json({ message: "Generated content not found" });
+      }
+      
+      res.json({ success: true, message: "Content deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting generated content:", error);
+      res.status(500).json({ message: "Failed to delete generated content" });
     }
   });
 

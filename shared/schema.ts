@@ -350,6 +350,20 @@ export const contentRequests = pgTable("content_requests", {
 export type ContentRequest = typeof contentRequests.$inferSelect;
 export type InsertContentRequest = typeof contentRequests.$inferInsert;
 
+// Generated Content History
+export const generatedContent = pgTable("generated_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads', 'content-generator'
+  title: varchar("title").notNull(),
+  inputData: jsonb("input_data").notNull(), // Store the input parameters
+  outputData: jsonb("output_data").notNull(), // Store the generated results
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type GeneratedContent = typeof generatedContent.$inferSelect;
+export type InsertGeneratedContent = typeof generatedContent.$inferInsert;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type CompleteProfile = z.infer<typeof completeProfileSchema>;
 export type Contact = typeof contacts.$inferSelect;
