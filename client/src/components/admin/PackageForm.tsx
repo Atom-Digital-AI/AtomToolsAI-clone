@@ -130,14 +130,21 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
         isActive: data.isActive,
       };
 
+      console.log('Mutation function called with data:', data);
+
       if (packageData) {
         // For updates, send the complete package data with tiers
-        return apiRequest('PUT', `/api/admin/packages/with-tiers/${packageData.id}`, {
+        const endpoint = `/api/admin/packages/with-tiers/${packageData.id}`;
+        const payload = {
           package: packagePayload,
           productIds: data.productIds,
           tiers: data.tiers,
-        });
+        };
+        console.log('Making PUT request to:', endpoint);
+        console.log('With payload:', payload);
+        return apiRequest('PUT', endpoint, payload);
       } else {
+        console.log('Making POST request for new package');
         return apiRequest('POST', '/api/admin/packages/with-tiers', {
           package: packagePayload,
           productIds: data.productIds,
@@ -145,7 +152,8 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('Package mutation successful:', result);
       toast({
         title: 'Success',
         description: `Package ${packageData ? 'updated' : 'created'} successfully`,
@@ -154,6 +162,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       onSuccess();
     },
     onError: (error: Error) => {
+      console.error('Package mutation error:', error);
       toast({
         title: 'Error',
         description: error.message,
@@ -163,6 +172,9 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
   });
 
   const onSubmit = (data: PackageFormData) => {
+    console.log('Submitting package form with data:', data);
+    console.log('Is updating package?', !!packageData);
+    console.log('Package ID:', packageData?.id);
     createPackageMutation.mutate(data);
   };
 
