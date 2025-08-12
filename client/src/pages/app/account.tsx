@@ -8,6 +8,7 @@ import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2 } from
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import UsageStatsDisplay from "@/components/UsageStatsDisplay";
 
 interface TierSubscription {
   id: string;
@@ -338,6 +339,9 @@ export default function Account() {
               )}
             </CardContent>
           </Card>
+
+          {/* Usage Statistics */}
+          <UsageStatsDisplay />
 
           {/* Account Actions */}
           <Card>

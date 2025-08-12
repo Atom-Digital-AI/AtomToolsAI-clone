@@ -1716,6 +1716,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Usage Statistics API
+  app.get("/api/user/usage-stats", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get user's tier subscriptions
+      const tierSubs = await storage.getUserTierSubscriptions(userId);
+      const activeTierSub = tierSubs.find(sub => sub.status === 'active');
+      
+      if (!activeTierSub) {
+        return res.json({ usageStats: [], hasActiveTier: false });
+      }
+
+      // Get all products accessible in this tier
+      const products = await storage.getProductsForTier(activeTierSub.tierId);
+      
+      const usageStats = await Promise.all(
+        products.map(async (product) => {
+          const accessInfo = await storage.getUserProductAccess(userId, product.id);
+          const currentUsage = await storage.getUserProductUsage(userId, product.id);
+          
+          return {
+            productId: product.id,
+            productName: product.name,
+            currentUsage: currentUsage || 0,
+            limit: accessInfo.tierLimit?.quantity || 0,
+            period: accessInfo.tierLimit?.period || 'monthly',
+            subfeatures: accessInfo.tierLimit?.subfeatures || {},
+            remaining: Math.max(0, (accessInfo.tierLimit?.quantity || 0) - (currentUsage || 0))
+          };
+        })
+      );
+
+      res.json({ 
+        usageStats,
+        hasActiveTier: true,
+        tierName: activeTierSub.tierName,
+        tierId: activeTierSub.tierId
+      });
+    } catch (error) {
+      console.error("Error fetching usage stats:", error);
+      res.status(500).json({ message: "Failed to fetch usage statistics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
