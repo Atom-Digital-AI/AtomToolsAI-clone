@@ -105,25 +105,15 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
   // Update selected products when packageData changes
   useEffect(() => {
     if (packageData?.products) {
-      console.log('Package data products:', packageData.products);
       const productIds = packageData.products.map(p => p.id);
-      console.log('Extracted product IDs:', productIds);
-      console.log('Setting selectedProducts to:', productIds);
       setSelectedProducts(productIds);
       form.setValue('productIds', productIds);
     } else if (packageData) {
-      console.log('Package data without products:', packageData);
       // Reset selected products if editing a package without products
       setSelectedProducts([]);
       form.setValue('productIds', []);
     }
   }, [packageData, form]);
-
-  // Debug: Log current state
-  useEffect(() => {
-    console.log('Current selectedProducts state:', selectedProducts);
-    console.log('Available products:', products.map(p => ({ id: p.id, name: p.name })));
-  }, [selectedProducts, products]);
 
   const { fields: tierFields, append: appendTier, remove: removeTier } = useFieldArray({
     control: form.control,
