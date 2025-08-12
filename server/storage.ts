@@ -28,7 +28,7 @@ import {
   type InsertCmsPage,
   type UpdateCmsPage
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray } from "drizzle-orm";
 
@@ -428,9 +428,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserProductUsage(userId: string, productId: string): Promise<number> {
-    // For now, return 0 - this would be implemented based on actual usage tracking
-    // In a real system, this would query usage records for the current period
-    return 0;
+    // Count generated content entries for this user and product
+    // The toolType in generatedContent corresponds to productId for tracking
+    const toolTypeMap: Record<string, string> = {
+      'c5985990-e94e-49b3-a86c-3076fd9d6b3f': 'google-ads',
+      '531de90b-12ef-4169-b664-0d55428435a6': 'seo-meta', 
+      '9dfbe2c0-1128-4ec1-891b-899e1b282ff6': 'content-generator',
+      'e8f73a2d-5c4e-4b1f-8a9d-3e7f2a1b4c6d': 'facebook-ads'
+    };
+
+    const toolType = toolTypeMap[productId];
+    if (!toolType) return 0;
+
+    // Count usage in the current billing period (this month for simplicity)
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(generatedContent)
+      .where(and(
+        eq(generatedContent.userId, userId),
+        eq(generatedContent.toolType, toolType),
+        sql`${generatedContent.createdAt} >= ${startOfMonth}`
+      ));
+
+    return result?.count || 0;
   }
 
 
