@@ -1738,7 +1738,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint for Make.com to send completed content back
   app.post("/api/content-complete", async (req, res) => {
     try {
-      const { requestId, content } = req.body;
+      // Check API key authentication
+      const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+      const expectedApiKey = process.env.WEBHOOK_API_KEY || 'default-webhook-key-change-me';
+      
+      if (!apiKey || apiKey !== expectedApiKey) {
+        return res.status(401).json({ message: "Invalid or missing API key" });
+      }
+
+      // Get request ID from header or body (header takes precedence)
+      const requestId = req.headers['x-request-id'] || req.body.requestId;
+      const { content } = req.body;
       
       if (!requestId || !content) {
         return res.status(400).json({ message: "Request ID and content are required" });

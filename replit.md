@@ -42,6 +42,7 @@ A PostgreSQL database with a pure tier-based subscription system:
 - **Authentication**: Google OAuth 2.0 and traditional email/password signup.
 - **Session Management**: Server-side sessions in PostgreSQL.
 - **Input Validation**: Zod schemas for client and server-side validation.
+- **Webhook Security**: API key authentication for external webhook endpoints (WEBHOOK_API_KEY environment variable).
 
 ### UI/UX Design System
 - **Color Scheme**: Custom dark-mode palette with electric indigo accent (#6366F1).
@@ -62,6 +63,7 @@ A PostgreSQL database with a pure tier-based subscription system:
 - **Cloud Image Upload Integration**: Direct image upload functionality within CMS using Google Cloud Storage and Uppy integration, eliminating external URL dependencies with admin-authenticated upload endpoints.
 - **Complete Content History System**: Comprehensive content lifecycle management with automatic saving, search, filtering, copy, download, and delete functionality for all generated content from SEO Meta, Google Ads, and Content Generator tools.
 - **Usage Tracking & Monitoring**: Real-time usage statistics display showing current usage vs limits for each tool with visual progress indicators, subfeature tracking, and upgrade prompts integrated into account settings.
+- **Enhanced Webhook Integration**: Content generator webhook endpoint supports both header-based (`x-request-id`) and body-based request ID passing, with API key authentication for secure external service integration.
 - **Performance Optimizations**: Code splitting, tree shaking, privacy-focused analytics, font loading optimization, image optimization, and SEO.
 
 ## External Dependencies
