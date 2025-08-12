@@ -39,6 +39,16 @@ export default function AdminDashboard() {
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(undefined);
 
+  // Reset package form when switching tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Reset package form state when switching away from packages tab
+    if (value !== "packages") {
+      setPackageFormOpen(false);
+      setEditingPackage(undefined);
+    }
+  };
+
   const [editForm, setEditForm] = useState<any>({});
   
   const { toast } = useToast();
@@ -259,7 +269,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" defaultValue="overview">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full" defaultValue="overview">
           <TabsList className="grid w-full grid-cols-4 bg-gray-900 border-gray-800">
             <TabsTrigger 
               value="overview" 

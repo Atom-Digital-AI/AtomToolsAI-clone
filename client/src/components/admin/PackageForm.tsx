@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -60,12 +60,27 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedProducts, setSelectedProducts] = useState<string[]>(
-    packageData?.products.map(p => p.id) || []
+    packageData?.products?.map(p => p.id) || []
   );
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/product-admin/products'],
   });
+
+  // Update selected products when packageData changes
+  useEffect(() => {
+    if (packageData?.products) {
+      console.log('Package data products:', packageData.products);
+      const productIds = packageData.products.map(p => p.id);
+      setSelectedProducts(productIds);
+      form.setValue('productIds', productIds);
+    } else if (packageData) {
+      console.log('Package data without products:', packageData);
+      // Reset selected products if editing a package without products
+      setSelectedProducts([]);
+      form.setValue('productIds', []);
+    }
+  }, [packageData, form]);
 
   const form = useForm<PackageFormData>({
     resolver: zodResolver(packageFormSchema),
@@ -75,7 +90,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       category: packageData?.category || '',
       version: packageData?.version || 1,
       isActive: packageData?.isActive ?? true,
-      productIds: selectedProducts,
+      productIds: packageData?.products?.map(p => p.id) || [],
       tiers: packageData?.tiers.map(tier => ({
         name: tier.name,
         promotionalTag: tier.promotionalTag || '',
