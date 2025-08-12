@@ -3,8 +3,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2 } from "lucide-react";
+import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2, Save, XIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -48,6 +49,13 @@ export default function Account() {
   const { user, isLoading: userLoading } = useAuth();
   const { toast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // Edit mode states
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [editedFirstName, setEditedFirstName] = useState("");
+  const [editedLastName, setEditedLastName] = useState("");
+  const [editedEmail, setEditedEmail] = useState("");
 
   // Get tier subscriptions (new system)
   const { data: tierSubscriptions = [], isLoading: tierSubscriptionsLoading } = useQuery<TierSubscription[]>({
@@ -106,6 +114,29 @@ export default function Account() {
     }
   });
 
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { firstName?: string; lastName?: string; email?: string }) => {
+      return apiRequest("PUT", "/api/auth/profile", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setIsEditingName(false);
+      setIsEditingEmail(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Delete account mutation
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
@@ -126,6 +157,39 @@ export default function Account() {
       });
     }
   });
+
+  // Edit handlers
+  const handleEditName = () => {
+    setEditedFirstName(user?.firstName || "");
+    setEditedLastName(user?.lastName || "");
+    setIsEditingName(true);
+  };
+
+  const handleEditEmail = () => {
+    setEditedEmail(user?.email || "");
+    setIsEditingEmail(true);
+  };
+
+  const handleSaveName = () => {
+    updateProfileMutation.mutate({
+      firstName: editedFirstName,
+      lastName: editedLastName
+    });
+  };
+
+  const handleSaveEmail = () => {
+    updateProfileMutation.mutate({
+      email: editedEmail
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setIsEditingEmail(false);
+    setEditedFirstName("");
+    setEditedLastName("");
+    setEditedEmail("");
+  };
 
   const loading = userLoading || tierSubscriptionsLoading || packagesLoading;
 
@@ -173,24 +237,103 @@ export default function Account() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-text-secondary">Name</label>
-                  <div className="mt-1 p-3 border border-border rounded-lg bg-surface flex items-center justify-between">
-                    <span>{user.firstName} {user.lastName}</span>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {isEditingName ? (
+                    <div className="mt-1 space-y-2">
+                      <div className="flex space-x-2">
+                        <Input
+                          placeholder="First Name"
+                          value={editedFirstName}
+                          onChange={(e) => setEditedFirstName(e.target.value)}
+                          data-testid="input-first-name"
+                        />
+                        <Input
+                          placeholder="Last Name"
+                          value={editedLastName}
+                          onChange={(e) => setEditedLastName(e.target.value)}
+                          data-testid="input-last-name"
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={handleCancelEdit}
+                          data-testid="button-cancel-name-edit"
+                        >
+                          <XIcon className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={handleSaveName}
+                          disabled={updateProfileMutation.isPending}
+                          data-testid="button-save-name"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-1 p-3 border border-border rounded-lg bg-surface flex items-center justify-between">
+                      <span>{user.firstName} {user.lastName}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleEditName}
+                        data-testid="button-edit-name"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-text-secondary">Email</label>
-                  <div className="mt-1 p-3 border border-border rounded-lg bg-surface flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Mail className="w-4 h-4 text-text-secondary" />
-                      <span>{user.email}</span>
+                  {isEditingEmail ? (
+                    <div className="mt-1 space-y-2">
+                      <Input
+                        type="email"
+                        placeholder="Email Address"
+                        value={editedEmail}
+                        onChange={(e) => setEditedEmail(e.target.value)}
+                        data-testid="input-email"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={handleCancelEdit}
+                          data-testid="button-cancel-email-edit"
+                        >
+                          <XIcon className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={handleSaveEmail}
+                          disabled={updateProfileMutation.isPending}
+                          data-testid="button-save-email"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="mt-1 p-3 border border-border rounded-lg bg-surface flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Mail className="w-4 h-4 text-text-secondary" />
+                        <span>{user.email}</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleEditEmail}
+                        data-testid="button-edit-email"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div>

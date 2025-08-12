@@ -223,6 +223,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Update profile endpoint
+  app.put("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { firstName, lastName, email } = req.body;
+
+      const updateData: any = {};
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (email !== undefined) updateData.email = email;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+
+      await storage.updateUser(userId, updateData);
+      res.json({ message: "Profile updated successfully" });
+    } catch (error) {
+      console.error("Update profile error:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Change password endpoint
   app.post("/api/auth/change-password", requireAuth, async (req, res) => {
     try {
