@@ -1832,7 +1832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user's tier subscriptions
       const tierSubs = await storage.getUserTierSubscriptions(userId);
-      const activeTierSub = tierSubs.find(sub => sub.status === 'active');
+      const activeTierSub = tierSubs.find(sub => sub.isActive === true);
       
       if (!activeTierSub) {
         return res.json({ usageStats: [], hasActiveTier: false });

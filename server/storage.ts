@@ -388,12 +388,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Tier subscription implementations
-  async getUserTierSubscriptions(userId: string): Promise<UserTierSubscription[]> {
+  async getUserTierSubscriptions(userId: string): Promise<any[]> {
     return await db
-      .select()
+      .select({
+        id: userTierSubscriptions.id,
+        userId: userTierSubscriptions.userId,
+        tierId: userTierSubscriptions.tierId,
+        subscribedAt: userTierSubscriptions.subscribedAt,
+        expiresAt: userTierSubscriptions.expiresAt,
+        isActive: userTierSubscriptions.isActive,
+        paymentReference: userTierSubscriptions.paymentReference,
+        currentUsage: userTierSubscriptions.currentUsage,
+        lastResetAt: userTierSubscriptions.lastResetAt,
+        createdAt: userTierSubscriptions.createdAt,
+        updatedAt: userTierSubscriptions.updatedAt,
+        tierName: tiers.name,
+        packageId: tiers.packageId
+      })
       .from(userTierSubscriptions)
+      .leftJoin(tiers, eq(userTierSubscriptions.tierId, tiers.id))
       .where(and(eq(userTierSubscriptions.userId, userId), eq(userTierSubscriptions.isActive, true)));
   }
+
+  async getProductsForTier(tierId: string): Promise<Product[]> {
+    // Get the tier to find its package
+    const [tier] = await db.select().from(tiers).where(eq(tiers.id, tierId));
+    if (!tier) return [];
+
+    // Get all products for this package through package_products table
+    const packageProducts = await db
+      .select({
+        product: products
+      })
+      .from(packageProducts)
+      .innerJoin(products, eq(packageProducts.productId, products.id))
+      .where(eq(packageProducts.packageId, tier.packageId));
+
+    return packageProducts.map(p => p.product);
+  }
+
+  async getUserProductUsage(userId: string, productId: string): Promise<number> {
+    // For now, return 0 - this would be implemented based on actual usage tracking
+    // In a real system, this would query usage records for the current period
+    return 0;
+  }
+
 
   async getUserTierSubscriptionsWithDetails(userId: string): Promise<any[]> {
     return await db
