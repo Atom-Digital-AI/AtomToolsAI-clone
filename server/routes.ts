@@ -951,12 +951,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user?.email,
         toolName: 'SEO Meta Generator',
         errorType: getErrorTypeFromError(error),
-        errorMessage: error?.message || 'Unknown error occurred',
-        errorStack: error?.stack,
+        errorMessage: (error as any)?.message || 'Unknown error occurred',
+        errorStack: (error as any)?.stack,
         requestData: req.body,
-        httpStatus: 500,
+        httpStatus: (error as any)?.status || 500,
         endpoint: '/api/tools/seo-meta/generate',
-        req
+        req,
+        responseHeaders: (error as any)?.headers ? Object.fromEntries((error as any).headers.entries()) : null
       });
       
       res.status(500).json({ message: "Internal server error" });
@@ -1145,12 +1146,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user?.email,
         toolName: 'Google Ads Copy Generator',
         errorType: getErrorTypeFromError(error),
-        errorMessage: error?.message || 'Unknown error occurred',
-        errorStack: error?.stack,
+        errorMessage: (error as any)?.message || 'Unknown error occurred',
+        errorStack: (error as any)?.stack,
         requestData: req.body,
-        httpStatus: 500,
-        endpoint: '/api/google-ads-copy',
-        req
+        httpStatus: (error as any)?.status || 500,
+        endpoint: '/api/tools/google-ads/generate',
+        req,
+        responseHeaders: (error as any)?.headers ? Object.fromEntries((error as any).headers.entries()) : null
       });
       
       res.status(500).json({ message: "Internal server error" });
@@ -1668,12 +1670,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user?.email,
         toolName: 'Content Generator',
         errorType: getErrorTypeFromError(error),
-        errorMessage: error?.message || 'Unknown error occurred',
-        errorStack: error?.stack,
+        errorMessage: (error as any)?.message || 'Unknown error occurred',
+        errorStack: (error as any)?.stack,
         requestData: req.body,
-        httpStatus: 500,
+        httpStatus: (error as any)?.status || 500,
         endpoint: '/api/content-requests',
-        req
+        req,
+        responseHeaders: (error as any)?.headers ? Object.fromEntries((error as any).headers.entries()) : null
       });
       
       res.status(500).json({ message: "Failed to create content request" });

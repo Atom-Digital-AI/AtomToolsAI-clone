@@ -13,6 +13,7 @@ interface LogErrorParams {
   httpStatus?: number;
   endpoint: string;
   req?: Request;
+  responseHeaders?: any; // HTTP response headers from external API calls
 }
 
 export async function logToolError(params: LogErrorParams) {
@@ -27,7 +28,8 @@ export async function logToolError(params: LogErrorParams) {
       requestData,
       httpStatus,
       endpoint,
-      req
+      req,
+      responseHeaders
     } = params;
 
     await db.insert(errorLogs).values({
@@ -42,6 +44,7 @@ export async function logToolError(params: LogErrorParams) {
       endpoint,
       userAgent: req?.get('User-Agent') || null,
       ipAddress: req?.ip || req?.connection?.remoteAddress || null,
+      responseHeaders: responseHeaders || null,
     });
 
     console.error(`Tool Error Logged: ${toolName} - ${errorType} - ${errorMessage}`);

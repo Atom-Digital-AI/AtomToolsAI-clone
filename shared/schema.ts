@@ -378,6 +378,7 @@ export const errorLogs = pgTable("error_logs", {
   endpoint: varchar("endpoint").notNull(),
   userAgent: varchar("user_agent"),
   ipAddress: varchar("ip_address"),
+  responseHeaders: jsonb("response_headers"), // HTTP response headers from external API calls
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
