@@ -112,22 +112,79 @@ export default function ContentHistory() {
   const downloadContent = (content: GeneratedContent) => {
     let fileContent = '';
     let fileName = '';
+    let mimeType = 'text/plain';
     
     if (content.toolType === 'google-ads') {
       const data = content.outputData as any;
-      fileContent = `Google Ads Copy - ${content.title}\n\nHeadlines:\n${data.headlines?.join('\n') || ''}\n\nDescriptions:\n${data.descriptions?.join('\n') || ''}`;
-      fileName = `google-ads-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+      // Create CSV format for Google Ads
+      const csvRows = [];
+      csvRows.push('Type,Content'); // Header
+      
+      (data.headlines || []).forEach((headline: string) => {
+        csvRows.push(`"Headline","${headline.replace(/"/g, '""')}"`);
+      });
+      
+      (data.descriptions || []).forEach((description: string) => {
+        csvRows.push(`"Description","${description.replace(/"/g, '""')}"`);
+      });
+      
+      fileContent = csvRows.join('\n');
+      fileName = `google-ads-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
+      mimeType = 'text/csv';
     } else if (content.toolType === 'seo-meta') {
       const data = content.outputData as any;
-      fileContent = `SEO Meta Tags - ${content.title}\n\nTitles:\n${data.titles?.join('\n') || ''}\n\nDescriptions:\n${data.descriptions?.join('\n') || ''}`;
-      fileName = `seo-meta-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+      // Create CSV format for SEO Meta
+      const csvRows = [];
+      csvRows.push('Type,Content'); // Header
+      
+      (data.titles || []).forEach((title: string) => {
+        csvRows.push(`"Title","${title.replace(/"/g, '""')}"`);
+      });
+      
+      (data.descriptions || []).forEach((description: string) => {
+        csvRows.push(`"Description","${description.replace(/"/g, '""')}"`);
+      });
+      
+      fileContent = csvRows.join('\n');
+      fileName = `seo-meta-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
+      mimeType = 'text/csv';
     } else if (content.toolType === 'content-generator') {
       const data = content.outputData as any;
-      fileContent = data.content || '';
-      fileName = `content-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
+      // Convert HTML content to markdown-friendly format
+      let markdownContent = data.content || '';
+      
+      // Basic HTML to Markdown conversion
+      markdownContent = markdownContent
+        .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+        .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+        .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+        .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n')
+        .replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n\n')
+        .replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n\n')
+        .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+        .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+        .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+        .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+        .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+        .replace(/<ul[^>]*>(.*?)<\/ul>/gis, '$1\n')
+        .replace(/<ol[^>]*>(.*?)<\/ol>/gis, '$1\n')
+        .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '') // Remove remaining HTML tags
+        .replace(/\n\n\n+/g, '\n\n') // Clean up multiple newlines
+        .trim();
+      
+      // Add metadata header
+      fileContent = `# ${content.title}\n\n`;
+      fileContent += `*Generated on ${formatDate(content.createdAt)}*\n\n`;
+      fileContent += `---\n\n`;
+      fileContent += markdownContent;
+      
+      fileName = `content-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+      mimeType = 'text/markdown';
     }
 
-    const blob = new Blob([fileContent], { type: 'text/plain' });
+    const blob = new Blob([fileContent], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -139,7 +196,7 @@ export default function ContentHistory() {
 
     toast({
       title: 'Download Started',
-      description: 'Your content is being downloaded.',
+      description: `Your content is being downloaded as ${fileName.split('.').pop()?.toUpperCase()}.`,
     });
   };
 
