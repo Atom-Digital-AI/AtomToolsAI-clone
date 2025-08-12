@@ -67,21 +67,6 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
     queryKey: ['/api/product-admin/products'],
   });
 
-  // Update selected products when packageData changes
-  useEffect(() => {
-    if (packageData?.products) {
-      console.log('Package data products:', packageData.products);
-      const productIds = packageData.products.map(p => p.id);
-      setSelectedProducts(productIds);
-      form.setValue('productIds', productIds);
-    } else if (packageData) {
-      console.log('Package data without products:', packageData);
-      // Reset selected products if editing a package without products
-      setSelectedProducts([]);
-      form.setValue('productIds', []);
-    }
-  }, [packageData, form]);
-
   const form = useForm<PackageFormData>({
     resolver: zodResolver(packageFormSchema),
     defaultValues: {
@@ -116,6 +101,21 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       }],
     },
   });
+
+  // Update selected products when packageData changes
+  useEffect(() => {
+    if (packageData?.products) {
+      console.log('Package data products:', packageData.products);
+      const productIds = packageData.products.map(p => p.id);
+      setSelectedProducts(productIds);
+      form.setValue('productIds', productIds);
+    } else if (packageData) {
+      console.log('Package data without products:', packageData);
+      // Reset selected products if editing a package without products
+      setSelectedProducts([]);
+      form.setValue('productIds', []);
+    }
+  }, [packageData, form]);
 
   const { fields: tierFields, append: appendTier, remove: removeTier } = useFieldArray({
     control: form.control,
