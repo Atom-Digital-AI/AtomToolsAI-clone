@@ -82,6 +82,7 @@ export interface IStorage {
   unsubscribeTierUser(userId: string, tierId: string): Promise<boolean>;
   checkTierUsage(userId: string, productId: string): Promise<{ canUse: boolean; currentUsage: number; limit: number | null }>;
   updateTierUsage(userId: string, productId: string, incrementBy?: number): Promise<void>;
+  incrementUsage(userId: string, productId: string, periodicity: string): Promise<void>;
   
   // Guideline Profile operations
   getUserGuidelineProfiles(userId: string, type?: 'brand' | 'regulatory'): Promise<GuidelineProfile[]>;
@@ -488,6 +489,112 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(userTierSubscriptions.userId, userId), eq(userTierSubscriptions.isActive, true)));
   }
 
+  // Reset usage counters if the periodicity period has elapsed
+  async resetUsageIfNeeded(subscriptionId: string, periodicity: string): Promise<void> {
+    const [subscription] = await db
+      .select()
+      .from(userTierSubscriptions)
+      .where(eq(userTierSubscriptions.id, subscriptionId));
+
+    if (!subscription) return;
+
+    const now = new Date();
+    const lastReset = new Date(subscription.lastResetAt);
+    let needsReset = false;
+
+    switch (periodicity) {
+      case 'day':
+        // Reset if last reset was before today
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const lastResetDay = new Date(lastReset.getFullYear(), lastReset.getMonth(), lastReset.getDate());
+        needsReset = lastResetDay < todayStart;
+        break;
+      
+      case 'month':
+        // Reset if last reset was before this month
+        needsReset = lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear();
+        break;
+      
+      case 'year':
+        // Reset if last reset was before this year
+        needsReset = lastReset.getFullYear() !== now.getFullYear();
+        break;
+      
+      case 'lifetime':
+        // Never reset lifetime limits
+        needsReset = false;
+        break;
+      
+      default:
+        // For unknown periodicity, don't reset
+        needsReset = false;
+        break;
+    }
+
+    if (needsReset) {
+      // Reset all usage counters for this periodicity
+      const currentUsage = subscription.currentUsage as any || {};
+      
+      // Clear usage for all products with this periodicity
+      Object.keys(currentUsage).forEach(productId => {
+        if (currentUsage[productId] && currentUsage[productId][periodicity] !== undefined) {
+          currentUsage[productId][periodicity] = 0;
+        }
+      });
+
+      // Update the subscription with reset usage and new reset timestamp
+      await db
+        .update(userTierSubscriptions)
+        .set({
+          currentUsage: currentUsage,
+          lastResetAt: now,
+          updatedAt: now
+        })
+        .where(eq(userTierSubscriptions.id, subscriptionId));
+    }
+  }
+
+  // Increment usage counter for a specific product and periodicity
+  async incrementUsage(userId: string, productId: string, periodicity: string): Promise<void> {
+    const [subscription] = await db
+      .select()
+      .from(userTierSubscriptions)
+      .where(and(
+        eq(userTierSubscriptions.userId, userId),
+        eq(userTierSubscriptions.isActive, true)
+      ));
+
+    if (!subscription) return;
+
+    // Check if reset is needed first
+    await this.resetUsageIfNeeded(subscription.id, periodicity);
+
+    // Get updated subscription after potential reset
+    const [updatedSubscription] = await db
+      .select()
+      .from(userTierSubscriptions)
+      .where(eq(userTierSubscriptions.id, subscription.id));
+
+    const currentUsage = updatedSubscription.currentUsage as any || {};
+    
+    // Initialize structure if needed
+    if (!currentUsage[productId]) {
+      currentUsage[productId] = {};
+    }
+    
+    // Increment the usage counter
+    currentUsage[productId][periodicity] = (currentUsage[productId][periodicity] || 0) + 1;
+
+    // Update the subscription
+    await db
+      .update(userTierSubscriptions)
+      .set({
+        currentUsage: currentUsage,
+        updatedAt: new Date()
+      })
+      .where(eq(userTierSubscriptions.id, subscription.id));
+  }
+
   async isUserSubscribedToTier(userId: string, tierId: string): Promise<boolean> {
     const [subscription] = await db
       .select()
@@ -588,7 +695,17 @@ export class DatabaseStorage implements IStorage {
     }
 
     const { tierSubscription, tierLimit } = accessInfo;
-    const currentUsage = (tierSubscription.currentUsage as any)?.[productId]?.[tierLimit.periodicity] || 0;
+    
+    // Check if usage needs to be reset based on periodicity
+    await this.resetUsageIfNeeded(tierSubscription.id, tierLimit.periodicity);
+    
+    // Get updated usage after potential reset
+    const [updatedSubscription] = await db
+      .select()
+      .from(userTierSubscriptions)
+      .where(eq(userTierSubscriptions.id, tierSubscription.id));
+    
+    const currentUsage = (updatedSubscription.currentUsage as any)?.[productId]?.[tierLimit.periodicity] || 0;
     const limit = tierLimit.quantity;
 
     // If no limit (unlimited), allow usage

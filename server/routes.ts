@@ -922,7 +922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Save the generated content to history
       try {
         await db.insert(generatedContent).values({
-          userId: req.user.id,
+          userId: (req as any).user.id,
           toolType: 'seo-meta',
           title: `SEO Meta - ${url || targetKeywords}`,
           inputData: {
@@ -937,6 +937,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           outputData: result
         });
+
+        // Increment usage for SEO Meta tool
+        const seoMetaProductId = '531de90b-12ef-4169-b664-0d55428435a6';
+        const accessInfo = await storage.getUserProductAccess((req as any).user.id, seoMetaProductId);
+        if (accessInfo.tierLimit) {
+          await storage.incrementUsage((req as any).user.id, seoMetaProductId, accessInfo.tierLimit.periodicity);
+        }
       } catch (error) {
         console.error("Error saving generated content:", error);
       }
@@ -1117,7 +1124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Save the generated content to history
       try {
         await db.insert(generatedContent).values({
-          userId: req.user.id,
+          userId: (req as any).user.id,
           toolType: 'google-ads',
           title: `Google Ads - ${brandName || targetKeywords}`,
           inputData: {
@@ -1132,6 +1139,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           outputData: result
         });
+
+        // Increment usage for Google Ads tool
+        const googleAdsProductId = 'c5985990-e94e-49b3-a86c-3076fd9d6b3f';
+        const accessInfo = await storage.getUserProductAccess((req as any).user.id, googleAdsProductId);
+        if (accessInfo.tierLimit) {
+          await storage.incrementUsage((req as any).user.id, googleAdsProductId, accessInfo.tierLimit.periodicity);
+        }
       } catch (error) {
         console.error("Error saving generated content:", error);
       }
@@ -1762,6 +1776,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           outputData: { content }
         });
+
+        // Increment usage for Content Generator tool
+        const contentGenProductId = '9dfbe2c0-1128-4ec1-891b-899e1b282ff6';
+        const accessInfo = await storage.getUserProductAccess(updatedRequest.userId, contentGenProductId);
+        if (accessInfo.tierLimit) {
+          await storage.incrementUsage(updatedRequest.userId, contentGenProductId, accessInfo.tierLimit.periodicity);
+        }
       } catch (error) {
         console.error("Error saving completed content to history:", error);
       }
