@@ -90,6 +90,7 @@ export default function App() {
             <Route path="/app/account" component={Account} />
             <Route path="/app/profile-settings" component={ProfileSettings} />
             <Route path="/app/my-tools" component={MyTools} />
+            <Route path="/app/tools" component={ToolsIndex} />
             <Route path="/app/tools/facebook-ads-connector" component={FacebookAdsConnector} />
             <Route path="/app/tools/google-ads-copy-generator" component={GoogleAdsCopyGeneratorApp} />
             <Route path="/app/tools/seo-meta-generator" component={SEOMetaGeneratorApp} />
