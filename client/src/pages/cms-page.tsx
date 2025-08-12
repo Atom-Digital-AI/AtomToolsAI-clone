@@ -186,11 +186,9 @@ function CmsPageDisplay({ slug }: CmsPageDisplayProps) {
 
         {/* Page Content */}
         <main className="px-4 md:px-0">
-          <Card className="bg-gray-900 border-gray-800 max-w-4xl mx-auto">
-            <CardContent className="p-0">
-              <BlockRenderer content={page.content} />
-            </CardContent>
-          </Card>
+          <div className="max-w-4xl mx-auto">
+            <BlockRenderer content={page.content} />
+          </div>
         </main>
 
         {/* Page Footer */}
@@ -208,6 +206,11 @@ function CmsPageDisplay({ slug }: CmsPageDisplayProps) {
       </div>
     </div>
   );
+}
+
+// Homepage component that uses CMS data
+export function CmsHomePage() {
+  return <CmsPageDisplay slug="/" />;
 }
 
 // Dynamic page component that extracts slug from URL

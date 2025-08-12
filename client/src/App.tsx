@@ -30,7 +30,7 @@ import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generat
 import SEOMetaGeneratorApp from "@/pages/app/tools/seo-meta-generator";
 import AdminDashboard from "@/pages/admin/dashboard";
 import CmsManagement from "@/pages/admin/cms";
-import DynamicCmsPage from "@/pages/cms-page";
+import DynamicCmsPage, { CmsHomePage } from "@/pages/cms-page";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import Cookies from "@/pages/cookies";
@@ -69,7 +69,7 @@ export default function App() {
         <Header />
         <main className="flex-1 w-full">
           <Switch>
-            <Route path="/" component={Home} />
+            <Route path="/" component={CmsHomePage} />
             <Route path="/tools" component={ToolsIndex} />
             <Route path="/tools/facebook-ads-looker-studio-connector" component={FacebookAdsTool} />
             <Route path="/tools/seo-meta-generator" component={SeoMetaTool} />
