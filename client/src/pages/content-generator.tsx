@@ -10,6 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { FileText, Hash, Target, Link, ExternalLink, MessageSquare, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { apiRequest } from '@/lib/queryClient';
+import { nanoid } from 'nanoid';
 
 const contentGeneratorSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -86,6 +88,23 @@ export default function ContentGenerator() {
     setIsGenerating(true);
     
     try {
+      // Generate unique request ID
+      const requestId = nanoid();
+      
+      // First, save the request to our database
+      await apiRequest('POST', '/api/content-requests', {
+        requestId,
+        title: data.title,
+        wordCount: data.wordCount,
+        primaryKeyword: data.primaryKeyword,
+        secondaryKeywords: data.secondaryKeywords,
+        internalLinks: data.internalLinks,
+        externalLinks: data.externalLinks,
+        additionalInstructions: data.additionalInstructions || '',
+        status: 'pending'
+      });
+
+      // Then send to Make.com with the request ID
       const payload = {
         title: data.title,
         wordCount: data.wordCount,
@@ -101,6 +120,7 @@ export default function ContentGenerator() {
         headers: {
           'Content-Type': 'application/json',
           'x-make-apikey': '*F~k$|1WnBZ6}k08Rp;DPg@!y*-:bkqr0==At0g4wo.:HTXVdvi1C&Qn62W,0jzQ',
+          'x-request-id': requestId,
         },
         body: JSON.stringify(payload),
       });
@@ -108,7 +128,7 @@ export default function ContentGenerator() {
       if (response.ok) {
         toast({
           title: 'Content Generation Started',
-          description: 'Your content is being generated. You will receive it shortly.',
+          description: 'Your content is being generated and you will be notified when it is ready. You can check your progress in the My Tools section.',
         });
         
         // Reset form after successful submission

@@ -328,6 +328,28 @@ export const updateProductSchema = insertProductSchema.partial();
 
 // Type exports
 export type User = typeof users.$inferSelect;
+
+// Content Generation Requests
+export const contentRequests = pgTable("content_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().unique(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  wordCount: integer("word_count").notNull(),
+  primaryKeyword: varchar("primary_keyword").notNull(),
+  secondaryKeywords: jsonb("secondary_keywords").$type<string[]>().default([]),
+  internalLinks: jsonb("internal_links").$type<string[]>().default([]),
+  externalLinks: jsonb("external_links").$type<string[]>().default([]),
+  additionalInstructions: text("additional_instructions"),
+  status: varchar("status").notNull().default("pending"), // pending, completed, failed
+  generatedContent: text("generated_content"),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export type ContentRequest = typeof contentRequests.$inferSelect;
+export type InsertContentRequest = typeof contentRequests.$inferInsert;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type CompleteProfile = z.infer<typeof completeProfileSchema>;
 export type Contact = typeof contacts.$inferSelect;

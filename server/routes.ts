@@ -4,10 +4,10 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, type InsertContentRequest } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./db";
 import OpenAI from "openai";
 import axios from "axios";
@@ -1499,6 +1499,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { registerObjectStorageRoutes } = await import("./object-storage-routes");
   registerCmsRoutes(app);
   registerObjectStorageRoutes(app);
+
+  // Content Generation Request Routes
+  app.post("/api/content-requests", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const contentRequestData = {
+        ...req.body,
+        userId
+      };
+      
+      const [contentRequest] = await db.insert(contentRequests).values(contentRequestData).returning();
+      res.status(201).json(contentRequest);
+    } catch (error) {
+      console.error("Error creating content request:", error);
+      res.status(500).json({ message: "Failed to create content request" });
+    }
+  });
+
+  app.get("/api/content-requests/:requestId", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { requestId } = req.params;
+      
+      const [contentRequest] = await db
+        .select()
+        .from(contentRequests)
+        .where(eq(contentRequests.requestId, requestId));
+      
+      if (!contentRequest) {
+        return res.status(404).json({ message: "Content request not found" });
+      }
+      
+      res.json(contentRequest);
+    } catch (error) {
+      console.error("Error fetching content request:", error);
+      res.status(500).json({ message: "Failed to fetch content request" });
+    }
+  });
+
+  app.get("/api/user/content-requests", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      const userRequests = await db
+        .select()
+        .from(contentRequests)
+        .where(eq(contentRequests.userId, userId))
+        .orderBy(sql`${contentRequests.createdAt} DESC`);
+      
+      res.json(userRequests);
+    } catch (error) {
+      console.error("Error fetching user content requests:", error);
+      res.status(500).json({ message: "Failed to fetch content requests" });
+    }
+  });
+
+  // Endpoint for Make.com to send completed content back
+  app.post("/api/content-complete", async (req, res) => {
+    try {
+      const { requestId, content } = req.body;
+      
+      if (!requestId || !content) {
+        return res.status(400).json({ message: "Request ID and content are required" });
+      }
+      
+      // Update the content request with the generated content
+      const [updatedRequest] = await db
+        .update(contentRequests)
+        .set({
+          generatedContent: content,
+          status: 'completed',
+          completedAt: new Date()
+        })
+        .where(eq(contentRequests.requestId, requestId))
+        .returning();
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ message: "Content request not found" });
+      }
+      
+      res.json({ success: true, message: "Content updated successfully" });
+    } catch (error) {
+      console.error("Error updating content request:", error);
+      res.status(500).json({ message: "Failed to update content request" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
