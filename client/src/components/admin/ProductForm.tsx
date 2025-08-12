@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -45,13 +45,35 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
     },
   });
 
+  // Reset form when product changes
+  useEffect(() => {
+    if (open) {
+      console.log('Resetting form with product:', product);
+      form.reset({
+        name: product?.name || "",
+        description: product?.description || "",
+        routePath: product?.routePath || "",
+        isActive: product?.isActive ?? true,
+        availableSubfeatures: product?.availableSubfeatures || {
+          bulk_processing: false,
+          variations: false,
+          brand_guidelines: false,
+        },
+      });
+    }
+  }, [product, open, form]);
+
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
       const endpoint = product ? `/api/admin/products/${product.id}` : "/api/admin/products";
       const method = product ? "PUT" : "POST";
-      return await apiRequest(method, endpoint, data);
+      console.log('Product mutation - Method:', method, 'Endpoint:', endpoint, 'Data:', data);
+      const result = await apiRequest(method, endpoint, data);
+      console.log('Product mutation result:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('Product mutation success:', result);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
       onOpenChange(false);
@@ -71,6 +93,8 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
   });
 
   const onSubmit = (data: ProductFormData) => {
+    console.log('Product form submit with data:', data);
+    console.log('Current product prop:', product);
     createProductMutation.mutate(data);
   };
 
