@@ -157,8 +157,6 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
         isActive: data.isActive,
       };
 
-      console.log('Mutation function called with data:', data);
-
       if (packageData) {
         // For updates, send the complete package data with tiers
         const endpoint = `/api/admin/packages/with-tiers/${packageData.id}`;
@@ -167,11 +165,8 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
           productIds: data.productIds,
           tiers: data.tiers,
         };
-        console.log('Making PUT request to:', endpoint);
-        console.log('With payload:', payload);
         return apiRequest('PUT', endpoint, payload);
       } else {
-        console.log('Making POST request for new package');
         return apiRequest('POST', '/api/admin/packages/with-tiers', {
           package: packagePayload,
           productIds: data.productIds,
@@ -199,20 +194,10 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
   });
 
   const onSubmit = (data: PackageFormData) => {
-    console.log('Submitting package form with data:', data);
-    console.log('Is updating package?', !!packageData);
-    console.log('Package ID:', packageData?.id);
     createPackageMutation.mutate(data);
   };
 
-  // Debug form validation errors
-  const handleFormSubmit = (e: React.FormEvent) => {
-    console.log('Form submit triggered');
-    console.log('Form errors:', form.formState.errors);
-    console.log('Form is valid:', form.formState.isValid);
-    console.log('Form values:', form.getValues());
-    form.handleSubmit(onSubmit)(e);
-  };
+
 
 
 
@@ -248,7 +233,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       </div>
 
       <Form {...form}>
-        <form onSubmit={handleFormSubmit} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Basic Package Information */}
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>

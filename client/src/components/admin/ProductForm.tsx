@@ -93,8 +93,6 @@ export function ProductForm({ open, onOpenChange, product }: ProductFormProps) {
   });
 
   const onSubmit = (data: ProductFormData) => {
-    console.log('Product form submit with data:', data);
-    console.log('Current product prop:', product);
     createProductMutation.mutate(data);
   };
 
