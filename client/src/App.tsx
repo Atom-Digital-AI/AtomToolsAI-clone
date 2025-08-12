@@ -69,7 +69,7 @@ export default function App() {
         <Header />
         <main className="flex-1 w-full">
           <Switch>
-            <Route path="/" component={CmsHomePage} />
+            <Route path="/" component={Home} />
             <Route path="/tools" component={ToolsIndex} />
             <Route path="/tools/facebook-ads-looker-studio-connector" component={FacebookAdsTool} />
             <Route path="/tools/seo-meta-generator" component={SeoMetaTool} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import Section from "@/components/ui/section";
 import { Check, ArrowRight, Rocket, Cog, Star, Plug, Bolt, Shield, ChartBar, Mail, User, Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
@@ -423,6 +423,34 @@ function SignUpFormCard() {
 }
 
 export default function Home() {
+  // Fetch CMS data for meta tags
+  const { data: cmsPages } = useQuery({
+    queryKey: ["/api/public/pages/"],
+    retry: false,
+  });
+
+  // Find the homepage data in CMS
+  const homePage = cmsPages?.find((page: any) => page.slug === "/");
+
+  // Update document title when CMS data loads
+  useEffect(() => {
+    if (homePage?.metaTitle) {
+      document.title = homePage.metaTitle;
+    } else {
+      document.title = "atomtools.ai - AI Marketing & Automation Tools";
+    }
+
+    // Set meta description
+    if (homePage?.metaDescription) {
+      const metaDescription = document.querySelector('meta[name="description"]') || 
+                             document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      metaDescription.setAttribute('content', homePage.metaDescription);
+      if (!document.querySelector('meta[name="description"]')) {
+        document.head.appendChild(metaDescription);
+      }
+    }
+  }, [homePage]);
   const getBadgeColors = (color: string) => {
     const colors = {
       success: "bg-success/10 text-success",
