@@ -364,6 +364,26 @@ export const generatedContent = pgTable("generated_content", {
 export type GeneratedContent = typeof generatedContent.$inferSelect;
 export type InsertGeneratedContent = typeof generatedContent.$inferInsert;
 
+// Error logs table for tracking tool usage errors
+export const errorLogs = pgTable("error_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  userEmail: varchar("user_email"),
+  toolName: varchar("tool_name").notNull(),
+  errorType: varchar("error_type").notNull(), // 'rate_limit', 'api_error', 'validation_error', etc.
+  errorMessage: text("error_message").notNull(),
+  errorStack: text("error_stack"),
+  requestData: jsonb("request_data"), // The input data that caused the error
+  httpStatus: integer("http_status"),
+  endpoint: varchar("endpoint").notNull(),
+  userAgent: varchar("user_agent"),
+  ipAddress: varchar("ip_address"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ErrorLog = typeof errorLogs.$inferSelect;
+export type InsertErrorLog = typeof errorLogs.$inferInsert;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type CompleteProfile = z.infer<typeof completeProfileSchema>;
 export type Contact = typeof contacts.$inferSelect;

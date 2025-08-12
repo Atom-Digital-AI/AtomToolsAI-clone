@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, errorLogs, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -16,6 +16,7 @@ import { sendVerificationEmail } from "./email";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 import { getGoogleAuthUrl, verifyGoogleToken } from "./oauth";
+import { logToolError, getErrorTypeFromError } from "./errorLogger";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -920,6 +921,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("SEO generation error:", error);
+      
+      // Log error for admin portal
+      await logToolError({
+        userId: req.user?.id,
+        userEmail: req.user?.email,
+        toolName: 'SEO Meta Generator',
+        errorType: getErrorTypeFromError(error),
+        errorMessage: error?.message || 'Unknown error occurred',
+        errorStack: error?.stack,
+        requestData: req.body,
+        httpStatus: 500,
+        endpoint: '/api/tools/seo-meta/generate',
+        req
+      });
+      
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1099,6 +1115,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Ad copy generation error:", error);
+      
+      // Log error for admin portal
+      await logToolError({
+        userId: req.user?.id,
+        userEmail: req.user?.email,
+        toolName: 'Google Ads Copy Generator',
+        errorType: getErrorTypeFromError(error),
+        errorMessage: error?.message || 'Unknown error occurred',
+        errorStack: error?.stack,
+        requestData: req.body,
+        httpStatus: 500,
+        endpoint: '/api/google-ads-copy',
+        req
+      });
+      
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1522,6 +1553,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Error Log Management for Admin Portal
+  app.get("/api/admin/error-logs", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 50;
+      const offset = (page - 1) * limit;
+      
+      const [logs, [{ count }]] = await Promise.all([
+        db.select().from(errorLogs)
+          .orderBy(sql`${errorLogs.createdAt} DESC`)
+          .limit(limit)
+          .offset(offset),
+        db.select({ count: sql`count(*)` }).from(errorLogs)
+      ]);
+      
+      res.json({
+        logs,
+        pagination: {
+          page,
+          limit,
+          total: Number(count),
+          pages: Math.ceil(Number(count) / limit)
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching error logs:", error);
+      res.status(500).json({ message: "Failed to fetch error logs" });
+    }
+  });
+
+  app.delete("/api/admin/error-logs/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const result = await db.delete(errorLogs).where(eq(errorLogs.id, req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting error log:", error);
+      res.status(500).json({ message: "Failed to delete error log" });
+    }
+  });
+
+  app.delete("/api/admin/error-logs", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      await db.delete(errorLogs);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error clearing error logs:", error);
+      res.status(500).json({ message: "Failed to clear error logs" });
+    }
+  });
+
   app.delete("/api/admin/users/:id", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const success = await storage.deleteUser(req.params.id);
@@ -1557,6 +1638,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(contentRequest);
     } catch (error) {
       console.error("Error creating content request:", error);
+      
+      // Log error for admin portal
+      await logToolError({
+        userId: req.user?.id,
+        userEmail: req.user?.email,
+        toolName: 'Content Generator',
+        errorType: getErrorTypeFromError(error),
+        errorMessage: error?.message || 'Unknown error occurred',
+        errorStack: error?.stack,
+        requestData: req.body,
+        httpStatus: 500,
+        endpoint: '/api/content-requests',
+        req
+      });
+      
       res.status(500).json({ message: "Failed to create content request" });
     }
   });
@@ -1647,6 +1743,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Content updated successfully" });
     } catch (error) {
       console.error("Error updating content request:", error);
+      
+      // Log error for admin portal
+      await logToolError({
+        toolName: 'Content Generator',
+        errorType: getErrorTypeFromError(error),
+        errorMessage: error?.message || 'Unknown error occurred',
+        errorStack: error?.stack,
+        requestData: req.body,
+        httpStatus: 500,
+        endpoint: '/api/content-complete',
+        req
+      });
+      
       res.status(500).json({ message: "Failed to update content request" });
     }
   });

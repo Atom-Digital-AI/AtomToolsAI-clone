@@ -33,6 +33,7 @@ import ContentDisplay from "@/pages/content-display";
 import ContentHistory from "@/pages/content-history";
 import AdminDashboard from "@/pages/admin/dashboard";
 import CmsManagement from "@/pages/admin/cms";
+import ErrorLogs from "@/pages/admin/error-logs";
 import DynamicCmsPage, { CmsHomePage } from "@/pages/cms-page";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/app/content-history" component={ContentHistory} />
             <Route path="/admin" component={AdminDashboard} />
             <Route path="/admin/cms" component={CmsManagement} />
+            <Route path="/admin/error-logs" component={ErrorLogs} />
             <Route path="/terms" component={Terms} />
             <Route path="/privacy" component={Privacy} />
             <Route path="/cookies" component={Cookies} />

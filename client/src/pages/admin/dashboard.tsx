@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit, FileText } from "lucide-react";
+import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit, FileText, AlertTriangle } from "lucide-react";
 import { Link } from "wouter";
 import { PackageCard } from "@/components/admin/PackageCard";
 import { PackageForm } from "@/components/admin/PackageForm";
@@ -260,12 +260,20 @@ export default function AdminDashboard() {
                 Manage packages, products, and users for atomtools.ai
               </p>
             </div>
-            <Link href="/admin/cms">
-              <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-cms-management">
-                <FileText className="w-4 h-4 mr-2" />
-                CMS Management
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/admin/cms">
+                <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-cms-management">
+                  <FileText className="w-4 h-4 mr-2" />
+                  CMS Management
+                </Button>
+              </Link>
+              <Link href="/admin/error-logs">
+                <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white" data-testid="button-error-logs">
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Error Logs
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
