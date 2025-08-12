@@ -64,7 +64,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
   );
 
   const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ['/api/product-admin/products'],
+    queryKey: ['/api/admin/products'],
   });
 
   const form = useForm<PackageFormData>({
@@ -107,6 +107,8 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
     if (packageData?.products) {
       console.log('Package data products:', packageData.products);
       const productIds = packageData.products.map(p => p.id);
+      console.log('Extracted product IDs:', productIds);
+      console.log('Setting selectedProducts to:', productIds);
       setSelectedProducts(productIds);
       form.setValue('productIds', productIds);
     } else if (packageData) {
@@ -116,6 +118,12 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       form.setValue('productIds', []);
     }
   }, [packageData, form]);
+
+  // Debug: Log current state
+  useEffect(() => {
+    console.log('Current selectedProducts state:', selectedProducts);
+    console.log('Available products:', products.map(p => ({ id: p.id, name: p.name })));
+  }, [selectedProducts, products]);
 
   const { fields: tierFields, append: appendTier, remove: removeTier } = useFieldArray({
     control: form.control,
@@ -140,7 +148,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
           tiers: data.tiers,
         });
       } else {
-        return apiRequest('POST', '/api/product-admin/packages/with-tiers', {
+        return apiRequest('POST', '/api/admin/packages/with-tiers', {
           package: packagePayload,
           productIds: data.productIds,
           tiers: data.tiers,
@@ -152,7 +160,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
         title: 'Success',
         description: `Package ${packageData ? 'updated' : 'created'} successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/product-admin/packages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/packages'] });
       onSuccess();
     },
     onError: (error: Error) => {
