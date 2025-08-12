@@ -14,6 +14,7 @@ import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit, FileText } 
 import { Link } from "wouter";
 import { PackageCard } from "@/components/admin/PackageCard";
 import { PackageForm } from "@/components/admin/PackageForm";
+import { ProductForm } from "@/components/admin/ProductForm";
 import type { PackageWithTiers } from "@shared/schema";
 // import { PackageManager } from "@/components/admin/PackageManager";
 // import { ProductManager } from "@/components/admin/ProductManager";
@@ -35,6 +36,8 @@ export default function AdminDashboard() {
 
   const [packageFormOpen, setPackageFormOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<PackageWithTiers | undefined>(undefined);
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(undefined);
 
   const [editForm, setEditForm] = useState<any>({});
   
@@ -470,7 +473,14 @@ export default function AdminDashboard() {
           <TabsContent value="products" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Product Management</h2>
-              <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-add-product">
+              <Button 
+                className="bg-indigo-600 hover:bg-indigo-700" 
+                data-testid="button-add-product"
+                onClick={() => {
+                  setEditingProduct(undefined);
+                  setProductFormOpen(true);
+                }}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
               </Button>
@@ -525,7 +535,10 @@ export default function AdminDashboard() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleEdit('product', product)}
+                              onClick={() => {
+                                setEditingProduct(product);
+                                setProductFormOpen(true);
+                              }}
                               data-testid={`button-edit-product-${product.id}`}
                             >
                               <Edit className="h-4 w-4 mr-1" />
@@ -904,6 +917,13 @@ export default function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Product Form Dialog */}
+      <ProductForm
+        open={productFormOpen}
+        onOpenChange={setProductFormOpen}
+        product={editingProduct}
+      />
     </div>
   );
 }
