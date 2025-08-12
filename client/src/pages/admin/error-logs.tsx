@@ -158,32 +158,33 @@ export default function ErrorLogs() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">Error Logs</h1>
-          <p className="text-text-secondary">Monitor and debug tool usage errors</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-text-primary">Error Logs</h1>
+            <p className="text-text-secondary">Monitor and debug tool usage errors</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/error-logs"] })}
+              data-testid="refresh-logs"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => clearAllLogsMutation.mutate()}
+              disabled={clearAllLogsMutation.isPending}
+              data-testid="clear-all-logs"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/error-logs"] })}
-            data-testid="refresh-logs"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => clearAllLogsMutation.mutate()}
-            disabled={clearAllLogsMutation.isPending}
-            data-testid="clear-all-logs"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear All
-          </Button>
-        </div>
-      </div>
 
       {/* Search and Filter */}
       <Card>
@@ -408,6 +409,7 @@ export default function ErrorLogs() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }
