@@ -63,7 +63,7 @@ A PostgreSQL database with a pure tier-based subscription system:
 - **Cloud Image Upload Integration**: Direct image upload functionality within CMS using Google Cloud Storage and Uppy integration, eliminating external URL dependencies with admin-authenticated upload endpoints.
 - **Complete Content History System**: Comprehensive content lifecycle management with automatic saving, search, filtering, copy, download, and delete functionality for all generated content from SEO Meta, Google Ads, and Content Generator tools.
 - **Usage Tracking & Monitoring**: Real-time usage statistics display showing current usage vs limits for each tool with visual progress indicators, subfeature tracking, and upgrade prompts integrated into account settings.
-- **Enhanced Webhook Integration**: Content generator webhook endpoint supports both header-based (`x-request-id`) and body-based request ID passing, with API key authentication for secure external service integration.
+- **Enhanced Webhook Integration**: Content generator webhook endpoint supports both header-based (`x-request-id`) and body-based request ID passing, with secure API key authentication (wK8mN5pR7vL2xZ9qE3fT6jA4hG1cY8sB9mW5nP2xL7qE3fT6jA4hG1cY8sB9mW5n) for external service integration.
 - **Performance Optimizations**: Code splitting, tree shaking, privacy-focused analytics, font loading optimization, image optimization, and SEO.
 
 ## External Dependencies

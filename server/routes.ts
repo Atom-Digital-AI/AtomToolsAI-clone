@@ -1740,7 +1740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Check API key authentication
       const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-      const expectedApiKey = process.env.WEBHOOK_API_KEY || 'default-webhook-key-change-me';
+      const expectedApiKey = process.env.WEBHOOK_API_KEY || 'wK8mN5pR7vL2xZ9qE3fT6jA4hG1cY8sB9mW5nP2xL7qE3fT6jA4hG1cY8sB9mW5n';
       
       if (!apiKey || apiKey !== expectedApiKey) {
         return res.status(401).json({ message: "Invalid or missing API key" });
