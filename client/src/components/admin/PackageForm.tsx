@@ -178,6 +178,15 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
     createPackageMutation.mutate(data);
   };
 
+  // Debug form validation errors
+  const handleFormSubmit = (e: React.FormEvent) => {
+    console.log('Form submit triggered');
+    console.log('Form errors:', form.formState.errors);
+    console.log('Form is valid:', form.formState.isValid);
+    console.log('Form values:', form.getValues());
+    form.handleSubmit(onSubmit)(e);
+  };
+
   const addTier = () => {
     appendTier({
       name: '',
@@ -210,7 +219,7 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleFormSubmit} className="space-y-6">
           {/* Basic Package Information */}
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
