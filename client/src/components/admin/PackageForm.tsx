@@ -102,6 +102,26 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
     },
   });
 
+  // Update tier limits when selected products change
+  const updateTierLimits = React.useCallback(() => {
+    const currentTiers = form.getValues('tiers');
+    const updatedTiers = currentTiers.map(tier => ({
+      ...tier,
+      limits: selectedProducts.map(productId => {
+        // Find existing limit for this product or create new one
+        const existingLimit = tier.limits.find(limit => limit.productId === productId);
+        return existingLimit || {
+          productId,
+          includedInTier: true,
+          periodicity: 'month' as const,
+          quantity: null,
+          subfeatures: { bulk: false, variations: false, brand_guidelines: false },
+        };
+      }),
+    }));
+    form.setValue('tiers', updatedTiers);
+  }, [selectedProducts, form]);
+
   // Update selected products when packageData changes
   useEffect(() => {
     if (packageData?.products) {
@@ -114,6 +134,13 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
       form.setValue('productIds', []);
     }
   }, [packageData, form]);
+
+  // Update tier limits when selected products change
+  useEffect(() => {
+    if (selectedProducts.length > 0) {
+      updateTierLimits();
+    }
+  }, [selectedProducts, updateTierLimits]);
 
   const { fields: tierFields, append: appendTier, remove: removeTier } = useFieldArray({
     control: form.control,
@@ -186,6 +213,8 @@ export function PackageForm({ packageData, onSuccess, onCancel }: PackageFormPro
     console.log('Form values:', form.getValues());
     form.handleSubmit(onSubmit)(e);
   };
+
+
 
   const addTier = () => {
     appendTier({
