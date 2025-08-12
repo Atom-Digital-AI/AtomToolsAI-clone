@@ -10,6 +10,14 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { 
   Select,
   SelectContent,
@@ -28,7 +36,8 @@ import {
   Target,
   Globe,
   Copy,
-  CheckCircle
+  CheckCircle,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -38,6 +47,7 @@ export default function ContentHistory() {
   const [searchTerm, setSearchTerm] = useState('');
   const [toolFilter, setToolFilter] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedContent, setSelectedContent] = useState<GeneratedContent | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -182,6 +192,76 @@ export default function ContentHistory() {
     });
   };
 
+  const renderContentPreview = (content: GeneratedContent) => {
+    if (content.toolType === 'google-ads') {
+      const data = content.outputData as any;
+      return (
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-semibold text-white mb-2">Headlines:</h4>
+            <div className="space-y-1">
+              {(data.headlines || []).map((headline: string, index: number) => (
+                <div key={index} className="bg-gray-800 p-2 rounded text-sm text-gray-300">
+                  {headline}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="font-semibold text-white mb-2">Descriptions:</h4>
+            <div className="space-y-1">
+              {(data.descriptions || []).map((description: string, index: number) => (
+                <div key={index} className="bg-gray-800 p-2 rounded text-sm text-gray-300">
+                  {description}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    } else if (content.toolType === 'seo-meta') {
+      const data = content.outputData as any;
+      return (
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-semibold text-white mb-2">Meta Titles:</h4>
+            <div className="space-y-1">
+              {(data.titles || []).map((title: string, index: number) => (
+                <div key={index} className="bg-gray-800 p-2 rounded text-sm text-gray-300">
+                  {title}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="font-semibold text-white mb-2">Meta Descriptions:</h4>
+            <div className="space-y-1">
+              {(data.descriptions || []).map((description: string, index: number) => (
+                <div key={index} className="bg-gray-800 p-2 rounded text-sm text-gray-300">
+                  {description}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    } else if (content.toolType === 'content-generator') {
+      const data = content.outputData as any;
+      return (
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-semibold text-white mb-2">Generated Content:</h4>
+            <div 
+              className="bg-gray-800 p-4 rounded text-sm text-gray-300 max-h-96 overflow-y-auto prose prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: data.content || '' }}
+            />
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
@@ -253,6 +333,14 @@ export default function ContentHistory() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="bg-gray-800 border-gray-700">
                         <DropdownMenuItem 
+                          onClick={() => setSelectedContent(content)}
+                          className="text-gray-300 hover:text-white hover:bg-gray-700"
+                          data-testid={`button-view-${content.id}`}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Content
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
                           onClick={() => copyToClipboard(content)}
                           className="text-gray-300 hover:text-white hover:bg-gray-700"
                           data-testid={`button-copy-${content.id}`}
@@ -314,11 +402,57 @@ export default function ContentHistory() {
                       </div>
                     )}
                   </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSelectedContent(content)}
+                    className="mt-3 w-full bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white"
+                    data-testid={`button-view-content-${content.id}`}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Content
+                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
+
+        {/* Content Viewer Modal */}
+        <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] bg-gray-900 border-gray-700 overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                {selectedContent && getToolIcon(selectedContent.toolType)}
+                {selectedContent?.title}
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Generated on {selectedContent && formatDate(selectedContent.createdAt)}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto max-h-[60vh] pr-2">
+              {selectedContent && renderContentPreview(selectedContent)}
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
+              <Button 
+                variant="outline" 
+                onClick={() => selectedContent && copyToClipboard(selectedContent)}
+                className="bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => selectedContent && downloadContent(selectedContent)}
+                className="bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
