@@ -80,7 +80,7 @@ export default function App() {
             <Route path="/sign-up" component={SignUp} />
             <Route path="/login" component={Login} />
             <Route path="/verify-email" component={VerifyEmail} />
-            <Route path="/email-verification-sent" component={EmailVerificationSent} />
+            <Route path="/email-verification-sent" component={() => <EmailVerificationSent email="" />} />
             <Route path="/complete-profile" component={CompleteProfile} />
             <Route path="/app" component={Dashboard} />
             <Route path="/app/account" component={Account} />

@@ -147,19 +147,21 @@ function CmsPageDisplay({ slug }: CmsPageDisplayProps) {
         {/* Page Header */}
         <header className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <Badge
-              variant="outline"
-              className={`${
-                page.type === "blog"
-                  ? "text-purple-400 border-purple-400"
-                  : page.type === "resource"
-                  ? "text-orange-400 border-orange-400"
-                  : "text-blue-400 border-blue-400"
-              }`}
-            >
-              <Tag className="w-3 h-3 mr-1" />
-              {page.type.charAt(0).toUpperCase() + page.type.slice(1)}
-            </Badge>
+            {page.type && (
+              <Badge
+                variant="outline"
+                className={`${
+                  page.type === "blog"
+                    ? "text-purple-400 border-purple-400"
+                    : page.type === "resource"
+                    ? "text-orange-400 border-orange-400"
+                    : "text-blue-400 border-blue-400"
+                }`}
+              >
+                <Tag className="w-3 h-3 mr-1" />
+                {page.type.charAt(0).toUpperCase() + page.type.slice(1)}
+              </Badge>
+            )}
             
             {page.publishedAt && (
               <div className="flex items-center text-gray-400 text-sm">
