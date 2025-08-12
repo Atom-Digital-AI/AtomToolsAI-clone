@@ -416,7 +416,7 @@ export class DatabaseStorage implements IStorage {
     if (!tier) return [];
 
     // Get all products for this package through package_products table
-    const packageProducts = await db
+    const packageProductsQuery = await db
       .select({
         product: products
       })
@@ -424,7 +424,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(products, eq(packageProducts.productId, products.id))
       .where(eq(packageProducts.packageId, tier.packageId));
 
-    return packageProducts.map(p => p.product);
+    return packageProductsQuery.map((p: any) => p.product);
   }
 
   async getUserProductUsage(userId: string, productId: string): Promise<number> {
