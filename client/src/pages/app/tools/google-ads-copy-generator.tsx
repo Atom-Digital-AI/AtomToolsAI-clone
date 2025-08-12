@@ -67,7 +67,7 @@ export default function GoogleAdsCopyGenerator() {
     retry: false,
   });
 
-  const subfeatures = accessInfo?.subfeatures || {};
+  const subfeatures = (accessInfo?.subfeatures as any) || {};
   const canUseBulk = subfeatures.bulk === true;
   const canUseVariations = subfeatures.variations === true;  
   const canUseBrandGuidelines = subfeatures.brand_guidelines === true;
