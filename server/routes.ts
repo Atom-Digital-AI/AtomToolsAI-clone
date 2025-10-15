@@ -17,6 +17,7 @@ import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 import { getGoogleAuthUrl, verifyGoogleToken } from "./oauth";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
+import { formatBrandGuidelines, formatRegulatoryGuidelines } from "./utils/format-guidelines";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -845,8 +846,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
         
-        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED: ${brandGuidelines}` : ''}
-        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED: ${regulatoryGuidelines}` : ''}
+        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
+        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(regulatoryGuidelines)}` : ''}
 
         Generate ${numVariations} variations.
 
@@ -1037,8 +1038,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints || "None"}
         ${languageInstruction}
         
-        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED: ${brandGuidelines}` : ''}
-        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED: ${regulatoryGuidelines}` : ''}
+        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
+        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(regulatoryGuidelines)}` : ''}
 
         Generate Google Ads copy with EXACTLY this format:
         - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)

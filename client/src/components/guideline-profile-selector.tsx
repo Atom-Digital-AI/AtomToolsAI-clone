@@ -9,7 +9,43 @@ import { Label } from "@/components/ui/label";
 import { Save, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { GuidelineProfile } from "@shared/schema";
+import type { GuidelineProfile, GuidelineContent, BrandGuidelineContent } from "@shared/schema";
+
+// Helper function to convert GuidelineContent to string for display/editing
+function guidelineContentToString(content: GuidelineContent): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+  
+  if (content && typeof content === 'object' && 'legacy_text' in content) {
+    return (content as any).legacy_text;
+  }
+  
+  // For structured content, create a formatted string representation
+  const brandContent = content as BrandGuidelineContent;
+  const sections: string[] = [];
+  
+  if (brandContent.tone_of_voice) sections.push(`Tone: ${brandContent.tone_of_voice}`);
+  if (brandContent.style_preferences) sections.push(`Style: ${brandContent.style_preferences}`);
+  if (brandContent.brand_personality && brandContent.brand_personality.length > 0) {
+    sections.push(`Personality: ${brandContent.brand_personality.join(', ')}`);
+  }
+  if (brandContent.target_audience && brandContent.target_audience.length > 0) {
+    const audiences = brandContent.target_audience.map(a => {
+      const parts = [];
+      if (a.gender) parts.push(a.gender);
+      if (a.age_range) parts.push(`${a.age_range.from_age}-${a.age_range.to_age} yrs`);
+      if (a.profession) parts.push(a.profession);
+      return parts.join(' ');
+    }).join('; ');
+    sections.push(`Target Audience: ${audiences}`);
+  }
+  if (brandContent.color_palette && brandContent.color_palette.length > 0) {
+    sections.push(`Colors: ${brandContent.color_palette.join(', ')}`);
+  }
+  
+  return sections.join('\n') || JSON.stringify(content);
+}
 
 interface GuidelineProfileSelectorProps {
   type: 'brand' | 'regulatory';
@@ -73,7 +109,7 @@ export default function GuidelineProfileSelector({
     
     const profile = profiles?.find(p => p.id === profileId);
     if (profile) {
-      onChange(profile.content);
+      onChange(guidelineContentToString(profile.content));
     }
   };
 
@@ -89,7 +125,7 @@ export default function GuidelineProfileSelector({
     }
 
     // Check if content already exists as a profile
-    const existingProfile = profiles?.find(p => p.content.trim() === value.trim());
+    const existingProfile = profiles?.find(p => guidelineContentToString(p.content).trim() === value.trim());
     if (existingProfile) {
       toast({ title: "Info", description: "This content is already saved as a profile", variant: "default" });
       setShowSaveDialog(false);
@@ -102,7 +138,7 @@ export default function GuidelineProfileSelector({
     });
   };
 
-  const currentProfile = profiles?.find(p => p.content === value);
+  const currentProfile = profiles?.find(p => guidelineContentToString(p.content) === value);
 
   return (
     <div className="space-y-2">
