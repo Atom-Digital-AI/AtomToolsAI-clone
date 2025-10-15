@@ -43,6 +43,10 @@ export function formatBrandGuidelines(content: GuidelineContent): string {
   const brandContent = content as BrandGuidelineContent;
   const sections: string[] = [];
 
+  if (brandContent.domain_url) {
+    sections.push(`**Brand Website**: ${brandContent.domain_url}`);
+  }
+
   if (brandContent.tone_of_voice) {
     sections.push(`**Tone of Voice**: ${brandContent.tone_of_voice}`);
   }
