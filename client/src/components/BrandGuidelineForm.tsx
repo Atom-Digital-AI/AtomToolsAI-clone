@@ -182,6 +182,22 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
 
         <TabsContent value="basic" className="space-y-4 mt-6">
           <div>
+            <Label htmlFor="domain-url" className="text-gray-200">Domain URL</Label>
+            <Input
+              id="domain-url"
+              data-testid="input-domain-url"
+              type="url"
+              value={formData.domain_url || ""}
+              onChange={(e) => updateField("domain_url", e.target.value)}
+              placeholder="https://yourbrand.com"
+              className="mt-2 bg-gray-800 border-gray-700 text-white"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Your brand's primary website URL
+            </p>
+          </div>
+
+          <div>
             <Label htmlFor="tone-of-voice" className="text-gray-200">Tone of Voice</Label>
             <Textarea
               id="tone-of-voice"
