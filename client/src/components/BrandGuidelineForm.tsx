@@ -5,7 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, AlertCircle } from "lucide-react";
-import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema } from "@shared/schema";
+import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, GuidelineProfile } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -17,6 +19,12 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
   const [isLegacy, setIsLegacy] = useState(false);
   const [legacyText, setLegacyText] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [regulatoryMode, setRegulatoryMode] = useState<"none" | "existing" | "new">("none");
+  const [newRegulatoryText, setNewRegulatoryText] = useState("");
+
+  const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
+    queryKey: ["/api/guideline-profiles", { type: "regulatory" }],
+  });
 
   useEffect(() => {
     if (typeof value === "string") {
@@ -29,7 +37,14 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
       setFormData({});
     } else {
       setIsLegacy(false);
-      setFormData(value || {});
+      const data = value || {};
+      setFormData(data);
+      
+      if (data.regulatory_guideline_id) {
+        setRegulatoryMode("existing");
+      } else {
+        setRegulatoryMode("none");
+      }
     }
   }, [value]);
 
@@ -157,11 +172,12 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
       )}
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+        <TabsList className="grid w-full grid-cols-5 bg-gray-800">
           <TabsTrigger value="basic" data-testid="tab-basic-info">Basic Info</TabsTrigger>
           <TabsTrigger value="visual" data-testid="tab-visual-identity">Visual Identity</TabsTrigger>
           <TabsTrigger value="audience" data-testid="tab-audience">Audience</TabsTrigger>
           <TabsTrigger value="voice" data-testid="tab-brand-voice">Brand Voice</TabsTrigger>
+          <TabsTrigger value="regulatory" data-testid="tab-regulatory">Regulatory</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4 mt-6">
@@ -409,6 +425,96 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
               rows={4}
               className="mt-2 bg-gray-800 border-gray-700 text-white"
             />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="regulatory" className="space-y-4 mt-6">
+          <div className="space-y-4">
+            <div>
+              <Label className="text-gray-200">Attach Regulatory Guideline</Label>
+              <p className="text-sm text-gray-400 mt-1 mb-3">
+                Attach an existing regulatory guideline profile or create a new one for this brand.
+              </p>
+              
+              <div className="space-y-3">
+                <Select
+                  data-testid="select-regulatory-mode"
+                  value={regulatoryMode}
+                  onValueChange={(value: "none" | "existing" | "new") => {
+                    setRegulatoryMode(value);
+                    if (value === "none") {
+                      updateField("regulatory_guideline_id", undefined);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue placeholder="Choose option..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Regulatory Guideline</SelectItem>
+                    <SelectItem value="existing">Attach Existing Guideline</SelectItem>
+                    <SelectItem value="new">Create New Guideline</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {regulatoryMode === "existing" && (
+                  <div>
+                    <Label className="text-gray-300 text-sm">Select Regulatory Guideline</Label>
+                    <Select
+                      data-testid="select-existing-regulatory"
+                      value={formData.regulatory_guideline_id || ""}
+                      onValueChange={(value) => updateField("regulatory_guideline_id", value)}
+                    >
+                      <SelectTrigger className="mt-2 bg-gray-800 border-gray-700 text-white">
+                        <SelectValue placeholder="Select a regulatory guideline..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {regulatoryGuidelines.length === 0 ? (
+                          <SelectItem value="none" disabled>No regulatory guidelines available</SelectItem>
+                        ) : (
+                          regulatoryGuidelines.map((guideline) => (
+                            <SelectItem key={guideline.id} value={guideline.id}>
+                              {guideline.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {regulatoryMode === "new" && (
+                  <div>
+                    <Label htmlFor="new-regulatory-text" className="text-gray-300 text-sm">
+                      New Regulatory Guideline Content
+                    </Label>
+                    <p className="text-xs text-gray-400 mt-1 mb-2">
+                      Note: This will create a temporary guideline. To save it permanently, create a regulatory profile in Profile Settings.
+                    </p>
+                    <Textarea
+                      id="new-regulatory-text"
+                      data-testid="textarea-new-regulatory"
+                      value={newRegulatoryText}
+                      onChange={(e) => setNewRegulatoryText(e.target.value)}
+                      placeholder="Enter regulatory guidelines, compliance requirements, or industry-specific rules..."
+                      rows={6}
+                      className="mt-2 bg-gray-800 border-gray-700 text-white"
+                    />
+                    <p className="text-xs text-amber-500 mt-2">
+                      ⚠️ Temporary guidelines are not saved permanently. Consider creating a regulatory profile for reuse.
+                    </p>
+                  </div>
+                )}
+
+                {formData.regulatory_guideline_id && regulatoryMode === "existing" && (
+                  <div className="p-3 bg-green-950/20 border border-green-800 rounded-lg">
+                    <p className="text-sm text-green-400">
+                      ✓ Regulatory guideline attached: {regulatoryGuidelines.find(g => g.id === formData.regulatory_guideline_id)?.name}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
