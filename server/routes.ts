@@ -1284,7 +1284,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auto-populate brand guidelines from PDF upload
-  app.post("/api/guideline-profiles/auto-populate-pdf", requireAuth, async (req: any, res) => {
+  app.post("/api/guideline-profiles/auto-populate-pdf", 
+    express.json({ limit: '15mb' }), 
+    requireAuth, 
+    async (req: any, res) => {
     try {
       const { pdfBase64 } = req.body;
       
@@ -1301,6 +1304,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Server-side validation: Decode base64 and verify PDF signature
+      let pdfBuffer: Buffer;
+      try {
+        pdfBuffer = Buffer.from(pdfBase64, 'base64');
+      } catch (error) {
+        return res.status(400).json({ 
+          message: "Invalid PDF data. The file appears to be corrupted." 
+        });
+      }
+
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (pdfBuffer.length > maxSize) {
+        return res.status(413).json({ 
+          message: `PDF file is too large (${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB). Maximum size is 10MB.` 
+        });
+      }
+
+      // Validate PDF signature (PDFs start with "%PDF-")
+      const pdfSignature = pdfBuffer.slice(0, 5).toString('ascii');
+      if (pdfSignature !== '%PDF-') {
+        return res.status(400).json({ 
+          message: "Invalid file type. Only PDF files are accepted." 
+        });
+      }
+
       // Import the PDF analyzer
       const { analyzePdfForBrandGuidelines } = await import("./utils/pdf-brand-analyzer");
       
@@ -1310,7 +1339,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error analyzing PDF brand guidelines:", error);
       const errorMessage = (error as any)?.message || "Failed to analyze PDF";
       
-      res.status(500).json({ message: errorMessage });
+      // Return appropriate status code based on error type
+      const statusCode = errorMessage.includes('Invalid') || 
+                        errorMessage.includes('corrupted') ||
+                        errorMessage.includes('too large')
+                        ? 400 : 500;
+      
+      res.status(statusCode).json({ message: errorMessage });
     }
   });
 
