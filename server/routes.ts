@@ -1283,6 +1283,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-populate brand guidelines from PDF upload
+  app.post("/api/guideline-profiles/auto-populate-pdf", requireAuth, async (req: any, res) => {
+    try {
+      const { pdfBase64 } = req.body;
+      
+      if (!pdfBase64 || typeof pdfBase64 !== 'string') {
+        return res.status(400).json({ 
+          message: "PDF data is required. Please upload a valid PDF file." 
+        });
+      }
+
+      // Check if API key is configured
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ 
+          message: "PDF upload feature is not configured. Please add ANTHROPIC_API_KEY to enable this feature." 
+        });
+      }
+
+      // Import the PDF analyzer
+      const { analyzePdfForBrandGuidelines } = await import("./utils/pdf-brand-analyzer");
+      
+      const guidelines = await analyzePdfForBrandGuidelines(pdfBase64);
+      res.json(guidelines);
+    } catch (error) {
+      console.error("Error analyzing PDF brand guidelines:", error);
+      const errorMessage = (error as any)?.message || "Failed to analyze PDF";
+      
+      res.status(500).json({ message: errorMessage });
+    }
+  });
+
   // Public packages endpoint for pricing page
   app.get("/api/packages", async (req: any, res) => {
     try {
