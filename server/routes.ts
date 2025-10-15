@@ -18,6 +18,7 @@ import bcrypt from "bcryptjs";
 import { getGoogleAuthUrl, verifyGoogleToken } from "./oauth";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
 import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuidelineFromBrand } from "./utils/format-guidelines";
+import { analyzeBrandGuidelines } from "./utils/brand-analyzer";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -1243,6 +1244,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting guideline profile:", error);
       res.status(500).json({ message: "Failed to delete guideline profile" });
+    }
+  });
+
+  // Auto-populate brand guidelines from website
+  app.post("/api/guideline-profiles/auto-populate", requireAuth, async (req: any, res) => {
+    try {
+      const { domainUrl } = req.body;
+      
+      if (!domainUrl) {
+        return res.status(400).json({ message: "Domain URL is required" });
+      }
+
+      // Validate URL format
+      try {
+        new URL(domainUrl);
+      } catch {
+        return res.status(400).json({ message: "Invalid URL format" });
+      }
+
+      // Check if API key is configured
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ 
+          message: "Auto-populate feature is not configured. Please add ANTHROPIC_API_KEY to enable this feature." 
+        });
+      }
+
+      const guidelines = await analyzeBrandGuidelines(domainUrl);
+      res.json(guidelines);
+    } catch (error) {
+      console.error("Error auto-populating brand guidelines:", error);
+      const errorMessage = (error as any)?.message || "Failed to analyze website";
+      res.status(500).json({ message: errorMessage });
     }
   });
 
