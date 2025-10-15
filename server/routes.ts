@@ -1252,15 +1252,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { domainUrl } = req.body;
       
-      if (!domainUrl) {
-        return res.status(400).json({ message: "Domain URL is required" });
-      }
-
-      // Validate URL format
-      try {
-        new URL(domainUrl);
-      } catch {
-        return res.status(400).json({ message: "Invalid URL format" });
+      if (!domainUrl || typeof domainUrl !== 'string') {
+        return res.status(400).json({ 
+          message: "Domain URL is required. Please provide a valid website URL (e.g., https://example.com)" 
+        });
       }
 
       // Check if API key is configured
@@ -1270,12 +1265,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // analyzeBrandGuidelines will validate and normalize the URL internally
       const guidelines = await analyzeBrandGuidelines(domainUrl);
       res.json(guidelines);
     } catch (error) {
       console.error("Error auto-populating brand guidelines:", error);
       const errorMessage = (error as any)?.message || "Failed to analyze website";
-      res.status(500).json({ message: errorMessage });
+      
+      // Return appropriate status code based on error type
+      const statusCode = errorMessage.includes('Invalid URL') || 
+                        errorMessage.includes('Cannot crawl') ||
+                        errorMessage.includes('Domain not found') ||
+                        errorMessage.includes('Only HTTPS')
+                        ? 400 : 500;
+      
+      res.status(statusCode).json({ message: errorMessage });
     }
   });
 

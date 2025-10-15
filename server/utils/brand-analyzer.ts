@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { BrandGuidelineContent } from '@shared/schema';
 import { crawlWebsite } from './web-crawler';
+import { validateAndNormalizeUrl } from './url-validator';
 
 /*
 <important_code_snippet_instructions>
@@ -23,9 +24,12 @@ export async function analyzeBrandGuidelines(domainUrl: string): Promise<BrandGu
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
-  // Step 1: Crawl the website
-  console.log(`Crawling website: ${domainUrl}`);
-  const crawlResult = await crawlWebsite(domainUrl, 5);
+  // Step 1: Validate and normalize the URL (prevents SSRF attacks)
+  const validatedUrl = await validateAndNormalizeUrl(domainUrl);
+  
+  // Step 2: Crawl the website
+  console.log(`Crawling website: ${validatedUrl}`);
+  const crawlResult = await crawlWebsite(validatedUrl, 5);
   
   if (crawlResult.pages.length === 0) {
     throw new Error('Unable to crawl any pages from the provided URL');

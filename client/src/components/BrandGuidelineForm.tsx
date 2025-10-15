@@ -128,7 +128,7 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
   };
 
   const handleAutoPopulate = async () => {
-    const domainUrl = formData.domain_url;
+    let domainUrl = formData.domain_url?.trim();
     
     if (!domainUrl) {
       toast({
@@ -139,16 +139,22 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
       return;
     }
 
+    // Basic client-side normalization - add https if no protocol
+    if (!domainUrl.match(/^https?:\/\//i)) {
+      domainUrl = `https://${domainUrl}`;
+      updateField("domain_url", domainUrl);
+    }
+
     try {
       setIsAutoPopulating(true);
       
-      const response = await apiRequest<BrandGuidelineContent>(
+      const response = await apiRequest(
         "/api/guideline-profiles/auto-populate",
         {
           method: "POST",
           body: JSON.stringify({ domainUrl }),
         }
-      );
+      ) as BrandGuidelineContent;
 
       // Merge the auto-populated data with existing form data
       const updatedData = { ...formData, ...response };
