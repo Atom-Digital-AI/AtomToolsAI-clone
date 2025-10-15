@@ -26,6 +26,7 @@ export default function Header() {
     { href: "/app", label: "Dashboard" },
     { href: "/app/my-tools", label: "My Tools" },
     { href: "/app/content-history", label: "Content History" },
+    { href: "/app/profile-settings", label: "Guideline Profiles" },
     { href: "/resources", label: "Resources" },
   ];
 

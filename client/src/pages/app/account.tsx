@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2, Save, XIcon } from "lucide-react";
+import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2, Save, XIcon, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -485,6 +485,33 @@ export default function Account() {
 
           {/* Usage Statistics */}
           <UsageStatsDisplay />
+
+          {/* Guideline Profiles */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="w-5 h-5" />
+                <span>Guideline Profiles</span>
+              </CardTitle>
+              <CardDescription>
+                Manage your brand and regulatory guideline profiles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-surface">
+                <div>
+                  <h4 className="font-medium text-text-primary">Brand & Regulatory Guidelines</h4>
+                  <p className="text-sm text-text-secondary">Create and manage reusable guideline profiles for AI tools</p>
+                </div>
+                <Link href="/app/profile-settings">
+                  <Button variant="outline" data-testid="manage-guidelines-button">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Manage Profiles
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Account Actions */}
           <Card>
