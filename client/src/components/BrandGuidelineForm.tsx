@@ -8,6 +8,7 @@ import { Plus, Trash2, AlertCircle } from "lucide-react";
 import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, GuidelineProfile } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import TagInput from "@/components/TagInput";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -120,14 +121,6 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
     const audiences = [...(formData.target_audience || [])];
     audiences.splice(index, 1);
     updateField("target_audience", audiences);
-  };
-
-  const tagsToArray = (tags: string): string[] => {
-    return tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
-  };
-
-  const arrayToTags = (arr: string[] | undefined): string => {
-    return (arr || []).join(', ');
   };
 
   if (isLegacy) {
@@ -361,31 +354,31 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
                   </div>
 
                   <div>
-                    <Label htmlFor={`interests-${index}`} className="text-gray-300 text-xs">
-                      Interests (comma-separated)
+                    <Label className="text-gray-300 text-xs">
+                      Interests
                     </Label>
-                    <Input
-                      id={`interests-${index}`}
-                      data-testid={`input-audience-interests-${index}`}
-                      value={arrayToTags(audience.interests)}
-                      onChange={(e) => updateTargetAudience(index, "interests", tagsToArray(e.target.value))}
-                      placeholder="e.g., Technology, Marketing, Design"
-                      className="mt-1 bg-gray-900 border-gray-600 text-white"
-                    />
+                    <div className="mt-1">
+                      <TagInput
+                        data-testid={`input-audience-interests-${index}`}
+                        value={audience.interests || []}
+                        onChange={(tags) => updateTargetAudience(index, "interests", tags)}
+                        placeholder="e.g., Technology, Marketing, Design"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <Label htmlFor={`keywords-${index}`} className="text-gray-300 text-xs">
-                      Other Keywords (comma-separated)
+                    <Label className="text-gray-300 text-xs">
+                      Other Keywords
                     </Label>
-                    <Input
-                      id={`keywords-${index}`}
-                      data-testid={`input-audience-keywords-${index}`}
-                      value={arrayToTags(audience.other_keywords)}
-                      onChange={(e) => updateTargetAudience(index, "other_keywords", tagsToArray(e.target.value))}
-                      placeholder="e.g., B2B, SaaS, Enterprise"
-                      className="mt-1 bg-gray-900 border-gray-600 text-white"
-                    />
+                    <div className="mt-1">
+                      <TagInput
+                        data-testid={`input-audience-keywords-${index}`}
+                        value={audience.other_keywords || []}
+                        onChange={(tags) => updateTargetAudience(index, "other_keywords", tags)}
+                        placeholder="e.g., B2B, SaaS, Enterprise"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -404,31 +397,31 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
 
         <TabsContent value="voice" className="space-y-4 mt-6">
           <div>
-            <Label htmlFor="brand-personality" className="text-gray-200">
-              Brand Personality (comma-separated tags)
+            <Label className="text-gray-200">
+              Brand Personality
             </Label>
-            <Input
-              id="brand-personality"
-              data-testid="input-brand-personality"
-              value={arrayToTags(formData.brand_personality)}
-              onChange={(e) => updateField("brand_personality", tagsToArray(e.target.value))}
-              placeholder="e.g., Innovative, Trustworthy, Bold"
-              className="mt-2 bg-gray-800 border-gray-700 text-white"
-            />
+            <div className="mt-2">
+              <TagInput
+                data-testid="input-brand-personality"
+                value={formData.brand_personality || []}
+                onChange={(tags) => updateField("brand_personality", tags)}
+                placeholder="e.g., Innovative, Trustworthy, Bold"
+              />
+            </div>
           </div>
 
           <div>
-            <Label htmlFor="content-themes" className="text-gray-200">
-              Content Themes (comma-separated tags)
+            <Label className="text-gray-200">
+              Content Themes
             </Label>
-            <Input
-              id="content-themes"
-              data-testid="input-content-themes"
-              value={arrayToTags(formData.content_themes)}
-              onChange={(e) => updateField("content_themes", tagsToArray(e.target.value))}
-              placeholder="e.g., Innovation, Customer Success, Industry Leadership"
-              className="mt-2 bg-gray-800 border-gray-700 text-white"
-            />
+            <div className="mt-2">
+              <TagInput
+                data-testid="input-content-themes"
+                value={formData.content_themes || []}
+                onChange={(tags) => updateField("content_themes", tags)}
+                placeholder="e.g., Innovation, Customer Success, Industry Leadership"
+              />
+            </div>
           </div>
 
           <div>
