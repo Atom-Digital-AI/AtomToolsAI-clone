@@ -31,7 +31,7 @@ A PostgreSQL database with a pure tier-based subscription system:
 - **User Tier Subscriptions**: Pure tier-based subscription system with usage tracking and limits management.
 - **Contacts**: Contact form submissions.
 - **Sessions**: User session data.
-- **Guideline Profiles**: Stores saved brand and regulatory guideline profiles for tools.
+- **Guideline Profiles**: Stores saved brand and regulatory guideline profiles for tools (supports structured JSON format with comprehensive brand data including color palettes, target audience demographics, brand personality, visual style, and tone of voice).
 - **CMS Pages**: Content management system pages with SEO metadata, publishing workflow, and rich content support.
 - **CMS Navigation**: Navigation structure for CMS content organization.
 - **Packages, Tiers, Tier Prices, Tier Limits, Package Products**: Comprehensive tier-based package system supporting flexible pricing, product assignment, and usage limits (e.g., quantity restrictions, periodicity, subfeature toggles).
@@ -53,8 +53,8 @@ A PostgreSQL database with a pure tier-based subscription system:
 
 ### Key Features and Technical Implementations
 - **Marketing Tools**: Includes Ad Copy Generators (Google Ads, SEO Meta) mirroring original Python logic (prompts, OpenAI model, temperature, language detection).
-- **Compliance Guidelines Support**: Optional brand and regulatory guidelines input in AI prompts with pre-output review.
-- **Saved Guideline Profiles**: Users can save and reuse brand/regulatory guideline profiles across tools.
+- **Structured Brand Guidelines System**: Comprehensive brand guidelines support with structured JSON format storing color palettes, tone of voice, target audience demographics (gender, age range, profession, interests), brand personality traits, content themes, visual style, and language style preferences. Guidelines are intelligently formatted for AI prompts to ensure consistent brand compliance across all generated content.
+- **Saved Guideline Profiles**: Users can save and reuse brand/regulatory guideline profiles across tools with backward compatibility for legacy text format and automatic migration support.
 - **Pure Tier-Based System**: Complete tier-based package subscription system (Free, Pro, Enterprise) with individual pricing and granular product usage limits, including subfeature controls (bulk processing, variations, brand guidelines).
 - **No Individual Subscriptions**: System completely moved away from individual product subscriptions - users only subscribe to package tiers which grant access to multiple products with usage limits and tracking.
 - **Tier Reordering**: Admin interface includes drag-and-drop style tier reordering with persistent sort order stored in database.

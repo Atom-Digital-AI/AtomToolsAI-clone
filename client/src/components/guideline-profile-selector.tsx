@@ -11,8 +11,29 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { GuidelineProfile, GuidelineContent, BrandGuidelineContent } from "@shared/schema";
 
-// Helper function to convert GuidelineContent to string for display/editing
-function guidelineContentToString(content: GuidelineContent): string {
+// Helper function to check if content is a string
+function isStringContent(content: GuidelineContent | string): content is string {
+  return typeof content === 'string';
+}
+
+// Helper function to compare two GuidelineContent values for equality
+function areContentsEqual(a: GuidelineContent | string, b: GuidelineContent | string): boolean {
+  // If both are strings, compare directly
+  if (typeof a === 'string' && typeof b === 'string') {
+    return a === b;
+  }
+  
+  // If types don't match, they're not equal
+  if (typeof a !== typeof b) {
+    return false;
+  }
+  
+  // Both are objects - do deep comparison via JSON stringification
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// Helper function to display structured content in a readable format
+function displayGuidelineContent(content: GuidelineContent | string): string {
   if (typeof content === 'string') {
     return content;
   }
@@ -21,14 +42,19 @@ function guidelineContentToString(content: GuidelineContent): string {
     return (content as any).legacy_text;
   }
   
-  // For structured content, create a formatted string representation
+  // For structured content, create a formatted display string
   const brandContent = content as BrandGuidelineContent;
   const sections: string[] = [];
   
   if (brandContent.tone_of_voice) sections.push(`Tone: ${brandContent.tone_of_voice}`);
   if (brandContent.style_preferences) sections.push(`Style: ${brandContent.style_preferences}`);
+  if (brandContent.language_style) sections.push(`Language: ${brandContent.language_style}`);
+  if (brandContent.visual_style) sections.push(`Visual: ${brandContent.visual_style}`);
   if (brandContent.brand_personality && brandContent.brand_personality.length > 0) {
     sections.push(`Personality: ${brandContent.brand_personality.join(', ')}`);
+  }
+  if (brandContent.content_themes && brandContent.content_themes.length > 0) {
+    sections.push(`Themes: ${brandContent.content_themes.join(', ')}`);
   }
   if (brandContent.target_audience && brandContent.target_audience.length > 0) {
     const audiences = brandContent.target_audience.map(a => {
@@ -38,7 +64,7 @@ function guidelineContentToString(content: GuidelineContent): string {
       if (a.profession) parts.push(a.profession);
       return parts.join(' ');
     }).join('; ');
-    sections.push(`Target Audience: ${audiences}`);
+    sections.push(`Audience: ${audiences}`);
   }
   if (brandContent.color_palette && brandContent.color_palette.length > 0) {
     sections.push(`Colors: ${brandContent.color_palette.join(', ')}`);
@@ -49,8 +75,8 @@ function guidelineContentToString(content: GuidelineContent): string {
 
 interface GuidelineProfileSelectorProps {
   type: 'brand' | 'regulatory';
-  value: string;
-  onChange: (value: string) => void;
+  value: GuidelineContent | string;
+  onChange: (value: GuidelineContent | string) => void;
   placeholder?: string;
   label?: string;
 }
@@ -109,11 +135,18 @@ export default function GuidelineProfileSelector({
     
     const profile = profiles?.find(p => p.id === profileId);
     if (profile) {
-      onChange(guidelineContentToString(profile.content));
+      // Pass the structured content directly to preserve all fields
+      onChange(profile.content);
     }
   };
 
   const handleSaveCurrentContent = () => {
+    // Only allow saving string content
+    if (!isStringContent(value)) {
+      toast({ title: "Error", description: "Cannot save structured content", variant: "destructive" });
+      return;
+    }
+
     if (!value.trim()) {
       toast({ title: "Error", description: "No content to save", variant: "destructive" });
       return;
@@ -125,7 +158,11 @@ export default function GuidelineProfileSelector({
     }
 
     // Check if content already exists as a profile
-    const existingProfile = profiles?.find(p => guidelineContentToString(p.content).trim() === value.trim());
+    const existingProfile = profiles?.find(p => {
+      const profileDisplay = displayGuidelineContent(p.content);
+      return profileDisplay.trim() === value.trim();
+    });
+    
     if (existingProfile) {
       toast({ title: "Info", description: "This content is already saved as a profile", variant: "default" });
       setShowSaveDialog(false);
@@ -138,7 +175,12 @@ export default function GuidelineProfileSelector({
     });
   };
 
-  const currentProfile = profiles?.find(p => guidelineContentToString(p.content) === value);
+  // Find current profile by comparing content
+  const currentProfile = profiles?.find(p => areContentsEqual(p.content, value));
+
+  // Check if value is a string for conditional rendering
+  const isString = isStringContent(value);
+  const displayValue = displayGuidelineContent(value);
 
   return (
     <div className="space-y-2">
@@ -161,7 +203,8 @@ export default function GuidelineProfileSelector({
             </Select>
           )}
           
-          {value.trim() && !currentProfile && (
+          {/* Only show save button for string values (manual entry) that aren't already saved */}
+          {isString && value.trim() && !currentProfile && (
             <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
               <DialogTrigger asChild>
                 <Button 
@@ -192,7 +235,7 @@ export default function GuidelineProfileSelector({
                   </div>
                   <div>
                     <Label className="text-white">Content Preview</Label>
-                    <div className="p-3 bg-gray-800 border border-gray-700 rounded-md text-sm max-h-32 overflow-y-auto text-white">
+                    <div className="p-3 bg-gray-800 border border-gray-700 rounded-md text-sm max-h-32 overflow-y-auto text-white whitespace-pre-wrap">
                       {value}
                     </div>
                   </div>
@@ -220,15 +263,34 @@ export default function GuidelineProfileSelector({
         </div>
       </div>
       
-      <Textarea
-        id={`${type}-guidelines`}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={3}
-        className="resize-none"
-        data-testid={`textarea-${type}-guidelines`}
-      />
+      {/* Conditional rendering based on value type */}
+      {isString ? (
+        // Editable textarea for string values
+        <Textarea
+          id={`${type}-guidelines`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={3}
+          className="resize-none"
+          data-testid={`textarea-${type}-guidelines`}
+        />
+      ) : (
+        // Readonly formatted display for structured content
+        <div className="space-y-2">
+          <div 
+            id={`${type}-guidelines`}
+            className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md text-sm min-h-[76px] whitespace-pre-wrap"
+            data-testid={`display-${type}-guidelines`}
+          >
+            {displayValue}
+          </div>
+          <div className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span>ℹ️</span>
+            <span>This is a structured profile. Edit in Profile Settings to modify.</span>
+          </div>
+        </div>
+      )}
       
       {currentProfile && (
         <div className="text-xs text-gray-400">

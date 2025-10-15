@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
+import type { GuidelineContent } from "@shared/schema";
 
 interface MetaData {
   title: string;
@@ -43,8 +44,8 @@ export default function SEOMetaGenerator() {
   const [caseType, setCaseType] = useState<'sentence' | 'title'>('sentence');
   const [contentType, setContentType] = useState<'both' | 'titles' | 'descriptions'>('both');
   const [numVariations, setNumVariations] = useState(1);
-  const [brandGuidelines, setBrandGuidelines] = useState('');
-  const [regulatoryGuidelines, setRegulatoryGuidelines] = useState('');
+  const [brandGuidelines, setBrandGuidelines] = useState<GuidelineContent | string>('');
+  const [regulatoryGuidelines, setRegulatoryGuidelines] = useState<GuidelineContent | string>('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);

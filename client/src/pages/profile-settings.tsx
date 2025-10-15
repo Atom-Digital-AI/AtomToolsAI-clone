@@ -278,9 +278,9 @@ export default function ProfileSettings() {
                             <p data-testid={`text-profile-content-${profile.id}`} className="text-sm text-gray-300 line-clamp-3">
                               {typeof profile.content === "string" 
                                 ? profile.content
-                                : (profile.content as any)?.legacy_text 
-                                ? (profile.content as any).legacy_text
-                                : "Structured brand guidelines"}
+                                : ((profile.content as any)?.legacy_text 
+                                  ? (profile.content as any).legacy_text
+                                  : "Structured brand guidelines")}
                             </p>
                           </div>
                         )}
