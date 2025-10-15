@@ -1,0 +1,417 @@
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema } from "@shared/schema";
+
+interface BrandGuidelineFormProps {
+  value: BrandGuidelineContent | string;
+  onChange: (value: BrandGuidelineContent) => void;
+}
+
+export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFormProps) {
+  const [formData, setFormData] = useState<BrandGuidelineContent>({});
+  const [isLegacy, setIsLegacy] = useState(false);
+  const [legacyText, setLegacyText] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof value === "string") {
+      setIsLegacy(true);
+      setLegacyText(value);
+      setFormData({});
+    } else if (value && typeof value === "object" && "legacy_text" in value) {
+      setIsLegacy(true);
+      setLegacyText((value as any).legacy_text);
+      setFormData({});
+    } else {
+      setIsLegacy(false);
+      setFormData(value || {});
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (!isLegacy) {
+      const result = brandGuidelineContentSchema.safeParse(formData);
+      if (!result.success) {
+        const errors = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+        setValidationErrors(errors);
+      } else {
+        setValidationErrors([]);
+      }
+      onChange(formData);
+    }
+  }, [formData, isLegacy, onChange]);
+
+  const handleConvertToStructured = () => {
+    const converted: BrandGuidelineContent = {
+      tone_of_voice: legacyText,
+      style_preferences: "",
+      color_palette: [],
+      visual_style: "",
+      target_audience: [],
+      brand_personality: [],
+      content_themes: [],
+      language_style: "",
+    };
+    setFormData(converted);
+    setIsLegacy(false);
+    onChange(converted);
+  };
+
+  const updateField = <K extends keyof BrandGuidelineContent>(
+    field: K,
+    value: BrandGuidelineContent[K]
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const addColor = () => {
+    const colors = formData.color_palette || [];
+    updateField("color_palette", [...colors, "#000000"]);
+  };
+
+  const updateColor = (index: number, color: string) => {
+    const colors = [...(formData.color_palette || [])];
+    colors[index] = color;
+    updateField("color_palette", colors);
+  };
+
+  const removeColor = (index: number) => {
+    const colors = [...(formData.color_palette || [])];
+    colors.splice(index, 1);
+    updateField("color_palette", colors);
+  };
+
+  const addTargetAudience = () => {
+    const audiences = formData.target_audience || [];
+    updateField("target_audience", [
+      ...audiences,
+      { gender: "", profession: "", interests: [], other_keywords: [] }
+    ]);
+  };
+
+  const updateTargetAudience = (index: number, field: keyof TargetAudience, value: any) => {
+    const audiences = [...(formData.target_audience || [])];
+    audiences[index] = { ...audiences[index], [field]: value };
+    updateField("target_audience", audiences);
+  };
+
+  const removeTargetAudience = (index: number) => {
+    const audiences = [...(formData.target_audience || [])];
+    audiences.splice(index, 1);
+    updateField("target_audience", audiences);
+  };
+
+  const tagsToArray = (tags: string): string[] => {
+    return tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+  };
+
+  const arrayToTags = (arr: string[] | undefined): string => {
+    return (arr || []).join(', ');
+  };
+
+  if (isLegacy) {
+    return (
+      <div className="space-y-4 p-6 bg-yellow-950/20 border border-yellow-800 rounded-lg">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-yellow-500 mb-2">Legacy Format Detected</h3>
+            <p className="text-sm text-gray-300 mb-4">
+              This profile uses the old text-based format. Convert it to the new structured format to unlock advanced features like color palettes, target audiences, and more.
+            </p>
+            <div className="mb-4">
+              <Label className="text-gray-300">Current Content:</Label>
+              <p className="mt-2 p-3 bg-gray-800 rounded border border-gray-700 text-gray-200 text-sm whitespace-pre-wrap">
+                {legacyText}
+              </p>
+            </div>
+            <Button 
+              onClick={handleConvertToStructured}
+              data-testid="button-convert-to-structured"
+              className="bg-yellow-600 hover:bg-yellow-700"
+            >
+              Convert to Structured Format
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {validationErrors.length > 0 && (
+        <div className="p-4 bg-red-950/20 border border-red-800 rounded-lg">
+          <h4 className="text-red-500 font-semibold mb-2">Validation Errors:</h4>
+          <ul className="list-disc list-inside text-sm text-red-400">
+            {validationErrors.map((error, i) => (
+              <li key={i}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+          <TabsTrigger value="basic" data-testid="tab-basic-info">Basic Info</TabsTrigger>
+          <TabsTrigger value="visual" data-testid="tab-visual-identity">Visual Identity</TabsTrigger>
+          <TabsTrigger value="audience" data-testid="tab-audience">Audience</TabsTrigger>
+          <TabsTrigger value="voice" data-testid="tab-brand-voice">Brand Voice</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="basic" className="space-y-4 mt-6">
+          <div>
+            <Label htmlFor="tone-of-voice" className="text-gray-200">Tone of Voice</Label>
+            <Textarea
+              id="tone-of-voice"
+              data-testid="textarea-tone-of-voice"
+              value={formData.tone_of_voice || ""}
+              onChange={(e) => updateField("tone_of_voice", e.target.value)}
+              placeholder="Describe the tone and voice of your brand (e.g., professional, friendly, authoritative)..."
+              rows={4}
+              className="mt-2 bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="style-preferences" className="text-gray-200">Style Preferences</Label>
+            <Textarea
+              id="style-preferences"
+              data-testid="textarea-style-preferences"
+              value={formData.style_preferences || ""}
+              onChange={(e) => updateField("style_preferences", e.target.value)}
+              placeholder="Describe your brand's style preferences..."
+              rows={4}
+              className="mt-2 bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="visual" className="space-y-4 mt-6">
+          <div>
+            <Label className="text-gray-200">Color Palette</Label>
+            <div className="space-y-2 mt-2">
+              {(formData.color_palette || []).map((color, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    data-testid={`input-color-${index}`}
+                    value={color}
+                    onChange={(e) => updateColor(index, e.target.value)}
+                    className="w-12 h-10 rounded border border-gray-700 bg-gray-800 cursor-pointer"
+                  />
+                  <Input
+                    data-testid={`input-color-hex-${index}`}
+                    value={color}
+                    onChange={(e) => updateColor(index, e.target.value)}
+                    placeholder="#000000"
+                    className="flex-1 bg-gray-800 border-gray-700 text-white"
+                  />
+                  <Button
+                    data-testid={`button-remove-color-${index}`}
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => removeColor(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                data-testid="button-add-color"
+                variant="outline"
+                onClick={addColor}
+                className="w-full border-gray-700 hover:bg-gray-800"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Color
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="visual-style" className="text-gray-200">Visual Style</Label>
+            <Textarea
+              id="visual-style"
+              data-testid="textarea-visual-style"
+              value={formData.visual_style || ""}
+              onChange={(e) => updateField("visual_style", e.target.value)}
+              placeholder="Describe your brand's visual style (e.g., minimalist, bold, playful)..."
+              rows={4}
+              className="mt-2 bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="audience" className="space-y-4 mt-6">
+          <div>
+            <Label className="text-gray-200">Target Audiences</Label>
+            <div className="space-y-4 mt-2">
+              {(formData.target_audience || []).map((audience, index) => (
+                <div
+                  key={index}
+                  className="p-4 bg-gray-800 rounded-lg border border-gray-700 space-y-3"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-sm font-semibold text-gray-200">Audience {index + 1}</h4>
+                    <Button
+                      data-testid={`button-remove-audience-${index}`}
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeTargetAudience(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor={`gender-${index}`} className="text-gray-300 text-xs">Gender</Label>
+                      <Input
+                        id={`gender-${index}`}
+                        data-testid={`input-audience-gender-${index}`}
+                        value={audience.gender || ""}
+                        onChange={(e) => updateTargetAudience(index, "gender", e.target.value)}
+                        placeholder="e.g., All, Male, Female"
+                        className="mt-1 bg-gray-900 border-gray-600 text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`profession-${index}`} className="text-gray-300 text-xs">Profession</Label>
+                      <Input
+                        id={`profession-${index}`}
+                        data-testid={`input-audience-profession-${index}`}
+                        value={audience.profession || ""}
+                        onChange={(e) => updateTargetAudience(index, "profession", e.target.value)}
+                        placeholder="e.g., Marketing Managers"
+                        className="mt-1 bg-gray-900 border-gray-600 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-gray-300 text-xs">Age Range</Label>
+                    <div className="grid grid-cols-2 gap-3 mt-1">
+                      <Input
+                        data-testid={`input-audience-age-from-${index}`}
+                        type="number"
+                        min="0"
+                        max="120"
+                        value={audience.age_range?.from_age || ""}
+                        onChange={(e) => updateTargetAudience(index, "age_range", {
+                          ...audience.age_range,
+                          from_age: parseInt(e.target.value) || 0
+                        })}
+                        placeholder="From age"
+                        className="bg-gray-900 border-gray-600 text-white"
+                      />
+                      <Input
+                        data-testid={`input-audience-age-to-${index}`}
+                        type="number"
+                        min="0"
+                        max="120"
+                        value={audience.age_range?.to_age || ""}
+                        onChange={(e) => updateTargetAudience(index, "age_range", {
+                          ...audience.age_range,
+                          to_age: parseInt(e.target.value) || 0
+                        })}
+                        placeholder="To age"
+                        className="bg-gray-900 border-gray-600 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`interests-${index}`} className="text-gray-300 text-xs">
+                      Interests (comma-separated)
+                    </Label>
+                    <Input
+                      id={`interests-${index}`}
+                      data-testid={`input-audience-interests-${index}`}
+                      value={arrayToTags(audience.interests)}
+                      onChange={(e) => updateTargetAudience(index, "interests", tagsToArray(e.target.value))}
+                      placeholder="e.g., Technology, Marketing, Design"
+                      className="mt-1 bg-gray-900 border-gray-600 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`keywords-${index}`} className="text-gray-300 text-xs">
+                      Other Keywords (comma-separated)
+                    </Label>
+                    <Input
+                      id={`keywords-${index}`}
+                      data-testid={`input-audience-keywords-${index}`}
+                      value={arrayToTags(audience.other_keywords)}
+                      onChange={(e) => updateTargetAudience(index, "other_keywords", tagsToArray(e.target.value))}
+                      placeholder="e.g., B2B, SaaS, Enterprise"
+                      className="mt-1 bg-gray-900 border-gray-600 text-white"
+                    />
+                  </div>
+                </div>
+              ))}
+              <Button
+                data-testid="button-add-audience"
+                variant="outline"
+                onClick={addTargetAudience}
+                className="w-full border-gray-700 hover:bg-gray-800"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Target Audience
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="voice" className="space-y-4 mt-6">
+          <div>
+            <Label htmlFor="brand-personality" className="text-gray-200">
+              Brand Personality (comma-separated tags)
+            </Label>
+            <Input
+              id="brand-personality"
+              data-testid="input-brand-personality"
+              value={arrayToTags(formData.brand_personality)}
+              onChange={(e) => updateField("brand_personality", tagsToArray(e.target.value))}
+              placeholder="e.g., Innovative, Trustworthy, Bold"
+              className="mt-2 bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="content-themes" className="text-gray-200">
+              Content Themes (comma-separated tags)
+            </Label>
+            <Input
+              id="content-themes"
+              data-testid="input-content-themes"
+              value={arrayToTags(formData.content_themes)}
+              onChange={(e) => updateField("content_themes", tagsToArray(e.target.value))}
+              placeholder="e.g., Innovation, Customer Success, Industry Leadership"
+              className="mt-2 bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="language-style" className="text-gray-200">Language Style</Label>
+            <Textarea
+              id="language-style"
+              data-testid="textarea-language-style"
+              value={formData.language_style || ""}
+              onChange={(e) => updateField("language_style", e.target.value)}
+              placeholder="Describe the language style to use (e.g., use active voice, avoid jargon, conversational)..."
+              rows={4}
+              className="mt-2 bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

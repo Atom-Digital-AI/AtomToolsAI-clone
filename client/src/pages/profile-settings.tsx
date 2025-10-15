@@ -10,12 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { GuidelineProfile } from "@shared/schema";
+import BrandGuidelineForm from "@/components/BrandGuidelineForm";
+import type { GuidelineProfile, BrandGuidelineContent, GuidelineContent } from "@shared/schema";
 
 export default function ProfileSettings() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<GuidelineProfile | null>(null);
-  const [newProfile, setNewProfile] = useState({ name: "", type: "brand" as "brand" | "regulatory", content: "" });
+  const [newProfile, setNewProfile] = useState<{ name: string; type: "brand" | "regulatory"; content: GuidelineContent }>({ 
+    name: "", 
+    type: "brand", 
+    content: {} as BrandGuidelineContent 
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -35,13 +40,13 @@ export default function ProfileSettings() {
 
   // Create profile mutation
   const createProfileMutation = useMutation({
-    mutationFn: async (profile: { name: string; type: "brand" | "regulatory"; content: string }) => {
+    mutationFn: async (profile: { name: string; type: "brand" | "regulatory"; content: GuidelineContent }) => {
       return await apiRequest("POST", "/api/guideline-profiles", profile);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/guideline-profiles"] });
       setIsCreateDialogOpen(false);
-      setNewProfile({ name: "", type: "brand", content: "" });
+      setNewProfile({ name: "", type: "brand", content: {} as BrandGuidelineContent });
       toast({ title: "Success", description: "Profile created successfully" });
     },
     onError: () => {
@@ -51,7 +56,7 @@ export default function ProfileSettings() {
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
-    mutationFn: async ({ id, ...profile }: { id: string; name: string; content: string }) => {
+    mutationFn: async ({ id, ...profile }: { id: string; name: string; content: GuidelineContent }) => {
       return await apiRequest("PUT", `/api/guideline-profiles/${id}`, profile);
     },
     onSuccess: () => {
@@ -79,10 +84,17 @@ export default function ProfileSettings() {
   });
 
   const handleCreateProfile = () => {
-    if (!newProfile.name.trim() || !newProfile.content.trim()) {
-      toast({ title: "Error", description: "Name and content are required", variant: "destructive" });
+    if (!newProfile.name.trim()) {
+      toast({ title: "Error", description: "Name is required", variant: "destructive" });
       return;
     }
+    
+    // Validate content based on type
+    if (typeof newProfile.content === "string" && !newProfile.content.trim()) {
+      toast({ title: "Error", description: "Content is required", variant: "destructive" });
+      return;
+    }
+    
     createProfileMutation.mutate(newProfile);
   };
 
@@ -130,7 +142,16 @@ export default function ProfileSettings() {
                   </div>
                   <div>
                     <Label htmlFor="profile-type" className="text-white">Type</Label>
-                    <Select value={newProfile.type} onValueChange={(value: "brand" | "regulatory") => setNewProfile({ ...newProfile, type: value })}>
+                    <Select 
+                      value={newProfile.type} 
+                      onValueChange={(value: "brand" | "regulatory") => {
+                        setNewProfile({ 
+                          ...newProfile, 
+                          type: value,
+                          content: value === "brand" ? {} as BrandGuidelineContent : ""
+                        });
+                      }}
+                    >
                       <SelectTrigger data-testid="select-profile-type" className="bg-gray-800 border-gray-700 text-[#ffffff]">
                         <SelectValue />
                       </SelectTrigger>
@@ -142,15 +163,22 @@ export default function ProfileSettings() {
                   </div>
                   <div>
                     <Label htmlFor="profile-content" className="text-white">Guidelines Content</Label>
-                    <Textarea
-                      id="profile-content"
-                      data-testid="textarea-profile-content"
-                      value={newProfile.content}
-                      onChange={(e) => setNewProfile({ ...newProfile, content: e.target.value })}
-                      placeholder="Enter your guidelines..."
-                      rows={6}
-                      className="bg-gray-800 border-gray-700 text-white"
-                    />
+                    {newProfile.type === "brand" ? (
+                      <BrandGuidelineForm
+                        value={newProfile.content as BrandGuidelineContent}
+                        onChange={(value) => setNewProfile({ ...newProfile, content: value })}
+                      />
+                    ) : (
+                      <Textarea
+                        id="profile-content"
+                        data-testid="textarea-profile-content"
+                        value={typeof newProfile.content === "string" ? newProfile.content : ""}
+                        onChange={(e) => setNewProfile({ ...newProfile, content: e.target.value })}
+                        placeholder="Enter your regulatory guidelines..."
+                        rows={6}
+                        className="bg-gray-800 border-gray-700 text-white"
+                      />
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button 
@@ -197,11 +225,9 @@ export default function ProfileSettings() {
                               onChange={(e) => setEditingProfile({ ...editingProfile, name: e.target.value })}
                               className="bg-gray-700 border-gray-600"
                             />
-                            <Textarea
-                              value={editingProfile.content}
-                              onChange={(e) => setEditingProfile({ ...editingProfile, content: e.target.value })}
-                              rows={4}
-                              className="bg-gray-700 border-gray-600"
+                            <BrandGuidelineForm
+                              value={editingProfile.content as BrandGuidelineContent}
+                              onChange={(value) => setEditingProfile({ ...editingProfile, content: value })}
                             />
                             <div className="flex gap-2">
                               <Button
@@ -249,7 +275,13 @@ export default function ProfileSettings() {
                                 </Button>
                               </div>
                             </div>
-                            <p data-testid={`text-profile-content-${profile.id}`} className="text-sm text-gray-300 line-clamp-3">{profile.content}</p>
+                            <p data-testid={`text-profile-content-${profile.id}`} className="text-sm text-gray-300 line-clamp-3">
+                              {typeof profile.content === "string" 
+                                ? profile.content
+                                : (profile.content as any)?.legacy_text 
+                                ? (profile.content as any).legacy_text
+                                : "Structured brand guidelines"}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -281,8 +313,15 @@ export default function ProfileSettings() {
                               className="bg-gray-700 border-gray-600"
                             />
                             <Textarea
-                              value={editingProfile.content}
-                              onChange={(e) => setEditingProfile({ ...editingProfile, content: e.target.value })}
+                              value={typeof editingProfile.content === "string" ? editingProfile.content : JSON.stringify(editingProfile.content, null, 2)}
+                              onChange={(e) => {
+                                try {
+                                  const parsed = JSON.parse(e.target.value);
+                                  setEditingProfile({ ...editingProfile, content: parsed });
+                                } catch {
+                                  setEditingProfile({ ...editingProfile, content: e.target.value });
+                                }
+                              }}
                               rows={4}
                               className="bg-gray-700 border-gray-600"
                             />
@@ -332,7 +371,11 @@ export default function ProfileSettings() {
                                 </Button>
                               </div>
                             </div>
-                            <p data-testid={`text-profile-content-${profile.id}`} className="text-sm text-gray-300 line-clamp-3">{profile.content}</p>
+                            <p data-testid={`text-profile-content-${profile.id}`} className="text-sm text-gray-300 line-clamp-3">
+                              {typeof profile.content === "string" 
+                                ? profile.content
+                                : JSON.stringify(profile.content)}
+                            </p>
                           </div>
                         )}
                       </div>
