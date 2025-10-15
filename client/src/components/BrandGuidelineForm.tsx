@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Sparkles } from "lucide-react";
 import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, GuidelineProfile } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TagInput from "@/components/TagInput";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -21,6 +23,8 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
   const [legacyText, setLegacyText] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [regulatoryMode, setRegulatoryMode] = useState<"none" | "existing" | "new">("none");
+  const [isAutoPopulating, setIsAutoPopulating] = useState(false);
+  const { toast } = useToast();
 
   const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
     queryKey: ["/api/guideline-profiles", { type: "regulatory" }],
@@ -123,6 +127,50 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
     updateField("target_audience", audiences);
   };
 
+  const handleAutoPopulate = async () => {
+    const domainUrl = formData.domain_url;
+    
+    if (!domainUrl) {
+      toast({
+        title: "Domain URL Required",
+        description: "Please enter a domain URL first to auto-populate brand guidelines.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsAutoPopulating(true);
+      
+      const response = await apiRequest<BrandGuidelineContent>(
+        "/api/guideline-profiles/auto-populate",
+        {
+          method: "POST",
+          body: JSON.stringify({ domainUrl }),
+        }
+      );
+
+      // Merge the auto-populated data with existing form data
+      const updatedData = { ...formData, ...response };
+      setFormData(updatedData);
+      onChange(updatedData);
+
+      toast({
+        title: "Success!",
+        description: "Brand guidelines have been auto-populated from your website.",
+      });
+    } catch (error: any) {
+      console.error("Auto-populate error:", error);
+      toast({
+        title: "Auto-populate Failed",
+        description: error.message || "Failed to analyze website. Please check the URL and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAutoPopulating(false);
+    }
+  };
+
   if (isLegacy) {
     return (
       <div className="space-y-4 p-6 bg-yellow-950/20 border border-yellow-800 rounded-lg">
@@ -177,17 +225,38 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
         <TabsContent value="basic" className="space-y-4 mt-6">
           <div>
             <Label htmlFor="domain-url" className="text-gray-200">Domain URL</Label>
-            <Input
-              id="domain-url"
-              data-testid="input-domain-url"
-              type="url"
-              value={formData.domain_url || ""}
-              onChange={(e) => updateField("domain_url", e.target.value)}
-              placeholder="https://yourbrand.com"
-              className="mt-2 bg-gray-800 border-gray-700 text-white"
-            />
+            <div className="flex gap-2 mt-2">
+              <Input
+                id="domain-url"
+                data-testid="input-domain-url"
+                type="url"
+                value={formData.domain_url || ""}
+                onChange={(e) => updateField("domain_url", e.target.value)}
+                placeholder="https://yourbrand.com"
+                className="flex-1 bg-gray-800 border-gray-700 text-white"
+              />
+              <Button
+                type="button"
+                data-testid="button-auto-populate"
+                onClick={handleAutoPopulate}
+                disabled={isAutoPopulating || !formData.domain_url}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap"
+              >
+                {isAutoPopulating ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Auto Populate
+                  </>
+                )}
+              </Button>
+            </div>
             <p className="text-xs text-gray-400 mt-1">
-              Your brand's primary website URL
+              Your brand's primary website URL. Click Auto Populate to analyze your website and extract brand guidelines automatically.
             </p>
           </div>
 
