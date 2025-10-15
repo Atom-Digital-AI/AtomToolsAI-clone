@@ -25,6 +25,7 @@ export interface BrandGuidelineContent {
   content_themes?: string[];
   visual_style?: string;
   language_style?: string;
+  regulatory_guideline_id?: string; // Link to regulatory guideline profile
 }
 
 export interface RegulatoryGuidelineContent {
@@ -54,6 +55,7 @@ export const brandGuidelineContentSchema = z.object({
   content_themes: z.array(z.string()).optional(),
   visual_style: z.string().optional(),
   language_style: z.string().optional(),
+  regulatory_guideline_id: z.string().optional(),
 });
 
 export const regulatoryGuidelineContentSchema = z.record(z.any());
