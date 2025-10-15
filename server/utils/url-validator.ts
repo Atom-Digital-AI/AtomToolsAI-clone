@@ -1,7 +1,9 @@
 import * as dns from 'dns';
+import * as net from 'net';
 import { promisify } from 'util';
 
-const dnsResolve = promisify(dns.resolve4);
+const dnsResolve4 = promisify(dns.resolve4);
+const dnsResolve6 = promisify(dns.resolve6);
 
 /**
  * Validates and normalizes a URL for safe crawling
@@ -30,10 +32,7 @@ export async function validateAndNormalizeUrl(url: string): Promise<string> {
   // Block localhost and common internal hostnames
   const blockedHostnames = [
     'localhost',
-    '127.0.0.1',
-    '0.0.0.0',
     'metadata.google.internal',
-    '169.254.169.254', // AWS/GCP metadata
     'metadata.azure.com',
   ];
 
@@ -42,35 +41,75 @@ export async function validateAndNormalizeUrl(url: string): Promise<string> {
     throw new Error('Cannot crawl local or internal addresses.');
   }
 
+  // Check if hostname is a literal IP address (IPv4 or IPv6)
+  const ipVersion = net.isIP(hostname);
+  if (ipVersion !== 0) {
+    // It's a literal IP address - check if it's private
+    if (ipVersion === 4 && isPrivateIPv4(hostname)) {
+      throw new Error('Cannot crawl private or internal IP addresses.');
+    }
+    if (ipVersion === 6 && isPrivateIPv6(hostname)) {
+      throw new Error('Cannot crawl private or internal IPv6 addresses.');
+    }
+    // Even if it's a public IP, we should reject literal IPs for security
+    throw new Error('Please use domain names instead of IP addresses.');
+  }
+
   // Resolve DNS to check for private IP ranges
+  // IMPORTANT: Check BOTH IPv4 and IPv6 records in parallel to prevent bypass
   try {
-    const addresses = await dnsResolve(parsedUrl.hostname);
-    
-    for (const address of addresses) {
-      if (isPrivateIP(address)) {
-        throw new Error('Cannot crawl private or internal IP addresses.');
+    const [v4Result, v6Result] = await Promise.allSettled([
+      dnsResolve4(hostname),
+      dnsResolve6(hostname)
+    ]);
+
+    // Check if at least one resolution succeeded
+    const hasV4 = v4Result.status === 'fulfilled' && v4Result.value.length > 0;
+    const hasV6 = v6Result.status === 'fulfilled' && v6Result.value.length > 0;
+
+    if (!hasV4 && !hasV6) {
+      throw new Error('Domain not found. Please check the URL and try again.');
+    }
+
+    // Validate all IPv4 addresses if present
+    if (hasV4) {
+      for (const address of v4Result.value) {
+        if (isPrivateIPv4(address)) {
+          throw new Error('Cannot crawl private or internal IP addresses.');
+        }
+      }
+    }
+
+    // Validate all IPv6 addresses if present
+    if (hasV6) {
+      for (const address of v6Result.value) {
+        if (isPrivateIPv6(address)) {
+          throw new Error('Cannot crawl private or internal IPv6 addresses.');
+        }
       }
     }
   } catch (error) {
-    if ((error as any).code === 'ENOTFOUND') {
-      throw new Error('Domain not found. Please check the URL and try again.');
-    }
-    // Re-throw if it's our custom error
-    if ((error as Error).message.includes('private or internal')) {
+    // If it's one of our custom errors, re-throw it
+    if ((error as Error).message.includes('Cannot crawl') || 
+        (error as Error).message.includes('Domain not found')) {
       throw error;
     }
-    // For other DNS errors, log but continue
-    console.warn('DNS resolution warning:', error);
+    // For any other DNS errors, block the request
+    throw new Error('Unable to resolve domain. Please check the URL and try again.');
   }
 
   return normalizedUrl;
 }
 
 /**
- * Checks if an IP address is in a private range
+ * Checks if an IPv4 address is in a private range
  */
-function isPrivateIP(ip: string): boolean {
+function isPrivateIPv4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
+  
+  if (parts.length !== 4) {
+    return false;
+  }
   
   // 10.0.0.0 - 10.255.255.255
   if (parts[0] === 10) {
@@ -95,6 +134,47 @@ function isPrivateIP(ip: string): boolean {
   // 169.254.0.0 - 169.254.255.255 (link-local)
   if (parts[0] === 169 && parts[1] === 254) {
     return true;
+  }
+  
+  // 0.0.0.0 - 0.255.255.255 (current network)
+  if (parts[0] === 0) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Checks if an IPv6 address is in a private/internal range
+ */
+function isPrivateIPv6(ip: string): boolean {
+  const lower = ip.toLowerCase();
+  
+  // ::1 (loopback)
+  if (lower === '::1' || lower === '0000:0000:0000:0000:0000:0000:0000:0001') {
+    return true;
+  }
+  
+  // fe80::/10 (link-local)
+  if (lower.startsWith('fe80:')) {
+    return true;
+  }
+  
+  // fc00::/7 (unique local addresses)
+  if (lower.startsWith('fc') || lower.startsWith('fd')) {
+    return true;
+  }
+  
+  // ::ffff:0:0/96 (IPv4-mapped IPv6)
+  if (lower.includes('::ffff:')) {
+    const ipv4Part = lower.split('::ffff:')[1];
+    if (ipv4Part) {
+      // Extract IPv4 and check if it's private
+      const ipv4Match = ipv4Part.match(/(\d+\.\d+\.\d+\.\d+)/);
+      if (ipv4Match) {
+        return isPrivateIPv4(ipv4Match[1]);
+      }
+    }
   }
   
   return false;
