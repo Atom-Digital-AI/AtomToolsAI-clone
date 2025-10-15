@@ -20,7 +20,6 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
   const [legacyText, setLegacyText] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [regulatoryMode, setRegulatoryMode] = useState<"none" | "existing" | "new">("none");
-  const [newRegulatoryText, setNewRegulatoryText] = useState("");
 
   const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
     queryKey: ["/api/guideline-profiles", { type: "regulatory" }],
@@ -42,6 +41,8 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
       
       if (data.regulatory_guideline_id) {
         setRegulatoryMode("existing");
+      } else if (data.temporary_regulatory_text) {
+        setRegulatoryMode("new");
       } else {
         setRegulatoryMode("none");
       }
@@ -460,6 +461,11 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
                     setRegulatoryMode(value);
                     if (value === "none") {
                       updateField("regulatory_guideline_id", undefined);
+                      updateField("temporary_regulatory_text", undefined);
+                    } else if (value === "existing") {
+                      updateField("temporary_regulatory_text", undefined);
+                    } else if (value === "new") {
+                      updateField("regulatory_guideline_id", undefined);
                     }
                   }}
                 >
@@ -510,8 +516,8 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
                     <Textarea
                       id="new-regulatory-text"
                       data-testid="textarea-new-regulatory"
-                      value={newRegulatoryText}
-                      onChange={(e) => setNewRegulatoryText(e.target.value)}
+                      value={formData.temporary_regulatory_text || ""}
+                      onChange={(e) => updateField("temporary_regulatory_text", e.target.value)}
                       placeholder="Enter regulatory guidelines, compliance requirements, or industry-specific rules..."
                       rows={6}
                       className="mt-2 bg-gray-800 border-gray-700 text-white"

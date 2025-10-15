@@ -27,6 +27,7 @@ export interface BrandGuidelineContent {
   visual_style?: string;
   language_style?: string;
   regulatory_guideline_id?: string; // Link to regulatory guideline profile
+  temporary_regulatory_text?: string; // Temporary regulatory text (not saved as profile)
 }
 
 export interface RegulatoryGuidelineContent {
@@ -58,6 +59,7 @@ export const brandGuidelineContentSchema = z.object({
   visual_style: z.string().optional(),
   language_style: z.string().optional(),
   regulatory_guideline_id: z.string().optional(),
+  temporary_regulatory_text: z.string().optional(),
 });
 
 export const regulatoryGuidelineContentSchema = z.record(z.any());

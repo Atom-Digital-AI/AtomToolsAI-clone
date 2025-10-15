@@ -2,18 +2,25 @@ import type { BrandGuidelineContent, GuidelineContent, GuidelineProfile } from "
 import type { IStorage } from "../storage";
 
 /**
- * Fetches the regulatory guideline if the brand content has a regulatory_guideline_id
+ * Fetches the regulatory guideline if the brand content has a regulatory_guideline_id or temporary_regulatory_text
  */
 export async function getRegulatoryGuidelineFromBrand(
   brandContent: GuidelineContent,
   userId: string,
   storage: IStorage
 ): Promise<string> {
-  if (typeof brandContent === 'object' && 'regulatory_guideline_id' in brandContent) {
-    const regulatoryId = (brandContent as BrandGuidelineContent).regulatory_guideline_id;
-    if (regulatoryId) {
+  if (typeof brandContent === 'object') {
+    const brand = brandContent as BrandGuidelineContent;
+    
+    // Check for temporary regulatory text first (higher priority)
+    if (brand.temporary_regulatory_text) {
+      return brand.temporary_regulatory_text;
+    }
+    
+    // Then check for attached regulatory guideline profile
+    if (brand.regulatory_guideline_id) {
       try {
-        const regulatory = await storage.getGuidelineProfile(regulatoryId, userId);
+        const regulatory = await storage.getGuidelineProfile(brand.regulatory_guideline_id, userId);
         if (regulatory) {
           return formatRegulatoryGuidelines(regulatory.content);
         }
