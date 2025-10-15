@@ -17,6 +17,7 @@ export interface TargetAudience {
 }
 
 export interface BrandGuidelineContent {
+  domain_url?: string;
   color_palette?: string[];
   tone_of_voice?: string;
   style_preferences?: string;
@@ -47,6 +48,7 @@ export const targetAudienceSchema = z.object({
 });
 
 export const brandGuidelineContentSchema = z.object({
+  domain_url: z.string().url().optional().or(z.literal('')),
   color_palette: z.array(z.string()).optional(),
   tone_of_voice: z.string().optional(),
   style_preferences: z.string().optional(),
