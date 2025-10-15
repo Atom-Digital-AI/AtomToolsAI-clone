@@ -4,6 +4,66 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Brand Guidelines Types
+export interface TargetAudience {
+  gender?: string;
+  age_range?: {
+    from_age: number;
+    to_age: number;
+  };
+  profession?: string;
+  interests?: string[];
+  other_keywords?: string[];
+}
+
+export interface BrandGuidelineContent {
+  color_palette?: string[];
+  tone_of_voice?: string;
+  style_preferences?: string;
+  target_audience?: TargetAudience[];
+  brand_personality?: string[];
+  content_themes?: string[];
+  visual_style?: string;
+  language_style?: string;
+}
+
+export interface RegulatoryGuidelineContent {
+  [key: string]: any; // Flexible structure for regulatory guidelines
+}
+
+export type GuidelineContent = BrandGuidelineContent | RegulatoryGuidelineContent | string;
+
+// Zod Schemas for Brand Guidelines
+export const targetAudienceSchema = z.object({
+  gender: z.string().optional(),
+  age_range: z.object({
+    from_age: z.number().min(0).max(120),
+    to_age: z.number().min(0).max(120),
+  }).optional(),
+  profession: z.string().optional(),
+  interests: z.array(z.string()).optional(),
+  other_keywords: z.array(z.string()).optional(),
+});
+
+export const brandGuidelineContentSchema = z.object({
+  color_palette: z.array(z.string()).optional(),
+  tone_of_voice: z.string().optional(),
+  style_preferences: z.string().optional(),
+  target_audience: z.array(targetAudienceSchema).optional(),
+  brand_personality: z.array(z.string()).optional(),
+  content_themes: z.array(z.string()).optional(),
+  visual_style: z.string().optional(),
+  language_style: z.string().optional(),
+});
+
+export const regulatoryGuidelineContentSchema = z.record(z.any());
+
+export const guidelineContentSchema = z.union([
+  brandGuidelineContentSchema,
+  regulatoryGuidelineContentSchema,
+  z.string(), // Backward compatibility for simple text
+]);
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
@@ -137,7 +197,7 @@ export const guidelineProfiles = pgTable("guideline_profiles", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'brand' or 'regulatory'
-  content: text("content").notNull(),
+  content: jsonb("content").notNull(), // Structured JSON for brand/regulatory guidelines
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -222,11 +282,15 @@ export const insertGuidelineProfileSchema = createInsertSchema(guidelineProfiles
   name: true,
   type: true,
   content: true,
+}).extend({
+  content: guidelineContentSchema,
 });
 
 export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles).pick({
   name: true,
   content: true,
+}).extend({
+  content: guidelineContentSchema,
 }).partial();
 
 // CMS Page schemas
@@ -409,7 +473,9 @@ export type InsertUserSubscription = typeof userSubscriptions.$inferInsert;
 export type UserTierSubscription = typeof userTierSubscriptions.$inferSelect;
 export type InsertUserTierSubscription = typeof userTierSubscriptions.$inferInsert;
 
-export type GuidelineProfile = typeof guidelineProfiles.$inferSelect;
+export type GuidelineProfile = Omit<typeof guidelineProfiles.$inferSelect, 'content'> & {
+  content: GuidelineContent;
+};
 export type InsertGuidelineProfile = z.infer<typeof insertGuidelineProfileSchema>;
 export type UpdateGuidelineProfile = z.infer<typeof updateGuidelineProfileSchema>;
 
