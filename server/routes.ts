@@ -17,7 +17,7 @@ import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 import { getGoogleAuthUrl, verifyGoogleToken } from "./oauth";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
-import { formatBrandGuidelines, formatRegulatoryGuidelines } from "./utils/format-guidelines";
+import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuidelineFromBrand } from "./utils/format-guidelines";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -834,6 +834,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const languageInstruction = getLanguagePrompt(detectedLang);
       const caseInstruction = getCaseInstruction(caseType);
 
+      // Fetch attached regulatory guideline if brand guideline has one
+      const attachedRegulatory = await getRegulatoryGuidelineFromBrand(brandGuidelines, userId, storage);
+      const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
+
       // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
         Generate ${contentType === 'titles' ? 'only SEO-optimized page titles' : contentType === 'descriptions' ? 'only meta descriptions' : 'both SEO-optimized page titles and meta descriptions'} based on the following:
@@ -847,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LANGUAGE: ${languageInstruction}
         
         ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(regulatoryGuidelines)}` : ''}
+        ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
         Generate ${numVariations} variations.
 
@@ -1026,6 +1030,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const languageInstruction = getLanguagePrompt(detectedLang);
       const caseInstruction = getCaseInstruction(caseType);
 
+      // Fetch attached regulatory guideline if brand guideline has one
+      const attachedRegulatory = await getRegulatoryGuidelineFromBrand(brandGuidelines, userId, storage);
+      const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
+
       // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
         Based on the following requirements, generate compelling Google Ads copy:
@@ -1039,7 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ${languageInstruction}
         
         ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${regulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(regulatoryGuidelines)}` : ''}
+        ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
         Generate Google Ads copy with EXACTLY this format:
         - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)

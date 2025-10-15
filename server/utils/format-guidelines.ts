@@ -1,4 +1,29 @@
-import type { BrandGuidelineContent, GuidelineContent } from "@shared/schema";
+import type { BrandGuidelineContent, GuidelineContent, GuidelineProfile } from "@shared/schema";
+import type { IStorage } from "../storage";
+
+/**
+ * Fetches the regulatory guideline if the brand content has a regulatory_guideline_id
+ */
+export async function getRegulatoryGuidelineFromBrand(
+  brandContent: GuidelineContent,
+  userId: string,
+  storage: IStorage
+): Promise<string> {
+  if (typeof brandContent === 'object' && 'regulatory_guideline_id' in brandContent) {
+    const regulatoryId = (brandContent as BrandGuidelineContent).regulatory_guideline_id;
+    if (regulatoryId) {
+      try {
+        const regulatory = await storage.getGuidelineProfile(regulatoryId, userId);
+        if (regulatory) {
+          return formatRegulatoryGuidelines(regulatory.content);
+        }
+      } catch (error) {
+        console.error("Failed to fetch attached regulatory guideline:", error);
+      }
+    }
+  }
+  return '';
+}
 
 /**
  * Formats structured brand guidelines into a comprehensive text format for AI prompts
