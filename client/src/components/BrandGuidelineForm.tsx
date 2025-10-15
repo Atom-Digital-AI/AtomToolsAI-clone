@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, AlertCircle, Sparkles } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Sparkles, Upload } from "lucide-react";
 import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, GuidelineProfile } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -177,6 +177,77 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
     }
   };
 
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a PDF file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "PDF file must be smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsAutoPopulating(true);
+
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove data:application/pdf;base64, prefix
+          const base64String = result.split(',')[1];
+          resolve(base64String);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const response = await apiRequest(
+        "/api/guideline-profiles/auto-populate-pdf",
+        {
+          method: "POST",
+          body: JSON.stringify({ pdfBase64: base64 }),
+        }
+      ) as BrandGuidelineContent;
+
+      // Merge the auto-populated data with existing form data
+      const updatedData = { ...formData, ...response };
+      setFormData(updatedData);
+      onChange(updatedData);
+
+      toast({
+        title: "Success!",
+        description: "Brand guidelines have been extracted from your PDF.",
+      });
+    } catch (error: any) {
+      console.error("PDF upload error:", error);
+      toast({
+        title: "PDF Upload Failed",
+        description: error.message || "Failed to analyze PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAutoPopulating(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
   if (isLegacy) {
     return (
       <div className="space-y-4 p-6 bg-yellow-950/20 border border-yellow-800 rounded-lg">
@@ -260,9 +331,30 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
                   </>
                 )}
               </Button>
+              <div className="relative">
+                <input
+                  type="file"
+                  id="pdf-upload"
+                  data-testid="input-pdf-upload"
+                  accept="application/pdf"
+                  onChange={handlePdfUpload}
+                  disabled={isAutoPopulating}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  data-testid="button-upload-pdf"
+                  onClick={() => document.getElementById('pdf-upload')?.click()}
+                  disabled={isAutoPopulating}
+                  className="bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload PDF
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              Your brand's primary website URL. Click Auto Populate to analyze your website and extract brand guidelines automatically.
+              Enter your website URL and click Auto Populate, or upload a PDF brand guideline document to extract information automatically.
             </p>
           </div>
 
