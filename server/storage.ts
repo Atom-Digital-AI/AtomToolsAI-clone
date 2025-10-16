@@ -26,11 +26,13 @@ import {
   type ProductWithSubscriptionStatus,
   type CmsPage,
   type InsertCmsPage,
-  type UpdateCmsPage
+  type UpdateCmsPage,
+  type BrandEmbedding,
+  type InsertBrandEmbedding
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, brandContextContent } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, brandContextContent, brandEmbeddings } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray, cosineDistance } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -95,6 +97,13 @@ export interface IStorage {
   getBrandContextContent(guidelineProfileId: string): Promise<any[]>;
   createBrandContextContent(content: any): Promise<any>;
   deleteBrandContextContent(guidelineProfileId: string): Promise<boolean>;
+
+  // Brand Embeddings operations
+  createBrandEmbedding(embedding: InsertBrandEmbedding): Promise<BrandEmbedding>;
+  createBrandEmbeddingsBatch(embeddings: InsertBrandEmbedding[]): Promise<BrandEmbedding[]>;
+  getBrandEmbeddings(guidelineProfileId: string): Promise<BrandEmbedding[]>;
+  searchSimilarEmbeddings(guidelineProfileId: string, queryEmbedding: number[], limit?: number): Promise<Array<BrandEmbedding & { similarity: number }>>;
+  deleteBrandEmbeddings(guidelineProfileId: string): Promise<boolean>;
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
@@ -845,6 +854,71 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(brandContextContent)
       .where(eq(brandContextContent.guidelineProfileId, guidelineProfileId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Brand Embeddings operations
+  async createBrandEmbedding(embedding: InsertBrandEmbedding): Promise<BrandEmbedding> {
+    const [newEmbedding] = await db
+      .insert(brandEmbeddings)
+      .values({
+        ...embedding,
+        createdAt: new Date(),
+      })
+      .returning();
+    return newEmbedding;
+  }
+
+  async createBrandEmbeddingsBatch(embeddings: InsertBrandEmbedding[]): Promise<BrandEmbedding[]> {
+    if (embeddings.length === 0) return [];
+    
+    const newEmbeddings = await db
+      .insert(brandEmbeddings)
+      .values(embeddings.map(e => ({
+        ...e,
+        createdAt: new Date(),
+      })))
+      .returning();
+    return newEmbeddings;
+  }
+
+  async getBrandEmbeddings(guidelineProfileId: string): Promise<BrandEmbedding[]> {
+    return await db
+      .select()
+      .from(brandEmbeddings)
+      .where(eq(brandEmbeddings.guidelineProfileId, guidelineProfileId));
+  }
+
+  async searchSimilarEmbeddings(
+    guidelineProfileId: string, 
+    queryEmbedding: number[], 
+    limit: number = 5
+  ): Promise<Array<BrandEmbedding & { similarity: number }>> {
+    const results = await db
+      .select({
+        id: brandEmbeddings.id,
+        guidelineProfileId: brandEmbeddings.guidelineProfileId,
+        contextContentId: brandEmbeddings.contextContentId,
+        sourceType: brandEmbeddings.sourceType,
+        chunkText: brandEmbeddings.chunkText,
+        embedding: brandEmbeddings.embedding,
+        chunkIndex: brandEmbeddings.chunkIndex,
+        metadata: brandEmbeddings.metadata,
+        createdAt: brandEmbeddings.createdAt,
+        similarity: sql<number>`1 - ${cosineDistance(brandEmbeddings.embedding, queryEmbedding)}`,
+      })
+      .from(brandEmbeddings)
+      .where(eq(brandEmbeddings.guidelineProfileId, guidelineProfileId))
+      .orderBy(cosineDistance(brandEmbeddings.embedding, queryEmbedding))
+      .limit(limit);
+    
+    return results;
+  }
+
+  async deleteBrandEmbeddings(guidelineProfileId: string): Promise<boolean> {
+    const result = await db
+      .delete(brandEmbeddings)
+      .where(eq(brandEmbeddings.guidelineProfileId, guidelineProfileId));
     return (result.rowCount ?? 0) > 0;
   }
 
