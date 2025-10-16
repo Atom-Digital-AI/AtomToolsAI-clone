@@ -239,6 +239,7 @@ export const brandContextContent = pgTable("brand_context_content", {
 // Brand Embeddings - Stores vector embeddings for RAG retrieval
 export const brandEmbeddings = pgTable("brand_embeddings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // SECURITY: Direct user ownership for tenant isolation
   guidelineProfileId: varchar("guideline_profile_id").notNull().references(() => guidelineProfiles.id, { onDelete: "cascade" }),
   contextContentId: varchar("context_content_id").references(() => brandContextContent.id, { onDelete: "cascade" }), // Null for general profile embeddings
   sourceType: text("source_type").notNull(), // 'profile', 'context', 'pdf'
@@ -354,6 +355,7 @@ export const insertBrandContextContentSchema = createInsertSchema(brandContextCo
 
 // Brand Embeddings schemas
 export const insertBrandEmbeddingSchema = createInsertSchema(brandEmbeddings).pick({
+  userId: true, // SECURITY: Required for tenant isolation
   guidelineProfileId: true,
   contextContentId: true,
   sourceType: true,

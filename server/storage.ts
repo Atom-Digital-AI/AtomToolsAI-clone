@@ -98,12 +98,12 @@ export interface IStorage {
   createBrandContextContent(content: any): Promise<any>;
   deleteBrandContextContent(guidelineProfileId: string): Promise<boolean>;
 
-  // Brand Embeddings operations
+  // Brand Embeddings operations (SECURITY: All methods enforce userId for tenant isolation)
   createBrandEmbedding(embedding: InsertBrandEmbedding): Promise<BrandEmbedding>;
   createBrandEmbeddingsBatch(embeddings: InsertBrandEmbedding[]): Promise<BrandEmbedding[]>;
   getBrandEmbeddings(guidelineProfileId: string): Promise<BrandEmbedding[]>;
-  searchSimilarEmbeddings(guidelineProfileId: string, queryEmbedding: number[], limit?: number): Promise<Array<BrandEmbedding & { similarity: number }>>;
-  deleteBrandEmbeddings(guidelineProfileId: string): Promise<boolean>;
+  searchSimilarEmbeddings(userId: string, guidelineProfileId: string, queryEmbedding: number[], limit?: number): Promise<Array<BrandEmbedding & { similarity: number }>>;
+  deleteBrandEmbeddings(userId: string, guidelineProfileId: string): Promise<boolean>;
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
@@ -890,6 +890,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchSimilarEmbeddings(
+    userId: string,
     guidelineProfileId: string, 
     queryEmbedding: number[], 
     limit: number = 5
@@ -897,6 +898,7 @@ export class DatabaseStorage implements IStorage {
     const results = await db
       .select({
         id: brandEmbeddings.id,
+        userId: brandEmbeddings.userId,
         guidelineProfileId: brandEmbeddings.guidelineProfileId,
         contextContentId: brandEmbeddings.contextContentId,
         sourceType: brandEmbeddings.sourceType,
@@ -908,17 +910,23 @@ export class DatabaseStorage implements IStorage {
         similarity: sql<number>`1 - ${cosineDistance(brandEmbeddings.embedding, queryEmbedding)}`,
       })
       .from(brandEmbeddings)
-      .where(eq(brandEmbeddings.guidelineProfileId, guidelineProfileId))
+      .where(and(
+        eq(brandEmbeddings.userId, userId), // SECURITY: Enforce user ownership
+        eq(brandEmbeddings.guidelineProfileId, guidelineProfileId)
+      ))
       .orderBy(cosineDistance(brandEmbeddings.embedding, queryEmbedding))
       .limit(limit);
     
     return results;
   }
 
-  async deleteBrandEmbeddings(guidelineProfileId: string): Promise<boolean> {
+  async deleteBrandEmbeddings(userId: string, guidelineProfileId: string): Promise<boolean> {
     const result = await db
       .delete(brandEmbeddings)
-      .where(eq(brandEmbeddings.guidelineProfileId, guidelineProfileId));
+      .where(and(
+        eq(brandEmbeddings.userId, userId), // SECURITY: Enforce user ownership
+        eq(brandEmbeddings.guidelineProfileId, guidelineProfileId)
+      ));
     return (result.rowCount ?? 0) > 0;
   }
 
