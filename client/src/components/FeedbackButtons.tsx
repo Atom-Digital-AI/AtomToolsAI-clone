@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface FeedbackButtonsProps {
-  toolType: 'seo-meta' | 'google-ads' | 'content-generator';
+  toolType: 'seo-meta' | 'google-ads' | 'content-generator' | 'content-writer';
   inputData: any;
   outputData: any;
   guidelineProfileId?: string; // Optional: associate with brand for RAG

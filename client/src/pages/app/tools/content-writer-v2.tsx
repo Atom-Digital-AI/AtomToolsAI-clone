@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
 import { Sparkles, RefreshCw, ChevronRight, ChevronLeft, Save, ThumbsUp, ThumbsDown, Check, X, Download, Copy, Plus, Loader2 } from "lucide-react";
+import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -704,10 +705,33 @@ export default function ContentWriterV2() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="prose dark:prose-invert max-w-none">
             <pre className="whitespace-pre-wrap font-sans text-sm">{draft?.finalArticle}</pre>
           </div>
+          
+          <Separator />
+          
+          {draft && (
+            <FeedbackButtons
+              toolType="content-writer"
+              inputData={{
+                topic,
+                objective,
+                targetLength,
+                toneOfVoice,
+                language,
+                internalLinks: internalLinks ? internalLinks.split(',').map(l => l.trim()) : [],
+                useBrandGuidelines,
+                selectedTargetAudiences
+              }}
+              outputData={{
+                finalArticle: draft.finalArticle,
+                metadata: draft.metadata
+              }}
+              guidelineProfileId={typeof brandGuidelines === 'string' && brandGuidelines ? brandGuidelines : undefined}
+            />
+          )}
         </CardContent>
       </Card>
 
