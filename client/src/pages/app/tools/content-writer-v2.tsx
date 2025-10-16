@@ -113,7 +113,7 @@ export default function ContentWriterV2() {
   // Create session mutation
   const createSessionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('/api/content-writer/sessions', 'POST', {
+      const res = await apiRequest('POST', '/api/content-writer/sessions', {
         topic,
         guidelineProfileId: (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : undefined,
       });
@@ -127,10 +127,12 @@ export default function ContentWriterV2() {
         description: "Review the article concepts below",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Concept generation error:", error);
+      const errorMessage = error?.message || "Failed to generate concepts";
       toast({
         title: "Error",
-        description: "Failed to generate concepts",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -139,7 +141,7 @@ export default function ContentWriterV2() {
   // Regenerate concepts mutation
   const regenerateConceptsMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(`/api/content-writer/sessions/${sessionId}/regenerate`, 'POST', {
+      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/regenerate`, {
         feedbackText: regenerateFeedback,
       });
       return res;
@@ -158,7 +160,7 @@ export default function ContentWriterV2() {
   // Choose concept mutation
   const chooseConceptMutation = useMutation({
     mutationFn: async ({ conceptId, rating, feedbackText }: { conceptId: string, rating?: string, feedbackText?: string }) => {
-      await apiRequest(`/api/content-writer/sessions/${sessionId}/concepts/${conceptId}`, 'PATCH', {
+      await apiRequest('PATCH', `/api/content-writer/sessions/${sessionId}/concepts/${conceptId}`, {
         userAction: 'chosen',
         rating,
         feedbackText,
@@ -173,7 +175,7 @@ export default function ContentWriterV2() {
   // Generate subtopics mutation
   const generateSubtopicsMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(`/api/content-writer/sessions/${sessionId}/subtopics`, 'POST', {
+      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics`, {
         objective,
         internalLinks: internalLinks.split(',').map(l => l.trim()).filter(Boolean),
         targetLength: parseInt(targetLength),
@@ -196,7 +198,7 @@ export default function ContentWriterV2() {
   // Request more subtopics mutation
   const moreSubtopicsMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(`/api/content-writer/sessions/${sessionId}/subtopics/more`, 'POST');
+      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics/more`);
       return res;
     },
     onSuccess: () => {
@@ -211,7 +213,7 @@ export default function ContentWriterV2() {
   // Toggle subtopic selection
   const toggleSubtopicMutation = useMutation({
     mutationFn: async ({ subtopicId, isSelected }: { subtopicId: string, isSelected: boolean }) => {
-      await apiRequest(`/api/content-writer/sessions/${sessionId}/subtopics/${subtopicId}`, 'PATCH', {
+      await apiRequest('PATCH', `/api/content-writer/sessions/${sessionId}/subtopics/${subtopicId}`, {
         isSelected,
       });
     },
@@ -232,7 +234,7 @@ export default function ContentWriterV2() {
   // Generate article mutation
   const generateArticleMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(`/api/content-writer/sessions/${sessionId}/generate`, 'POST');
+      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/generate`);
       return res;
     },
     onSuccess: () => {

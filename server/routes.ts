@@ -2239,7 +2239,8 @@ Return the response as a JSON array with this exact structure:
       res.json({ session, concepts: savedConcepts });
     } catch (error) {
       console.error("Error creating content writer session:", error);
-      res.status(500).json({ message: "Failed to create session" });
+      const errorMessage = error instanceof Error ? error.message : "Failed to create session";
+      res.status(500).json({ message: `Failed to create session: ${errorMessage}` });
     }
   });
 
