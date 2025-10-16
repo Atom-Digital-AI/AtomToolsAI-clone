@@ -104,13 +104,18 @@ export default function GoogleAdsCopyGenerator() {
       // Auto-select the brand profile
       setBrandGuidelines(selectedBrand.id);
       
-      // Auto-populate brand name if available in content
+      // Auto-populate brand name if available in content, otherwise clear it
       const content = selectedBrand.content as any;
-      if (content && typeof content === 'object') {
-        if (content.brandName && !brandName) {
-          setBrandName(content.brandName);
-        }
+      if (content && typeof content === 'object' && content.brandName) {
+        setBrandName(content.brandName);
+      } else {
+        // Clear brand name if not available in selected brand
+        setBrandName('');
       }
+    } else {
+      // Clear brand fields when brand is deselected
+      setBrandGuidelines('');
+      setBrandName('');
     }
   }, [selectedBrand]);
 

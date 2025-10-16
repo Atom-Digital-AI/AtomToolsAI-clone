@@ -40,7 +40,7 @@ export default function BrandSelector() {
         </div>
       ) : (
         <Select
-          value={selectedBrand?.id || ''}
+          value=""
           onValueChange={(value) => {
             const brand = brandProfiles.find(b => b.id === value);
             if (brand) setSelectedBrand(brand);
