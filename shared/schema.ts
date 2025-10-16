@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey, integer, jsonb, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey, integer, jsonb, unique, vector, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -236,6 +236,22 @@ export const brandContextContent = pgTable("brand_context_content", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Brand Embeddings - Stores vector embeddings for RAG retrieval
+export const brandEmbeddings = pgTable("brand_embeddings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  guidelineProfileId: varchar("guideline_profile_id").notNull().references(() => guidelineProfiles.id, { onDelete: "cascade" }),
+  contextContentId: varchar("context_content_id").references(() => brandContextContent.id, { onDelete: "cascade" }), // Null for general profile embeddings
+  sourceType: text("source_type").notNull(), // 'profile', 'context', 'pdf'
+  chunkText: text("chunk_text").notNull(), // The actual text chunk that was embedded
+  embedding: vector("embedding", { dimensions: 1536 }), // OpenAI text-embedding-3-small uses 1536 dimensions
+  chunkIndex: integer("chunk_index").notNull().default(0), // Order of the chunk in the document
+  metadata: jsonb("metadata"), // Additional metadata (page type, source URL, etc.)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  // HNSW index for fast similarity search using cosine distance
+  index("embedding_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
+]);
+
 // CMS Pages - For managing static pages and blog content
 export const cmsPages = pgTable("cms_pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -335,6 +351,20 @@ export const insertBrandContextContentSchema = createInsertSchema(brandContextCo
   markdownContent: true,
   pageTitle: true,
 });
+
+// Brand Embeddings schemas
+export const insertBrandEmbeddingSchema = createInsertSchema(brandEmbeddings).pick({
+  guidelineProfileId: true,
+  contextContentId: true,
+  sourceType: true,
+  chunkText: true,
+  embedding: true,
+  chunkIndex: true,
+  metadata: true,
+});
+
+export type InsertBrandEmbedding = z.infer<typeof insertBrandEmbeddingSchema>;
+export type BrandEmbedding = typeof brandEmbeddings.$inferSelect;
 
 // CMS Page schemas
 export const insertCmsPageSchema = createInsertSchema(cmsPages).pick({
