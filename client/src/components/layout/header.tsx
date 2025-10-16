@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import MobileMenu from "@/components/layout/mobile-menu";
 import BrandSubNav from "@/components/layout/BrandSubNav";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 export default function Header() {
   const [location] = useLocation();
@@ -129,6 +130,7 @@ export default function Header() {
               <div className="w-20 h-8 bg-surface animate-pulse rounded-md" />
             ) : isAuthenticated ? (
               <>
+                <NotificationBell />
                 <Link href="/app/account">
                   <Button 
                     variant="ghost" 

@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
-import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2, Save, XIcon, FileText } from "lucide-react";
+import { User, Mail, Package, CreditCard, X, Star, Settings, Edit, Trash2, Save, XIcon, FileText, Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -69,6 +71,33 @@ export default function Account() {
     queryKey: ["/api/packages"],
     enabled: !!user,
     retry: false,
+  });
+
+  // Get notification preferences
+  const { data: notificationPrefs } = useQuery<{ preferences: { emailOnArticleComplete: boolean; emailOnSystemMessages: boolean } }>({
+    queryKey: ["/api/user/notification-preferences"],
+    enabled: !!user,
+  });
+
+  // Update notification preferences
+  const updateNotificationPrefsMutation = useMutation({
+    mutationFn: async (prefs: { emailOnArticleComplete?: boolean; emailOnSystemMessages?: boolean }) => {
+      return apiRequest("PATCH", "/api/user/notification-preferences", prefs);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/notification-preferences"] });
+      toast({
+        title: "Preferences Updated",
+        description: "Your notification preferences have been saved",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update notification preferences",
+        variant: "destructive",
+      });
+    },
   });
 
   // Tier subscription mutations
@@ -509,6 +538,53 @@ export default function Account() {
                     Manage Profiles
                   </Button>
                 </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Notification Preferences */}
+          <Card data-testid="notification-preferences-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Notification Preferences
+              </CardTitle>
+              <CardDescription>
+                Manage how you receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="email-article-complete" className="text-base">
+                    Email when article is complete
+                  </Label>
+                  <p className="text-sm text-text-secondary">
+                    Receive an email notification when your Content Writer articles are ready
+                  </p>
+                </div>
+                <Switch
+                  id="email-article-complete"
+                  checked={notificationPrefs?.preferences?.emailOnArticleComplete ?? true}
+                  onCheckedChange={(checked) => updateNotificationPrefsMutation.mutate({ emailOnArticleComplete: checked })}
+                  data-testid="switch-email-article-complete"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="email-system-messages" className="text-base">
+                    Email for system messages
+                  </Label>
+                  <p className="text-sm text-text-secondary">
+                    Receive emails about important system updates and announcements
+                  </p>
+                </div>
+                <Switch
+                  id="email-system-messages"
+                  checked={notificationPrefs?.preferences?.emailOnSystemMessages ?? true}
+                  onCheckedChange={(checked) => updateNotificationPrefsMutation.mutate({ emailOnSystemMessages: checked })}
+                  data-testid="switch-email-system-messages"
+                />
               </div>
             </CardContent>
           </Card>

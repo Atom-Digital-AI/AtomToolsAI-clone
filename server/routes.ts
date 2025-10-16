@@ -2790,6 +2790,16 @@ Return the refined article maintaining the structure.`;
 
       await storage.updateContentWriterSession(id, userId, { status: 'completed' });
 
+      // Create in-app notification
+      await storage.createNotification({
+        userId,
+        type: 'article_complete',
+        title: 'Article Ready!',
+        message: `Your article "${session.topic}" has been completed and is ready for review.`,
+        relatedResourceType: 'content_writer_draft',
+        relatedResourceId: draft.id,
+      });
+
       res.json({ draft });
     } catch (error) {
       console.error("Error generating article:", error);

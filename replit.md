@@ -1,117 +1,46 @@
 # atomtools.ai
 
 ## Overview
-atomtools.ai is a platform offering digital marketing and automation tools through a subscription-based web application. It features a dark-mode marketing website and a comprehensive application with a full subscription system, enabling restricted access to tools based on active subscriptions. The platform aims to provide connectors, generators, and reporting helpers for digital marketers, agencies, and small businesses, focusing on marketing automation.
+atomtools.ai is a subscription-based web platform providing digital marketing and automation tools. It targets digital marketers, agencies, and small businesses with features like connectors, generators, and reporting helpers, all focused on marketing automation. The platform includes a dark-mode marketing website and a comprehensive application with a full subscription system to manage access to tools.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript, using Vite.
-- **Routing**: Wouter.
-- **UI Library**: Shadcn/ui components with Radix UI primitives.
-- **Styling**: Tailwind CSS with custom dark-mode design tokens.
-- **State Management**: React Query.
-- **Forms**: React Hook Form with Zod validation.
-- **Typography**: Inter (UI text), Space Grotesk (headlines).
+### UI/UX Design
+The platform uses React 18 with TypeScript, Vite, and Wouter for routing. UI components are built with Shadcn/ui and Radix UI primitives, styled using Tailwind CSS with a custom dark-mode palette and electric indigo accent. Typography uses Inter for UI text and Space Grotesk for headlines. The design is responsive, mobile-first, and follows WCAG 2.2 AA accessibility standards. An admin panel provides CRUD operations for managing packages, products, and users.
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js.
-- **Database ORM**: Drizzle ORM with PostgreSQL dialect.
-- **Database Provider**: Neon Database (serverless PostgreSQL).
-- **API Structure**: RESTful endpoints under `/api`.
-- **Session Storage**: PostgreSQL-based session storage using connect-pg-simple.
+### Backend and Database
+The backend is built with Node.js and Express.js. Data is managed using Drizzle ORM with a PostgreSQL dialect, hosted on Neon Database. Authentication supports Google OAuth 2.0 and email/password, with server-side sessions stored in PostgreSQL. Zod schemas are used for input validation on both client and server sides.
 
-### Database Schema
-A PostgreSQL database with a pure tier-based subscription system:
-- **Users**: User accounts, Google OAuth integration (stores google_id, profile_image_url).
-- **Products**: Available marketing tools (optimized: removed redundant package_id column).
-- **User Tier Subscriptions**: Pure tier-based subscription system with usage tracking and limits management.
-- **Contacts**: Contact form submissions.
-- **Sessions**: User session data.
-- **Guideline Profiles**: Stores saved brand and regulatory guideline profiles for tools (supports structured JSON format with comprehensive brand data including color palettes, target audience demographics, brand personality, visual style, and tone of voice).
-- **Content Feedback**: Stores user feedback (thumbs up/down, optional text) on generated content with complete tenant isolation (userId, guidelineProfileId). Includes toolType, inputData, outputData, rating, and feedbackText for RAG-powered AI improvements.
-- **Content Writer v2 Tables**: Multi-stage article generation system with complete tenant isolation:
-  - **Content Writer Sessions**: Tracks article writing workflow (topic, status, preferences, selected concept).
-  - **Content Writer Concepts**: Stores 5 AI-generated article concepts per session with user actions and feedback.
-  - **Content Writer Subtopics**: Stores 10+ subtopics for selected concept with selection state.
-  - **Content Writer Drafts**: Stores final articles with briefs, subtopic content, and metadata.
-- **CMS Pages**: Content management system pages with SEO metadata, publishing workflow, and rich content support.
-- **CMS Navigation**: Navigation structure for CMS content organization.
-- **Packages, Tiers, Tier Prices, Tier Limits, Package Products**: Comprehensive tier-based package system supporting flexible pricing, product assignment, and usage limits (e.g., quantity restrictions, periodicity, subfeature toggles).
-- **Schema Management**: Drizzle Kit for migrations.
-- **Database Optimization**: Removed redundant constraints, unused columns, and legacy individual subscription handling (August 2025).
-
-### Authentication & Security
-- **Authentication**: Google OAuth 2.0 and traditional email/password signup.
-- **Session Management**: Server-side sessions in PostgreSQL.
-- **Input Validation**: Zod schemas for client and server-side validation.
-- **Webhook Security**: API key authentication for external webhook endpoints (WEBHOOK_API_KEY environment variable).
-
-### UI/UX Design System
-- **Color Scheme**: Custom dark-mode palette with electric indigo accent (#6366F1).
-- **Accessibility**: WCAG 2.2 AA compliant components.
-- **Responsive Design**: Mobile-first approach.
-- **Component Architecture**: Atomic design principles.
-- **Admin Panel**: Comprehensive admin dashboard for managing packages, products, and users with full CRUD operations.
-
-### Key Features and Technical Implementations
-- **Marketing Tools**: Includes Ad Copy Generators (Google Ads, SEO Meta) mirroring original Python logic (prompts, OpenAI model, temperature, language detection).
-- **Content Writer v2**: Advanced multi-stage article generation system with AI-powered workflow: (1) Topic input with brand guidelines selection, (2) 5 AI-generated article concepts with regeneration and feedback integration, (3) 10+ subtopic suggestions with selection and "request more" capability, (4) Comprehensive article assembly with briefs → content → introduction/conclusion → AI review. Complete RAG integration uses user feedback to improve concept and subtopic generation. Full tenant isolation enforced across all stages (userId/brandId validation). Supports article preferences: objective, target length, tone of voice, language, internal links, brand guidelines toggle, and **target audience selection** (allows users to specify "all brand audiences", "no specific targeting", or select specific audience segments from brand guidelines; audience context is automatically included in all LLM prompts for personalized content generation). The `formatSelectedTargetAudiences()` utility formats audience data for AI prompts with robust fallbacks for edge cases.
-- **Structured Brand Guidelines System**: Comprehensive brand guidelines support with structured JSON format (JSONB database column) storing domain URL, color palettes, tone of voice, target audience demographics (gender, age range, profession, interests), brand personality traits, content themes, visual style, and language style preferences. Guidelines are intelligently formatted for AI prompts using `formatBrandGuidelines()` utility to ensure consistent brand compliance across all generated content. The system supports end-to-end structured data flow: creation in Profile Settings → storage in database → selection in tools → formatting for AI prompts.
-- **Saved Guideline Profiles**: Users can save and reuse brand/regulatory guideline profiles across tools with full backward compatibility for legacy text format (automatic detection and migration support). Profile creation UI uses BrandGuidelineForm component with tabbed interface, while tool selectors display structured content in readonly format and allow quick text entry for one-off guidelines.
-- **Regulatory Guidelines Attachment**: Brand guidelines can optionally attach regulatory compliance guidelines via three modes: (1) "none" for no regulatory guidelines, (2) "existing" to attach a saved regulatory profile by ID, or (3) "new" to create temporary regulatory text that doesn't persist. Backend utility `getRegulatoryGuidelineFromBrand()` prioritizes temporary text over profile lookup and includes regulatory content in AI prompts for SEO Meta and Google Ads generators.
-- **Domain URL Integration**: Brand guidelines include optional `domain_url` field (with URL validation) that captures the brand's website. The domain URL is formatted as "Brand Website" in AI prompts to provide additional context for content generation.
-- **Auto-Populate Brand Guidelines**: AI-powered feature that automatically extracts brand guidelines from a website. Clicking "Auto Populate" button initiates web crawler (crawls 5 pages, extracts HTML/CSS), sends content to Claude AI (Anthropic) for analysis, and populates all brand guideline fields (colors, tone, style, target audience, personality traits, content themes). Includes comprehensive SSRF protection with URL validation, private IP blocking (IPv4/IPv6), DNS resolution checks, and HTTPS enforcement. Requires ANTHROPIC_API_KEY environment variable.
-- **Pure Tier-Based System**: Complete tier-based package subscription system (Free, Pro, Enterprise) with individual pricing and granular product usage limits, including subfeature controls (bulk processing, variations, brand guidelines).
-- **No Individual Subscriptions**: System completely moved away from individual product subscriptions - users only subscribe to package tiers which grant access to multiple products with usage limits and tracking.
-- **Tier Reordering**: Admin interface includes drag-and-drop style tier reordering with persistent sort order stored in database.
-- **Legacy Code Removal**: All individual subscription buttons and deprecated handling completely removed (August 2025).
-- **Advanced CMS with Block Builder**: Sophisticated content management system evolved from simple text editor to powerful block-based builder with row/column layouts, flexbox controls, drag-and-drop interface, real-time preview, and backward compatibility for existing markdown content.
-- **Cloud Image Upload Integration**: Direct image upload functionality within CMS using Google Cloud Storage and Uppy integration, eliminating external URL dependencies with admin-authenticated upload endpoints.
-- **Complete Content History System**: Comprehensive content lifecycle management with automatic saving, search, filtering, copy, download, and delete functionality for all generated content from SEO Meta, Google Ads, and Content Generator tools.
-- **Usage Tracking & Monitoring**: Real-time usage statistics display showing current usage vs limits for each tool with visual progress indicators, subfeature tracking, and upgrade prompts integrated into account settings.
-- **Enhanced Webhook Integration**: Content generator webhook endpoint supports both header-based (`x-request-id`) and body-based request ID passing, with secure API key authentication (wK8mN5pR7vL2xZ9qE3fT6jA4hG1cY8sB9mW5nP2xL7qE3fT6jA4hG1cY8sB9mW5n) for external service integration.
-- **Global Brand Context System**: Application-wide brand selection system using React Context API (BrandContext) with localStorage persistence. Users can select a brand from the header, and it automatically applies to all tools. State synchronization ensures brand fields (brand guidelines, brand name) in tool forms stay aligned with global selection. Handles edge cases: clearing brand resets tool fields, switching to brands without brandName clears previous values to prevent stale data.
-- **Brand Sub-Navigation**: Contextual navigation row that appears below the main header when a user is authenticated and has selected a brand. Displays the currently selected brand name with a Sparkles icon indicator, and provides quick access links to Brand Guidelines (`/app/profile-settings?edit={brandId}`) and Content History (`/app/content-history?brand={brandId}`) for the selected brand. Seamlessly integrates with BrandContext, only renders when a brand is active, and includes visual active state indicators for current route. All interactive elements include data-testid attributes for testing compliance.
-- **Enhanced Form Validation**: Comprehensive form validation improvements across all tool forms including (1) visual mandatory field indicators with red asterisks for required fields, (2) specific validation error messages for each field type (keywords, brand name, etc.), (3) automatic scroll and focus to first error field when validation fails, ensuring users immediately see what needs to be corrected.
-- **Brand Auto-Population**: Intelligent auto-fill functionality that populates tool forms when a brand is selected from the global selector. Auto-selects the brand guideline profile by ID and populates brand name field if available in profile content. Includes complete cleanup logic: deselecting brand or switching to brand without brandName properly clears all related fields to maintain data integrity.
-- **Content Feedback & RAG System**: Comprehensive feedback collection system with thumbs up/down buttons integrated into SEO Meta and Google Ads generators. Users can provide optional text feedback on thumbs down ratings. All feedback is stored with complete tenant isolation (userId, guidelineProfileId) and integrated into RAG (Retrieval-Augmented Generation) prompts to continuously improve AI outputs based on user preferences. The RAG service retrieves the last 10 feedback items, separates positive and negative feedback, and includes them in AI prompts for personalized content generation improvements.
-- **Performance Optimizations**: Code splitting, tree shaking, privacy-focused analytics, font loading optimization, image optimization, and SEO.
+### Core Features
+- **Marketing Tools**: AI-powered generators for Ad Copy (Google Ads, SEO Meta) leveraging OpenAI.
+- **Content Writer v2**: A multi-stage AI-powered article generation system. It includes topic input, brand guideline selection, AI-generated concepts, subtopic suggestions, and comprehensive article assembly. It supports user preferences for objective, length, tone, language, and target audience, with RAG integration using user feedback for continuous improvement.
+- **Structured Brand Guidelines System**: Allows users to define and save comprehensive brand profiles in a structured JSON format (color palettes, target audience, tone of voice, etc.). These guidelines are integrated into AI prompts for consistent content generation. A key feature is "Auto Populate Brand Guidelines," which uses Claude AI to extract guidelines from a website URL, with robust SSRF protection.
+- **Subscription Management**: A pure tier-based system (Free, Pro, Enterprise) replacing individual product subscriptions. It offers granular product usage limits, subfeature controls, and usage tracking.
+- **Content Management System (CMS)**: An advanced block-based builder with row/column layouts, drag-and-drop interface, real-time preview, and Google Cloud Storage integration for image uploads.
+- **Content History & Feedback**: Comprehensive content lifecycle management with history, search, and filtering. Includes a feedback system (thumbs up/down) integrated with RAG to refine AI outputs based on user preferences.
+- **Notifications**: In-app notification system with real-time updates and user-configurable email preferences for article completion and system messages.
+- **Global Brand Context**: An application-wide brand selection system using React Context API, ensuring brand consistency across all tools and forms.
 
 ## External Dependencies
 
 ### Database Services
 - **Neon Database**: Serverless PostgreSQL hosting.
-- **Drizzle ORM**: Type-safe database queries and schema management.
+- **Drizzle ORM**: Type-safe database queries.
 
 ### AI/API Services
-- **OpenAI API**: For content generation in tools (e.g., gpt-4o-mini).
+- **OpenAI API**: For AI content generation.
 - **Google OAuth 2.0**: For user authentication.
+- **Anthropic Claude AI**: For the "Auto Populate Brand Guidelines" feature.
 
 ### UI & Styling
 - **Tailwind CSS**: Utility-first CSS framework.
 - **Radix UI**: Headless UI primitives.
 - **Lucide React**: Icon library.
-- **Google Fonts**: Web font delivery.
 
 ### Development Tools
 - **Vite**: Build tool and development server.
 - **TypeScript**: Type checking.
-- **ESBuild**: Fast JavaScript bundler.
-- **TSX**: TypeScript execution for development server.
-
-### Form & Validation
-- **React Hook Form**: Form state management and validation.
 - **Zod**: Schema validation.
-- **Hookform Resolvers**: Integration between React Hook Form and Zod.
-
-### Utility Libraries
-- **Date-fns**: Date manipulation.
-- **Class Variance Authority**: For variant-based component APIs.
-- **CLSX & Tailwind Merge**: Conditional class name composition.
-
-### Session Management
-- **Connect-PG-Simple**: PostgreSQL session store for Express sessions.
