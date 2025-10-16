@@ -184,112 +184,19 @@ export default function GuidelineProfileSelector({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label htmlFor={`${type}-guidelines`}>{label}</Label>
-        <div className="flex items-center gap-2">
-          {profiles && profiles.length > 0 && (
-            <Select onValueChange={handleProfileSelect} value={currentProfile?.id || "manual"}>
-              <SelectTrigger className="w-48 h-8 text-xs">
-                <SelectValue placeholder="Choose saved profile..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">Manual entry</SelectItem>
-                {profiles.map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    {profile.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          
-          {/* Only show save button for string values (manual entry) that aren't already saved */}
-          {isString && value.trim() && !currentProfile && (
-            <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-              <DialogTrigger asChild>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-8 text-xs"
-                  data-testid={`button-save-${type}-profile`}
-                >
-                  <Save className="w-3 h-3 mr-1" />
-                  Save
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-gray-900 border-gray-700 text-white">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Save {label} Profile</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="profile-name" className="text-white">Profile Name</Label>
-                    <Input
-                      id="profile-name"
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      placeholder="Enter profile name"
-                      className="bg-gray-800 border-gray-700 text-white"
-                      data-testid="input-save-profile-name"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-white">Content Preview</Label>
-                    <div className="p-3 bg-gray-800 border border-gray-700 rounded-md text-sm max-h-32 overflow-y-auto text-white whitespace-pre-wrap">
-                      {value}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowSaveDialog(false)}
-                      data-testid="button-cancel-save"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleSaveCurrentContent}
-                      disabled={saveProfileMutation.isPending}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                      data-testid="button-confirm-save"
-                    >
-                      {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-      </div>
-      
-      {/* Conditional rendering based on value type */}
-      {isString ? (
-        // Editable textarea for string values
-        <Textarea
-          id={`${type}-guidelines`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={3}
-          className="resize-none"
-          data-testid={`textarea-${type}-guidelines`}
-        />
-      ) : (
-        // Readonly formatted display for structured content
-        <div className="space-y-2">
-          <div 
-            id={`${type}-guidelines`}
-            className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md text-sm min-h-[76px] whitespace-pre-wrap"
-            data-testid={`display-${type}-guidelines`}
-          >
-            {displayValue}
-          </div>
-          <div className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-            <span>ℹ️</span>
-            <span>This is a structured profile. Edit in Profile Settings to modify.</span>
-          </div>
-        </div>
+      {profiles && profiles.length > 0 && (
+        <Select onValueChange={handleProfileSelect} value={currentProfile?.id || ""}>
+          <SelectTrigger data-testid={`select-${type}-profile`}>
+            <SelectValue placeholder="Select a brand profile..." />
+          </SelectTrigger>
+          <SelectContent>
+            {profiles.map((profile) => (
+              <SelectItem key={profile.id} value={profile.id}>
+                {profile.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
       
       {currentProfile && (
