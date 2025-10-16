@@ -158,11 +158,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       setIsAutoPopulating(true);
       
       const response = await apiRequest(
+        "POST",
         "/api/guideline-profiles/auto-populate",
-        {
-          method: "POST",
-          body: JSON.stringify({ domainUrl }),
-        }
+        { domainUrl }
       ) as BrandGuidelineContent;
 
       // Merge the auto-populated data with existing form data
@@ -227,11 +225,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       });
 
       const response = await apiRequest(
+        "POST",
         "/api/guideline-profiles/auto-populate-pdf",
-        {
-          method: "POST",
-          body: JSON.stringify({ pdfBase64: base64 }),
-        }
+        { pdfBase64: base64 }
       ) as BrandGuidelineContent;
 
       // Merge the auto-populated data with existing form data
@@ -280,12 +276,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       setIsExtractingContext(true);
 
       const response = await apiRequest(
+        "POST",
         `/api/guideline-profiles/${profileId}/extract-context`,
-        {
-          method: "POST",
-          body: JSON.stringify({ contextUrls: formData.context_urls }),
-        }
-      ) as { success: boolean; processed: number; failed: number; errors: any[] };
+        { contextUrls: formData.context_urls }
+      ) as unknown as { success: boolean; processed: number; failed: number; errors: any[] };
 
       if (response.success) {
         toast({

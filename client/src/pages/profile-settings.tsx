@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -203,20 +204,25 @@ export default function ProfileSettings() {
             </Dialog>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Brand Guidelines */}
-            <Card className="bg-gray-900 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-xl">Brand Guidelines</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div data-testid="loading-brand-profiles">Loading...</div>
-                ) : brandProfiles.length === 0 ? (
-                  <p data-testid="no-brand-profiles" className="text-gray-400">No brand guideline profiles created yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {brandProfiles.map((profile: GuidelineProfile) => (
+          <Tabs defaultValue="brand" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-800 mb-6">
+              <TabsTrigger value="brand" data-testid="tab-brand-guidelines">Brand Guidelines</TabsTrigger>
+              <TabsTrigger value="regulatory" data-testid="tab-regulatory-guidelines">Regulatory Guidelines</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="brand" className="mt-0">
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-xl">Brand Guidelines</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div data-testid="loading-brand-profiles">Loading...</div>
+                  ) : brandProfiles.length === 0 ? (
+                    <p data-testid="no-brand-profiles" className="text-gray-400">No brand guideline profiles created yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {brandProfiles.map((profile: GuidelineProfile) => (
                       <div key={profile.id} data-testid={`profile-brand-${profile.id}`} className="p-3 bg-gray-800 rounded-lg">
                         {editingProfile?.id === profile.id ? (
                           <div className="space-y-3">
@@ -286,25 +292,26 @@ export default function ProfileSettings() {
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-            {/* Regulatory Guidelines */}
-            <Card className="bg-gray-900 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-xl">Regulatory Guidelines</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div data-testid="loading-regulatory-profiles">Loading...</div>
-                ) : regulatoryProfiles.length === 0 ? (
-                  <p data-testid="no-regulatory-profiles" className="text-gray-400">No regulatory guideline profiles created yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {regulatoryProfiles.map((profile: GuidelineProfile) => (
+            <TabsContent value="regulatory" className="mt-0">
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-xl">Regulatory Guidelines</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div data-testid="loading-regulatory-profiles">Loading...</div>
+                  ) : regulatoryProfiles.length === 0 ? (
+                    <p data-testid="no-regulatory-profiles" className="text-gray-400">No regulatory guideline profiles created yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {regulatoryProfiles.map((profile: GuidelineProfile) => (
                       <div key={profile.id} data-testid={`profile-regulatory-${profile.id}`} className="p-3 bg-gray-800 rounded-lg">
                         {editingProfile?.id === profile.id ? (
                           <div className="space-y-3">
@@ -380,12 +387,13 @@ export default function ProfileSettings() {
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
