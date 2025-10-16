@@ -76,7 +76,7 @@ export default function ContentWriterV2() {
   const [objective, setObjective] = useState("");
   const [targetLength, setTargetLength] = useState("1000");
   const [toneOfVoice, setToneOfVoice] = useState("");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState("en-US");
   const [internalLinks, setInternalLinks] = useState("");
   const [useBrandGuidelines, setUseBrandGuidelines] = useState(true);
   const [selectedTargetAudiences, setSelectedTargetAudiences] = useState<"all" | "none" | number[]>("none");
@@ -505,16 +505,36 @@ export default function ContentWriterV2() {
                 />
               </div>
               <div>
-                <Label htmlFor="language">Language</Label>
+                <Label htmlFor="language">Language & Variant</Label>
                 <Select value={language} onValueChange={setLanguage} disabled={hasGeneratedSubtopics}>
                   <SelectTrigger data-testid="select-language">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
+                    <SelectItem value="en-US">English (US)</SelectItem>
+                    <SelectItem value="en-GB">English (UK)</SelectItem>
+                    <SelectItem value="en-AU">English (Australian)</SelectItem>
+                    <SelectItem value="en-CA">English (Canadian)</SelectItem>
+                    <SelectItem value="es-ES">Spanish (Spain)</SelectItem>
+                    <SelectItem value="es-MX">Spanish (Mexico)</SelectItem>
+                    <SelectItem value="es-AR">Spanish (Argentina)</SelectItem>
+                    <SelectItem value="fr-FR">French (France)</SelectItem>
+                    <SelectItem value="fr-CA">French (Canadian)</SelectItem>
+                    <SelectItem value="de-DE">German (Germany)</SelectItem>
+                    <SelectItem value="de-AT">German (Austria)</SelectItem>
+                    <SelectItem value="de-CH">German (Switzerland)</SelectItem>
+                    <SelectItem value="pt-PT">Portuguese (Portugal)</SelectItem>
+                    <SelectItem value="pt-BR">Portuguese (Brazil)</SelectItem>
+                    <SelectItem value="it-IT">Italian</SelectItem>
+                    <SelectItem value="nl-NL">Dutch</SelectItem>
+                    <SelectItem value="pl-PL">Polish</SelectItem>
+                    <SelectItem value="ru-RU">Russian</SelectItem>
+                    <SelectItem value="ja-JP">Japanese</SelectItem>
+                    <SelectItem value="zh-CN">Chinese (Simplified)</SelectItem>
+                    <SelectItem value="zh-TW">Chinese (Traditional)</SelectItem>
+                    <SelectItem value="ko-KR">Korean</SelectItem>
+                    <SelectItem value="ar-SA">Arabic</SelectItem>
+                    <SelectItem value="hi-IN">Hindi</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
