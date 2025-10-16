@@ -839,6 +839,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const attachedRegulatory = await getRegulatoryGuidelineFromBrand(brandGuidelines, userId, storage);
       const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
 
+      // RAG: Retrieve relevant brand context if using a profile
+      let ragContext = '';
+      try {
+        // Check if brandGuidelines is a profile ID (UUID format)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (brandGuidelines && uuidRegex.test(brandGuidelines.trim())) {
+          const { ragService } = await import("./utils/rag-service");
+          const query = `SEO meta content for: ${targetKeywords} ${brandName} ${sellingPoints}`;
+          ragContext = await ragService.getBrandContextForPrompt(brandGuidelines.trim(), query, {
+            limit: 5,
+            minSimilarity: 0.7
+          });
+        }
+      } catch (error) {
+        console.error("RAG retrieval error:", error);
+        // Continue without RAG if it fails
+      }
+
       // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
         Generate ${contentType === 'titles' ? 'only SEO-optimized page titles' : contentType === 'descriptions' ? 'only meta descriptions' : 'both SEO-optimized page titles and meta descriptions'} based on the following:
@@ -850,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
-        
+        ${ragContext}
         ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
         ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
@@ -1035,6 +1053,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const attachedRegulatory = await getRegulatoryGuidelineFromBrand(brandGuidelines, userId, storage);
       const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
 
+      // RAG: Retrieve relevant brand context if using a profile
+      let ragContext = '';
+      try {
+        // Check if brandGuidelines is a profile ID (UUID format)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (brandGuidelines && uuidRegex.test(brandGuidelines.trim())) {
+          const { ragService } = await import("./utils/rag-service");
+          const query = `Google Ads copy for: ${targetKeywords} ${brandName} ${sellingPoints}`;
+          ragContext = await ragService.getBrandContextForPrompt(brandGuidelines.trim(), query, {
+            limit: 5,
+            minSimilarity: 0.7
+          });
+        }
+      } catch (error) {
+        console.error("RAG retrieval error:", error);
+        // Continue without RAG if it fails
+      }
+
       // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
         Based on the following requirements, generate compelling Google Ads copy:
@@ -1046,7 +1082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints || "None"}
         ${languageInstruction}
-        
+        ${ragContext}
         ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
         ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
