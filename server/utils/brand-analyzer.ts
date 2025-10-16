@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
-import type { BrandGuidelineContent } from '@shared/schema';
-import { crawlWebsite } from './web-crawler';
-import { validateAndNormalizeUrl } from './url-validator';
+import Anthropic from "@anthropic-ai/sdk";
+import type { BrandGuidelineContent } from "@shared/schema";
+import { crawlWebsite } from "./web-crawler";
+import { validateAndNormalizeUrl } from "./url-validator";
 
 /*
 <important_code_snippet_instructions>
@@ -15,9 +15,13 @@ const DEFAULT_MODEL_STR = "claude-sonnet-4-20250514";
 /**
  * Analyzes a website and extracts brand guidelines using Claude AI
  */
-export async function analyzeBrandGuidelines(domainUrl: string): Promise<BrandGuidelineContent> {
+export async function analyzeBrandGuidelines(
+  domainUrl: string,
+): Promise<BrandGuidelineContent> {
   if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY is not configured. Please add your API key to continue.');
+    throw new Error(
+      "ANTHROPIC_API_KEY is not configured. Please add your API key to continue.",
+    );
   }
 
   const anthropic = new Anthropic({
@@ -26,18 +30,19 @@ export async function analyzeBrandGuidelines(domainUrl: string): Promise<BrandGu
 
   // Step 1: Validate and normalize the URL (prevents SSRF attacks)
   const validatedUrl = await validateAndNormalizeUrl(domainUrl);
-  
+
   // Step 2: Crawl the website
   console.log(`Crawling website: ${validatedUrl}`);
   const crawlResult = await crawlWebsite(validatedUrl, 5);
-  
+
   if (crawlResult.pages.length === 0) {
-    throw new Error('Unable to crawl any pages from the provided URL');
+    throw new Error("Unable to crawl any pages from the provided URL");
   }
 
   // Step 2: Prepare content for AI analysis
-  const pagesContent = crawlResult.pages.map((page, index) => {
-    return `
+  const pagesContent = crawlResult.pages
+    .map((page, index) => {
+      return `
 === PAGE ${index + 1}: ${page.title || page.url} ===
 URL: ${page.url}
 
@@ -45,9 +50,10 @@ HTML (first 3000 chars):
 ${page.html.substring(0, 3000)}
 
 CSS:
-${page.css.join('\n\n').substring(0, 2000)}
+${page.css.join("\n\n").substring(0, 2000)}
 `;
-  }).join('\n\n');
+    })
+    .join("\n\n");
 
   // Step 3: Call Claude AI to analyze
   const prompt = `You are a brand analysis expert. Analyze the following website pages and extract comprehensive brand guidelines.
@@ -77,30 +83,31 @@ Based on the above website content, extract the following brand guideline inform
 }
 
 Guidelines for extraction:
-1. Extract actual hex colors from CSS (look for color properties, background-color, etc.)
-2. Infer tone of voice from the copy and messaging
-3. Identify target audience from content, imagery, and messaging
-4. Extract brand personality from how the brand presents itself
-5. Identify content themes from the topics and messaging
-6. Be specific and accurate based on actual content
-7. If information is not available, use null or empty array
+1. Extract actual hex colours from CSS (look for background or background-color properties) and include the 3–5 most common accent or brand colours, excluding #FFFFFF and #000000.
+2. Infer tone of voice from the copy and messaging used in headlines, CTAs, taglines, and product descriptions.
+3. Identify target audience from product/service context, website content, imagery, and messaging. Use general web knowledge to refine audience details (e.g. cars → minimum age 17+, alcohol → 18+ UK, menopause products → older women).
+4. Extract brand personality from how the brand presents itself through language, visuals, and positioning.
+5. Identify content themes from recurring topics and key messages across the site.
+6. Be specific and accurate based on actual content.
+7. If information is not available, use null or an empty array.
 
 Return ONLY the JSON object, no additional text.`;
 
   const message = await anthropic.messages.create({
     max_tokens: 4000,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     model: DEFAULT_MODEL_STR,
   });
 
   // Step 4: Parse and return the result
-  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-  
+  const responseText =
+    message.content[0].type === "text" ? message.content[0].text : "";
+
   try {
     const guidelines = JSON.parse(responseText);
     return guidelines as BrandGuidelineContent;
   } catch (error) {
-    console.error('Failed to parse AI response:', responseText);
-    throw new Error('Failed to parse brand guidelines from AI response');
+    console.error("Failed to parse AI response:", responseText);
+    throw new Error("Failed to parse brand guidelines from AI response");
   }
 }
