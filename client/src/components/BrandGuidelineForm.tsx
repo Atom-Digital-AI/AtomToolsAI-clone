@@ -34,7 +34,6 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   });
 
   useEffect(() => {
-    console.log("BrandGuidelineForm received value prop:", value);
     if (typeof value === "string") {
       setIsLegacy(true);
       setLegacyText(value);
@@ -46,7 +45,6 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     } else {
       setIsLegacy(false);
       const data = value || {};
-      console.log("Setting formData from value prop:", data);
       setFormData(data);
       
       if (data.regulatory_guideline_id) {

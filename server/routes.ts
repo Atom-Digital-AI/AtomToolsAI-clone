@@ -1288,6 +1288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // analyzeBrandGuidelines will validate and normalize the URL internally
       const guidelines = await analyzeBrandGuidelines(domainUrl);
+      console.log("Auto-populate guidelines result:", JSON.stringify(guidelines, null, 2));
       res.json(guidelines);
     } catch (error) {
       console.error("Error auto-populating brand guidelines:", error);
