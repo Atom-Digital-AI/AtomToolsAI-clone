@@ -35,13 +35,13 @@ Please analyze the document and provide a comprehensive JSON response with the f
 }
 
 Guidelines for extraction:
-1. **Color Palette**: Extract primary and secondary brand colors in hex format. Look for color swatches, palettes, or color specifications.
-2. **Tone of Voice**: Summarize how the brand communicates - formal/casual, friendly/professional, etc.
-3. **Target Audience**: Identify demographics and psychographics. Create multiple audience segments if mentioned.
-4. **Brand Personality**: List personality traits and characteristics (e.g., innovative, trustworthy, playful).
-5. **Content Themes**: Main topics and themes the brand focuses on in their content.
-6. **Visual Style**: Design preferences, imagery style, typography preferences.
-7. **Language Style**: Writing style, vocabulary level, sentence structure preferences.
+1. Extract actual hex colours from the document (look for color swatches, palettes, or color specifications) and include the 3–5 most common accent or brand colours, excluding #FFFFFF and #000000.
+2. Infer tone of voice from the copy and messaging used in headlines, CTAs, taglines, and product descriptions.
+3. Identify target audience from product/service context, document content, imagery, and messaging. Use general web knowledge to refine audience details (e.g. cars → minimum age 17+, alcohol → 18+ UK, menopause products → older women).
+4. Extract brand personality from how the brand presents itself through language, visuals, and positioning.
+5. Identify content themes from recurring topics and key messages across the document.
+6. Be specific and accurate based on actual content.
+7. If information is not available, use null or an empty array.
 
 If any field cannot be determined from the document, use an empty array [] or empty string "" as appropriate.
 

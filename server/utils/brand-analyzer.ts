@@ -100,8 +100,16 @@ Return ONLY the JSON object, no additional text.`;
   });
 
   // Step 4: Parse and return the result
-  const responseText =
+  let responseText =
     message.content[0].type === "text" ? message.content[0].text : "";
+
+  // Remove markdown code blocks if present
+  responseText = responseText.trim();
+  if (responseText.startsWith("```json")) {
+    responseText = responseText.replace(/^```json\n/, "").replace(/\n```$/, "");
+  } else if (responseText.startsWith("```")) {
+    responseText = responseText.replace(/^```\n/, "").replace(/\n```$/, "");
+  }
 
   try {
     const guidelines = JSON.parse(responseText);
