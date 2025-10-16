@@ -503,6 +503,27 @@ export const generatedContent = pgTable("generated_content", {
 export type GeneratedContent = typeof generatedContent.$inferSelect;
 export type InsertGeneratedContent = typeof generatedContent.$inferInsert;
 
+// Content Feedback - for AI learning and improvement
+export const contentFeedback = pgTable("content_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id), // Optional: associate with brand
+  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads', 'content-generator'
+  rating: varchar("rating").notNull(), // 'thumbs_up' or 'thumbs_down'
+  feedbackText: text("feedback_text"), // Optional: only for thumbs down
+  inputData: jsonb("input_data").notNull(), // The input that generated the content
+  outputData: jsonb("output_data").notNull(), // The generated content being rated
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ContentFeedback = typeof contentFeedback.$inferSelect;
+export type InsertContentFeedback = typeof contentFeedback.$inferInsert;
+
+export const insertContentFeedbackSchema = createInsertSchema(contentFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Error logs table for tracking tool usage errors
 export const errorLogs = pgTable("error_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
