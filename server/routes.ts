@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, errorLogs, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, contentFeedback, errorLogs, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -2122,6 +2122,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error saving generated content:", error);
       res.status(500).json({ message: "Failed to save generated content" });
+    }
+  });
+
+  // Save content feedback for AI learning
+  app.post("/api/content-feedback", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { toolType, rating, feedbackText, inputData, outputData, guidelineProfileId } = req.body;
+      
+      if (!toolType || !rating || !inputData || !outputData) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      const [feedback] = await db.insert(contentFeedback).values({
+        userId,
+        toolType,
+        rating,
+        feedbackText: feedbackText || null,
+        inputData,
+        outputData,
+        guidelineProfileId: guidelineProfileId || null,
+      }).returning();
+      
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error saving content feedback:", error);
+      res.status(500).json({ message: "Failed to save feedback" });
     }
   });
 
