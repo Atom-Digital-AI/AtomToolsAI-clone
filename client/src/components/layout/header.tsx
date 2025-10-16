@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import MobileMenu from "@/components/layout/mobile-menu";
 import BrandSelector from "@/components/layout/BrandSelector";
+import BrandSubNav from "@/components/layout/BrandSubNav";
 
 export default function Header() {
   const [location] = useLocation();
@@ -200,6 +201,9 @@ export default function Header() {
           </div>
         </div>
       </nav>
+
+      {/* Brand Sub-Navigation - Only show when authenticated */}
+      {isAuthenticated && <BrandSubNav />}
       
       {/* Mobile menu */}
       <MobileMenu 
