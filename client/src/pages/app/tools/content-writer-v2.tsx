@@ -115,7 +115,7 @@ export default function ContentWriterV2() {
     mutationFn: async () => {
       const res = await apiRequest('/api/content-writer/sessions', 'POST', {
         topic,
-        guidelineProfileId: typeof brandGuidelines === 'string' ? brandGuidelines : undefined,
+        guidelineProfileId: (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : undefined,
       });
       return res;
     },
