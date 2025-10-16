@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, contentFeedback, errorLogs, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -19,6 +19,7 @@ import { getGoogleAuthUrl, verifyGoogleToken } from "./oauth";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
 import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuidelineFromBrand } from "./utils/format-guidelines";
 import { analyzeBrandGuidelines } from "./utils/brand-analyzer";
+import { ragService } from "./utils/rag-service";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -2170,6 +2171,573 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting generated content:", error);
       res.status(500).json({ message: "Failed to delete generated content" });
+    }
+  });
+
+  // Content Writer v2 API Routes - Multi-stage article generation
+  // Create new session and generate initial concepts
+  app.post("/api/content-writer/sessions", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { topic, guidelineProfileId } = req.body;
+      
+      if (!topic) {
+        return res.status(400).json({ message: "Topic is required" });
+      }
+
+      // Create session
+      const session = await storage.createContentWriterSession({
+        userId,
+        topic,
+        guidelineProfileId: guidelineProfileId || null,
+        status: 'concepts'
+      });
+
+      // Generate 5 article concepts using ChatGPT
+      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', guidelineProfileId);
+      const brandContext = guidelineProfileId 
+        ? await ragService.getBrandContextForPrompt(userId, guidelineProfileId)
+        : '';
+
+      const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${topic}"
+
+${brandContext}
+${ragContext}
+
+For each concept, provide:
+1. A compelling title
+2. A brief 2-3 sentence summary
+
+Return the response as a JSON array with this exact structure:
+[
+  {
+    "title": "Article Title Here",
+    "summary": "Brief summary here..."
+  }
+]`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: conceptPrompt }],
+        temperature: 0.8,
+      });
+
+      const conceptsText = completion.choices[0]?.message?.content || '[]';
+      const concepts = JSON.parse(conceptsText);
+
+      // Save concepts to database
+      const conceptsToInsert = concepts.map((c: any, index: number) => ({
+        sessionId: session.id,
+        title: c.title,
+        summary: c.summary,
+        rankOrder: index + 1
+      }));
+
+      const savedConcepts = await storage.createContentWriterConcepts(conceptsToInsert, userId);
+
+      res.json({ session, concepts: savedConcepts });
+    } catch (error) {
+      console.error("Error creating content writer session:", error);
+      res.status(500).json({ message: "Failed to create session" });
+    }
+  });
+
+  // Get session with concepts
+  app.get("/api/content-writer/sessions/:id", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+
+      const session = await storage.getContentWriterSession(id, userId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      const concepts = await storage.getSessionConcepts(id, userId);
+      const subtopics = await storage.getSessionSubtopics(id, userId);
+      const draft = await storage.getSessionDraft(id, userId);
+
+      res.json({ session, concepts, subtopics, draft });
+    } catch (error) {
+      console.error("Error fetching session:", error);
+      res.status(500).json({ message: "Failed to fetch session" });
+    }
+  });
+
+  // Regenerate concepts
+  app.post("/api/content-writer/sessions/:id/regenerate", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      const { feedbackText } = req.body;
+
+      const session = await storage.getContentWriterSession(id, userId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Save thumbs down feedback for all current concepts
+      const currentConcepts = await storage.getSessionConcepts(id, userId);
+      for (const concept of currentConcepts) {
+        const [feedback] = await db.insert(contentFeedback).values({
+          userId,
+          toolType: 'content-writer',
+          rating: 'thumbs_down',
+          feedbackText: feedbackText || 'Regenerated concepts',
+          inputData: { topic: session.topic },
+          outputData: { concept: concept.title },
+          guidelineProfileId: session.guidelineProfileId
+        }).returning();
+
+        await storage.updateConceptUserAction(concept.id, userId, 'regenerated', feedback.id);
+      }
+
+      // Generate new concepts
+      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
+      const brandContext = session.guidelineProfileId 
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        : '';
+
+      const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${session.topic}"
+
+${brandContext}
+${ragContext}
+${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ''}
+
+For each concept, provide:
+1. A compelling title
+2. A brief 2-3 sentence summary
+
+Return the response as a JSON array with this exact structure:
+[
+  {
+    "title": "Article Title Here",
+    "summary": "Brief summary here..."
+  }
+]`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: conceptPrompt }],
+        temperature: 0.8,
+      });
+
+      const conceptsText = completion.choices[0]?.message?.content || '[]';
+      const concepts = JSON.parse(conceptsText);
+
+      const conceptsToInsert = concepts.map((c: any, index: number) => ({
+        sessionId: session.id,
+        title: c.title,
+        summary: c.summary,
+        rankOrder: currentConcepts.length + index + 1
+      }));
+
+      const newConcepts = await storage.createContentWriterConcepts(conceptsToInsert, userId);
+
+      res.json({ concepts: newConcepts });
+    } catch (error) {
+      console.error("Error regenerating concepts:", error);
+      res.status(500).json({ message: "Failed to regenerate concepts" });
+    }
+  });
+
+  // Update concept user action (choose, save, feedback)
+  app.patch("/api/content-writer/sessions/:sessionId/concepts/:conceptId", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { sessionId, conceptId } = req.params;
+      const { userAction, rating, feedbackText } = req.body;
+
+      const session = await storage.getContentWriterSession(sessionId, userId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      let feedbackId = null;
+      if (rating) {
+        const [concept] = await db.select().from(contentWriterConcepts).where(eq(contentWriterConcepts.id, conceptId));
+        const [feedback] = await db.insert(contentFeedback).values({
+          userId,
+          toolType: 'content-writer',
+          rating,
+          feedbackText: feedbackText || null,
+          inputData: { topic: session.topic },
+          outputData: { concept: concept.title },
+          guidelineProfileId: session.guidelineProfileId
+        }).returning();
+        feedbackId = feedback.id;
+      }
+
+      await storage.updateConceptUserAction(conceptId, userId, userAction, feedbackId || undefined);
+
+      if (userAction === 'chosen') {
+        await storage.updateContentWriterSession(sessionId, userId, {
+          selectedConceptId: conceptId,
+          status: 'subtopics'
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating concept:", error);
+      res.status(500).json({ message: "Failed to update concept" });
+    }
+  });
+
+  // Generate subtopics for chosen concept
+  app.post("/api/content-writer/sessions/:id/subtopics", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      const { objective, internalLinks, targetLength, toneOfVoice, language, useBrandGuidelines } = req.body;
+
+      const session = await storage.getContentWriterSession(id, userId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Update session with user preferences
+      await storage.updateContentWriterSession(id, userId, {
+        objective,
+        internalLinks,
+        targetLength,
+        toneOfVoice,
+        language,
+        useBrandGuidelines
+      });
+
+      // Get chosen concept
+      const [chosenConcept] = await db.select()
+        .from(contentWriterConcepts)
+        .where(eq(contentWriterConcepts.id, session.selectedConceptId));
+
+      if (!chosenConcept) {
+        return res.status(400).json({ message: "No concept selected" });
+      }
+
+      // Build context
+      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
+      const brandContext = (useBrandGuidelines && session.guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        : '';
+
+      const subtopicPrompt = `Generate 10 subtopic ideas for an article about: "${chosenConcept.title}"
+
+Concept Summary: ${chosenConcept.summary}
+
+Article Objectives: ${objective || 'Inform and engage readers'}
+Target Length: ${targetLength || 1000} words
+${toneOfVoice ? `Tone of Voice: ${toneOfVoice}` : ''}
+${language ? `Language: ${language}` : ''}
+${internalLinks && internalLinks.length > 0 ? `Internal Links to Include: ${internalLinks.join(', ')}` : ''}
+
+${brandContext}
+${ragContext}
+
+Provide 10 diverse subtopics that:
+1. Cover the main topic comprehensively
+2. Flow logically when combined
+3. Are specific and actionable
+4. Align with the article objectives
+
+Return the response as a JSON array with this exact structure:
+[
+  {
+    "title": "Subtopic Title",
+    "summary": "What this subtopic will cover..."
+  }
+]`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: subtopicPrompt }],
+        temperature: 0.7,
+      });
+
+      const subtopicsText = completion.choices[0]?.message?.content || '[]';
+      const subtopics = JSON.parse(subtopicsText);
+
+      const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
+        sessionId: session.id,
+        parentConceptId: chosenConcept.id,
+        title: s.title,
+        summary: s.summary,
+        rankOrder: index + 1,
+        isSelected: false
+      }));
+
+      const savedSubtopics = await storage.createContentWriterSubtopics(subtopicsToInsert, userId);
+
+      res.json({ subtopics: savedSubtopics });
+    } catch (error) {
+      console.error("Error generating subtopics:", error);
+      res.status(500).json({ message: "Failed to generate subtopics" });
+    }
+  });
+
+  // Request more subtopics
+  app.post("/api/content-writer/sessions/:id/subtopics/more", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+
+      const session = await storage.getContentWriterSession(id, userId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      const existingSubtopics = await storage.getSessionSubtopics(id, userId);
+      const [chosenConcept] = await db.select()
+        .from(contentWriterConcepts)
+        .where(eq(contentWriterConcepts.id, session.selectedConceptId));
+
+      const existingTitles = existingSubtopics.map(s => s.title).join('\n- ');
+
+      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        : '';
+
+      const morePrompt = `Generate 5 additional subtopic ideas for an article about: "${chosenConcept.title}"
+
+Already have these subtopics:
+- ${existingTitles}
+
+Provide 5 NEW and different subtopics that complement the existing ones.
+
+${brandContext}
+
+Return the response as a JSON array with this structure:
+[
+  {
+    "title": "Subtopic Title",
+    "summary": "What this subtopic will cover..."
+  }
+]`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: morePrompt }],
+        temperature: 0.7,
+      });
+
+      const subtopicsText = completion.choices[0]?.message?.content || '[]';
+      const subtopics = JSON.parse(subtopicsText);
+
+      const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
+        sessionId: session.id,
+        parentConceptId: chosenConcept.id,
+        title: s.title,
+        summary: s.summary,
+        rankOrder: existingSubtopics.length + index + 1,
+        isSelected: false
+      }));
+
+      const newSubtopics = await storage.createContentWriterSubtopics(subtopicsToInsert, userId);
+
+      res.json({ subtopics: newSubtopics });
+    } catch (error) {
+      console.error("Error generating more subtopics:", error);
+      res.status(500).json({ message: "Failed to generate subtopics" });
+    }
+  });
+
+  // Update subtopic selection
+  app.patch("/api/content-writer/sessions/:sessionId/subtopics/:subtopicId", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { sessionId, subtopicId } = req.params;
+      const { isSelected, userAction, rating, feedbackText } = req.body;
+
+      const session = await storage.getContentWriterSession(sessionId, userId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      if (rating) {
+        const [subtopic] = await db.select().from(contentWriterSubtopics).where(eq(contentWriterSubtopics.id, subtopicId));
+        await db.insert(contentFeedback).values({
+          userId,
+          toolType: 'content-writer',
+          rating,
+          feedbackText: feedbackText || null,
+          inputData: { subtopic: subtopic.title },
+          outputData: { summary: subtopic.summary },
+          guidelineProfileId: session.guidelineProfileId
+        });
+      }
+
+      await storage.updateSubtopicSelection(subtopicId, userId, isSelected, userAction);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating subtopic:", error);
+      res.status(500).json({ message: "Failed to update subtopic" });
+    }
+  });
+
+  // Generate final article
+  app.post("/api/content-writer/sessions/:id/generate", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+
+      const session = await storage.getContentWriterSession(id, userId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      const selectedSubtopics = (await storage.getSessionSubtopics(id, userId))
+        .filter(s => s.isSelected);
+
+      if (selectedSubtopics.length === 0) {
+        return res.status(400).json({ message: "No subtopics selected" });
+      }
+
+      const [chosenConcept] = await db.select()
+        .from(contentWriterConcepts)
+        .where(eq(contentWriterConcepts.id, session.selectedConceptId));
+
+      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        : '';
+
+      // Generate main brief
+      const mainBriefPrompt = `Create a detailed content brief for: "${chosenConcept.title}"
+
+Summary: ${chosenConcept.summary}
+Objective: ${session.objective}
+Target Length: ${session.targetLength} words
+
+${brandContext}
+
+Provide a comprehensive brief covering:
+1. Main message and key takeaways
+2. Target audience
+3. Content structure
+4. SEO considerations
+5. Call to action`;
+
+      const briefCompletion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: mainBriefPrompt }],
+        temperature: 0.5,
+      });
+
+      const mainBrief = briefCompletion.choices[0]?.message?.content || '';
+
+      // Generate subtopic briefs
+      const subtopicBriefs = [];
+      for (const subtopic of selectedSubtopics) {
+        const subtopicBriefPrompt = `Create a brief for this subtopic: "${subtopic.title}"
+Summary: ${subtopic.summary}
+This is part of the main article: "${chosenConcept.title}"
+
+Provide guidance on key points to cover.`;
+
+        const subtopicBriefCompletion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: subtopicBriefPrompt }],
+          temperature: 0.5,
+        });
+
+        subtopicBriefs.push({
+          subtopicId: subtopic.id,
+          brief: subtopicBriefCompletion.choices[0]?.message?.content || ''
+        });
+      }
+
+      // Generate content for each subtopic
+      const subtopicContents = [];
+      for (const subtopic of selectedSubtopics) {
+        const brief = subtopicBriefs.find(b => b.subtopicId === subtopic.id)?.brief || '';
+        const contentPrompt = `Write detailed content for: "${subtopic.title}"
+
+Brief: ${brief}
+
+${brandContext}
+${session.toneOfVoice ? `Tone: ${session.toneOfVoice}` : ''}
+${session.language ? `Language: ${session.language}` : ''}
+
+Write approximately ${Math.floor((session.targetLength || 1000) / selectedSubtopics.length)} words.`;
+
+        const contentCompletion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: contentPrompt }],
+          temperature: 0.7,
+        });
+
+        subtopicContents.push({
+          subtopicId: subtopic.id,
+          content: contentCompletion.choices[0]?.message?.content || ''
+        });
+      }
+
+      // Generate top and tail (intro/conclusion)
+      const topTailPrompt = `Write an engaging introduction and conclusion for: "${chosenConcept.title}"
+
+Main Brief: ${mainBrief}
+
+${brandContext}
+
+Provide:
+1. A compelling introduction (2-3 paragraphs)
+2. A strong conclusion with call to action`;
+
+      const topTailCompletion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: topTailPrompt }],
+        temperature: 0.7,
+      });
+
+      const topAndTail = topTailCompletion.choices[0]?.message?.content || '';
+
+      // Assemble article
+      const introduction = topAndTail.split('Conclusion')[0] || topAndTail;
+      const conclusion = topAndTail.split('Conclusion')[1] || '';
+
+      let fullArticle = `# ${chosenConcept.title}\n\n${introduction}\n\n`;
+      
+      for (const subtopic of selectedSubtopics) {
+        const content = subtopicContents.find(c => c.subtopicId === subtopic.id)?.content || '';
+        fullArticle += `## ${subtopic.title}\n\n${content}\n\n`;
+      }
+
+      fullArticle += `## Conclusion\n\n${conclusion}`;
+
+      // Review and refine
+      const reviewPrompt = `Review and refine this article for consistency, formatting, and natural flow. Remove any AI-sounding phrases and ensure it reads naturally:
+
+${fullArticle}
+
+${brandContext}
+
+Return the refined article maintaining the structure.`;
+
+      const reviewCompletion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: reviewPrompt }],
+        temperature: 0.3,
+      });
+
+      const finalArticle = reviewCompletion.choices[0]?.message?.content || fullArticle;
+
+      // Save draft
+      const draft = await storage.createContentWriterDraft({
+        sessionId: session.id,
+        mainBrief,
+        subtopicBriefs,
+        subtopicContents,
+        topAndTail,
+        finalArticle,
+        metadata: { wordCount: finalArticle.split(' ').length }
+      }, userId);
+
+      await storage.updateContentWriterSession(id, userId, { status: 'completed' });
+
+      res.json({ draft });
+    } catch (error) {
+      console.error("Error generating article:", error);
+      res.status(500).json({ message: "Failed to generate article" });
     }
   });
 
