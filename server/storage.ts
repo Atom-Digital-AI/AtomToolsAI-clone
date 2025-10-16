@@ -29,9 +29,17 @@ import {
   type UpdateCmsPage,
   type BrandEmbedding,
   type InsertBrandEmbedding,
-  type ContentFeedback
+  type ContentFeedback,
+  type ContentWriterSession,
+  type InsertContentWriterSession,
+  type ContentWriterConcept,
+  type InsertContentWriterConcept,
+  type ContentWriterSubtopic,
+  type InsertContentWriterSubtopic,
+  type ContentWriterDraft,
+  type InsertContentWriterDraft
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray, cosineDistance, desc } from "drizzle-orm";
 
@@ -108,6 +116,25 @@ export interface IStorage {
 
   // Content Feedback operations (SECURITY: Enforce userId for tenant isolation)
   getUserFeedback(userId: string, toolType?: string, guidelineProfileId?: string, limit?: number): Promise<ContentFeedback[]>;
+
+  // Content Writer operations (SECURITY: All methods enforce userId for tenant isolation)
+  createContentWriterSession(session: InsertContentWriterSession & { userId: string }): Promise<ContentWriterSession>;
+  getContentWriterSession(id: string, userId: string): Promise<ContentWriterSession | undefined>;
+  getUserContentWriterSessions(userId: string): Promise<ContentWriterSession[]>;
+  updateContentWriterSession(id: string, userId: string, updates: Partial<InsertContentWriterSession>): Promise<ContentWriterSession | undefined>;
+  deleteContentWriterSession(id: string, userId: string): Promise<boolean>;
+  
+  createContentWriterConcepts(concepts: (InsertContentWriterConcept & { sessionId: string })[], userId: string): Promise<ContentWriterConcept[]>;
+  getSessionConcepts(sessionId: string, userId: string): Promise<ContentWriterConcept[]>;
+  updateConceptUserAction(id: string, userId: string, userAction: string, feedbackId?: string): Promise<void>;
+  
+  createContentWriterSubtopics(subtopics: (InsertContentWriterSubtopic & { sessionId: string })[], userId: string): Promise<ContentWriterSubtopic[]>;
+  getSessionSubtopics(sessionId: string, userId: string): Promise<ContentWriterSubtopic[]>;
+  updateSubtopicSelection(id: string, userId: string, isSelected: boolean, userAction?: string): Promise<void>;
+  
+  createContentWriterDraft(draft: InsertContentWriterDraft & { sessionId: string }, userId: string): Promise<ContentWriterDraft>;
+  getSessionDraft(sessionId: string, userId: string): Promise<ContentWriterDraft | undefined>;
+  updateContentWriterDraft(id: string, userId: string, updates: Partial<InsertContentWriterDraft>): Promise<ContentWriterDraft | undefined>;
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
@@ -959,6 +986,213 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
 
     return feedback;
+  }
+
+  // Content Writer operations
+  async createContentWriterSession(session: InsertContentWriterSession & { userId: string }): Promise<ContentWriterSession> {
+    const [newSession] = await db
+      .insert(contentWriterSessions)
+      .values(session)
+      .returning();
+    return newSession;
+  }
+
+  async getContentWriterSession(id: string, userId: string): Promise<ContentWriterSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(contentWriterSessions)
+      .where(and(
+        eq(contentWriterSessions.id, id),
+        eq(contentWriterSessions.userId, userId) // SECURITY: Enforce user ownership
+      ));
+    return session;
+  }
+
+  async getUserContentWriterSessions(userId: string): Promise<ContentWriterSession[]> {
+    return await db
+      .select()
+      .from(contentWriterSessions)
+      .where(eq(contentWriterSessions.userId, userId)) // SECURITY: Enforce user ownership
+      .orderBy(desc(contentWriterSessions.createdAt));
+  }
+
+  async updateContentWriterSession(id: string, userId: string, updates: Partial<InsertContentWriterSession>): Promise<ContentWriterSession | undefined> {
+    // SECURITY: Strip userId from updates to prevent reassignment
+    const { userId: _, ...safeUpdates } = updates;
+    
+    const [updated] = await db
+      .update(contentWriterSessions)
+      .set({ ...safeUpdates, updatedAt: new Date() })
+      .where(and(
+        eq(contentWriterSessions.id, id),
+        eq(contentWriterSessions.userId, userId) // SECURITY: Enforce user ownership
+      ))
+      .returning();
+    return updated;
+  }
+
+  async deleteContentWriterSession(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(contentWriterSessions)
+      .where(and(
+        eq(contentWriterSessions.id, id),
+        eq(contentWriterSessions.userId, userId) // SECURITY: Enforce user ownership
+      ));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async createContentWriterConcepts(concepts: (InsertContentWriterConcept & { sessionId: string })[], userId: string): Promise<ContentWriterConcept[]> {
+    if (concepts.length === 0) return [];
+    
+    // SECURITY: Verify all sessionIds belong to the user
+    const sessionIds = Array.from(new Set(concepts.map(c => c.sessionId)));
+    const sessions = await db
+      .select({ id: contentWriterSessions.id })
+      .from(contentWriterSessions)
+      .where(and(
+        inArray(contentWriterSessions.id, sessionIds),
+        eq(contentWriterSessions.userId, userId)
+      ));
+    
+    const validSessionIds = new Set(sessions.map(s => s.id));
+    const validConcepts = concepts.filter(c => validSessionIds.has(c.sessionId));
+    
+    if (validConcepts.length === 0) return [];
+    
+    return await db
+      .insert(contentWriterConcepts)
+      .values(validConcepts)
+      .returning();
+  }
+
+  async getSessionConcepts(sessionId: string, userId: string): Promise<ContentWriterConcept[]> {
+    // SECURITY: Verify session ownership first
+    const session = await this.getContentWriterSession(sessionId, userId);
+    if (!session) return [];
+
+    return await db
+      .select()
+      .from(contentWriterConcepts)
+      .where(eq(contentWriterConcepts.sessionId, sessionId))
+      .orderBy(contentWriterConcepts.rankOrder);
+  }
+
+  async updateConceptUserAction(id: string, userId: string, userAction: string, feedbackId?: string): Promise<void> {
+    // SECURITY: Verify concept belongs to user's session
+    const [concept] = await db
+      .select({ sessionId: contentWriterConcepts.sessionId })
+      .from(contentWriterConcepts)
+      .where(eq(contentWriterConcepts.id, id));
+    
+    if (!concept) return;
+    
+    const session = await this.getContentWriterSession(concept.sessionId, userId);
+    if (!session) return;
+
+    await db
+      .update(contentWriterConcepts)
+      .set({ userAction, feedbackId })
+      .where(eq(contentWriterConcepts.id, id));
+  }
+
+  async createContentWriterSubtopics(subtopics: (InsertContentWriterSubtopic & { sessionId: string })[], userId: string): Promise<ContentWriterSubtopic[]> {
+    if (subtopics.length === 0) return [];
+    
+    // SECURITY: Verify all sessionIds belong to the user
+    const sessionIds = Array.from(new Set(subtopics.map(s => s.sessionId)));
+    const sessions = await db
+      .select({ id: contentWriterSessions.id })
+      .from(contentWriterSessions)
+      .where(and(
+        inArray(contentWriterSessions.id, sessionIds),
+        eq(contentWriterSessions.userId, userId)
+      ));
+    
+    const validSessionIds = new Set(sessions.map(s => s.id));
+    const validSubtopics = subtopics.filter(s => validSessionIds.has(s.sessionId));
+    
+    if (validSubtopics.length === 0) return [];
+    
+    return await db
+      .insert(contentWriterSubtopics)
+      .values(validSubtopics)
+      .returning();
+  }
+
+  async getSessionSubtopics(sessionId: string, userId: string): Promise<ContentWriterSubtopic[]> {
+    // SECURITY: Verify session ownership first
+    const session = await this.getContentWriterSession(sessionId, userId);
+    if (!session) return [];
+
+    return await db
+      .select()
+      .from(contentWriterSubtopics)
+      .where(eq(contentWriterSubtopics.sessionId, sessionId))
+      .orderBy(contentWriterSubtopics.rankOrder);
+  }
+
+  async updateSubtopicSelection(id: string, userId: string, isSelected: boolean, userAction?: string): Promise<void> {
+    // SECURITY: Verify subtopic belongs to user's session
+    const [subtopic] = await db
+      .select({ sessionId: contentWriterSubtopics.sessionId })
+      .from(contentWriterSubtopics)
+      .where(eq(contentWriterSubtopics.id, id));
+    
+    if (!subtopic) return;
+    
+    const session = await this.getContentWriterSession(subtopic.sessionId, userId);
+    if (!session) return;
+
+    await db
+      .update(contentWriterSubtopics)
+      .set({ isSelected, userAction })
+      .where(eq(contentWriterSubtopics.id, id));
+  }
+
+  async createContentWriterDraft(draft: InsertContentWriterDraft & { sessionId: string }, userId: string): Promise<ContentWriterDraft> {
+    // SECURITY: Verify sessionId belongs to the user
+    const session = await this.getContentWriterSession(draft.sessionId, userId);
+    if (!session) {
+      throw new Error('Session not found or access denied');
+    }
+    
+    const [newDraft] = await db
+      .insert(contentWriterDrafts)
+      .values(draft)
+      .returning();
+    return newDraft;
+  }
+
+  async getSessionDraft(sessionId: string, userId: string): Promise<ContentWriterDraft | undefined> {
+    // SECURITY: Verify session ownership first
+    const session = await this.getContentWriterSession(sessionId, userId);
+    if (!session) return undefined;
+
+    const [draft] = await db
+      .select()
+      .from(contentWriterDrafts)
+      .where(eq(contentWriterDrafts.sessionId, sessionId));
+    return draft;
+  }
+
+  async updateContentWriterDraft(id: string, userId: string, updates: Partial<InsertContentWriterDraft>): Promise<ContentWriterDraft | undefined> {
+    // SECURITY: Verify draft belongs to user's session
+    const [draft] = await db
+      .select({ sessionId: contentWriterDrafts.sessionId })
+      .from(contentWriterDrafts)
+      .where(eq(contentWriterDrafts.id, id));
+    
+    if (!draft) return undefined;
+    
+    const session = await this.getContentWriterSession(draft.sessionId, userId);
+    if (!session) return undefined;
+
+    const [updated] = await db
+      .update(contentWriterDrafts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(contentWriterDrafts.id, id))
+      .returning();
+    return updated;
   }
 
   // Admin operations

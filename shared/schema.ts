@@ -524,6 +524,92 @@ export const insertContentFeedbackSchema = createInsertSchema(contentFeedback).o
   createdAt: true,
 });
 
+// Content Writer - Multi-stage article generation
+export const contentWriterSessions = pgTable("content_writer_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id), // Optional: brand context
+  topic: text("topic").notNull(), // Initial topic/keywords input
+  status: varchar("status").notNull().default("concepts"), // concepts, subtopics, generating, completed, failed
+  selectedConceptId: varchar("selected_concept_id"), // Which concept user chose
+  objective: text("objective"), // User's objective for the article
+  internalLinks: jsonb("internal_links").$type<string[]>(), // Links to include
+  targetLength: integer("target_length"), // Word count target
+  toneOfVoice: text("tone_of_voice"), // Custom tone
+  language: varchar("language"), // Custom language
+  useBrandGuidelines: boolean("use_brand_guidelines").default(false), // Whether to use brand guidelines
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const contentWriterConcepts = pgTable("content_writer_concepts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => contentWriterSessions.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  rankOrder: integer("rank_order").notNull(), // Display order (1-5, 1-10, etc.)
+  userAction: varchar("user_action"), // chosen, saved, discarded, regenerated
+  feedbackId: varchar("feedback_id").references(() => contentFeedback.id), // Link to feedback if provided
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const contentWriterSubtopics = pgTable("content_writer_subtopics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => contentWriterSessions.id, { onDelete: 'cascade' }),
+  parentConceptId: varchar("parent_concept_id").notNull().references(() => contentWriterConcepts.id),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  rankOrder: integer("rank_order").notNull(), // Display order
+  isSelected: boolean("is_selected").default(false), // User selected for final article
+  userAction: varchar("user_action"), // selected, saved, discarded
+  feedbackId: varchar("feedback_id").references(() => contentFeedback.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const contentWriterDrafts = pgTable("content_writer_drafts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => contentWriterSessions.id, { onDelete: 'cascade' }),
+  mainBrief: text("main_brief"), // Content brief for main article
+  subtopicBriefs: jsonb("subtopic_briefs").$type<{subtopicId: string, brief: string}[]>(), // Briefs for each subtopic
+  subtopicContents: jsonb("subtopic_contents").$type<{subtopicId: string, content: string}[]>(), // Generated content per subtopic
+  topAndTail: text("top_and_tail"), // Introduction and conclusion
+  finalArticle: text("final_article"), // Assembled and reviewed final article
+  metadata: jsonb("metadata"), // Additional metadata (word count, etc.)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ContentWriterSession = typeof contentWriterSessions.$inferSelect;
+export type InsertContentWriterSession = typeof contentWriterSessions.$inferInsert;
+export type ContentWriterConcept = typeof contentWriterConcepts.$inferSelect;
+export type InsertContentWriterConcept = typeof contentWriterConcepts.$inferInsert;
+export type ContentWriterSubtopic = typeof contentWriterSubtopics.$inferSelect;
+export type InsertContentWriterSubtopic = typeof contentWriterSubtopics.$inferInsert;
+export type ContentWriterDraft = typeof contentWriterDrafts.$inferSelect;
+export type InsertContentWriterDraft = typeof contentWriterDrafts.$inferInsert;
+
+export const insertContentWriterSessionSchema = createInsertSchema(contentWriterSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertContentWriterConceptSchema = createInsertSchema(contentWriterConcepts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContentWriterSubtopicSchema = createInsertSchema(contentWriterSubtopics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContentWriterDraftSchema = createInsertSchema(contentWriterDrafts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Error logs table for tracking tool usage errors
 export const errorLogs = pgTable("error_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
