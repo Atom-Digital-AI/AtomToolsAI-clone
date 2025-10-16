@@ -37,9 +37,13 @@ import {
   type ContentWriterSubtopic,
   type InsertContentWriterSubtopic,
   type ContentWriterDraft,
-  type InsertContentWriterDraft
+  type InsertContentWriterDraft,
+  type Notification,
+  type InsertNotification,
+  type UserNotificationPreference,
+  type InsertUserNotificationPreference
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray, cosineDistance, desc } from "drizzle-orm";
 
@@ -135,6 +139,18 @@ export interface IStorage {
   createContentWriterDraft(draft: InsertContentWriterDraft & { sessionId: string }, userId: string): Promise<ContentWriterDraft>;
   getSessionDraft(sessionId: string, userId: string): Promise<ContentWriterDraft | undefined>;
   updateContentWriterDraft(id: string, userId: string, updates: Partial<InsertContentWriterDraft>): Promise<ContentWriterDraft | undefined>;
+
+  // Notification operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: string, limit?: number): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
+  markNotificationAsRead(notificationId: string, userId: string): Promise<boolean>;
+  markAllNotificationsAsRead(userId: string): Promise<boolean>;
+  deleteNotification(notificationId: string, userId: string): Promise<boolean>;
+  
+  // User notification preferences
+  getUserNotificationPreferences(userId: string): Promise<UserNotificationPreference | undefined>;
+  upsertUserNotificationPreferences(userId: string, preferences: Partial<InsertUserNotificationPreference>): Promise<UserNotificationPreference>;
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
@@ -1193,6 +1209,95 @@ export class DatabaseStorage implements IStorage {
       .where(eq(contentWriterDrafts.id, id))
       .returning();
     return updated;
+  }
+
+  // Notification operations
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db
+      .insert(notifications)
+      .values(notification)
+      .returning();
+    return newNotification;
+  }
+
+  async getUserNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit);
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.isRead, false)
+      ));
+    return result[0]?.count || 0;
+  }
+
+  async markNotificationAsRead(notificationId: string, userId: string): Promise<boolean> {
+    const result = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, userId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<boolean> {
+    const result = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId))
+      .returning();
+    return result.length > 0;
+  }
+
+  async deleteNotification(notificationId: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(notifications)
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, userId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  // User notification preferences
+  async getUserNotificationPreferences(userId: string): Promise<UserNotificationPreference | undefined> {
+    const [preferences] = await db
+      .select()
+      .from(userNotificationPreferences)
+      .where(eq(userNotificationPreferences.userId, userId));
+    return preferences;
+  }
+
+  async upsertUserNotificationPreferences(userId: string, preferences: Partial<InsertUserNotificationPreference>): Promise<UserNotificationPreference> {
+    const existing = await this.getUserNotificationPreferences(userId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(userNotificationPreferences)
+        .set({ ...preferences, updatedAt: new Date() })
+        .where(eq(userNotificationPreferences.userId, userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(userNotificationPreferences)
+        .values({ userId, ...preferences })
+        .returning();
+      return created;
+    }
   }
 
   // Admin operations

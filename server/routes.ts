@@ -2842,6 +2842,101 @@ Return the refined article maintaining the structure.`;
     }
   });
 
+  // Notifications API
+  app.get("/api/notifications", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      
+      const notificationsData = await storage.getUserNotifications(userId, limit);
+      const unreadCount = await storage.getUnreadNotificationCount(userId);
+      
+      res.json({ notifications: notificationsData, unreadCount });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      const success = await storage.markNotificationAsRead(id, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.patch("/api/notifications/read-all", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      const success = await storage.markAllNotificationsAsRead(userId);
+      res.json({ success });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      const success = await storage.deleteNotification(id, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ message: "Failed to delete notification" });
+    }
+  });
+
+  // User notification preferences API
+  app.get("/api/user/notification-preferences", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const preferences = await storage.getUserNotificationPreferences(userId);
+      
+      res.json({ preferences: preferences || { 
+        emailOnArticleComplete: true,
+        emailOnSystemMessages: true
+      }});
+    } catch (error) {
+      console.error("Error fetching notification preferences:", error);
+      res.status(500).json({ message: "Failed to fetch notification preferences" });
+    }
+  });
+
+  app.patch("/api/user/notification-preferences", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { emailOnArticleComplete, emailOnSystemMessages } = req.body;
+      
+      const preferences = await storage.upsertUserNotificationPreferences(userId, {
+        emailOnArticleComplete,
+        emailOnSystemMessages
+      });
+      
+      res.json({ preferences });
+    } catch (error) {
+      console.error("Error updating notification preferences:", error);
+      res.status(500).json({ message: "Failed to update notification preferences" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
