@@ -8,6 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import MobileMenu from "@/components/layout/mobile-menu";
 import BrandSubNav from "@/components/layout/BrandSubNav";
 import NotificationBell from "@/components/layout/NotificationBell";
+import BrandSelector from "@/components/layout/BrandSelector";
 
 export default function Header() {
   const [location] = useLocation();
@@ -125,11 +126,13 @@ export default function Header() {
           </div>
           
           {/* Auth Buttons */}
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
             {isLoading ? (
               <div className="w-20 h-8 bg-surface animate-pulse rounded-md" />
             ) : isAuthenticated ? (
               <>
+                <BrandSelector />
+                <div className="h-6 w-px bg-border/50" />
                 <NotificationBell />
                 <Link href="/app/account">
                   <Button 
