@@ -78,6 +78,7 @@ export default function ContentWriterV2() {
   const [language, setLanguage] = useState("en");
   const [internalLinks, setInternalLinks] = useState("");
   const [useBrandGuidelines, setUseBrandGuidelines] = useState(true);
+  const [selectedTargetAudiences, setSelectedTargetAudiences] = useState<"all" | "none" | number[]>("none");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [regenerateFeedback, setRegenerateFeedback] = useState("");
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
@@ -179,6 +180,7 @@ export default function ContentWriterV2() {
         toneOfVoice,
         language,
         useBrandGuidelines,
+        selectedTargetAudiences,
       });
       return res;
     },
@@ -538,6 +540,31 @@ export default function ContentWriterV2() {
                 disabled={hasGeneratedSubtopics || !brandGuidelines}
               />
               <Label htmlFor="useBrandGuidelines">Apply Brand Guidelines</Label>
+            </div>
+
+            <div>
+              <Label htmlFor="targetAudience">Target Audience</Label>
+              <Select 
+                value={Array.isArray(selectedTargetAudiences) ? "custom" : selectedTargetAudiences}
+                onValueChange={(value) => {
+                  if (value === "all" || value === "none") {
+                    setSelectedTargetAudiences(value);
+                  }
+                }}
+                disabled={hasGeneratedSubtopics}
+              >
+                <SelectTrigger data-testid="select-target-audience">
+                  <SelectValue placeholder="Select target audience" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Generic (No specific audience)</SelectItem>
+                  <SelectItem value="all">All Brand Audiences</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">
+                {selectedTargetAudiences === "none" && "Article will be written for a general audience"}
+                {selectedTargetAudiences === "all" && "Article will target all audiences from brand guidelines"}
+              </p>
             </div>
 
             {!hasGeneratedSubtopics && (

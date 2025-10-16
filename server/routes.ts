@@ -17,7 +17,7 @@ import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 import { getGoogleAuthUrl, verifyGoogleToken } from "./oauth";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
-import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuidelineFromBrand } from "./utils/format-guidelines";
+import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuidelineFromBrand, formatSelectedTargetAudiences } from "./utils/format-guidelines";
 import { analyzeBrandGuidelines } from "./utils/brand-analyzer";
 import { ragService } from "./utils/rag-service";
 
@@ -2299,8 +2299,22 @@ Return the response as a JSON array with this exact structure:
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
         : '';
 
+      // Get target audience context (may be null if user hasn't set preferences yet)
+      let targetAudienceContext = '';
+      if (session.selectedTargetAudiences) {
+        if (session.guidelineProfileId) {
+          const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
+          if (guidelineProfile) {
+            targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, session.selectedTargetAudiences);
+          }
+        } else {
+          targetAudienceContext = formatSelectedTargetAudiences('', session.selectedTargetAudiences);
+        }
+      }
+
       const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${session.topic}"
 
+${targetAudienceContext}
 ${brandContext}
 ${ragContext}
 ${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ''}
@@ -2390,7 +2404,7 @@ Return the response as a JSON array with this exact structure:
     try {
       const userId = req.user.id;
       const { id } = req.params;
-      const { objective, internalLinks, targetLength, toneOfVoice, language, useBrandGuidelines } = req.body;
+      const { objective, internalLinks, targetLength, toneOfVoice, language, useBrandGuidelines, selectedTargetAudiences } = req.body;
 
       const session = await storage.getContentWriterSession(id, userId);
       if (!session) {
@@ -2404,7 +2418,8 @@ Return the response as a JSON array with this exact structure:
         targetLength,
         toneOfVoice,
         language,
-        useBrandGuidelines
+        useBrandGuidelines,
+        selectedTargetAudiences
       });
 
       // Get chosen concept
@@ -2422,6 +2437,17 @@ Return the response as a JSON array with this exact structure:
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
         : '';
 
+      // Get target audience context
+      let targetAudienceContext = '';
+      if (useBrandGuidelines && session.guidelineProfileId) {
+        const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
+        if (guidelineProfile) {
+          targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, selectedTargetAudiences);
+        }
+      } else {
+        targetAudienceContext = formatSelectedTargetAudiences('', selectedTargetAudiences);
+      }
+
       const subtopicPrompt = `Generate 10 subtopic ideas for an article about: "${chosenConcept.title}"
 
 Concept Summary: ${chosenConcept.summary}
@@ -2431,6 +2457,7 @@ Target Length: ${targetLength || 1000} words
 ${toneOfVoice ? `Tone of Voice: ${toneOfVoice}` : ''}
 ${language ? `Language: ${language}` : ''}
 ${internalLinks && internalLinks.length > 0 ? `Internal Links to Include: ${internalLinks.join(', ')}` : ''}
+${targetAudienceContext}
 
 ${brandContext}
 ${ragContext}
@@ -2498,6 +2525,17 @@ Return the response as a JSON array with this exact structure:
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
         : '';
 
+      // Get target audience context
+      let targetAudienceContext = '';
+      if (session.useBrandGuidelines && session.guidelineProfileId) {
+        const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
+        if (guidelineProfile) {
+          targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, session.selectedTargetAudiences);
+        }
+      } else {
+        targetAudienceContext = formatSelectedTargetAudiences('', session.selectedTargetAudiences);
+      }
+
       const morePrompt = `Generate 5 additional subtopic ideas for an article about: "${chosenConcept.title}"
 
 Already have these subtopics:
@@ -2505,6 +2543,7 @@ Already have these subtopics:
 
 Provide 5 NEW and different subtopics that complement the existing ones.
 
+${targetAudienceContext}
 ${brandContext}
 
 Return the response as a JSON array with this structure:
@@ -2602,12 +2641,24 @@ Return the response as a JSON array with this structure:
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
         : '';
 
+      // Get target audience context
+      let targetAudienceContext = '';
+      if (session.useBrandGuidelines && session.guidelineProfileId) {
+        const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
+        if (guidelineProfile) {
+          targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, session.selectedTargetAudiences);
+        }
+      } else {
+        targetAudienceContext = formatSelectedTargetAudiences('', session.selectedTargetAudiences);
+      }
+
       // Generate main brief
       const mainBriefPrompt = `Create a detailed content brief for: "${chosenConcept.title}"
 
 Summary: ${chosenConcept.summary}
 Objective: ${session.objective}
 Target Length: ${session.targetLength} words
+${targetAudienceContext}
 
 ${brandContext}
 
@@ -2654,6 +2705,7 @@ Provide guidance on key points to cover.`;
         const contentPrompt = `Write detailed content for: "${subtopic.title}"
 
 Brief: ${brief}
+${targetAudienceContext}
 
 ${brandContext}
 ${session.toneOfVoice ? `Tone: ${session.toneOfVoice}` : ''}
@@ -2677,6 +2729,7 @@ Write approximately ${Math.floor((session.targetLength || 1000) / selectedSubtop
       const topTailPrompt = `Write an engaging introduction and conclusion for: "${chosenConcept.title}"
 
 Main Brief: ${mainBrief}
+${targetAudienceContext}
 
 ${brandContext}
 
@@ -2710,6 +2763,7 @@ Provide:
 
 ${fullArticle}
 
+${targetAudienceContext}
 ${brandContext}
 
 Return the refined article maintaining the structure.`;

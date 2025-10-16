@@ -540,6 +540,7 @@ export const contentWriterSessions = pgTable("content_writer_sessions", {
   toneOfVoice: text("tone_of_voice"), // Custom tone
   language: varchar("language"), // Custom language
   useBrandGuidelines: boolean("use_brand_guidelines").default(false), // Whether to use brand guidelines
+  selectedTargetAudiences: jsonb("selected_target_audiences").$type<"all" | "none" | number[]>(), // Target audience selection: "all", "none", or array of indices
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

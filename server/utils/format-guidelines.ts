@@ -116,6 +116,106 @@ export function formatBrandGuidelines(content: GuidelineContent): string {
 }
 
 /**
+ * Formats ONLY the selected target audiences from brand guidelines for AI prompts
+ * @param content - The brand guideline content
+ * @param selectedTargetAudiences - "all" | "none" | number[] (indices of selected audiences)
+ * @returns Formatted target audience text for AI prompts
+ */
+export function formatSelectedTargetAudiences(
+  content: GuidelineContent,
+  selectedTargetAudiences: "all" | "none" | number[] | null | undefined
+): string {
+  // Handle "none" or null/undefined
+  if (!selectedTargetAudiences || selectedTargetAudiences === "none") {
+    return "**Target Audience**: General audience (no specific targeting)";
+  }
+
+  // Handle legacy text format - can't extract specific audiences
+  if (typeof content === 'string') {
+    return "**Target Audience**: General audience";
+  }
+
+  const brandContent = content as BrandGuidelineContent;
+  
+  // Check if brand has target audiences defined
+  if (!brandContent.target_audience || brandContent.target_audience.length === 0) {
+    return "**Target Audience**: General audience (no brand audiences defined)";
+  }
+
+  // Handle "all" - format all audiences
+  if (selectedTargetAudiences === "all") {
+    const audienceDescriptions = brandContent.target_audience.map(audience => {
+      const parts: string[] = [];
+      
+      if (audience.gender) parts.push(`${audience.gender}`);
+      if (audience.age_range) {
+        const { from_age, to_age } = audience.age_range;
+        const ageRange = from_age && to_age 
+          ? `${from_age}-${to_age} years old`
+          : from_age 
+            ? `${from_age}+ years old`
+            : to_age 
+              ? `up to ${to_age} years old`
+              : '';
+        if (ageRange) parts.push(ageRange);
+      }
+      if (audience.profession) parts.push(audience.profession);
+      if (audience.interests && audience.interests.length > 0) {
+        parts.push(`interested in: ${audience.interests.join(', ')}`);
+      }
+      if (audience.other_keywords && audience.other_keywords.length > 0) {
+        parts.push(audience.other_keywords.join(', '));
+      }
+      
+      return parts.length > 0 ? parts.join('; ') : 'General audience';
+    });
+
+    return `**Target Audience**: ${audienceDescriptions.join(' | ')}`;
+  }
+
+  // Handle array of indices - format only selected audiences
+  if (Array.isArray(selectedTargetAudiences)) {
+    const selectedAudiences = selectedTargetAudiences
+      .filter(index => index >= 0 && index < brandContent.target_audience!.length)
+      .map(index => brandContent.target_audience![index]);
+
+    if (selectedAudiences.length === 0) {
+      return "**Target Audience**: General audience (no valid audiences selected)";
+    }
+
+    const audienceDescriptions = selectedAudiences.map(audience => {
+      const parts: string[] = [];
+      
+      if (audience.gender) parts.push(`${audience.gender}`);
+      if (audience.age_range) {
+        const { from_age, to_age } = audience.age_range;
+        const ageRange = from_age && to_age 
+          ? `${from_age}-${to_age} years old`
+          : from_age 
+            ? `${from_age}+ years old`
+            : to_age 
+              ? `up to ${to_age} years old`
+              : '';
+        if (ageRange) parts.push(ageRange);
+      }
+      if (audience.profession) parts.push(audience.profession);
+      if (audience.interests && audience.interests.length > 0) {
+        parts.push(`interested in: ${audience.interests.join(', ')}`);
+      }
+      if (audience.other_keywords && audience.other_keywords.length > 0) {
+        parts.push(audience.other_keywords.join(', '));
+      }
+      
+      return parts.length > 0 ? parts.join('; ') : 'General audience';
+    });
+
+    return `**Target Audience**: ${audienceDescriptions.join(' | ')}`;
+  }
+
+  return "**Target Audience**: General audience";
+}
+
+/**
  * Formats regulatory guidelines (currently just passes through text)
  */
 export function formatRegulatoryGuidelines(content: GuidelineContent): string {
