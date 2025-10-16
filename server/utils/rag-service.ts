@@ -1,0 +1,182 @@
+import { storage } from "../storage";
+import { embeddingsService } from "./embeddings";
+import { documentChunker, type ChunkResult } from "./chunking";
+import type { InsertBrandEmbedding, BrandEmbedding } from "@shared/schema";
+
+/**
+ * RAG (Retrieval-Augmented Generation) Service
+ * Provides semantic search and retrieval for brand guidelines and context
+ */
+
+export interface RetrievalResult {
+  chunk: string;
+  similarity: number;
+  metadata?: Record<string, any>;
+  sourceType: string;
+}
+
+export class RAGService {
+  /**
+   * Process and store brand guidelines content
+   * Chunks the content and generates embeddings
+   */
+  async processAndStoreContent(
+    profileId: string,
+    content: string,
+    sourceType: 'profile' | 'context' | 'pdf',
+    contextContentId?: string,
+    metadata?: Record<string, any>
+  ): Promise<void> {
+    // Step 1: Chunk the content
+    const chunks = await documentChunker.chunkMarkdown(content, metadata);
+
+    if (chunks.length === 0) {
+      console.log('No chunks generated from content');
+      return;
+    }
+
+    // Step 2: Generate embeddings for chunks
+    const embeddingsData = await embeddingsService.generateChunkEmbeddings(
+      chunks,
+      profileId,
+      sourceType,
+      contextContentId
+    );
+
+    // Step 3: Store embeddings in database
+    await storage.createBrandEmbeddingsBatch(embeddingsData);
+    
+    console.log(`Stored ${embeddingsData.length} embeddings for profile ${profileId}`);
+  }
+
+  /**
+   * Process multiple context pages and store embeddings
+   */
+  async processMultipleContexts(
+    profileId: string,
+    contexts: Array<{
+      content: string;
+      contextContentId: string;
+      urlType: string;
+      url: string;
+    }>
+  ): Promise<void> {
+    const allEmbeddings: InsertBrandEmbedding[] = [];
+
+    for (const context of contexts) {
+      // Chunk each context
+      const chunks = await documentChunker.chunkMarkdown(context.content, {
+        urlType: context.urlType,
+        url: context.url,
+      });
+
+      // Generate embeddings
+      const embeddingsData = await embeddingsService.generateChunkEmbeddings(
+        chunks,
+        profileId,
+        'context',
+        context.contextContentId
+      );
+
+      allEmbeddings.push(...embeddingsData);
+    }
+
+    // Batch insert all embeddings
+    if (allEmbeddings.length > 0) {
+      await storage.createBrandEmbeddingsBatch(allEmbeddings);
+      console.log(`Stored ${allEmbeddings.length} embeddings from ${contexts.length} contexts`);
+    }
+  }
+
+  /**
+   * Retrieve relevant brand context chunks based on a query
+   * This is the core RAG retrieval function
+   */
+  async retrieveRelevantContext(
+    profileId: string,
+    query: string,
+    limit: number = 5
+  ): Promise<RetrievalResult[]> {
+    // Step 1: Generate embedding for the query
+    const queryEmbedding = await embeddingsService.generateQueryEmbedding(query);
+
+    // Step 2: Search for similar embeddings in the database
+    const results = await storage.searchSimilarEmbeddings(
+      profileId,
+      queryEmbedding,
+      limit
+    );
+
+    // Step 3: Format results
+    return results.map(result => ({
+      chunk: result.chunkText,
+      similarity: result.similarity,
+      metadata: result.metadata as Record<string, any> | undefined,
+      sourceType: result.sourceType,
+    }));
+  }
+
+  /**
+   * Get formatted brand context for AI prompts
+   * Retrieves relevant chunks and formats them for injection into prompts
+   */
+  async getBrandContextForPrompt(
+    profileId: string,
+    query: string,
+    options?: {
+      limit?: number;
+      minSimilarity?: number;
+    }
+  ): Promise<string> {
+    const limit = options?.limit || 5;
+    const minSimilarity = options?.minSimilarity || 0.7; // Only include highly relevant chunks
+
+    const results = await this.retrieveRelevantContext(profileId, query, limit);
+
+    // Filter by similarity threshold
+    const relevantResults = results.filter(r => r.similarity >= minSimilarity);
+
+    if (relevantResults.length === 0) {
+      return '';
+    }
+
+    // Format for prompt injection
+    const contextParts = relevantResults.map((result, index) => {
+      const source = result.metadata?.urlType || result.sourceType;
+      return `[Context ${index + 1} - ${source}]:\n${result.chunk}`;
+    });
+
+    return `\n\nRELEVANT BRAND CONTEXT:\n${contextParts.join('\n\n')}\n`;
+  }
+
+  /**
+   * Delete all embeddings for a profile
+   * Useful when updating/deleting guidelines
+   */
+  async deleteProfileEmbeddings(profileId: string): Promise<void> {
+    await storage.deleteBrandEmbeddings(profileId);
+    console.log(`Deleted all embeddings for profile ${profileId}`);
+  }
+
+  /**
+   * Re-index a profile's content
+   * Deletes old embeddings and generates new ones
+   */
+  async reindexProfile(
+    profileId: string,
+    content: string,
+    sourceType: 'profile' | 'context' | 'pdf',
+    metadata?: Record<string, any>
+  ): Promise<void> {
+    // Delete old embeddings
+    await this.deleteProfileEmbeddings(profileId);
+
+    // Generate new embeddings
+    await this.processAndStoreContent(profileId, content, sourceType, undefined, metadata);
+    
+    console.log(`Re-indexed profile ${profileId}`);
+  }
+}
+
+// Singleton instance
+export const ragService = new RAGService();
