@@ -34,6 +34,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   });
 
   useEffect(() => {
+    console.log("BrandGuidelineForm received value prop:", value);
     if (typeof value === "string") {
       setIsLegacy(true);
       setLegacyText(value);
@@ -45,6 +46,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     } else {
       setIsLegacy(false);
       const data = value || {};
+      console.log("Setting formData from value prop:", data);
       setFormData(data);
       
       if (data.regulatory_guideline_id) {
@@ -163,8 +165,11 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         { domainUrl }
       ) as BrandGuidelineContent;
 
+      console.log("Auto-populate response:", response);
+
       // Merge the auto-populated data with existing form data
       const updatedData = { ...formData, ...response };
+      console.log("Updated form data:", updatedData);
       setFormData(updatedData);
       onChange(updatedData);
 
