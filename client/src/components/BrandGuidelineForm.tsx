@@ -291,11 +291,12 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
       )}
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-800">
+        <TabsList className="grid w-full grid-cols-6 bg-gray-800">
           <TabsTrigger value="basic" data-testid="tab-basic-info">Basic Info</TabsTrigger>
           <TabsTrigger value="visual" data-testid="tab-visual-identity">Visual Identity</TabsTrigger>
           <TabsTrigger value="audience" data-testid="tab-audience">Audience</TabsTrigger>
           <TabsTrigger value="voice" data-testid="tab-brand-voice">Brand Voice</TabsTrigger>
+          <TabsTrigger value="context" data-testid="tab-context">Context</TabsTrigger>
           <TabsTrigger value="regulatory" data-testid="tab-regulatory">Regulatory</TabsTrigger>
         </TabsList>
 
@@ -602,6 +603,109 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
               rows={4}
               className="mt-2 bg-gray-800 border-gray-700 text-white"
             />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="context" className="space-y-4 mt-6">
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-950/20 border border-blue-800 rounded-lg">
+              <h4 className="text-blue-400 font-semibold mb-2">Brand Context Pages</h4>
+              <p className="text-sm text-gray-300">
+                Provide URLs to key pages of your website. We'll extract the main content from each page and convert it to markdown format for use in content generation.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="context-home-page" className="text-gray-200">Home Page URL</Label>
+              <Input
+                id="context-home-page"
+                data-testid="input-context-home-page"
+                type="url"
+                value={formData.context_urls?.home_page || ""}
+                onChange={(e) => updateField("context_urls", { ...formData.context_urls, home_page: e.target.value })}
+                placeholder="https://yourbrand.com"
+                className="mt-2 bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="context-about-page" className="text-gray-200">About Us Page URL</Label>
+              <Input
+                id="context-about-page"
+                data-testid="input-context-about-page"
+                type="url"
+                value={formData.context_urls?.about_page || ""}
+                onChange={(e) => updateField("context_urls", { ...formData.context_urls, about_page: e.target.value })}
+                placeholder="https://yourbrand.com/about"
+                className="mt-2 bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+
+            <div>
+              <Label className="text-gray-200">Service/Product Pages (up to 5)</Label>
+              <div className="mt-2 space-y-2">
+                {[...(formData.context_urls?.service_pages || []), ""].slice(0, 5).map((url, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      data-testid={`input-context-service-page-${index}`}
+                      type="url"
+                      value={url}
+                      onChange={(e) => {
+                        const pages = [...(formData.context_urls?.service_pages || [])];
+                        if (e.target.value) {
+                          pages[index] = e.target.value;
+                        } else {
+                          pages.splice(index, 1);
+                        }
+                        updateField("context_urls", { ...formData.context_urls, service_pages: pages.filter(p => p) });
+                      }}
+                      placeholder={`Service/Product page ${index + 1}`}
+                      className="flex-1 bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Add URLs to your key service or product pages
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-gray-200">Blog Articles/Resources (up to 20)</Label>
+              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                {[...(formData.context_urls?.blog_articles || []), ""].slice(0, 20).map((url, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      data-testid={`input-context-blog-article-${index}`}
+                      type="url"
+                      value={url}
+                      onChange={(e) => {
+                        const articles = [...(formData.context_urls?.blog_articles || [])];
+                        if (e.target.value) {
+                          articles[index] = e.target.value;
+                        } else {
+                          articles.splice(index, 1);
+                        }
+                        updateField("context_urls", { ...formData.context_urls, blog_articles: articles.filter(a => a) });
+                      }}
+                      placeholder={`Blog article/resource ${index + 1}`}
+                      className="flex-1 bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Add URLs to your blog posts or resource articles
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              data-testid="button-extract-context"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              Extract & Save Context
+            </Button>
           </div>
         </TabsContent>
 
