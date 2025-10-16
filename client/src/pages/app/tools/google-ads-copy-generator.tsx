@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Sparkles, Copy, RefreshCw, Download, Upload, AlertCircle, CheckCircle2, Globe, Target, ChevronUp, ChevronDown, Lock } from "lucide-react";
+import { Sparkles, Copy, RefreshCw, Download, Upload, AlertCircle, CheckCircle2, Globe, Target, ChevronUp, ChevronDown, Lock, Save } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 import type { GuidelineContent } from "@shared/schema";
 import { useBrand } from "@/contexts/BrandContext";
+import { SaveContentDialog } from "@/components/SaveContentDialog";
 
 interface GeneratedCopy {
   headlines: string[];
@@ -59,6 +60,9 @@ export default function GoogleAdsCopyGenerator() {
   const [progress, setProgress] = useState(0);
   const [urlContent, setUrlContent] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [saveInputData, setSaveInputData] = useState<any>(null);
+  const [saveOutputData, setSaveOutputData] = useState<any>(null);
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
   
@@ -1002,10 +1006,34 @@ export default function GoogleAdsCopyGenerator() {
                   </div>
                 ))}
                 
-                <div className="flex gap-4">
-                  <Button onClick={exportToGoogleAds} className="flex-1" data-testid="button-export-google-ads">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <Button 
+                    onClick={() => {
+                      setSaveInputData({
+                        url,
+                        targetKeywords: keywords,
+                        brandName,
+                        sellingPoints,
+                        caseType,
+                        numVariations,
+                        brandGuidelines,
+                        regulatoryGuidelines
+                      });
+                      setSaveOutputData({
+                        headlines: adCopy.variations.flatMap(v => v.headlines),
+                        descriptions: adCopy.variations.flatMap(v => v.descriptions)
+                      });
+                      setIsSaveDialogOpen(true);
+                    }}
+                    variant="outline"
+                    data-testid="button-save-library"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save to Library
+                  </Button>
+                  <Button onClick={exportToGoogleAds} variant="outline" data-testid="button-export-google-ads">
                     <Download className="w-4 h-4 mr-2" />
-                    Export for Google Ads Editor
+                    Export for Google Ads
                   </Button>
                   <Button 
                     variant="outline" 
@@ -1086,6 +1114,15 @@ export default function GoogleAdsCopyGenerator() {
           )}
         </div>
       </div>
+
+      <SaveContentDialog
+        isOpen={isSaveDialogOpen}
+        onClose={() => setIsSaveDialogOpen(false)}
+        defaultTitle={`Google Ads - ${brandName || keywords}`}
+        toolType="google-ads"
+        inputData={saveInputData}
+        outputData={saveOutputData}
+      />
     </AccessGuard>
   );
 }
