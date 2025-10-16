@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,13 @@ export function SaveContentDialog({
   const [customTitle, setCustomTitle] = useState(defaultTitle);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Reset customTitle when dialog opens or defaultTitle changes
+  useEffect(() => {
+    if (isOpen) {
+      setCustomTitle(defaultTitle);
+    }
+  }, [isOpen, defaultTitle]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -74,13 +81,8 @@ export function SaveContentDialog({
     saveMutation.mutate();
   };
 
-  const handleClose = () => {
-    setCustomTitle(defaultTitle);
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-white">Save to Library</DialogTitle>
@@ -109,7 +111,7 @@ export function SaveContentDialog({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={handleClose}
+            onClick={onClose}
             className="bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700"
             data-testid="button-cancel-save"
           >
