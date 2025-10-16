@@ -1366,8 +1366,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { htmlToMarkdown } = await import("./utils/html-to-markdown");
       const axios = (await import("axios")).default;
 
-      // Delete existing context content for this profile
+      // Delete existing context content and embeddings for this profile
       await storage.deleteBrandContextContent(id);
+      await storage.deleteBrandEmbeddings(id);
 
       const urlsToProcess: Array<{ url: string; type: string }> = [];
 
@@ -1423,6 +1424,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`Error processing ${url}:`, error.message);
           errors.push({ url, type, error: error.message });
         }
+      }
+
+      // Generate embeddings for the extracted context (async, don't wait)
+      if (results.length > 0) {
+        const { ragService } = await import("./utils/rag-service");
+        const contextContents = await storage.getBrandContextContent(id);
+        
+        // Process embeddings in background
+        ragService.processMultipleContexts(
+          id,
+          contextContents.map(ctx => ({
+            content: ctx.markdownContent,
+            contextContentId: ctx.id,
+            urlType: ctx.urlType,
+            url: ctx.url
+          }))
+        ).catch(err => console.error("Error generating embeddings:", err));
       }
 
       res.json({
