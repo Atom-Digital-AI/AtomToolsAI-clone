@@ -40,9 +40,11 @@ export class EmbeddingsService {
 
   /**
    * Generate embeddings for chunks and prepare for database insertion
+   * SECURITY: Includes userId for tenant isolation
    */
   async generateChunkEmbeddings(
     chunks: ChunkResult[],
+    userId: string,
     guidelineProfileId: string,
     sourceType: 'profile' | 'context' | 'pdf',
     contextContentId?: string
@@ -55,6 +57,7 @@ export class EmbeddingsService {
     
     // Prepare for database insertion
     return chunks.map((chunk, index) => ({
+      userId, // SECURITY: Direct user ownership for tenant isolation
       guidelineProfileId,
       contextContentId: contextContentId || null,
       sourceType,

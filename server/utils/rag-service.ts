@@ -21,8 +21,10 @@ export class RAGService {
   /**
    * Process and store brand guidelines content
    * Chunks the content and generates embeddings
+   * SECURITY: Requires userId for tenant isolation
    */
   async processAndStoreContent(
+    userId: string,
     profileId: string,
     content: string,
     sourceType: 'profile' | 'context' | 'pdf',
@@ -37,9 +39,10 @@ export class RAGService {
       return;
     }
 
-    // Step 2: Generate embeddings for chunks
+    // Step 2: Generate embeddings for chunks (includes userId for security)
     const embeddingsData = await embeddingsService.generateChunkEmbeddings(
       chunks,
+      userId, // SECURITY: Pass userId for tenant isolation
       profileId,
       sourceType,
       contextContentId
@@ -48,13 +51,15 @@ export class RAGService {
     // Step 3: Store embeddings in database
     await storage.createBrandEmbeddingsBatch(embeddingsData);
     
-    console.log(`Stored ${embeddingsData.length} embeddings for profile ${profileId}`);
+    console.log(`Stored ${embeddingsData.length} embeddings for user ${userId}, profile ${profileId}`);
   }
 
   /**
    * Process multiple context pages and store embeddings
+   * SECURITY: Requires userId for tenant isolation
    */
   async processMultipleContexts(
+    userId: string,
     profileId: string,
     contexts: Array<{
       content: string;
@@ -72,9 +77,10 @@ export class RAGService {
         url: context.url,
       });
 
-      // Generate embeddings
+      // Generate embeddings (includes userId for security)
       const embeddingsData = await embeddingsService.generateChunkEmbeddings(
         chunks,
+        userId, // SECURITY: Pass userId for tenant isolation
         profileId,
         'context',
         context.contextContentId
@@ -86,15 +92,17 @@ export class RAGService {
     // Batch insert all embeddings
     if (allEmbeddings.length > 0) {
       await storage.createBrandEmbeddingsBatch(allEmbeddings);
-      console.log(`Stored ${allEmbeddings.length} embeddings from ${contexts.length} contexts`);
+      console.log(`Stored ${allEmbeddings.length} embeddings from ${contexts.length} contexts for user ${userId}`);
     }
   }
 
   /**
    * Retrieve relevant brand context chunks based on a query
    * This is the core RAG retrieval function
+   * SECURITY: Requires userId to enforce tenant isolation
    */
   async retrieveRelevantContext(
+    userId: string,
     profileId: string,
     query: string,
     limit: number = 5
@@ -102,8 +110,9 @@ export class RAGService {
     // Step 1: Generate embedding for the query
     const queryEmbedding = await embeddingsService.generateQueryEmbedding(query);
 
-    // Step 2: Search for similar embeddings in the database
+    // Step 2: Search for similar embeddings in the database (with userId filtering for security)
     const results = await storage.searchSimilarEmbeddings(
+      userId, // SECURITY: Enforce user ownership
       profileId,
       queryEmbedding,
       limit
@@ -121,8 +130,10 @@ export class RAGService {
   /**
    * Get formatted brand context for AI prompts
    * Retrieves relevant chunks and formats them for injection into prompts
+   * SECURITY: Requires userId to enforce tenant isolation
    */
   async getBrandContextForPrompt(
+    userId: string,
     profileId: string,
     query: string,
     options?: {
@@ -133,7 +144,7 @@ export class RAGService {
     const limit = options?.limit || 5;
     const minSimilarity = options?.minSimilarity || 0.7; // Only include highly relevant chunks
 
-    const results = await this.retrieveRelevantContext(profileId, query, limit);
+    const results = await this.retrieveRelevantContext(userId, profileId, query, limit);
 
     // Filter by similarity threshold
     const relevantResults = results.filter(r => r.similarity >= minSimilarity);
@@ -154,29 +165,32 @@ export class RAGService {
   /**
    * Delete all embeddings for a profile
    * Useful when updating/deleting guidelines
+   * SECURITY: Requires userId to ensure only owner can delete
    */
-  async deleteProfileEmbeddings(profileId: string): Promise<void> {
-    await storage.deleteBrandEmbeddings(profileId);
-    console.log(`Deleted all embeddings for profile ${profileId}`);
+  async deleteProfileEmbeddings(userId: string, profileId: string): Promise<void> {
+    await storage.deleteBrandEmbeddings(userId, profileId);
+    console.log(`Deleted all embeddings for user ${userId}, profile ${profileId}`);
   }
 
   /**
    * Re-index a profile's content
    * Deletes old embeddings and generates new ones
+   * SECURITY: Requires userId for tenant isolation
    */
   async reindexProfile(
+    userId: string,
     profileId: string,
     content: string,
     sourceType: 'profile' | 'context' | 'pdf',
     metadata?: Record<string, any>
   ): Promise<void> {
     // Delete old embeddings
-    await this.deleteProfileEmbeddings(profileId);
+    await this.deleteProfileEmbeddings(userId, profileId);
 
     // Generate new embeddings
-    await this.processAndStoreContent(profileId, content, sourceType, undefined, metadata);
+    await this.processAndStoreContent(userId, profileId, content, sourceType, undefined, metadata);
     
-    console.log(`Re-indexed profile ${profileId}`);
+    console.log(`Re-indexed profile ${profileId} for user ${userId}`);
   }
 }
 

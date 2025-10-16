@@ -840,17 +840,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
 
       // RAG: Retrieve relevant brand context if using a profile
+      // SECURITY: Verify profile ownership before RAG retrieval
       let ragContext = '';
       try {
         // Check if brandGuidelines is a profile ID (UUID format)
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (brandGuidelines && uuidRegex.test(brandGuidelines.trim())) {
+          // SECURITY: Verify the profile belongs to the user
+          const profile = await storage.getGuidelineProfile(brandGuidelines.trim(), userId);
+          if (!profile) {
+            return res.status(403).json({
+              message: "Access denied. This brand guideline profile does not belong to you."
+            });
+          }
+          
           const { ragService } = await import("./utils/rag-service");
           const query = `SEO meta content for: ${targetKeywords} ${brandName} ${sellingPoints}`;
-          ragContext = await ragService.getBrandContextForPrompt(brandGuidelines.trim(), query, {
-            limit: 5,
-            minSimilarity: 0.7
-          });
+          ragContext = await ragService.getBrandContextForPrompt(
+            userId, // SECURITY: Pass userId for tenant isolation
+            brandGuidelines.trim(),
+            query,
+            {
+              limit: 5,
+              minSimilarity: 0.7
+            }
+          );
         }
       } catch (error) {
         console.error("RAG retrieval error:", error);
@@ -1054,17 +1068,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
 
       // RAG: Retrieve relevant brand context if using a profile
+      // SECURITY: Verify profile ownership before RAG retrieval
       let ragContext = '';
       try {
         // Check if brandGuidelines is a profile ID (UUID format)
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (brandGuidelines && uuidRegex.test(brandGuidelines.trim())) {
+          // SECURITY: Verify the profile belongs to the user
+          const profile = await storage.getGuidelineProfile(brandGuidelines.trim(), userId);
+          if (!profile) {
+            return res.status(403).json({
+              message: "Access denied. This brand guideline profile does not belong to you."
+            });
+          }
+          
           const { ragService } = await import("./utils/rag-service");
           const query = `Google Ads copy for: ${targetKeywords} ${brandName} ${sellingPoints}`;
-          ragContext = await ragService.getBrandContextForPrompt(brandGuidelines.trim(), query, {
-            limit: 5,
-            minSimilarity: 0.7
-          });
+          ragContext = await ragService.getBrandContextForPrompt(
+            userId, // SECURITY: Pass userId for tenant isolation
+            brandGuidelines.trim(),
+            query,
+            {
+              limit: 5,
+              minSimilarity: 0.7
+            }
+          );
         }
       } catch (error) {
         console.error("RAG retrieval error:", error);
@@ -1404,7 +1432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Delete existing context content and embeddings for this profile
       await storage.deleteBrandContextContent(id);
-      await storage.deleteBrandEmbeddings(id);
+      await storage.deleteBrandEmbeddings(req.user.id, id); // SECURITY: Pass userId for tenant isolation
 
       const urlsToProcess: Array<{ url: string; type: string }> = [];
 
@@ -1467,8 +1495,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { ragService } = await import("./utils/rag-service");
         const contextContents = await storage.getBrandContextContent(id);
         
-        // Process embeddings in background
+        // Process embeddings in background (includes userId for security)
         ragService.processMultipleContexts(
+          req.user.id, // SECURITY: Pass userId for tenant isolation
           id,
           contextContents.map(ctx => ({
             content: ctx.markdownContent,
