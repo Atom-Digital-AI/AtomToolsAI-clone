@@ -1349,6 +1349,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Extract and save brand context from URLs
+  app.post("/api/guideline-profiles/:id/extract-context", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { contextUrls } = req.body;
+      
+      // Verify the guideline profile belongs to the user
+      const profile = await storage.getGuidelineProfile(id, req.user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Guideline profile not found" });
+      }
+
+      // Import utilities
+      const { validateUrl } = await import("./utils/url-validator");
+      const { htmlToMarkdown } = await import("./utils/html-to-markdown");
+      const axios = (await import("axios")).default;
+
+      // Delete existing context content for this profile
+      await storage.deleteBrandContextContent(id);
+
+      const urlsToProcess: Array<{ url: string; type: string }> = [];
+
+      // Collect all URLs to process
+      if (contextUrls?.home_page) {
+        urlsToProcess.push({ url: contextUrls.home_page, type: 'home' });
+      }
+      if (contextUrls?.about_page) {
+        urlsToProcess.push({ url: contextUrls.about_page, type: 'about' });
+      }
+      if (contextUrls?.service_pages) {
+        contextUrls.service_pages.forEach((url: string) => {
+          if (url) urlsToProcess.push({ url, type: 'service' });
+        });
+      }
+      if (contextUrls?.blog_articles) {
+        contextUrls.blog_articles.forEach((url: string) => {
+          if (url) urlsToProcess.push({ url, type: 'blog' });
+        });
+      }
+
+      const results = [];
+      const errors = [];
+
+      // Process each URL
+      for (const { url, type } of urlsToProcess) {
+        try {
+          // Validate URL (security check)
+          const validatedUrl = await validateUrl(url);
+
+          // Fetch page content
+          const response = await axios.get(validatedUrl, {
+            timeout: 10000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; BrandContextBot/1.0)'
+            }
+          });
+
+          // Convert HTML to markdown
+          const { markdown, title } = htmlToMarkdown(response.data, validatedUrl);
+
+          // Save to database
+          await storage.createBrandContextContent({
+            guidelineProfileId: id,
+            url: validatedUrl,
+            urlType: type,
+            markdownContent: markdown,
+            pageTitle: title
+          });
+
+          results.push({ url: validatedUrl, type, title, success: true });
+        } catch (error: any) {
+          console.error(`Error processing ${url}:`, error.message);
+          errors.push({ url, type, error: error.message });
+        }
+      }
+
+      res.json({
+        success: true,
+        processed: results.length,
+        failed: errors.length,
+        results,
+        errors
+      });
+    } catch (error) {
+      console.error("Error extracting brand context:", error);
+      res.status(500).json({ message: "Failed to extract brand context" });
+    }
+  });
+
   // Public packages endpoint for pricing page
   app.get("/api/packages", async (req: any, res) => {
     try {

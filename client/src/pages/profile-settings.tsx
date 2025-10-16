@@ -228,6 +228,7 @@ export default function ProfileSettings() {
                             <BrandGuidelineForm
                               value={editingProfile.content as BrandGuidelineContent}
                               onChange={(value) => setEditingProfile({ ...editingProfile, content: value })}
+                              profileId={editingProfile.id}
                             />
                             <div className="flex gap-2">
                               <Button

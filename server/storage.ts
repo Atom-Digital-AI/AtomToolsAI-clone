@@ -28,7 +28,7 @@ import {
   type InsertCmsPage,
   type UpdateCmsPage
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, brandContextContent } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray } from "drizzle-orm";
 
@@ -90,6 +90,11 @@ export interface IStorage {
   createGuidelineProfile(profile: InsertGuidelineProfile & { userId: string }): Promise<GuidelineProfile>;
   updateGuidelineProfile(id: string, userId: string, profile: UpdateGuidelineProfile): Promise<GuidelineProfile | undefined>;
   deleteGuidelineProfile(id: string, userId: string): Promise<boolean>;
+  
+  // Brand Context Content operations
+  getBrandContextContent(guidelineProfileId: string): Promise<any[]>;
+  createBrandContextContent(content: any): Promise<any>;
+  deleteBrandContextContent(guidelineProfileId: string): Promise<boolean>;
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
@@ -813,6 +818,33 @@ export class DatabaseStorage implements IStorage {
           eq(guidelineProfiles.userId, userId)
         )
       );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Brand Context Content operations
+  async getBrandContextContent(guidelineProfileId: string): Promise<any[]> {
+    return await db
+      .select()
+      .from(brandContextContent)
+      .where(eq(brandContextContent.guidelineProfileId, guidelineProfileId));
+  }
+
+  async createBrandContextContent(content: any): Promise<any> {
+    const [newContent] = await db
+      .insert(brandContextContent)
+      .values({
+        ...content,
+        createdAt: new Date(),
+        extractedAt: new Date(),
+      })
+      .returning();
+    return newContent;
+  }
+
+  async deleteBrandContextContent(guidelineProfileId: string): Promise<boolean> {
+    const result = await db
+      .delete(brandContextContent)
+      .where(eq(brandContextContent.guidelineProfileId, guidelineProfileId));
     return (result.rowCount ?? 0) > 0;
   }
 

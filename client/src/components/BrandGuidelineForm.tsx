@@ -15,15 +15,17 @@ import { useToast } from "@/hooks/use-toast";
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
   onChange: (value: BrandGuidelineContent) => void;
+  profileId?: string; // ID of the guideline profile (for existing profiles)
 }
 
-export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFormProps) {
+export default function BrandGuidelineForm({ value, onChange, profileId }: BrandGuidelineFormProps) {
   const [formData, setFormData] = useState<BrandGuidelineContent>({});
   const [isLegacy, setIsLegacy] = useState(false);
   const [legacyText, setLegacyText] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [regulatoryMode, setRegulatoryMode] = useState<"none" | "existing" | "new">("none");
   const [isAutoPopulating, setIsAutoPopulating] = useState(false);
+  const [isExtractingContext, setIsExtractingContext] = useState(false);
   const { toast } = useToast();
 
   const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
@@ -245,6 +247,54 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
       setIsAutoPopulating(false);
       // Reset file input
       event.target.value = '';
+    }
+  };
+
+  const handleExtractContext = async () => {
+    if (!profileId) {
+      toast({
+        title: "Profile Not Saved",
+        description: "Please save the profile first before extracting context.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.context_urls) {
+      toast({
+        title: "No URLs Provided",
+        description: "Please provide at least one URL to extract context from.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsExtractingContext(true);
+
+      const response = await apiRequest(
+        `/api/guideline-profiles/${profileId}/extract-context`,
+        {
+          method: "POST",
+          body: JSON.stringify({ contextUrls: formData.context_urls }),
+        }
+      ) as { success: boolean; processed: number; failed: number; errors: any[] };
+
+      if (response.success) {
+        toast({
+          title: "Context Extracted Successfully",
+          description: `Processed ${response.processed} pages${response.failed > 0 ? `, ${response.failed} failed` : ''}.`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Extract context error:", error);
+      toast({
+        title: "Context Extraction Failed",
+        description: error.message || "Failed to extract context from pages.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExtractingContext(false);
     }
   };
 
@@ -702,10 +752,17 @@ export default function BrandGuidelineForm({ value, onChange }: BrandGuidelineFo
             <Button
               type="button"
               data-testid="button-extract-context"
+              onClick={handleExtractContext}
+              disabled={isExtractingContext || !profileId}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
-              Extract & Save Context
+              {isExtractingContext ? "Extracting..." : "Extract & Save Context"}
             </Button>
+            {!profileId && (
+              <p className="text-xs text-gray-400 mt-1">
+                Save the profile first to enable context extraction
+              </p>
+            )}
           </div>
         </TabsContent>
 
