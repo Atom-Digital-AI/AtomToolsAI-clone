@@ -18,6 +18,7 @@ import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 import type { GuidelineContent } from "@shared/schema";
 import { useBrand } from "@/contexts/BrandContext";
 import { SaveContentDialog } from "@/components/SaveContentDialog";
+import { FeedbackButtons } from "@/components/FeedbackButtons";
 
 interface MetaData {
   title: string;
@@ -915,6 +916,28 @@ export default function SEOMetaGenerator() {
                     <Download className="w-4 h-4 mr-2" />
                     Export Results
                   </Button>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <FeedbackButtons
+                    toolType="seo-meta"
+                    inputData={{
+                      url,
+                      targetKeywords: keywords,
+                      brandName,
+                      sellingPoints,
+                      additionalContext: urlContent,
+                      contentType,
+                      brandGuidelines,
+                      regulatoryGuidelines
+                    }}
+                    outputData={{
+                      title: metaData.title,
+                      description: metaData.description,
+                      variations: metaData.variations
+                    }}
+                    guidelineProfileId={typeof brandGuidelines === 'string' ? brandGuidelines : undefined}
+                  />
                 </div>
               </CardContent>
             </Card>
