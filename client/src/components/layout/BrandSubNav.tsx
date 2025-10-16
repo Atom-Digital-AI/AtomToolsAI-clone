@@ -19,16 +19,16 @@ export default function BrandSubNav() {
     },
     {
       href: `/app/content-history?brand=${selectedBrand.id}`,
-      label: "Content History",
+      label: "Content Library",
       icon: History,
-      testId: "subnav-content-history"
+      testId: "subnav-content-library"
     }
   ];
 
   return (
-    <div className="border-b border-border/50 bg-surface/30">
+    <div className="border-b border-border/50 bg-surface/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-6 h-12">
+        <div className="flex items-center justify-center gap-6 h-12">
           {/* Selected Brand Indicator */}
           <div className="flex items-center gap-2 text-sm" data-testid="selected-brand-indicator">
             <Sparkles className="w-4 h-4 text-accent" />

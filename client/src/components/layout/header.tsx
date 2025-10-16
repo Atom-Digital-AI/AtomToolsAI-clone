@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import MobileMenu from "@/components/layout/mobile-menu";
-import BrandSelector from "@/components/layout/BrandSelector";
 import BrandSubNav from "@/components/layout/BrandSubNav";
 
 export default function Header() {
@@ -27,8 +26,7 @@ export default function Header() {
   const authenticatedNavItems = [
     { href: "/app", label: "Dashboard" },
     { href: "/app/my-tools", label: "My Tools" },
-    { href: "/app/content-history", label: "Content History" },
-    { href: "/app/profile-settings", label: "Guideline Profiles" },
+    { href: "/app/profile-settings", label: "Brands" },
     { href: "/resources", label: "Resources" },
   ];
 
@@ -131,7 +129,6 @@ export default function Header() {
               <div className="w-20 h-8 bg-surface animate-pulse rounded-md" />
             ) : isAuthenticated ? (
               <>
-                <BrandSelector />
                 <Link href="/app/account">
                   <Button 
                     variant="ghost" 
