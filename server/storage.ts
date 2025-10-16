@@ -138,6 +138,7 @@ export interface IStorage {
   
   createContentWriterDraft(draft: InsertContentWriterDraft & { sessionId: string }, userId: string): Promise<ContentWriterDraft>;
   getSessionDraft(sessionId: string, userId: string): Promise<ContentWriterDraft | undefined>;
+  getUserContentWriterDrafts(userId: string): Promise<Array<ContentWriterDraft & { session: ContentWriterSession }>>;
   updateContentWriterDraft(id: string, userId: string, updates: Partial<InsertContentWriterDraft>): Promise<ContentWriterDraft | undefined>;
 
   // Notification operations
@@ -1189,6 +1190,30 @@ export class DatabaseStorage implements IStorage {
       .from(contentWriterDrafts)
       .where(eq(contentWriterDrafts.sessionId, sessionId));
     return draft;
+  }
+
+  async getUserContentWriterDrafts(userId: string): Promise<Array<ContentWriterDraft & { session: ContentWriterSession }>> {
+    // SECURITY: Only fetch drafts from sessions owned by the user
+    const drafts = await db
+      .select({
+        id: contentWriterDrafts.id,
+        sessionId: contentWriterDrafts.sessionId,
+        mainBrief: contentWriterDrafts.mainBrief,
+        subtopicBriefs: contentWriterDrafts.subtopicBriefs,
+        subtopicContents: contentWriterDrafts.subtopicContents,
+        topAndTail: contentWriterDrafts.topAndTail,
+        finalArticle: contentWriterDrafts.finalArticle,
+        metadata: contentWriterDrafts.metadata,
+        createdAt: contentWriterDrafts.createdAt,
+        updatedAt: contentWriterDrafts.updatedAt,
+        session: contentWriterSessions
+      })
+      .from(contentWriterDrafts)
+      .innerJoin(contentWriterSessions, eq(contentWriterDrafts.sessionId, contentWriterSessions.id))
+      .where(eq(contentWriterSessions.userId, userId))
+      .orderBy(desc(contentWriterDrafts.createdAt));
+    
+    return drafts;
   }
 
   async updateContentWriterDraft(id: string, userId: string, updates: Partial<InsertContentWriterDraft>): Promise<ContentWriterDraft | undefined> {

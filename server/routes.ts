@@ -2807,6 +2807,18 @@ Return the refined article maintaining the structure.`;
     }
   });
 
+  // Get all user's content writer drafts
+  app.get("/api/content-writer/drafts", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const drafts = await storage.getUserContentWriterDrafts(userId);
+      res.json(drafts);
+    } catch (error) {
+      console.error("Error fetching user drafts:", error);
+      res.status(500).json({ message: "Failed to fetch drafts" });
+    }
+  });
+
   // Usage Statistics API
   app.get("/api/user/usage-stats", requireAuth, async (req: any, res) => {
     try {

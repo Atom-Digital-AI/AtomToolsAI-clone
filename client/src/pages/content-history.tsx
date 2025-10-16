@@ -55,6 +55,10 @@ export default function ContentHistory() {
     queryKey: ['/api/generated-content', toolFilter === 'all' ? undefined : toolFilter],
   });
 
+  const { data: v2Drafts = [], isLoading: isLoadingV2 } = useQuery<any[]>({
+    queryKey: ['/api/content-writer/drafts'],
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/generated-content/${id}`),
     onSuccess: () => {
@@ -73,12 +77,38 @@ export default function ContentHistory() {
     },
   });
 
-  const filteredContents = (contents || []).filter((content: GeneratedContent) =>
-    content.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    JSON.stringify(content.inputData).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Merge v2 drafts with other content
+  const v2Content = (v2Drafts || []).map((draft: any) => ({
+    id: draft.id,
+    title: draft.session?.topic || 'Untitled Article',
+    toolType: 'content-writer-v2',
+    inputData: {
+      topic: draft.session?.topic,
+      objective: draft.session?.objective,
+      targetLength: draft.session?.targetLength,
+      wordCount: draft.metadata?.wordCount
+    },
+    outputData: {
+      finalArticle: draft.finalArticle,
+      mainBrief: draft.mainBrief,
+      metadata: draft.metadata
+    },
+    createdAt: draft.createdAt,
+    userId: draft.session?.userId
+  }));
 
-  const copyToClipboard = async (content: GeneratedContent) => {
+  const allContent = [...(contents || []), ...v2Content];
+
+  const filteredContents = allContent.filter((content: any) => {
+    const matchesSearch = content.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      JSON.stringify(content.inputData).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = toolFilter === 'all' || content.toolType === toolFilter;
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  const copyToClipboard = async (content: any) => {
     try {
       let textToCopy = '';
       
@@ -91,6 +121,9 @@ export default function ContentHistory() {
       } else if (content.toolType === 'content-generator') {
         const data = content.outputData as any;
         textToCopy = data.content || '';
+      } else if (content.toolType === 'content-writer-v2') {
+        const data = content.outputData as any;
+        textToCopy = data.finalArticle || '';
       }
 
       await navigator.clipboard.writeText(textToCopy);
@@ -109,12 +142,28 @@ export default function ContentHistory() {
     }
   };
 
-  const downloadContent = (content: GeneratedContent) => {
+  const downloadContent = (content: any) => {
     let fileContent = '';
     let fileName = '';
     let mimeType = 'text/plain';
     
-    if (content.toolType === 'google-ads') {
+    if (content.toolType === 'content-writer-v2') {
+      const data = content.outputData as any;
+      // Add metadata header
+      fileContent = `# ${content.title}\n\n`;
+      fileContent += `*Generated on ${formatDate(content.createdAt)}*\n\n`;
+      if (content.inputData?.objective) {
+        fileContent += `**Objective:** ${content.inputData.objective}\n\n`;
+      }
+      if (content.inputData?.wordCount) {
+        fileContent += `**Word Count:** ${content.inputData.wordCount} words\n\n`;
+      }
+      fileContent += `---\n\n`;
+      fileContent += data.finalArticle || '';
+      
+      fileName = `article-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+      mimeType = 'text/markdown';
+    } else if (content.toolType === 'google-ads') {
       const data = content.outputData as any;
       // Create CSV format for Google Ads
       const csvRows = [];
@@ -208,6 +257,8 @@ export default function ContentHistory() {
         return <Globe className="h-4 w-4" />;
       case 'content-generator':
         return <FileText className="h-4 w-4" />;
+      case 'content-writer-v2':
+        return <FileText className="h-4 w-4" />;
       default:
         return <FileText className="h-4 w-4" />;
     }
@@ -221,6 +272,8 @@ export default function ContentHistory() {
         return 'SEO Meta';
       case 'content-generator':
         return 'Content Generator';
+      case 'content-writer-v2':
+        return 'Content Writer v2';
       default:
         return toolType;
     }
@@ -234,6 +287,8 @@ export default function ContentHistory() {
         return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'content-generator':
         return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'content-writer-v2':
+        return 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
@@ -249,8 +304,27 @@ export default function ContentHistory() {
     });
   };
 
-  const renderContentPreview = (content: GeneratedContent) => {
-    if (content.toolType === 'google-ads') {
+  const renderContentPreview = (content: any) => {
+    if (content.toolType === 'content-writer-v2') {
+      const data = content.outputData as any;
+      return (
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-semibold text-white mb-2">Article:</h4>
+            <div 
+              className="bg-gray-800 p-4 rounded text-sm text-gray-300 max-h-96 overflow-y-auto prose prose-invert max-w-none whitespace-pre-wrap"
+            >
+              {data.finalArticle || ''}
+            </div>
+          </div>
+          {data.metadata?.wordCount && (
+            <div className="text-sm text-gray-400">
+              Word Count: {data.metadata.wordCount}
+            </div>
+          )}
+        </div>
+      );
+    } else if (content.toolType === 'google-ads') {
       const data = content.outputData as any;
       return (
         <div className="space-y-4">
@@ -349,12 +423,13 @@ export default function ContentHistory() {
               <SelectItem value="google-ads">Google Ads</SelectItem>
               <SelectItem value="seo-meta">SEO Meta</SelectItem>
               <SelectItem value="content-generator">Content Generator</SelectItem>
+              <SelectItem value="content-writer-v2">Content Writer v2</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Content Grid */}
-        {isLoading ? (
+        {(isLoading || isLoadingV2) ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
           </div>
@@ -456,6 +531,12 @@ export default function ContentHistory() {
                       <div>
                         <p><strong>Word Count:</strong> {(content.inputData as any).wordCount || 'N/A'}</p>
                         <p><strong>Keyword:</strong> {(content.inputData as any).primaryKeyword || 'N/A'}</p>
+                      </div>
+                    )}
+                    {content.toolType === 'content-writer-v2' && (
+                      <div>
+                        <p><strong>Topic:</strong> {(content.inputData as any).topic || 'N/A'}</p>
+                        <p><strong>Word Count:</strong> {(content.inputData as any).wordCount || 'N/A'}</p>
                       </div>
                     )}
                   </div>
