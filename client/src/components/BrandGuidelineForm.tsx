@@ -157,11 +157,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     try {
       setIsAutoPopulating(true);
       
-      const response = await apiRequest(
+      const res = await apiRequest(
         "POST",
         "/api/guideline-profiles/auto-populate",
         { domainUrl }
-      ) as BrandGuidelineContent;
+      );
+      const response = await res.json() as BrandGuidelineContent;
 
       console.log("Auto-populate response:", response);
 
@@ -227,11 +228,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         reader.readAsDataURL(file);
       });
 
-      const response = await apiRequest(
+      const res = await apiRequest(
         "POST",
         "/api/guideline-profiles/auto-populate-pdf",
         { pdfBase64: base64 }
-      ) as BrandGuidelineContent;
+      );
+      const response = await res.json() as BrandGuidelineContent;
 
       // Merge the auto-populated data with existing form data
       const updatedData = { ...formData, ...response };
