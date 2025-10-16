@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 import type { GuidelineContent } from "@shared/schema";
+import { useBrand } from "@/contexts/BrandContext";
 
 interface MetaData {
   title: string;
@@ -57,6 +58,11 @@ export default function SEOMetaGenerator() {
   const [urlContent, setUrlContent] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+  const { selectedBrand } = useBrand();
+  
+  // Refs for auto-scroll to error fields
+  const keywordsRef = useRef<HTMLTextAreaElement>(null);
+  const brandNameRef = useRef<HTMLInputElement>(null);
 
   const productId = "531de90b-12ef-4169-b664-0d55428435a6";
 
@@ -90,6 +96,22 @@ export default function SEOMetaGenerator() {
     }
   }, [canUseBulk, mode]);
 
+  // Auto-populate fields from selected brand
+  useEffect(() => {
+    if (selectedBrand) {
+      // Auto-select the brand profile
+      setBrandGuidelines(selectedBrand.id);
+      
+      // Auto-populate brand name if available in content
+      const content = selectedBrand.content as any;
+      if (content && typeof content === 'object') {
+        if (content.brandName && !brandName) {
+          setBrandName(content.brandName);
+        }
+      }
+    }
+  }, [selectedBrand]);
+
   const analyzeUrl = async () => {
     if (!url) return;
     
@@ -122,21 +144,26 @@ export default function SEOMetaGenerator() {
   };
 
   const handleGenerate = async () => {
+    // Validation with auto-scroll to first error
     if (!url && !keywords) {
       toast({
-        title: "Missing Information",
-        description: "Please provide either a URL or target keywords",
+        title: "Missing Required Field",
+        description: "Please provide Target Keywords (required)",
         variant: "destructive",
       });
+      keywordsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      keywordsRef.current?.focus();
       return;
     }
 
     if (!brandName) {
       toast({
-        title: "Missing Information", 
-        description: "Please provide a brand name",
+        title: "Missing Required Field", 
+        description: "Please provide Brand Name (required)",
         variant: "destructive",
       });
+      brandNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      brandNameRef.current?.focus();
       return;
     }
 
@@ -448,12 +475,16 @@ export default function SEOMetaGenerator() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="keywords">Target Keywords</Label>
-                    <Input
+                    <Label htmlFor="keywords">
+                      Target Keywords <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
                       id="keywords"
+                      ref={keywordsRef}
                       placeholder="digital marketing, SEO services, online advertising"
                       value={keywords}
                       onChange={(e) => setKeywords(e.target.value)}
+                      className="min-h-[80px]"
                       data-testid="input-keywords"
                     />
                     <p className="text-sm text-text-secondary mt-1">
@@ -462,9 +493,12 @@ export default function SEOMetaGenerator() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="brand">Brand Name</Label>
+                    <Label htmlFor="brand">
+                      Brand Name <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="brand"
+                      ref={brandNameRef}
                       placeholder="Your Brand Name"
                       value={brandName}
                       onChange={(e) => setBrandName(e.target.value)}
