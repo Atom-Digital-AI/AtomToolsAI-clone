@@ -18,6 +18,7 @@ import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 import type { GuidelineContent } from "@shared/schema";
 import { useBrand } from "@/contexts/BrandContext";
 import { SaveContentDialog } from "@/components/SaveContentDialog";
+import { FeedbackButtons } from "@/components/FeedbackButtons";
 
 interface GeneratedCopy {
   headlines: string[];
@@ -1043,6 +1044,26 @@ export default function GoogleAdsCopyGenerator() {
                     <Copy className="w-4 h-4 mr-2" />
                     Copy All
                   </Button>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <FeedbackButtons
+                    toolType="google-ads"
+                    inputData={{
+                      url,
+                      targetKeywords: keywords,
+                      brandName,
+                      sellingPoints,
+                      caseType,
+                      numVariations,
+                      brandGuidelines,
+                      regulatoryGuidelines
+                    }}
+                    outputData={{
+                      variations: adCopy.variations
+                    }}
+                    guidelineProfileId={typeof brandGuidelines === 'string' ? brandGuidelines : undefined}
+                  />
                 </div>
               </CardContent>
             </Card>
