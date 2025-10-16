@@ -120,6 +120,16 @@ export default function ContentWriterV2() {
       return await res.json();
     },
     onSuccess: (data: any) => {
+      console.log("Session creation response:", data);
+      if (!data || !data.session || !data.session.id) {
+        console.error("Invalid session response:", data);
+        toast({
+          title: "Error",
+          description: "Invalid response from server",
+          variant: "destructive",
+        });
+        return;
+      }
       setSessionId(data.session.id);
       setStage('concepts');
       toast({
