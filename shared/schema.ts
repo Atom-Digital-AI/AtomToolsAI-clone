@@ -16,6 +16,13 @@ export interface TargetAudience {
   other_keywords?: string[];
 }
 
+export interface BrandContextUrls {
+  home_page?: string;
+  about_page?: string;
+  service_pages?: string[]; // Up to 5 service/product pages
+  blog_articles?: string[]; // Up to 20 blog articles/resources
+}
+
 export interface BrandGuidelineContent {
   domain_url?: string;
   color_palette?: string[];
@@ -28,6 +35,7 @@ export interface BrandGuidelineContent {
   language_style?: string;
   regulatory_guideline_id?: string; // Link to regulatory guideline profile
   temporary_regulatory_text?: string; // Temporary regulatory text (not saved as profile)
+  context_urls?: BrandContextUrls; // URLs for brand context pages
 }
 
 export interface RegulatoryGuidelineContent {
@@ -48,6 +56,13 @@ export const targetAudienceSchema = z.object({
   other_keywords: z.array(z.string()).optional(),
 });
 
+export const brandContextUrlsSchema = z.object({
+  home_page: z.string().url().optional().or(z.literal('')),
+  about_page: z.string().url().optional().or(z.literal('')),
+  service_pages: z.array(z.string().url()).max(5).optional(),
+  blog_articles: z.array(z.string().url()).max(20).optional(),
+});
+
 export const brandGuidelineContentSchema = z.object({
   domain_url: z.string().url().optional().or(z.literal('')),
   color_palette: z.array(z.string()).optional(),
@@ -60,6 +75,7 @@ export const brandGuidelineContentSchema = z.object({
   language_style: z.string().optional(),
   regulatory_guideline_id: z.string().optional(),
   temporary_regulatory_text: z.string().optional(),
+  context_urls: brandContextUrlsSchema.optional(),
 });
 
 export const regulatoryGuidelineContentSchema = z.record(z.any());
@@ -208,6 +224,18 @@ export const guidelineProfiles = pgTable("guideline_profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Brand Context Content - Stores extracted markdown content from brand URLs
+export const brandContextContent = pgTable("brand_context_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  guidelineProfileId: varchar("guideline_profile_id").notNull().references(() => guidelineProfiles.id, { onDelete: "cascade" }),
+  url: text("url").notNull(), // The original URL that was crawled
+  urlType: text("url_type").notNull(), // 'home', 'about', 'service', 'blog'
+  markdownContent: text("markdown_content").notNull(), // Extracted main content in markdown format
+  pageTitle: text("page_title"), // Title of the page
+  extractedAt: timestamp("extracted_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // CMS Pages - For managing static pages and blog content
 export const cmsPages = pgTable("cms_pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -298,6 +326,15 @@ export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles
 }).extend({
   content: guidelineContentSchema,
 }).partial();
+
+// Brand Context Content schemas
+export const insertBrandContextContentSchema = createInsertSchema(brandContextContent).pick({
+  guidelineProfileId: true,
+  url: true,
+  urlType: true,
+  markdownContent: true,
+  pageTitle: true,
+});
 
 // CMS Page schemas
 export const insertCmsPageSchema = createInsertSchema(cmsPages).pick({
@@ -485,6 +522,9 @@ export type GuidelineProfile = Omit<typeof guidelineProfiles.$inferSelect, 'cont
 export type InsertGuidelineProfile = z.infer<typeof insertGuidelineProfileSchema>;
 export type UpdateGuidelineProfile = z.infer<typeof updateGuidelineProfileSchema>;
 
+export type BrandContextContent = typeof brandContextContent.$inferSelect;
+export type InsertBrandContextContent = z.infer<typeof insertBrandContextContentSchema>;
+
 // CMS Types
 export type CmsPage = typeof cmsPages.$inferSelect;
 export type InsertCmsPage = z.infer<typeof insertCmsPageSchema>;
@@ -573,10 +613,18 @@ export const cmsNavigationRelations = relations(cmsNavigation, ({ one, many }) =
   children: many(cmsNavigation),
 }));
 
-export const guidelineProfilesRelations = relations(guidelineProfiles, ({ one }) => ({
+export const guidelineProfilesRelations = relations(guidelineProfiles, ({ one, many }) => ({
   user: one(users, {
     fields: [guidelineProfiles.userId],
     references: [users.id],
+  }),
+  contextContent: many(brandContextContent),
+}));
+
+export const brandContextContentRelations = relations(brandContextContent, ({ one }) => ({
+  guidelineProfile: one(guidelineProfiles, {
+    fields: [brandContextContent.guidelineProfileId],
+    references: [guidelineProfiles.id],
   }),
 }));
 
