@@ -1,6 +1,7 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
 import type { ChunkResult } from "./chunking";
 import type { InsertBrandEmbedding } from "@shared/schema";
+import "./langsmith-config"; // Initialize LangSmith tracing if available
 
 /**
  * Embeddings service for generating vector embeddings using OpenAI
@@ -8,6 +9,7 @@ import type { InsertBrandEmbedding } from "@shared/schema";
  * - Fast and cost-effective
  * - High quality for semantic search
  * - Compatible with pgvector
+ * - Optional LangSmith tracing for monitoring
  */
 
 export class EmbeddingsService {

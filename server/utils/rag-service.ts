@@ -2,10 +2,12 @@ import { storage } from "../storage";
 import { embeddingsService } from "./embeddings";
 import { documentChunker, type ChunkResult } from "./chunking";
 import type { InsertBrandEmbedding, BrandEmbedding } from "@shared/schema";
+import "./langsmith-config"; // Initialize LangSmith tracing if available
 
 /**
  * RAG (Retrieval-Augmented Generation) Service
  * Provides semantic search and retrieval for brand guidelines and context
+ * With optional LangSmith tracing for monitoring
  */
 
 export interface RetrievalResult {

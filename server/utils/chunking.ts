@@ -1,4 +1,5 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import "./langsmith-config"; // Initialize LangSmith tracing if available
 
 /**
  * Chunking service for splitting documents into semantic chunks for RAG
@@ -7,6 +8,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
  * 2. Sentences (\n)
  * 3. Words (space)
  * This preserves context better than fixed-size chunks
+ * With optional LangSmith tracing for monitoring
  */
 
 export interface ChunkResult {
