@@ -117,7 +117,7 @@ export default function ContentWriterV2() {
         topic,
         guidelineProfileId: (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : undefined,
       });
-      return res;
+      return await res.json();
     },
     onSuccess: (data: any) => {
       setSessionId(data.session.id);
@@ -144,7 +144,7 @@ export default function ContentWriterV2() {
       const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/regenerate`, {
         feedbackText: regenerateFeedback,
       });
-      return res;
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
@@ -184,7 +184,7 @@ export default function ContentWriterV2() {
         useBrandGuidelines,
         selectedTargetAudiences,
       });
-      return res;
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
@@ -199,7 +199,7 @@ export default function ContentWriterV2() {
   const moreSubtopicsMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics/more`);
-      return res;
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
@@ -235,7 +235,7 @@ export default function ContentWriterV2() {
   const generateArticleMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/generate`);
-      return res;
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
