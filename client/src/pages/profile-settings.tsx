@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -108,6 +108,15 @@ export default function ProfileSettings() {
     });
   };
 
+  // Memoized onChange handlers to prevent infinite loops
+  const handleNewProfileContentChange = useCallback((value: BrandGuidelineContent) => {
+    setNewProfile(prev => ({ ...prev, content: value }));
+  }, []);
+
+  const handleEditProfileContentChange = useCallback((value: BrandGuidelineContent) => {
+    setEditingProfile(prev => prev ? { ...prev, content: value } : null);
+  }, []);
+
   const brandProfiles = profiles?.filter(p => p.type === "brand") || [];
   const regulatoryProfiles = profiles?.filter(p => p.type === "regulatory") || [];
 
@@ -167,7 +176,7 @@ export default function ProfileSettings() {
                     {newProfile.type === "brand" ? (
                       <BrandGuidelineForm
                         value={newProfile.content as BrandGuidelineContent}
-                        onChange={(value) => setNewProfile({ ...newProfile, content: value })}
+                        onChange={handleNewProfileContentChange}
                       />
                     ) : (
                       <Textarea
@@ -233,7 +242,7 @@ export default function ProfileSettings() {
                             />
                             <BrandGuidelineForm
                               value={editingProfile.content as BrandGuidelineContent}
-                              onChange={(value) => setEditingProfile({ ...editingProfile, content: value })}
+                              onChange={handleEditProfileContentChange}
                               profileId={editingProfile.id}
                             />
                             <div className="flex gap-2">

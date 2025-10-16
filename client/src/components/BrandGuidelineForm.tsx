@@ -27,7 +27,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [isAutoPopulating, setIsAutoPopulating] = useState(false);
   const [isExtractingContext, setIsExtractingContext] = useState(false);
   const { toast } = useToast();
-  const previousFormDataRef = useRef<string>("");
+  const lastSentToParentRef = useRef<string>("");
 
   const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
     queryKey: ["/api/guideline-profiles?type=regulatory"],
@@ -45,7 +45,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     } else {
       setIsLegacy(false);
       const data = value || {};
-      setFormData(data);
+      
+      // Only update formData if the incoming value is different from what we last sent to parent
+      // This prevents infinite loops when parent echoes back our onChange
+      const newDataString = JSON.stringify(data);
+      if (newDataString !== lastSentToParentRef.current) {
+        setFormData(data);
+      }
       
       if (data.regulatory_guideline_id) {
         setRegulatoryMode("existing");
@@ -67,14 +73,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         setValidationErrors([]);
       }
       
-      // Only call onChange if formData actually changed
+      // Only call onChange if formData actually changed from what we last sent
       const currentFormDataString = JSON.stringify(formData);
-      if (currentFormDataString !== previousFormDataRef.current) {
-        previousFormDataRef.current = currentFormDataString;
+      if (currentFormDataString !== lastSentToParentRef.current) {
+        lastSentToParentRef.current = currentFormDataString;
         onChange(formData);
       }
     }
-  }, [formData, isLegacy]);
+  }, [formData, isLegacy, onChange]);
 
   const handleConvertToStructured = () => {
     const converted: BrandGuidelineContent = {
