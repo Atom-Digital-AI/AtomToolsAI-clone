@@ -192,6 +192,57 @@ export class RAGService {
     
     console.log(`Re-indexed profile ${profileId} for user ${userId}`);
   }
+
+  /**
+   * Retrieve and format user feedback for AI prompt enhancement
+   * Retrieves recent feedback (both positive and negative) to help AI learn from past generations
+   * SECURITY: Requires userId for tenant isolation
+   */
+  async retrieveUserFeedback(
+    userId: string,
+    toolType: 'seo-meta' | 'google-ads' | 'content-generator',
+    guidelineProfileId?: string,
+    limit: number = 10
+  ): Promise<string> {
+    const feedback = await storage.getUserFeedback(userId, toolType, guidelineProfileId, limit);
+
+    if (feedback.length === 0) {
+      return '';
+    }
+
+    // Separate positive and negative feedback
+    const positiveFeedback = feedback.filter(f => f.rating === 'thumbs_up');
+    const negativeFeedback = feedback.filter(f => f.rating === 'thumbs_down');
+
+    const feedbackParts: string[] = [];
+
+    // Format negative feedback (what to improve)
+    if (negativeFeedback.length > 0) {
+      feedbackParts.push('AREAS TO IMPROVE (based on user feedback):');
+      negativeFeedback.forEach((fb, index) => {
+        if (fb.feedbackText) {
+          feedbackParts.push(`${index + 1}. ${fb.feedbackText}`);
+        }
+      });
+    }
+
+    // Format positive feedback (what worked well)
+    if (positiveFeedback.length > 0) {
+      feedbackParts.push('\nWHAT WORKED WELL (based on positive feedback):');
+      positiveFeedback.slice(0, 3).forEach((fb, index) => {
+        const output = fb.outputData as any;
+        if (output) {
+          feedbackParts.push(`${index + 1}. User approved content similar to: "${JSON.stringify(output).substring(0, 150)}..."`);
+        }
+      });
+    }
+
+    if (feedbackParts.length === 0) {
+      return '';
+    }
+
+    return `\n\nUSER LEARNING & PREFERENCES:\n${feedbackParts.join('\n')}\n`;
+  }
 }
 
 // Singleton instance

@@ -28,11 +28,12 @@ import {
   type InsertCmsPage,
   type UpdateCmsPage,
   type BrandEmbedding,
-  type InsertBrandEmbedding
+  type InsertBrandEmbedding,
+  type ContentFeedback
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, brandContextContent, brandEmbeddings } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, inArray, cosineDistance } from "drizzle-orm";
+import { eq, and, sql, inArray, cosineDistance, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -104,6 +105,9 @@ export interface IStorage {
   getBrandEmbeddings(guidelineProfileId: string): Promise<BrandEmbedding[]>;
   searchSimilarEmbeddings(userId: string, guidelineProfileId: string, queryEmbedding: number[], limit?: number): Promise<Array<BrandEmbedding & { similarity: number }>>;
   deleteBrandEmbeddings(userId: string, guidelineProfileId: string): Promise<boolean>;
+
+  // Content Feedback operations (SECURITY: Enforce userId for tenant isolation)
+  getUserFeedback(userId: string, toolType?: string, guidelineProfileId?: string, limit?: number): Promise<ContentFeedback[]>;
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
@@ -928,6 +932,33 @@ export class DatabaseStorage implements IStorage {
         eq(brandEmbeddings.guidelineProfileId, guidelineProfileId)
       ));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Content Feedback operations
+  async getUserFeedback(
+    userId: string, 
+    toolType?: string, 
+    guidelineProfileId?: string, 
+    limit: number = 10
+  ): Promise<ContentFeedback[]> {
+    const conditions = [eq(contentFeedback.userId, userId)]; // SECURITY: Enforce user ownership
+
+    if (toolType) {
+      conditions.push(eq(contentFeedback.toolType, toolType));
+    }
+
+    if (guidelineProfileId) {
+      conditions.push(eq(contentFeedback.guidelineProfileId, guidelineProfileId));
+    }
+
+    const feedback = await db
+      .select()
+      .from(contentFeedback)
+      .where(and(...conditions))
+      .orderBy(desc(contentFeedback.createdAt))
+      .limit(limit);
+
+    return feedback;
   }
 
   // Admin operations
