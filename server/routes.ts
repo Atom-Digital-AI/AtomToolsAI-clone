@@ -2145,6 +2145,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/generated-content", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { toolType, title, inputData, outputData } = req.body;
+      
+      if (!toolType || !title || !inputData || !outputData) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      const [savedContent] = await db.insert(generatedContent).values({
+        userId,
+        toolType,
+        title,
+        inputData,
+        outputData,
+      }).returning();
+      
+      res.json(savedContent);
+    } catch (error) {
+      console.error("Error saving generated content:", error);
+      res.status(500).json({ message: "Failed to save generated content" });
+    }
+  });
+
   app.delete("/api/generated-content/:id", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
