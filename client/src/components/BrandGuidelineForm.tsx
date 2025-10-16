@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,9 +27,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [isAutoPopulating, setIsAutoPopulating] = useState(false);
   const [isExtractingContext, setIsExtractingContext] = useState(false);
   const { toast } = useToast();
+  const previousFormDataRef = useRef<string>("");
 
   const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
-    queryKey: ["/api/guideline-profiles", { type: "regulatory" }],
+    queryKey: ["/api/guideline-profiles?type=regulatory"],
   });
 
   useEffect(() => {
@@ -65,9 +66,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       } else {
         setValidationErrors([]);
       }
-      onChange(formData);
+      
+      // Only call onChange if formData actually changed
+      const currentFormDataString = JSON.stringify(formData);
+      if (currentFormDataString !== previousFormDataRef.current) {
+        previousFormDataRef.current = currentFormDataString;
+        onChange(formData);
+      }
     }
-  }, [formData, isLegacy, onChange]);
+  }, [formData, isLegacy]);
 
   const handleConvertToStructured = () => {
     const converted: BrandGuidelineContent = {
@@ -341,13 +348,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       )}
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 bg-gray-800">
-          <TabsTrigger value="basic" data-testid="tab-basic-info">Basic Info</TabsTrigger>
-          <TabsTrigger value="visual" data-testid="tab-visual-identity">Visual Identity</TabsTrigger>
-          <TabsTrigger value="audience" data-testid="tab-audience">Audience</TabsTrigger>
-          <TabsTrigger value="voice" data-testid="tab-brand-voice">Brand Voice</TabsTrigger>
-          <TabsTrigger value="context" data-testid="tab-context">Context</TabsTrigger>
-          <TabsTrigger value="regulatory" data-testid="tab-regulatory">Regulatory</TabsTrigger>
+        <TabsList className="flex flex-wrap w-full bg-gray-800 h-auto p-1 gap-1">
+          <TabsTrigger value="basic" data-testid="tab-basic-info" className="flex-1 min-w-[120px]">Basic Info</TabsTrigger>
+          <TabsTrigger value="visual" data-testid="tab-visual-identity" className="flex-1 min-w-[120px]">Visual Identity</TabsTrigger>
+          <TabsTrigger value="audience" data-testid="tab-audience" className="flex-1 min-w-[120px]">Audience</TabsTrigger>
+          <TabsTrigger value="voice" data-testid="tab-brand-voice" className="flex-1 min-w-[120px]">Brand Voice</TabsTrigger>
+          <TabsTrigger value="context" data-testid="tab-context" className="flex-1 min-w-[120px]">Context</TabsTrigger>
+          <TabsTrigger value="regulatory" data-testid="tab-regulatory" className="flex-1 min-w-[120px]">Regulatory</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4 mt-6">
