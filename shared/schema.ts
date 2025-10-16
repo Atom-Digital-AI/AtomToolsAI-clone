@@ -36,6 +36,7 @@ export interface BrandGuidelineContent {
   regulatory_guideline_id?: string; // Link to regulatory guideline profile
   temporary_regulatory_text?: string; // Temporary regulatory text (not saved as profile)
   context_urls?: BrandContextUrls; // URLs for brand context pages
+  analyzed_pages?: string[]; // URLs of pages analyzed during auto-populate
 }
 
 export interface RegulatoryGuidelineContent {
@@ -76,6 +77,7 @@ export const brandGuidelineContentSchema = z.object({
   regulatory_guideline_id: z.string().optional(),
   temporary_regulatory_text: z.string().optional(),
   context_urls: brandContextUrlsSchema.optional(),
+  analyzed_pages: z.array(z.string()).optional(),
 });
 
 export const regulatoryGuidelineContentSchema = z.record(z.any());

@@ -39,6 +39,8 @@ export async function analyzeBrandGuidelines(
     throw new Error("Unable to crawl any pages from the provided URL");
   }
 
+  console.log(`Analyzed pages: ${crawlResult.crawledUrls.join(', ')}`);
+
   // Step 2: Prepare content for AI analysis
   const pagesContent = crawlResult.pages
     .map((page, index) => {
@@ -113,7 +115,10 @@ Return ONLY the JSON object, no additional text.`;
 
   try {
     const guidelines = JSON.parse(responseText);
-    return guidelines as BrandGuidelineContent;
+    return {
+      ...guidelines,
+      analyzed_pages: crawlResult.crawledUrls
+    } as BrandGuidelineContent;
   } catch (error) {
     console.error("Failed to parse AI response:", responseText);
     throw new Error("Failed to parse brand guidelines from AI response");

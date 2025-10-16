@@ -172,9 +172,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       setFormData(updatedData);
       onChange(updatedData);
 
+      const analyzedPagesInfo = response.analyzed_pages && response.analyzed_pages.length > 0
+        ? `\n\nAnalyzed ${response.analyzed_pages.length} page(s):\n${response.analyzed_pages.map(url => `• ${url}`).join('\n')}`
+        : "";
+
       toast({
         title: "Success!",
-        description: "Brand guidelines have been auto-populated from your website.",
+        description: `Brand guidelines have been auto-populated from your website.${analyzedPagesInfo}`,
       });
     } catch (error: any) {
       console.error("Auto-populate error:", error);

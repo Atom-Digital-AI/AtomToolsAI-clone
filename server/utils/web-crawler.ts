@@ -11,6 +11,7 @@ interface CrawledPage {
 interface CrawlResult {
   pages: CrawledPage[];
   domain: string;
+  crawledUrls: string[];
 }
 
 /**
@@ -31,6 +32,7 @@ export async function crawlWebsite(startUrl: string, maxPages: number = 5): Prom
 
     try {
       visitedUrls.add(currentUrl);
+      console.log(`Crawling page ${crawledPages.length + 1}/${maxPages}: ${currentUrl}`);
       const page = await fetchPage(currentUrl, domain);
       crawledPages.push(page);
 
@@ -47,9 +49,12 @@ export async function crawlWebsite(startUrl: string, maxPages: number = 5): Prom
     }
   }
 
+  console.log(`Successfully crawled ${crawledPages.length} pages from ${domain}`);
+  
   return {
     pages: crawledPages,
-    domain
+    domain,
+    crawledUrls: crawledPages.map(page => page.url)
   };
 }
 
