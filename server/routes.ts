@@ -957,33 +957,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Failed to generate SEO content" });
       }
 
-      // Save the generated content to history
-      try {
-        await db.insert(generatedContent).values({
-          userId: (req as any).user.id,
-          toolType: 'seo-meta',
-          title: `SEO Meta - ${url || targetKeywords}`,
-          inputData: {
-            url,
-            targetKeywords,
-            brandName,
-            sellingPoints,
-            additionalContext,
-            contentType,
-            brandGuidelines,
-            regulatoryGuidelines
-          },
-          outputData: result
-        });
-
-        // Increment usage for SEO Meta tool
-        const seoMetaProductId = '531de90b-12ef-4169-b664-0d55428435a6';
-        const accessInfo = await storage.getUserProductAccess((req as any).user.id, seoMetaProductId);
-        if (accessInfo.tierLimit) {
-          await storage.incrementUsage((req as any).user.id, seoMetaProductId, accessInfo.tierLimit.periodicity);
-        }
-      } catch (error) {
-        console.error("Error saving generated content:", error);
+      // Increment usage for SEO Meta tool
+      const seoMetaProductId = '531de90b-12ef-4169-b664-0d55428435a6';
+      const accessInfo = await storage.getUserProductAccess((req as any).user.id, seoMetaProductId);
+      if (accessInfo.tierLimit) {
+        await storage.incrementUsage((req as any).user.id, seoMetaProductId, accessInfo.tierLimit.periodicity);
       }
 
       res.json(result);
@@ -1195,33 +1173,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "No valid response from AI" });
       }
 
-      // Save the generated content to history
-      try {
-        await db.insert(generatedContent).values({
-          userId: (req as any).user.id,
-          toolType: 'google-ads',
-          title: `Google Ads - ${brandName || targetKeywords}`,
-          inputData: {
-            url,
-            targetKeywords,
-            brandName,
-            sellingPoints,
-            caseType,
-            numVariations,
-            brandGuidelines,
-            regulatoryGuidelines
-          },
-          outputData: result
-        });
-
-        // Increment usage for Google Ads tool
-        const googleAdsProductId = 'c5985990-e94e-49b3-a86c-3076fd9d6b3f';
-        const accessInfo = await storage.getUserProductAccess((req as any).user.id, googleAdsProductId);
-        if (accessInfo.tierLimit) {
-          await storage.incrementUsage((req as any).user.id, googleAdsProductId, accessInfo.tierLimit.periodicity);
-        }
-      } catch (error) {
-        console.error("Error saving generated content:", error);
+      // Increment usage for Google Ads tool
+      const googleAdsProductId = 'c5985990-e94e-49b3-a86c-3076fd9d6b3f';
+      const accessInfo = await storage.getUserProductAccess((req as any).user.id, googleAdsProductId);
+      if (accessInfo.tierLimit) {
+        await storage.incrementUsage((req as any).user.id, googleAdsProductId, accessInfo.tierLimit.periodicity);
       }
 
       res.json(result);

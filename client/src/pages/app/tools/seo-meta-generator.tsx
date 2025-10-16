@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Search, Copy, Download, Upload, RefreshCw, AlertCircle, CheckCircle2, Globe, ChevronUp, ChevronDown, Lock } from "lucide-react";
+import { Search, Copy, Download, Upload, RefreshCw, AlertCircle, CheckCircle2, Globe, ChevronUp, ChevronDown, Lock, Save } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 import type { GuidelineContent } from "@shared/schema";
 import { useBrand } from "@/contexts/BrandContext";
+import { SaveContentDialog } from "@/components/SaveContentDialog";
 
 interface MetaData {
   title: string;
@@ -57,6 +58,9 @@ export default function SEOMetaGenerator() {
   const [progress, setProgress] = useState(0);
   const [urlContent, setUrlContent] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [saveInputData, setSaveInputData] = useState<any>(null);
+  const [saveOutputData, setSaveOutputData] = useState<any>(null);
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
   
@@ -881,10 +885,37 @@ export default function SEOMetaGenerator() {
                   </div>
                 )}
                 
-                <Button onClick={exportResults} className="w-full" data-testid="button-export">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export Results
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      setSaveInputData({
+                        url,
+                        targetKeywords: keywords,
+                        brandName,
+                        sellingPoints,
+                        additionalContext: urlContent,
+                        contentType,
+                        brandGuidelines,
+                        regulatoryGuidelines
+                      });
+                      setSaveOutputData({
+                        titles: metaData.variations?.titles || [metaData.title],
+                        descriptions: metaData.variations?.descriptions || [metaData.description]
+                      });
+                      setIsSaveDialogOpen(true);
+                    }} 
+                    variant="outline" 
+                    className="flex-1" 
+                    data-testid="button-save-library"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save to Library
+                  </Button>
+                  <Button onClick={exportResults} variant="outline" className="flex-1" data-testid="button-export">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Results
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -941,6 +972,15 @@ export default function SEOMetaGenerator() {
           )}
         </div>
       </div>
+
+      <SaveContentDialog
+        isOpen={isSaveDialogOpen}
+        onClose={() => setIsSaveDialogOpen(false)}
+        defaultTitle={`SEO Meta - ${url || keywords}`}
+        toolType="seo-meta"
+        inputData={saveInputData}
+        outputData={saveOutputData}
+      />
     </AccessGuard>
   );
 }
