@@ -47,55 +47,73 @@ If any field cannot be determined from the document, use an empty array [] or em
 
 Respond ONLY with valid JSON matching the structure above. Do not include any explanatory text outside the JSON.`;
 
-  try {
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: "application/pdf",
-                data: pdfBase64,
+  // Try with the latest model first, fallback to older stable model if needed
+  const models = ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20240620"];
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      const message = await anthropic.messages.create({
+        model,
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "document",
+                source: {
+                  type: "base64",
+                  media_type: "application/pdf",
+                  data: pdfBase64,
+                },
               },
-            },
-            {
-              type: "text",
-              text: prompt,
-            },
-          ],
-        },
-      ],
-    });
+              {
+                type: "text",
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      });
 
-    // Extract text content from response
-    const textContent = message.content.find((block) => block.type === "text");
-    if (!textContent || textContent.type !== "text") {
-      throw new Error("No text response from Claude AI");
+      // Extract text content from response
+      const textContent = message.content.find((block) => block.type === "text");
+      if (!textContent || textContent.type !== "text") {
+        throw new Error("No text response from Claude AI");
+      }
+
+      let responseText = textContent.text.trim();
+
+      // Remove markdown code blocks if present
+      if (responseText.startsWith("```json")) {
+        responseText = responseText.replace(/^```json\n/, "").replace(/\n```$/, "");
+      } else if (responseText.startsWith("```")) {
+        responseText = responseText.replace(/^```\n/, "").replace(/\n```$/, "");
+      }
+
+      // Parse JSON response
+      const brandData = JSON.parse(responseText) as BrandGuidelineContent;
+
+      return brandData;
+    } catch (error) {
+      console.error(`PDF brand analysis error with model ${model}:`, error);
+      lastError = error instanceof Error ? error : new Error("Unknown error");
+      
+      // If it's a model not found error, try the next model
+      if (error instanceof Error && error.message.includes("not_found")) {
+        continue;
+      }
+      
+      // For other errors, throw immediately
+      throw error;
     }
-
-    let responseText = textContent.text.trim();
-
-    // Remove markdown code blocks if present
-    if (responseText.startsWith("```json")) {
-      responseText = responseText.replace(/^```json\n/, "").replace(/\n```$/, "");
-    } else if (responseText.startsWith("```")) {
-      responseText = responseText.replace(/^```\n/, "").replace(/\n```$/, "");
-    }
-
-    // Parse JSON response
-    const brandData = JSON.parse(responseText) as BrandGuidelineContent;
-
-    return brandData;
-  } catch (error) {
-    console.error("PDF brand analysis error:", error);
-    if (error instanceof Error) {
-      throw new Error(`Failed to analyze PDF: ${error.message}`);
-    }
-    throw new Error("Failed to analyze PDF brand guidelines");
   }
+
+  // If all models failed, throw the last error
+  if (lastError) {
+    throw new Error(`Failed to analyze PDF with any available model: ${lastError.message}`);
+  }
+  
+  throw new Error("Failed to analyze PDF brand guidelines");
 }
