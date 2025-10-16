@@ -71,8 +71,8 @@ export default function Header() {
         Skip to main content
       </a>
 
-      <nav className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
-        <div className="flex items-center justify-between h-16">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
+        <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href={isAuthenticated ? "/app" : "/"}>
@@ -80,7 +80,7 @@ export default function Header() {
                 className="flex items-center focus:outline-none focus:ring-2 focus:ring-accent rounded-lg p-1 cursor-pointer text-text-primary"
                 data-testid="logo-link"
               >
-                <svg width="200" height="48" viewBox="0 0 140 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="160" height="40" viewBox="0 0 140 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Atomic symbol */}
                   <g>
                     {/* Central nucleus */}
@@ -107,11 +107,11 @@ export default function Header() {
           </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center gap-6 flex-1 justify-center">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
                 <span 
-                  className={`transition-colors font-medium cursor-pointer ${
+                  className={`transition-colors font-medium cursor-pointer whitespace-nowrap text-sm ${
                     location === item.href
                       ? "text-text-primary"
                       : "text-text-secondary hover:text-text-primary"
@@ -125,7 +125,7 @@ export default function Header() {
           </div>
           
           {/* Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             {isLoading ? (
               <div className="w-20 h-8 bg-surface animate-pulse rounded-md" />
             ) : isAuthenticated ? (
@@ -186,7 +186,7 @@ export default function Header() {
           </div>
           
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <Button
               variant="ghost"
               size="sm"
