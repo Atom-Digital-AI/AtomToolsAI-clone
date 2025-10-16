@@ -28,7 +28,7 @@ export default function BrandSubNav() {
   return (
     <div className="border-b border-border/50 bg-surface/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center gap-6 h-12">
+        <div className="flex items-center justify-center gap-4 sm:gap-6 h-12 overflow-x-auto">
           {/* Selected Brand Indicator */}
           <div className="flex items-center gap-2 text-sm" data-testid="selected-brand-indicator">
             <Sparkles className="w-4 h-4 text-accent" />
