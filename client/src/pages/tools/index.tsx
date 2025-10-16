@@ -50,6 +50,20 @@ const tools = [
     href: "/tools/google-ads-copy-generator",
     category: "Generators",
   },
+  {
+    name: "Content Writer v2",
+    description: "Multi-stage AI article generation with concept selection and subtopic planning.",
+    icon: "fas fa-pen-fancy",
+    iconColor: "bg-purple-500/10 text-purple-400",
+    badge: { text: "New", variant: "accent" as const },
+    features: [
+      "AI-generated article concepts",
+      "Subtopic selection & planning",
+      "Complete article assembly",
+    ],
+    href: "/app/tools/content-writer-v2",
+    category: "Generators",
+  },
 ];
 
 export default function ToolsIndex() {
