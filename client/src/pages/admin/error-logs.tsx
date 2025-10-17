@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   AlertTriangle, 
   Search, 
@@ -93,6 +94,26 @@ export default function ErrorLogs() {
     },
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ logId, status }: { logId: string; status: string }) => {
+      await apiRequest("PATCH", `/api/admin/error-logs/${logId}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/error-logs"] });
+      toast({
+        title: "Success",
+        description: "Error log status updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update status",
+        variant: "destructive",
+      });
+    },
+  });
+
   const toggleExpanded = (logId: string) => {
     const newExpanded = new Set(expandedLogs);
     if (newExpanded.has(logId)) {
@@ -117,6 +138,32 @@ export default function ErrorLogs() {
         return 'bg-red-500/10 text-red-500 border-red-500/20';
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'to_do':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'investigated':
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'fixed':
+        return 'bg-green-500/10 text-green-500 border-green-500/20';
+      default:
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'to_do':
+        return 'To Do';
+      case 'investigated':
+        return 'Investigated';
+      case 'fixed':
+        return 'Fixed';
+      default:
+        return status;
     }
   };
 
@@ -265,7 +312,7 @@ export default function ErrorLogs() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <CardTitle className="text-lg flex items-center">
                         <AlertTriangle className="w-4 h-4 mr-2 text-red-500" />
                         {log.toolName}
@@ -278,6 +325,9 @@ export default function ErrorLogs() {
                           HTTP {log.httpStatus}
                         </Badge>
                       )}
+                      <Badge className={getStatusColor(log.status)}>
+                        {getStatusLabel(log.status)}
+                      </Badge>
                     </div>
                     <CardDescription className="flex items-center gap-4 text-sm">
                       <span className="flex items-center">
@@ -332,6 +382,24 @@ export default function ErrorLogs() {
 
                   {expandedLogs.has(log.id) && (
                     <div className="space-y-4 border-t pt-4">
+                      <div>
+                        <h4 className="font-medium text-text-primary mb-2">Status</h4>
+                        <Select
+                          value={log.status}
+                          onValueChange={(status) => updateStatusMutation.mutate({ logId: log.id, status })}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          <SelectTrigger className="w-48" data-testid={`status-select-${log.id}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="to_do">To Do</SelectItem>
+                            <SelectItem value="investigated">Investigated</SelectItem>
+                            <SelectItem value="fixed">Fixed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       {log.errorStack && (
                         <div>
                           <h4 className="font-medium text-text-primary mb-2">Stack Trace</h4>
@@ -347,7 +415,7 @@ export default function ErrorLogs() {
                         <div>
                           <h4 className="font-medium text-text-primary mb-2">Request Data</h4>
                           <Textarea
-                            value={JSON.stringify(log.requestData, null, 2)}
+                            value={JSON.stringify(log.requestData as any, null, 2)}
                             readOnly
                             className="h-32 font-mono text-xs"
                           />
