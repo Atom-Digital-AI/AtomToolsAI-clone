@@ -80,6 +80,7 @@ export default function ContentWriterV2() {
   const [internalLinks, setInternalLinks] = useState("");
   const [useBrandGuidelines, setUseBrandGuidelines] = useState(true);
   const [selectedTargetAudiences, setSelectedTargetAudiences] = useState<"all" | "none" | number[]>("none");
+  const [matchStyle, setMatchStyle] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [regenerateFeedback, setRegenerateFeedback] = useState("");
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
@@ -117,6 +118,7 @@ export default function ContentWriterV2() {
       const res = await apiRequest('POST', '/api/content-writer/sessions', {
         topic,
         guidelineProfileId: (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : undefined,
+        matchStyle,
       });
       return await res.json();
     },
@@ -154,6 +156,7 @@ export default function ContentWriterV2() {
     mutationFn: async () => {
       const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/regenerate`, {
         feedbackText: regenerateFeedback,
+        matchStyle,
       });
       return await res.json();
     },
@@ -194,6 +197,7 @@ export default function ContentWriterV2() {
         language,
         useBrandGuidelines,
         selectedTargetAudiences,
+        matchStyle,
       });
       return await res.json();
     },
@@ -209,7 +213,9 @@ export default function ContentWriterV2() {
   // Request more subtopics mutation
   const moreSubtopicsMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics/more`);
+      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics/more`, {
+        matchStyle,
+      });
       return await res.json();
     },
     onSuccess: () => {
@@ -245,7 +251,9 @@ export default function ContentWriterV2() {
   // Generate article mutation
   const generateArticleMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/generate`);
+      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/generate`, {
+        matchStyle,
+      });
       return await res.json();
     },
     onSuccess: () => {
@@ -355,6 +363,23 @@ export default function ContentWriterV2() {
             type="brand"
           />
         </div>
+
+        {brandGuidelines && (
+          <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+            <Checkbox
+              id="matchStyle"
+              data-testid="checkbox-match-style"
+              checked={matchStyle}
+              onCheckedChange={(checked) => setMatchStyle(checked === true)}
+            />
+            <Label
+              htmlFor="matchStyle"
+              className="text-sm font-normal cursor-pointer"
+            >
+              Match brand's writing style and tone
+            </Label>
+          </div>
+        )}
 
         <Button 
           onClick={handleStartSession} 

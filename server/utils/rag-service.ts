@@ -139,10 +139,12 @@ export class RAGService {
     options?: {
       limit?: number;
       minSimilarity?: number;
+      matchStyle?: boolean;
     }
   ): Promise<string> {
     const limit = options?.limit || 5;
     const minSimilarity = options?.minSimilarity || 0.7; // Only include highly relevant chunks
+    const matchStyle = options?.matchStyle ?? false; // Default to false if not specified
 
     const results = await this.retrieveRelevantContext(userId, profileId, query, limit);
 
@@ -159,7 +161,14 @@ export class RAGService {
       return `[Context ${index + 1} - ${source}]:\n${result.chunk}`;
     });
 
-    return `\n\nRELEVANT BRAND CONTEXT:\n${contextParts.join('\n\n')}\n`;
+    let contextPrompt = `\n\nRELEVANT BRAND CONTEXT:\n${contextParts.join('\n\n')}\n`;
+
+    // Add style-matching instruction if requested
+    if (matchStyle) {
+      contextPrompt += `\nIMPORTANT: Write this content in the same style, tone, and language patterns as the brand context provided above. Match the writing style, vocabulary choices, sentence structure, and overall voice.\n`;
+    }
+
+    return contextPrompt;
   }
 
   /**

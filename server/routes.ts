@@ -724,7 +724,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contentType = 'both',
         caseType = "sentence",
         brandGuidelines = "",
-        regulatoryGuidelines = ""
+        regulatoryGuidelines = "",
+        matchStyle = false
       } = req.body;
 
       // Check user's product access and tier limits
@@ -791,7 +792,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             query,
             {
               limit: 5,
-              minSimilarity: 0.7
+              minSimilarity: 0.7,
+              matchStyle
             }
           );
         }
@@ -937,7 +939,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         caseType = "sentence",
         brandGuidelines = "",
         regulatoryGuidelines = "",
-        numVariations = 1
+        numVariations = 1,
+        matchStyle = false
       } = req.body;
 
       // Check user's product access and tier limits
@@ -1004,7 +1007,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             query,
             {
               limit: 5,
-              minSimilarity: 0.7
+              minSimilarity: 0.7,
+              matchStyle
             }
           );
         }
@@ -1969,7 +1973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/content-writer/sessions", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { topic, guidelineProfileId } = req.body;
+      const { topic, guidelineProfileId, matchStyle = false } = req.body;
       
       if (!topic) {
         return res.status(400).json({ message: "Topic is required" });
@@ -1986,7 +1990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate 5 article concepts using ChatGPT
       const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', guidelineProfileId);
       const brandContext = guidelineProfileId 
-        ? await ragService.getBrandContextForPrompt(userId, guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, guidelineProfileId, `Article concepts for: ${topic}`, { matchStyle })
         : '';
 
       const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${topic}"
@@ -2067,7 +2071,7 @@ Return the response as a JSON array with this exact structure:
     try {
       const userId = req.user.id;
       const { id } = req.params;
-      const { feedbackText } = req.body;
+      const { feedbackText, matchStyle = false } = req.body;
 
       const session = await storage.getContentWriterSession(id, userId);
       if (!session) {
@@ -2093,7 +2097,7 @@ Return the response as a JSON array with this exact structure:
       // Generate new concepts
       const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
       const brandContext = session.guidelineProfileId 
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Article concepts for: ${session.topic}`, { matchStyle })
         : '';
 
       // Get target audience context (may be null if user hasn't set preferences yet)
@@ -2208,7 +2212,7 @@ Return the response as a JSON array with this exact structure:
     try {
       const userId = req.user.id;
       const { id } = req.params;
-      const { objective, internalLinks, targetLength, toneOfVoice, language, useBrandGuidelines, selectedTargetAudiences } = req.body;
+      const { objective, internalLinks, targetLength, toneOfVoice, language, useBrandGuidelines, selectedTargetAudiences, matchStyle = false } = req.body;
 
       const session = await storage.getContentWriterSession(id, userId);
       if (!session) {
@@ -2238,7 +2242,7 @@ Return the response as a JSON array with this exact structure:
       // Build context
       const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
       const brandContext = (useBrandGuidelines && session.guidelineProfileId)
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Subtopics for: ${chosenConcept.title}`, { matchStyle })
         : '';
 
       // Get target audience context
@@ -2319,6 +2323,7 @@ Return the response as a JSON array with this exact structure:
     try {
       const userId = req.user.id;
       const { id } = req.params;
+      const { matchStyle = false } = req.body;
 
       const session = await storage.getContentWriterSession(id, userId);
       if (!session) {
@@ -2333,7 +2338,7 @@ Return the response as a JSON array with this exact structure:
       const existingTitles = existingSubtopics.map(s => s.title).join('\n- ');
 
       const brandContext = (session.useBrandGuidelines && session.guidelineProfileId)
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `More subtopics for: ${chosenConcept.title}`, { matchStyle })
         : '';
 
       // Get target audience context
@@ -2438,6 +2443,7 @@ Return the response as a JSON array with this structure:
     try {
       const userId = req.user.id;
       const { id } = req.params;
+      const { matchStyle = false } = req.body;
 
       const session = await storage.getContentWriterSession(id, userId);
       if (!session) {
@@ -2456,7 +2462,7 @@ Return the response as a JSON array with this structure:
         .where(eq(contentWriterConcepts.id, session.selectedConceptId));
 
       const brandContext = (session.useBrandGuidelines && session.guidelineProfileId)
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId)
+        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Article for: ${chosenConcept.title}`, { matchStyle })
         : '';
 
       // Get target audience context
