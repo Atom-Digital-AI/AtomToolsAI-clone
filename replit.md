@@ -4,6 +4,7 @@
 atomtools.ai is a subscription-based web platform providing digital marketing and automation tools. It targets digital marketers, agencies, and small businesses with features like connectors, generators, and reporting helpers, all focused on marketing automation. The platform includes a dark-mode marketing website and a comprehensive application with a full subscription system to manage access to tools.
 
 ## Recent Changes (October 2025)
+- **Google OAuth Removal**: Completely removed Google OAuth authentication from the entire application. Now supports email/password authentication only. Removed Google login/signup buttons from homepage, login page, and signup page. Removed OAuth routes, storage methods, and disabled oauth.ts module (October 17, 2025)
 - **AI Analytics Module**: Added comprehensive AI usage analytics for super admin portal showing total API calls, tokens, costs, and breakdowns by provider and endpoint (October 17, 2025)
 - **Content Writer v2 Bug Fix**: Fixed RAG service type mismatch preventing Content Writer v2 usage from being logged to ai_usage_logs table. Updated tool type validation to accept 'content-writer' alongside 'seo-meta' and 'google-ads' (October 17, 2025)
 - **Centralized Tool Types**: Refactored hardcoded tool type strings to use centralized `ToolType` definition in shared/schema.ts. Ensures single source of truth for all tool types across the application (October 17, 2025)
@@ -17,7 +18,7 @@ Preferred communication style: Simple, everyday language.
 The platform uses React 18 with TypeScript, Vite, and Wouter for routing. UI components are built with Shadcn/ui and Radix UI primitives, styled using Tailwind CSS with a custom dark-mode palette and electric indigo accent. Typography uses Inter for UI text and Space Grotesk for headlines. The design is responsive, mobile-first, and follows WCAG 2.2 AA accessibility standards. An admin panel provides CRUD operations for managing packages, products, and users.
 
 ### Backend and Database
-The backend is built with Node.js and Express.js. Data is managed using Drizzle ORM with a PostgreSQL dialect, hosted on Neon Database. Authentication supports Google OAuth 2.0 and email/password, with server-side sessions stored in PostgreSQL. Zod schemas are used for input validation on both client and server sides.
+The backend is built with Node.js and Express.js. Data is managed using Drizzle ORM with a PostgreSQL dialect, hosted on Neon Database. Authentication supports email/password only, with server-side sessions stored in PostgreSQL. Zod schemas are used for input validation on both client and server sides.
 
 ### Core Features
 - **Marketing Tools**: AI-powered generators for Ad Copy (Google Ads, SEO Meta) leveraging OpenAI.
@@ -38,7 +39,6 @@ The backend is built with Node.js and Express.js. Data is managed using Drizzle 
 
 ### AI/API Services
 - **OpenAI API**: For AI content generation.
-- **Google OAuth 2.0**: For user authentication.
 - **Anthropic Claude AI**: For the "Auto Populate Brand Guidelines" feature.
 
 ### UI & Styling
