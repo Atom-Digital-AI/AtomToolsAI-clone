@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Trash2, Edit, Plus, Save, X } from "lucide-react";
+import { Trash2, Edit, Plus, Save, X, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import BrandGuidelineForm from "@/components/BrandGuidelineForm";
 import type { GuidelineProfile, BrandGuidelineContent, GuidelineContent } from "@shared/schema";
@@ -81,6 +81,25 @@ export default function ProfileSettings() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to delete profile", variant: "destructive" });
+    },
+  });
+
+  // Duplicate profile mutation
+  const duplicateProfileMutation = useMutation({
+    mutationFn: async (profile: GuidelineProfile) => {
+      const duplicateName = `${profile.name} (Copy)`;
+      return await apiRequest("POST", "/api/guideline-profiles", {
+        name: duplicateName,
+        type: profile.type,
+        content: profile.content,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/guideline-profiles"] });
+      toast({ title: "Success", description: "Profile duplicated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to duplicate profile", variant: "destructive" });
     },
   });
 
@@ -273,10 +292,21 @@ export default function ProfileSettings() {
                               <h4 data-testid={`text-profile-name-${profile.id}`} className="font-medium">{profile.name}</h4>
                               <div className="flex gap-1">
                                 <Button
+                                  data-testid={`button-duplicate-${profile.id}`}
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => duplicateProfileMutation.mutate(profile)}
+                                  title="Duplicate profile"
+                                  className="text-blue-400 hover:text-blue-300"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                                <Button
                                   data-testid={`button-edit-${profile.id}`}
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => setEditingProfile(profile)}
+                                  title="Edit profile"
                                 >
                                   <Edit className="w-3 h-3" />
                                 </Button>
@@ -285,6 +315,7 @@ export default function ProfileSettings() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => deleteProfileMutation.mutate(profile.id)}
+                                  title="Delete profile"
                                   className="text-red-400 hover:text-red-300"
                                 >
                                   <Trash2 className="w-3 h-3" />
@@ -370,10 +401,21 @@ export default function ProfileSettings() {
                               <h4 data-testid={`text-profile-name-${profile.id}`} className="font-medium">{profile.name}</h4>
                               <div className="flex gap-1">
                                 <Button
+                                  data-testid={`button-duplicate-${profile.id}`}
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => duplicateProfileMutation.mutate(profile)}
+                                  title="Duplicate profile"
+                                  className="text-blue-400 hover:text-blue-300"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                                <Button
                                   data-testid={`button-edit-${profile.id}`}
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => setEditingProfile(profile)}
+                                  title="Edit profile"
                                 >
                                   <Edit className="w-3 h-3" />
                                 </Button>
@@ -382,6 +424,7 @@ export default function ProfileSettings() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => deleteProfileMutation.mutate(profile.id)}
+                                  title="Delete profile"
                                   className="text-red-400 hover:text-red-300"
                                 >
                                   <Trash2 className="w-3 h-3" />

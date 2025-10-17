@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, AlertCircle, Sparkles, Upload } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Sparkles, Upload, Copy } from "lucide-react";
 import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, GuidelineProfile } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -169,6 +169,20 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const removeTargetAudience = (index: number) => {
     const audiences = [...(formData.target_audience || [])];
     audiences.splice(index, 1);
+    updateField("target_audience", audiences);
+  };
+
+  const duplicateTargetAudience = (index: number) => {
+    const audiences = [...(formData.target_audience || [])];
+    const audienceToDuplicate = audiences[index];
+    // Deep clone to avoid shared references for arrays
+    const duplicatedAudience = {
+      ...audienceToDuplicate,
+      interests: audienceToDuplicate.interests ? [...audienceToDuplicate.interests] : [],
+      other_keywords: audienceToDuplicate.other_keywords ? [...audienceToDuplicate.other_keywords] : [],
+      age_range: audienceToDuplicate.age_range ? { ...audienceToDuplicate.age_range } : undefined,
+    };
+    audiences.splice(index + 1, 0, duplicatedAudience);
     updateField("target_audience", audiences);
   };
 
@@ -715,14 +729,27 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                 >
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-sm font-semibold text-gray-200">Audience {index + 1}</h4>
-                    <Button
-                      data-testid={`button-remove-audience-${index}`}
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeTargetAudience(index)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        data-testid={`button-duplicate-audience-${index}`}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => duplicateTargetAudience(index)}
+                        title="Duplicate audience"
+                        className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        data-testid={`button-remove-audience-${index}`}
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeTargetAudience(index)}
+                        title="Remove audience"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
