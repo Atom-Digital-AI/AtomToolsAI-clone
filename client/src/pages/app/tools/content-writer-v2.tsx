@@ -474,9 +474,23 @@ export default function ContentWriterV2() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Choose Your Article Concept</CardTitle>
-              <CardDescription>Topic: {topic}</CardDescription>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStage('topic');
+                  setSessionId(null);
+                }}
+                data-testid="button-back-to-topic"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
+              <div>
+                <CardTitle>Choose Your Article Concept</CardTitle>
+                <CardDescription>Topic: {topic}</CardDescription>
+              </div>
             </div>
             <Button
               variant="outline"
@@ -588,7 +602,21 @@ export default function ContentWriterV2() {
       <div className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Configure Your Article</CardTitle>
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStage('concepts');
+                  setSelectedConcept(null);
+                }}
+                data-testid="button-back-to-concepts"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
+              <CardTitle>Configure Your Article</CardTitle>
+            </div>
             <CardDescription>
               Selected Concept: {selectedConcept?.title || concepts.find(c => c.id === session?.selectedConceptId)?.title}
             </CardDescription>
@@ -834,11 +862,22 @@ export default function ContentWriterV2() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Your Article is Ready!</CardTitle>
-              <CardDescription>
-                {draft?.metadata?.wordCount || 0} words
-              </CardDescription>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStage('subtopics')}
+                data-testid="button-back-to-subtopics"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
+              <div>
+                <CardTitle>Your Article is Ready!</CardTitle>
+                <CardDescription>
+                  {draft?.metadata?.wordCount || 0} words
+                </CardDescription>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
