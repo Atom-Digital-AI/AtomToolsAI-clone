@@ -1302,7 +1302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // analyzeBrandGuidelines will validate and normalize the URL internally
-      const guidelines = await analyzeBrandGuidelines(domainUrl);
+      const guidelines = await analyzeBrandGuidelines(domainUrl, userId);
       console.log("Auto-populate guidelines result:", JSON.stringify(guidelines, null, 2));
       res.json(guidelines);
     } catch (error) {
@@ -1370,7 +1370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import the PDF analyzer
       const { analyzePdfForBrandGuidelines } = await import("./utils/pdf-brand-analyzer");
       
-      const guidelines = await analyzePdfForBrandGuidelines(pdfBase64);
+      const guidelines = await analyzePdfForBrandGuidelines(pdfBase64, userId);
       res.json(guidelines);
     } catch (error) {
       console.error("Error analyzing PDF brand guidelines:", error);

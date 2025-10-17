@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { BrandGuidelineContent } from "@shared/schema";
 import { crawlWebsite } from "./web-crawler";
 import { validateAndNormalizeUrl } from "./url-validator";
+import { loggedAnthropicCall } from "./ai-logger";
 
 /*
 <important_code_snippet_instructions>
@@ -17,6 +18,7 @@ const DEFAULT_MODEL_STR = "claude-sonnet-4-20250514";
  */
 export async function analyzeBrandGuidelines(
   domainUrl: string,
+  userId?: string,
 ): Promise<BrandGuidelineContent> {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error(
@@ -95,10 +97,17 @@ Guidelines for extraction:
 
 Return ONLY the JSON object, no additional text.`;
 
-  const message = await anthropic.messages.create({
-    max_tokens: 4000,
-    messages: [{ role: "user", content: prompt }],
+  const message = await loggedAnthropicCall({
+    userId,
+    endpoint: 'brand-guidelines-auto-populate',
     model: DEFAULT_MODEL_STR,
+    metadata: { domainUrl, pagesAnalyzed: crawlResult.pages.length }
+  }, async () => {
+    return await anthropic.messages.create({
+      max_tokens: 4000,
+      messages: [{ role: "user", content: prompt }],
+      model: DEFAULT_MODEL_STR,
+    });
   });
 
   // Step 4: Parse and return the result

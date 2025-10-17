@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { BrandGuidelineContent } from "@shared/schema";
+import { loggedAnthropicCall } from "./ai-logger";
 
-export async function analyzePdfForBrandGuidelines(pdfBase64: string): Promise<BrandGuidelineContent> {
+export async function analyzePdfForBrandGuidelines(pdfBase64: string, userId?: string): Promise<BrandGuidelineContent> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   
   if (!apiKey) {
@@ -57,28 +58,35 @@ Respond ONLY with valid JSON matching the structure above. Do not include any ex
 
   for (const model of models) {
     try {
-      const message = await anthropic.messages.create({
+      const message = await loggedAnthropicCall({
+        userId,
+        endpoint: 'brand-guidelines-pdf-auto-populate',
         model,
-        max_tokens: 4096,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "document",
-                source: {
-                  type: "base64",
-                  media_type: "application/pdf",
-                  data: pdfBase64,
+        metadata: { pdfSize: pdfBase64.length }
+      }, async () => {
+        return await anthropic.messages.create({
+          model,
+          max_tokens: 4096,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "document",
+                  source: {
+                    type: "base64",
+                    media_type: "application/pdf",
+                    data: pdfBase64,
+                  },
                 },
-              },
-              {
-                type: "text",
-                text: prompt,
-              },
-            ],
-          },
-        ],
+                {
+                  type: "text",
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        });
       });
 
       // Extract text content from response
