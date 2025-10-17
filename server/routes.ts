@@ -21,6 +21,7 @@ import { analyzeBrandGuidelines } from "./utils/brand-analyzer";
 import { ragService } from "./utils/rag-service";
 import { loggedOpenAICall, loggedAnthropicCall } from "./utils/ai-logger";
 import { aiUsageLogs } from "@shared/schema";
+import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -63,31 +64,7 @@ function detectLanguage(text: string): string {
   return 'en';
 }
 
-function getLanguagePrompt(languageCode: string): string {
-  const languagePrompts: { [key: string]: string } = {
-    'en': "Write in English.",
-    'de': "Write in German (Deutsch).",
-    'fr': "Write in French (Français).",
-    'es': "Write in Spanish (Español).",
-    'it': "Write in Italian (Italiano).",
-    'pt': "Write in Portuguese (Português).",
-    'nl': "Write in Dutch (Nederlands).",
-    'pl': "Write in Polish (Polski).",
-    'ru': "Write in Russian (Русский).",
-    'ja': "Write in Japanese (日本語).",
-    'ko': "Write in Korean (한국어).",
-    'zh': "Write in Chinese (中文).",
-    'ar': "Write in Arabic (العربية).",
-    'hi': "Write in Hindi (हिन्दी).",
-    'tr': "Write in Turkish (Türkçe).",
-    'sv': "Write in Swedish (Svenska).",
-    'da': "Write in Danish (Dansk).",
-    'no': "Write in Norwegian (Norsk).",
-    'fi': "Write in Finnish (Suomi)."
-  };
-  
-  return languagePrompts[languageCode] || "Write in English.";
-}
+// Removed - now using getLanguageInstruction from language-helpers.ts
 
 function getToneInstruction(tone: string): string {
   if (!tone) return "";
@@ -2239,8 +2216,10 @@ ${brandContext}
 ${ragContext}
 ${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ''}
 
+${getAntiFabricationInstructions()}
+
 For each concept, provide:
-1. A compelling title
+1. A compelling title suitable for a web article
 2. A brief 2-3 sentence summary
 
 Return the response as a JSON array with this exact structure:
@@ -2375,6 +2354,8 @@ Return the response as a JSON array with this exact structure:
         targetAudienceContext = formatSelectedTargetAudiences('', selectedTargetAudiences);
       }
 
+      const languageInstruction = language ? getLanguageInstruction(language) : getLanguageInstruction('en-US');
+      
       const subtopicPrompt = `Generate 10 subtopic ideas for an article about: "${chosenConcept.title}"
 
 Concept Summary: ${chosenConcept.summary}
@@ -2382,12 +2363,16 @@ Concept Summary: ${chosenConcept.summary}
 Article Objectives: ${objective || 'Inform and engage readers'}
 Target Length: ${targetLength || 1000} words
 ${toneOfVoice ? `Tone of Voice: ${toneOfVoice}` : ''}
-${language ? `Language: ${language}` : ''}
+${languageInstruction}
 ${internalLinks && internalLinks.length > 0 ? `Internal Links to Include: ${internalLinks.join(', ')}` : ''}
 ${targetAudienceContext}
 
 ${brandContext}
 ${ragContext}
+
+${getWebArticleStyleInstructions()}
+
+${getAntiFabricationInstructions()}
 
 Provide 10 diverse subtopics that:
 1. Cover the main topic comprehensively
@@ -2471,6 +2456,8 @@ Return the response as a JSON array with this exact structure:
         targetAudienceContext = formatSelectedTargetAudiences('', session.selectedTargetAudiences);
       }
 
+      const languageInstruction = session.language ? getLanguageInstruction(session.language) : getLanguageInstruction('en-US');
+      
       const morePrompt = `Generate 5 additional subtopic ideas for an article about: "${chosenConcept.title}"
 
 Already have these subtopics:
@@ -2478,8 +2465,13 @@ Already have these subtopics:
 
 Provide 5 NEW and different subtopics that complement the existing ones.
 
+${languageInstruction}
 ${targetAudienceContext}
 ${brandContext}
+
+${getWebArticleStyleInstructions()}
+
+${getAntiFabricationInstructions()}
 
 Return the response as a JSON array with this structure:
 [
@@ -2657,6 +2649,8 @@ Provide guidance on key points to cover.`;
 
       // Generate content for each subtopic
       const subtopicContents = [];
+      const languageInstruction = session.language ? getLanguageInstruction(session.language) : getLanguageInstruction('en-US');
+      
       for (const subtopic of selectedSubtopics) {
         const brief = subtopicBriefs.find(b => b.subtopicId === subtopic.id)?.brief || '';
         const contentPrompt = `Write detailed content for: "${subtopic.title}"
@@ -2666,7 +2660,11 @@ ${targetAudienceContext}
 
 ${brandContext}
 ${session.toneOfVoice ? `Tone: ${session.toneOfVoice}` : ''}
-${session.language ? `Language: ${session.language}` : ''}
+${languageInstruction}
+
+${getWebArticleStyleInstructions()}
+
+${getAntiFabricationInstructions()}
 
 Write approximately ${Math.floor((session.targetLength || 1000) / selectedSubtopics.length)} words.`;
 
@@ -2696,6 +2694,11 @@ Main Brief: ${mainBrief}
 ${targetAudienceContext}
 
 ${brandContext}
+${languageInstruction}
+
+${getWebArticleStyleInstructions()}
+
+${getAntiFabricationInstructions()}
 
 Provide:
 1. A compelling introduction (2-3 paragraphs)
@@ -2734,8 +2737,18 @@ Provide:
 
 ${fullArticle}
 
-${targetAudienceContext}
 ${brandContext}
+${languageInstruction}
+
+${getWebArticleStyleInstructions()}
+
+${getAntiFabricationInstructions()}
+
+CRITICAL INSTRUCTIONS:
+- DO NOT include any mention of the target audience in the article itself
+- DO NOT add phrases like "Target Audience:" or "Written for:" at the end
+- Remove any meta-information about who the article is for
+- Focus purely on the article content itself
 
 Return the refined article maintaining the structure.`;
 
