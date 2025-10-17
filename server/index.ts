@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { logToolError, getErrorTypeFromError } from "./errorLogger";
 
 const app = express();
 app.use(cors({
@@ -44,12 +45,36 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    // Log error to database
+    try {
+      const user = (req as any).user;
+      await logToolError({
+        userId: user?.id,
+        userEmail: user?.email,
+        toolName: 'system',
+        errorType: getErrorTypeFromError(err),
+        errorMessage: message,
+        errorStack: err.stack,
+        requestData: {
+          body: req.body,
+          query: req.query,
+          params: req.params,
+        },
+        httpStatus: status,
+        endpoint: `${req.method} ${req.path}`,
+        req,
+        status: 'to_do', // New errors start as "to_do"
+      });
+    } catch (logError) {
+      console.error('Failed to log error to database:', logError);
+    }
+
     res.status(status).json({ message });
-    throw err;
+    console.error(`[Global Error Handler] ${req.method} ${req.path}:`, err);
   });
 
   // importantly only setup vite in development and after
