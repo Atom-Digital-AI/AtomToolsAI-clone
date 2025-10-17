@@ -3,6 +3,10 @@
 ## Overview
 atomtools.ai is a subscription-based web platform providing digital marketing and automation tools. It targets digital marketers, agencies, and small businesses with features like connectors, generators, and reporting helpers, all focused on marketing automation. The platform includes a dark-mode marketing website and a comprehensive application with a full subscription system to manage access to tools.
 
+## Recent Changes (October 2025)
+- **AI Analytics Module**: Added comprehensive AI usage analytics for super admin portal showing total API calls, tokens, costs, and breakdowns by provider and endpoint (October 17, 2025)
+- **Content Writer v2 Bug Fix**: Fixed RAG service type mismatch preventing Content Writer v2 usage from being logged to ai_usage_logs table. Updated tool type validation to accept 'content-writer' alongside 'seo-meta' and 'google-ads' (October 17, 2025)
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
@@ -23,6 +27,7 @@ The backend is built with Node.js and Express.js. Data is managed using Drizzle 
 - **Content History & Feedback**: Comprehensive content lifecycle management with history, search, and filtering. Includes a feedback system (thumbs up/down) integrated with RAG to refine AI outputs based on user preferences.
 - **Notifications**: In-app notification system with real-time updates and user-configurable email preferences for article completion and system messages.
 - **Global Brand Context**: An application-wide brand selection system using React Context API, ensuring brand consistency across all tools and forms.
+- **AI Analytics Dashboard**: Super admin portal for monitoring AI usage across all tools. Displays total API calls, token consumption, estimated costs, and breakdowns by provider (OpenAI/Anthropic) and endpoint. Accessible at /admin/ai-analytics with date range filtering.
 
 ## External Dependencies
 
