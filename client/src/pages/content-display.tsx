@@ -243,7 +243,7 @@ export default function ContentDisplay() {
             <CardContent className="p-8 text-center">
               <h3 className="text-xl font-semibold text-white mb-2">Content Generation Failed</h3>
               <p className="text-gray-400 mb-6">There was an issue generating your content. Please try creating a new request.</p>
-              <Link href="/app/tools/content-generator">
+              <Link href="/app/tools/content-writer-v2">
                 <Button className="bg-indigo-600 hover:bg-indigo-700">
                   Create New Request
                 </Button>

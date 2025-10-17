@@ -118,9 +118,6 @@ export default function ContentHistory() {
       } else if (content.toolType === 'seo-meta') {
         const data = content.outputData as any;
         textToCopy = `Titles:\n${data.titles?.join('\n') || ''}\n\nDescriptions:\n${data.descriptions?.join('\n') || ''}`;
-      } else if (content.toolType === 'content-generator') {
-        const data = content.outputData as any;
-        textToCopy = data.content || '';
       } else if (content.toolType === 'content-writer-v2') {
         const data = content.outputData as any;
         textToCopy = data.finalArticle || '';
@@ -197,40 +194,6 @@ export default function ContentHistory() {
       fileContent = csvRows.join('\n');
       fileName = `seo-meta-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
       mimeType = 'text/csv';
-    } else if (content.toolType === 'content-generator') {
-      const data = content.outputData as any;
-      // Convert HTML content to markdown-friendly format
-      let markdownContent = data.content || '';
-      
-      // Basic HTML to Markdown conversion
-      markdownContent = markdownContent
-        .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
-        .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
-        .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
-        .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n')
-        .replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n\n')
-        .replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n\n')
-        .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
-        .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
-        .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
-        .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
-        .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
-        .replace(/<ul[^>]*>(.*?)<\/ul>/gis, '$1\n')
-        .replace(/<ol[^>]*>(.*?)<\/ol>/gis, '$1\n')
-        .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/<[^>]+>/g, '') // Remove remaining HTML tags
-        .replace(/\n\n\n+/g, '\n\n') // Clean up multiple newlines
-        .trim();
-      
-      // Add metadata header
-      fileContent = `# ${content.title}\n\n`;
-      fileContent += `*Generated on ${formatDate(content.createdAt)}*\n\n`;
-      fileContent += `---\n\n`;
-      fileContent += markdownContent;
-      
-      fileName = `content-${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
-      mimeType = 'text/markdown';
     }
 
     const blob = new Blob([fileContent], { type: mimeType });
@@ -255,8 +218,6 @@ export default function ContentHistory() {
         return <Target className="h-4 w-4" />;
       case 'seo-meta':
         return <Globe className="h-4 w-4" />;
-      case 'content-generator':
-        return <FileText className="h-4 w-4" />;
       case 'content-writer-v2':
         return <FileText className="h-4 w-4" />;
       default:
@@ -270,8 +231,6 @@ export default function ContentHistory() {
         return 'Google Ads';
       case 'seo-meta':
         return 'SEO Meta';
-      case 'content-generator':
-        return 'Content Generator';
       case 'content-writer-v2':
         return 'Content Writer v2';
       default:
@@ -285,8 +244,6 @@ export default function ContentHistory() {
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'seo-meta':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'content-generator':
-        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
       case 'content-writer-v2':
         return 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
       default:
@@ -376,19 +333,6 @@ export default function ContentHistory() {
           </div>
         </div>
       );
-    } else if (content.toolType === 'content-generator') {
-      const data = content.outputData as any;
-      return (
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold text-white mb-2">Generated Content:</h4>
-            <div 
-              className="bg-gray-800 p-4 rounded text-sm text-gray-300 max-h-96 overflow-y-auto prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: data.content || '' }}
-            />
-          </div>
-        </div>
-      );
     }
     return null;
   };
@@ -422,7 +366,6 @@ export default function ContentHistory() {
               <SelectItem value="all">All Tools</SelectItem>
               <SelectItem value="google-ads">Google Ads</SelectItem>
               <SelectItem value="seo-meta">SEO Meta</SelectItem>
-              <SelectItem value="content-generator">Content Generator</SelectItem>
               <SelectItem value="content-writer-v2">Content Writer v2</SelectItem>
             </SelectContent>
           </Select>
@@ -525,12 +468,6 @@ export default function ContentHistory() {
                       <div>
                         <p><strong>Keywords:</strong> {(content.inputData as any).targetKeywords || 'N/A'}</p>
                         <p><strong>Type:</strong> {(content.inputData as any).contentType || 'N/A'}</p>
-                      </div>
-                    )}
-                    {content.toolType === 'content-generator' && (
-                      <div>
-                        <p><strong>Word Count:</strong> {(content.inputData as any).wordCount || 'N/A'}</p>
-                        <p><strong>Keyword:</strong> {(content.inputData as any).primaryKeyword || 'N/A'}</p>
                       </div>
                     )}
                     {content.toolType === 'content-writer-v2' && (
