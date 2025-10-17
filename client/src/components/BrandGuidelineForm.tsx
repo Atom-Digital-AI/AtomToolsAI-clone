@@ -13,6 +13,16 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { showAdminErrorToast } from "@/lib/admin-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -35,6 +45,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     service_pages: string[];
     blog_articles: string[];
   } | null>(null);
+  const [showAutoPopulateDialog, setShowAutoPopulateDialog] = useState(false);
+  const [pendingAutoPopulateData, setPendingAutoPopulateData] = useState<BrandGuidelineContent | null>(null);
+  const [autoPopulateSource, setAutoPopulateSource] = useState<"url" | "pdf">("url");
   const { toast } = useToast();
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
@@ -152,6 +165,43 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     updateField("target_audience", audiences);
   };
 
+  const hasExistingData = (): boolean => {
+    return !!(
+      formData.tone_of_voice ||
+      formData.style_preferences ||
+      formData.visual_style ||
+      (formData.color_palette && formData.color_palette.length > 0) ||
+      (formData.target_audience && formData.target_audience.length > 0) ||
+      (formData.brand_personality && formData.brand_personality.length > 0) ||
+      (formData.content_themes && formData.content_themes.length > 0) ||
+      formData.language_style
+    );
+  };
+
+  const mergeData = (newData: BrandGuidelineContent, fillEmptyOnly: boolean): BrandGuidelineContent => {
+    if (!fillEmptyOnly) {
+      // Overwrite all - simple merge
+      return { ...formData, ...newData };
+    }
+
+    // Fill empty only - preserve existing values
+    const merged: BrandGuidelineContent = { ...formData };
+    
+    Object.keys(newData).forEach((key) => {
+      const fieldKey = key as keyof BrandGuidelineContent;
+      const existingValue = merged[fieldKey];
+      const newValue = newData[fieldKey];
+
+      // Only fill if current value is empty/null/undefined
+      if (existingValue === null || existingValue === undefined || existingValue === '' ||
+          (Array.isArray(existingValue) && existingValue.length === 0)) {
+        (merged as any)[fieldKey] = newValue;
+      }
+    });
+
+    return merged;
+  };
+
   const handleAutoPopulate = async () => {
     let domainUrl = formData.domain_url?.trim();
     
@@ -180,22 +230,27 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       );
       const response = await res.json() as BrandGuidelineContent;
 
-      console.log("Auto-populate response:", response);
+      // Check if there's existing data
+      if (hasExistingData()) {
+        // Show dialog to ask user's preference
+        setPendingAutoPopulateData(response);
+        setAutoPopulateSource("url");
+        setShowAutoPopulateDialog(true);
+      } else {
+        // No existing data, apply directly
+        const updatedData = { ...formData, ...response };
+        setFormData(updatedData);
+        onChange(updatedData);
 
-      // Merge the auto-populated data with existing form data
-      const updatedData = { ...formData, ...response };
-      console.log("Updated form data:", updatedData);
-      setFormData(updatedData);
-      onChange(updatedData);
+        const analyzedPagesInfo = response.analyzed_pages && response.analyzed_pages.length > 0
+          ? `\n\nAnalyzed ${response.analyzed_pages.length} page(s):\n${response.analyzed_pages.map(url => `• ${url}`).join('\n')}`
+          : "";
 
-      const analyzedPagesInfo = response.analyzed_pages && response.analyzed_pages.length > 0
-        ? `\n\nAnalyzed ${response.analyzed_pages.length} page(s):\n${response.analyzed_pages.map(url => `• ${url}`).join('\n')}`
-        : "";
-
-      toast({
-        title: "Success!",
-        description: `Brand guidelines have been auto-populated from your website.${analyzedPagesInfo}`,
-      });
+        toast({
+          title: "Success!",
+          description: `Brand guidelines have been auto-populated from your website.${analyzedPagesInfo}`,
+        });
+      }
     } catch (error: any) {
       console.error("Auto-populate error:", error);
       showAdminErrorToast(
@@ -259,15 +314,23 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       );
       const response = await res.json() as BrandGuidelineContent;
 
-      // Merge the auto-populated data with existing form data
-      const updatedData = { ...formData, ...response };
-      setFormData(updatedData);
-      onChange(updatedData);
+      // Check if there's existing data
+      if (hasExistingData()) {
+        // Show dialog to ask user's preference
+        setPendingAutoPopulateData(response);
+        setAutoPopulateSource("pdf");
+        setShowAutoPopulateDialog(true);
+      } else {
+        // No existing data, apply directly
+        const updatedData = { ...formData, ...response };
+        setFormData(updatedData);
+        onChange(updatedData);
 
-      toast({
-        title: "Success!",
-        description: "Brand guidelines have been extracted from your PDF.",
-      });
+        toast({
+          title: "Success!",
+          description: "Brand guidelines have been extracted from your PDF.",
+        });
+      }
     } catch (error: any) {
       console.error("PDF upload error:", error);
       showAdminErrorToast(
@@ -285,6 +348,26 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       // Reset file input
       event.target.value = '';
     }
+  };
+
+  const handleApplyAutoPopulate = (fillEmptyOnly: boolean) => {
+    if (!pendingAutoPopulateData) return;
+
+    const updatedData = mergeData(pendingAutoPopulateData, fillEmptyOnly);
+    setFormData(updatedData);
+    onChange(updatedData);
+
+    const source = autoPopulateSource === "url" ? "website" : "PDF";
+    const mode = fillEmptyOnly ? "filled empty fields" : "overwritten all fields";
+    
+    toast({
+      title: "Success!",
+      description: `Brand guidelines from ${source} have been applied (${mode}).`,
+    });
+
+    // Reset dialog state
+    setShowAutoPopulateDialog(false);
+    setPendingAutoPopulateData(null);
   };
 
   const handleDiscoverPages = async () => {
@@ -989,6 +1072,51 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Auto-populate options dialog */}
+      <AlertDialog open={showAutoPopulateDialog} onOpenChange={setShowAutoPopulateDialog}>
+        <AlertDialogContent className="bg-gray-900 border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-gray-100">Auto-Populate Options</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              You have existing brand guideline data. How would you like to apply the new information from {autoPopulateSource === "url" ? "the website" : "the PDF"}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="p-3 bg-blue-950/30 border border-blue-800 rounded-lg">
+              <h4 className="text-sm font-semibold text-blue-400 mb-1">Fill Empty Fields Only</h4>
+              <p className="text-xs text-gray-400">
+                Keep all your existing data and only populate fields that are currently empty.
+              </p>
+            </div>
+            <div className="p-3 bg-amber-950/30 border border-amber-800 rounded-lg">
+              <h4 className="text-sm font-semibold text-amber-400 mb-1">Overwrite All Fields</h4>
+              <p className="text-xs text-gray-400">
+                Replace all existing data with the new information extracted from the {autoPopulateSource === "url" ? "website" : "PDF"}.
+              </p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-gray-200" data-testid="button-cancel-autopopulate">
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              onClick={() => handleApplyAutoPopulate(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              data-testid="button-fill-empty-only"
+            >
+              Fill Empty Only
+            </Button>
+            <AlertDialogAction
+              onClick={() => handleApplyAutoPopulate(false)}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              data-testid="button-overwrite-all"
+            >
+              Overwrite All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
