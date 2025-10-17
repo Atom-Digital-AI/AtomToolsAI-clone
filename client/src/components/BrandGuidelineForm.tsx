@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import TagInput from "@/components/TagInput";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { showAdminErrorToast } from "@/lib/admin-toast";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -34,6 +36,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     blog_articles: string[];
   } | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
 
   const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
@@ -195,11 +198,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       });
     } catch (error: any) {
       console.error("Auto-populate error:", error);
-      toast({
-        title: "Auto-populate Failed",
-        description: error.message || "Failed to analyze website. Please check the URL and try again.",
-        variant: "destructive",
-      });
+      showAdminErrorToast(
+        "Auto-populate Failed",
+        error.message || "Failed to analyze website. Please check the URL and try again.",
+        user?.isAdmin || false,
+        {
+          domainUrl,
+          feature: "auto-populate-brand-guidelines"
+        }
+      );
     } finally {
       setIsAutoPopulating(false);
     }
@@ -263,11 +270,16 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       });
     } catch (error: any) {
       console.error("PDF upload error:", error);
-      toast({
-        title: "PDF Upload Failed",
-        description: error.message || "Failed to analyze PDF. Please try again.",
-        variant: "destructive",
-      });
+      showAdminErrorToast(
+        "PDF Upload Failed",
+        error.message || "Failed to analyze PDF. Please try again.",
+        user?.isAdmin || false,
+        {
+          fileName: file.name,
+          fileSize: file.size,
+          feature: "auto-populate-brand-guidelines-pdf"
+        }
+      );
     } finally {
       setIsAutoPopulating(false);
       // Reset file input
@@ -324,11 +336,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       });
     } catch (error: any) {
       console.error("Discover pages error:", error);
-      toast({
-        title: "Discovery Failed",
-        description: error.message || "Failed to discover pages. Please check the URL and try again.",
-        variant: "destructive",
-      });
+      showAdminErrorToast(
+        "Discovery Failed",
+        error.message || "Failed to discover pages. Please check the URL and try again.",
+        user?.isAdmin || false,
+        {
+          homepageUrl,
+          feature: "discover-context-pages"
+        }
+      );
     } finally {
       setIsDiscoveringPages(false);
     }
@@ -370,11 +386,16 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       }
     } catch (error: any) {
       console.error("Extract context error:", error);
-      toast({
-        title: "Context Extraction Failed",
-        description: error.message || "Failed to extract context from pages.",
-        variant: "destructive",
-      });
+      showAdminErrorToast(
+        "Context Extraction Failed",
+        error.message || "Failed to extract context from pages.",
+        user?.isAdmin || false,
+        {
+          profileId,
+          contextUrls: formData.context_urls,
+          feature: "extract-context-pages"
+        }
+      );
     } finally {
       setIsExtractingContext(false);
     }

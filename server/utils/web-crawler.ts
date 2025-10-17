@@ -70,15 +70,16 @@ export async function crawlWebsite(startUrl: string, maxPages: number = 5): Prom
  */
 async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
   const https = await import('https');
+  const agent = new https.default.Agent({
+    rejectUnauthorized: false, // Allow self-signed or invalid SSL certificates
+  });
   
   const response = await axios.get(url, {
     timeout: 10000,
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
     },
-    httpsAgent: new https.Agent({
-      rejectUnauthorized: false, // Allow self-signed or invalid SSL certificates
-    })
+    httpsAgent: agent
   });
 
   const html = response.data;
@@ -100,9 +101,7 @@ async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
       try {
         const cssResponse = await axios.get(cssUrl, { 
           timeout: 5000,
-          httpsAgent: new https.Agent({
-            rejectUnauthorized: false,
-          })
+          httpsAgent: agent
         });
         return cssResponse.data;
       } catch {
