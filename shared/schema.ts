@@ -893,6 +893,34 @@ export const userTierSubscriptionsRelations = relations(userTierSubscriptions, (
   }),
 }));
 
+// Error Reports table - for admin error reporting
+export const errorReports = pgTable("error_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reportedBy: varchar("reported_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+  errorTitle: text("error_title").notNull(),
+  errorMessage: text("error_message").notNull(),
+  errorContext: jsonb("error_context"), // Additional context like URL, user agent, etc.
+  status: varchar("status").notNull().default('pending'), // pending, acknowledged, resolved
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type ErrorReport = typeof errorReports.$inferSelect;
+export type InsertErrorReport = typeof errorReports.$inferInsert;
+
+export const insertErrorReportSchema = createInsertSchema(errorReports).pick({
+  errorTitle: true,
+  errorMessage: true,
+  errorContext: true,
+});
+
+export const errorReportsRelations = relations(errorReports, ({ one }) => ({
+  reportedByUser: one(users, {
+    fields: [errorReports.reportedBy],
+    references: [users.id],
+  }),
+}));
+
 // Additional admin schemas
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).pick({
   userId: true,
