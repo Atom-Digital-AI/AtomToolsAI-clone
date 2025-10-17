@@ -200,7 +200,7 @@ export class RAGService {
    */
   async retrieveUserFeedback(
     userId: string,
-    toolType: 'seo-meta' | 'google-ads',
+    toolType: 'seo-meta' | 'google-ads' | 'content-writer',
     guidelineProfileId?: string,
     limit: number = 10
   ): Promise<string> {
