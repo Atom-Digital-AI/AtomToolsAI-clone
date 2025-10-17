@@ -843,9 +843,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
         </TabsContent>
 
-        <TabsContent value="context" className="space-y-4 mt-6">
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-950/20 border border-blue-800 rounded-lg">
+        <TabsContent value="context" className="space-y-6 mt-6">
+          <div className="space-y-6">
+            <div className="p-5 bg-blue-950/20 border-2 border-blue-700 rounded-lg">
               <h4 className="text-blue-400 font-semibold mb-2">Brand Context Pages</h4>
               <p className="text-sm text-gray-300 mb-3">
                 Provide URLs to key pages of your website. We'll extract the main content from each page and convert it to markdown format for use in content generation.
@@ -876,8 +876,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
               </p>
             </div>
 
-            <div>
-              <Label htmlFor="context-home-page" className="text-gray-200">Home Page URL</Label>
+            <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+              <Label htmlFor="context-home-page" className="text-gray-200 font-semibold text-sm">Home Page URL</Label>
               <Input
                 id="context-home-page"
                 data-testid="input-context-home-page"
@@ -889,8 +889,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
               />
             </div>
 
-            <div>
-              <Label htmlFor="context-about-page" className="text-gray-200">About Us Page URL</Label>
+            <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+              <Label htmlFor="context-about-page" className="text-gray-200 font-semibold text-sm">About Us Page URL</Label>
               <Input
                 id="context-about-page"
                 data-testid="input-context-about-page"
@@ -902,8 +902,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
               />
             </div>
 
-            <div>
-              <Label className="text-gray-200">Service/Product Pages (up to 5)</Label>
+            <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+              <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages (up to 5)</Label>
               <div className="mt-2 space-y-2">
                 {[...(formData.context_urls?.service_pages || []), ""].slice(0, 5).map((url, index) => (
                   <div key={index} className="flex gap-2">
@@ -931,8 +931,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
               </p>
             </div>
 
-            <div>
-              <Label className="text-gray-200">Blog Articles/Resources (up to 20)</Label>
+            <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+              <Label className="text-gray-200 font-semibold text-sm">Blog Articles/Resources (up to 20)</Label>
               <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
                 {[...(formData.context_urls?.blog_articles || []), ""].slice(0, 20).map((url, index) => (
                   <div key={index} className="flex gap-2">
@@ -977,10 +977,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
         </TabsContent>
 
-        <TabsContent value="regulatory" className="space-y-4 mt-6">
-          <div className="space-y-4">
-            <div>
-              <Label className="text-gray-200">Attach Regulatory Guideline</Label>
+        <TabsContent value="regulatory" className="space-y-6 mt-6">
+          <div className="space-y-6">
+            <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+              <Label className="text-gray-200 font-semibold text-sm">Attach Regulatory Guideline</Label>
               <p className="text-sm text-gray-400 mt-1 mb-3">
                 Attach an existing regulatory guideline profile or create a new one for this brand.
               </p>
