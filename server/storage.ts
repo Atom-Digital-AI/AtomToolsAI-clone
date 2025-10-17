@@ -496,7 +496,6 @@ export class DatabaseStorage implements IStorage {
     const toolTypeMap: Record<string, string> = {
       'c5985990-e94e-49b3-a86c-3076fd9d6b3f': 'google-ads',
       '531de90b-12ef-4169-b664-0d55428435a6': 'seo-meta', 
-      '9dfbe2c0-1128-4ec1-891b-899e1b282ff6': 'content-generator',
       'e8f73a2d-5c4e-4b1f-8a9d-3e7f2a1b4c6d': 'facebook-ads'
     };
 

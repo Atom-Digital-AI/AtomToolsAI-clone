@@ -495,7 +495,7 @@ export type InsertContentRequest = typeof contentRequests.$inferInsert;
 export const generatedContent = pgTable("generated_content", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads', 'content-generator'
+  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads'
   title: varchar("title").notNull(),
   inputData: jsonb("input_data").notNull(), // Store the input parameters
   outputData: jsonb("output_data").notNull(), // Store the generated results
@@ -510,7 +510,7 @@ export const contentFeedback = pgTable("content_feedback", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id), // Optional: associate with brand
-  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads', 'content-generator'
+  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads'
   rating: varchar("rating").notNull(), // 'thumbs_up' or 'thumbs_down'
   feedbackText: text("feedback_text"), // Optional: only for thumbs down
   inputData: jsonb("input_data").notNull(), // The input that generated the content

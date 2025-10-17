@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, contentRequests, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertContentRequest, type InsertGeneratedContent } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertGeneratedContent } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
