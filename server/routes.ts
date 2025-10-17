@@ -3044,7 +3044,7 @@ Return the refined article maintaining the structure.`;
       const userId = req.user.id;
       
       // Check if user is admin
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ message: "Admin access required" });
       }
@@ -3096,7 +3096,7 @@ Return the refined article maintaining the structure.`;
       const userId = req.user.id;
       
       // Check if user is admin
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ message: "Admin access required" });
       }

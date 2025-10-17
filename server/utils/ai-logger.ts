@@ -30,10 +30,17 @@ function calculateCost(
   promptTokens: number,
   completionTokens: number
 ): number {
-  const pricing = PRICING[provider]?.[model as keyof typeof PRICING[typeof provider]];
+  // Normalize model name - OpenAI often returns versioned names like "gpt-4o-mini-2024-07-18"
+  let normalizedModel = model;
+  if (provider === "openai" && !PRICING[provider][model as keyof typeof PRICING.openai]) {
+    // Try removing date suffix (e.g., -2024-07-18)
+    normalizedModel = model.replace(/-\d{4}-\d{2}-\d{2}$/, "");
+  }
+  
+  const pricing = PRICING[provider]?.[normalizedModel as keyof typeof PRICING[typeof provider]];
   
   if (!pricing) {
-    console.warn(`No pricing data for ${provider} model: ${model}`);
+    console.warn(`No pricing data for ${provider} model: ${model} (normalized: ${normalizedModel})`);
     return 0;
   }
 
