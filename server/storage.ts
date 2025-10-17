@@ -76,6 +76,7 @@ export interface IStorage {
   
   // Tier subscription operations
   getTier(id: string): Promise<Tier | undefined>;
+  getFreeTier(): Promise<Tier | undefined>;
   getUserTierSubscriptions(userId: string): Promise<UserTierSubscription[]>;
   getUserTierSubscriptionsWithDetails(userId: string): Promise<any[]>;
   isUserSubscribedToTier(userId: string, tierId: string): Promise<boolean>;
@@ -691,6 +692,11 @@ export class DatabaseStorage implements IStorage {
 
   async getTier(id: string): Promise<Tier | undefined> {
     const [tier] = await db.select().from(tiers).where(eq(tiers.id, id));
+    return tier || undefined;
+  }
+
+  async getFreeTier(): Promise<Tier | undefined> {
+    const [tier] = await db.select().from(tiers).where(eq(tiers.name, 'Free'));
     return tier || undefined;
   }
 

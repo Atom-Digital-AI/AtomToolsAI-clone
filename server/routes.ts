@@ -561,6 +561,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isEmailVerified: false,
       });
 
+      // Automatically assign Free tier to new users
+      try {
+        const freeTier = await storage.getFreeTier();
+        if (freeTier) {
+          await storage.subscribeTierUser({ userId: user.id, tierId: freeTier.id, isActive: true });
+          console.log(`Assigned Free tier to new user ${user.id}`);
+        } else {
+          console.warn('Free tier not found - new user will have no tier subscription');
+        }
+      } catch (tierError) {
+        console.error('Failed to assign Free tier to new user:', tierError);
+        // Continue anyway - user is created, they just won't have a tier subscription yet
+      }
+
       // Send verification email
       const emailResult = await sendVerificationEmail(user.email, verificationToken);
       
