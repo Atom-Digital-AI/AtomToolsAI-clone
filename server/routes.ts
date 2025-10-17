@@ -2620,7 +2620,8 @@ Return the response as a JSON array with this structure:
         .from(contentWriterConcepts)
         .where(eq(contentWriterConcepts.id, session.selectedConceptId));
 
-      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId)
+      // Skip brand context if using 'end-rewrite' method (will apply at the very end instead)
+      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Article for: ${chosenConcept.title}`, { matchStyle })
         : '';
 
@@ -2813,7 +2814,75 @@ Return the refined article maintaining the structure.`;
         });
       });
 
-      const finalArticle = reviewCompletion.choices[0]?.message?.content || fullArticle;
+      let finalArticle = reviewCompletion.choices[0]?.message?.content || fullArticle;
+
+      // SPLIT TEST: End-rewrite method - Analyze brand style and rewrite entire article
+      if (session.styleMatchingMethod === 'end-rewrite' && session.guidelineProfileId && matchStyle) {
+        // Retrieve ALL brand context chunks (not just top 5)
+        const allBrandContext = await ragService.getBrandContextForPrompt(
+          userId, 
+          session.guidelineProfileId, 
+          `Complete brand style analysis for article rewrite: ${chosenConcept.title}`,
+          { 
+            limit: 20, // Get more context for comprehensive analysis
+            minSimilarity: 0.6, // Lower threshold to get more examples
+            matchStyle: false // Don't add the instruction yet, we'll do it in the rewrite prompt
+          }
+        );
+
+        if (allBrandContext) {
+          const styleRewritePrompt = `You are a professional content writer tasked with rewriting an article to match a specific brand's writing style.
+
+STEP 1: ANALYZE THE BRAND'S WRITING STYLE
+Carefully analyze the following brand context documents to understand:
+- Writing tone (formal, casual, conversational, authoritative, etc.)
+- Vocabulary choices (simple vs. complex, industry jargon, specific phrases)
+- Sentence structure (short and punchy vs. long and detailed)
+- Paragraph length and rhythm
+- Use of questions, examples, metaphors, or storytelling
+- Overall voice and personality
+
+${allBrandContext}
+
+STEP 2: REWRITE THE ARTICLE
+Now rewrite the following article to perfectly match the brand's writing style you just analyzed. 
+
+IMPORTANT:
+- Maintain all the factual content and key messages
+- Keep the same structure and headings
+- Transform the language, tone, and style to match the brand's voice
+- Use similar vocabulary, sentence patterns, and writing techniques as the brand
+${languageInstruction}
+
+${getWebArticleStyleInstructions()}
+
+${getAntiFabricationInstructions()}
+
+ARTICLE TO REWRITE:
+${finalArticle}
+
+Return ONLY the rewritten article, maintaining the markdown structure.`;
+
+          const styleRewriteCompletion = await loggedOpenAICall({
+            userId,
+            guidelineProfileId: session.guidelineProfileId,
+            endpoint: 'content-writer-style-rewrite',
+            metadata: { 
+              conceptTitle: chosenConcept.title, 
+              method: 'end-rewrite',
+              wordCount: finalArticle.split(' ').length 
+            }
+          }, async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: styleRewritePrompt }],
+              temperature: 0.4, // Slightly lower temp for consistency
+            });
+          });
+
+          finalArticle = styleRewriteCompletion.choices[0]?.message?.content || finalArticle;
+        }
+      }
 
       // Save draft
       const draft = await storage.createContentWriterDraft({
