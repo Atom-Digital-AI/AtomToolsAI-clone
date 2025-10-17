@@ -1,5 +1,5 @@
 import { db } from './db';
-import { errorLogs } from '@shared/schema';
+import { errorLogs, type ErrorLogStatus } from '@shared/schema';
 import type { Request } from 'express';
 
 interface LogErrorParams {
@@ -14,6 +14,7 @@ interface LogErrorParams {
   endpoint: string;
   req?: Request;
   responseHeaders?: any; // HTTP response headers from external API calls
+  status?: ErrorLogStatus; // Error resolution status: 'to_do', 'investigated', 'fixed'
 }
 
 export async function logToolError(params: LogErrorParams) {
@@ -29,7 +30,8 @@ export async function logToolError(params: LogErrorParams) {
       httpStatus,
       endpoint,
       req,
-      responseHeaders
+      responseHeaders,
+      status = 'to_do' // Default status for new errors
     } = params;
 
     await db.insert(errorLogs).values({
@@ -45,9 +47,10 @@ export async function logToolError(params: LogErrorParams) {
       userAgent: req?.get('User-Agent') || null,
       ipAddress: req?.ip || req?.connection?.remoteAddress || null,
       responseHeaders: responseHeaders || null,
+      status, // Include status in error log
     });
 
-    console.error(`Tool Error Logged: ${toolName} - ${errorType} - ${errorMessage}`);
+    console.error(`Tool Error Logged [${status.toUpperCase()}]: ${toolName} - ${errorType} - ${errorMessage}`);
   } catch (logError) {
     console.error('Failed to log tool error:', logError);
     console.error('Original error:', params.errorMessage);
