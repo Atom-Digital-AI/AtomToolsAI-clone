@@ -30,7 +30,6 @@ import FacebookAdsConnector from "@/pages/app/tools/facebook-ads-connector";
 import GoogleAdsCopyGeneratorApp from "@/pages/app/tools/google-ads-copy-generator";
 import SEOMetaGeneratorApp from "@/pages/app/tools/seo-meta-generator";
 import ContentWriterV2 from "@/pages/app/tools/content-writer-v2";
-import ContentGenerator from "@/pages/content-generator";
 import ContentDisplay from "@/pages/content-display";
 import ContentHistory from "@/pages/content-history";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -98,7 +97,6 @@ export default function App() {
               <Route path="/app/tools/google-ads-copy-generator" component={GoogleAdsCopyGeneratorApp} />
               <Route path="/app/tools/seo-meta-generator" component={SEOMetaGeneratorApp} />
               <Route path="/app/tools/content-writer-v2" component={ContentWriterV2} />
-              <Route path="/app/tools/content-generator" component={ContentGenerator} />
               <Route path="/app/content/:requestId" component={ContentDisplay} />
               <Route path="/app/content-history" component={ContentHistory} />
               <Route path="/admin" component={AdminDashboard} />
