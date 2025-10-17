@@ -169,6 +169,26 @@ export function categorizePages(pages: CrawledPage[], homepageUrl: string): Cate
   const serviceKeywords = ['service', 'product', 'solution', 'offering', 'what-we-do', 'feature', 'plan', 'pricing'];
   const blogKeywords = ['blog', 'article', 'news', 'resource', 'insight', 'post', 'guide', 'learn'];
 
+  // First pass - prioritize exact patterns for about page
+  for (const page of pages) {
+    const urlPath = new URL(page.url).pathname.toLowerCase();
+    
+    // Skip homepage
+    if (page.url === homepageUrl || urlPath === '/' || urlPath === '') {
+      continue;
+    }
+
+    // Prioritize exact about page patterns
+    if (!categorized.about_page) {
+      const exactAboutPatterns = ['/about', '/about-us', '/about/', '/about-us/'];
+      if (exactAboutPatterns.some(pattern => urlPath === pattern || urlPath.endsWith(pattern))) {
+        categorized.about_page = page.url;
+        continue;
+      }
+    }
+  }
+
+  // Second pass - categorize other pages
   for (const page of pages) {
     const url = page.url.toLowerCase();
     const title = page.title.toLowerCase();
@@ -179,7 +199,12 @@ export function categorizePages(pages: CrawledPage[], homepageUrl: string): Cate
       continue;
     }
 
-    // Check if it's an about page
+    // Skip if already set as about page
+    if (page.url === categorized.about_page) {
+      continue;
+    }
+
+    // Check if it's an about page (fallback to keyword matching)
     if (!categorized.about_page && aboutKeywords.some(keyword => 
       urlPath.includes(keyword) || title.includes(keyword)
     )) {
@@ -188,7 +213,17 @@ export function categorizePages(pages: CrawledPage[], homepageUrl: string): Cate
     }
 
     // Check if it's a blog/article page
-    if (blogKeywords.some(keyword => 
+    // Exclude index/category pages that end with /blog, /blog/, contain /category/, or /tag/
+    const isBlogIndexOrCategory = 
+      urlPath.endsWith('/blog') || 
+      urlPath.endsWith('/blog/') || 
+      urlPath === '/blog' ||
+      urlPath.includes('/category/') ||
+      urlPath.includes('/categories/') ||
+      urlPath.includes('/tag/') ||
+      urlPath.includes('/tags/');
+    
+    if (!isBlogIndexOrCategory && blogKeywords.some(keyword => 
       urlPath.includes(keyword) || title.includes(keyword)
     )) {
       if (categorized.blog_articles.length < 20) {
@@ -201,7 +236,7 @@ export function categorizePages(pages: CrawledPage[], homepageUrl: string): Cate
     if (serviceKeywords.some(keyword => 
       urlPath.includes(keyword) || title.includes(keyword)
     )) {
-      if (categorized.service_pages.length < 5) {
+      if (categorized.service_pages.length < 10) {
         categorized.service_pages.push(page.url);
       }
       continue;
