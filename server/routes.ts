@@ -2235,7 +2235,9 @@ Return the response as a JSON array with this exact structure:
 
       // Generate new concepts
       const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
-      const brandContext = session.guidelineProfileId 
+      
+      // Skip brand context if using 'end-rewrite' method
+      const brandContext = (session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Article concepts for: ${session.topic}`, { matchStyle })
         : '';
 
@@ -2382,7 +2384,9 @@ Return the response as a JSON array with this exact structure:
 
       // Build context
       const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
-      const brandContext = (useBrandGuidelines && session.guidelineProfileId)
+      
+      // Skip brand context if using 'end-rewrite' method
+      const brandContext = (useBrandGuidelines && session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Subtopics for: ${chosenConcept.title}`, { matchStyle })
         : '';
 
@@ -2484,7 +2488,8 @@ Return the response as a JSON array with this exact structure:
 
       const existingTitles = existingSubtopics.map(s => s.title).join('\n- ');
 
-      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId)
+      // Skip brand context if using 'end-rewrite' method
+      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
         ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `More subtopics for: ${chosenConcept.title}`, { matchStyle })
         : '';
 
