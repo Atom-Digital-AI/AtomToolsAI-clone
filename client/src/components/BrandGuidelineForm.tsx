@@ -26,6 +26,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [regulatoryMode, setRegulatoryMode] = useState<"none" | "existing" | "new">("none");
   const [isAutoPopulating, setIsAutoPopulating] = useState(false);
   const [isExtractingContext, setIsExtractingContext] = useState(false);
+  const [isDiscoveringPages, setIsDiscoveringPages] = useState(false);
+  const [discoveredPages, setDiscoveredPages] = useState<{
+    home_page: string;
+    about_page: string;
+    service_pages: string[];
+    blog_articles: string[];
+  } | null>(null);
   const { toast } = useToast();
   const lastSentToParentRef = useRef<string>("");
 
@@ -265,6 +272,65 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       setIsAutoPopulating(false);
       // Reset file input
       event.target.value = '';
+    }
+  };
+
+  const handleDiscoverPages = async () => {
+    let homepageUrl = formData.domain_url?.trim();
+    
+    if (!homepageUrl) {
+      toast({
+        title: "Homepage URL Required",
+        description: "Please enter a domain URL first to discover context pages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic client-side normalization - add https if no protocol
+    if (!homepageUrl.match(/^https?:\/\//i)) {
+      homepageUrl = `https://${homepageUrl}`;
+      updateField("domain_url", homepageUrl);
+    }
+
+    try {
+      setIsDiscoveringPages(true);
+      
+      const res = await apiRequest(
+        "POST",
+        "/api/guideline-profiles/discover-context-pages",
+        { homepageUrl }
+      );
+      const discovered = await res.json() as {
+        home_page: string;
+        about_page: string;
+        service_pages: string[];
+        blog_articles: string[];
+      };
+
+      setDiscoveredPages(discovered);
+      
+      // Auto-populate the form with discovered URLs
+      updateField("context_urls", {
+        home_page: discovered.home_page,
+        about_page: discovered.about_page,
+        service_pages: discovered.service_pages,
+        blog_articles: discovered.blog_articles,
+      });
+
+      toast({
+        title: "Pages Discovered!",
+        description: `Found ${discovered.about_page ? 1 : 0} about page, ${discovered.service_pages.length} service pages, and ${discovered.blog_articles.length} blog articles. Review and edit before extracting.`,
+      });
+    } catch (error: any) {
+      console.error("Discover pages error:", error);
+      toast({
+        title: "Discovery Failed",
+        description: error.message || "Failed to discover pages. Please check the URL and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDiscoveringPages(false);
     }
   };
 
@@ -676,8 +742,32 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           <div className="space-y-4">
             <div className="p-4 bg-blue-950/20 border border-blue-800 rounded-lg">
               <h4 className="text-blue-400 font-semibold mb-2">Brand Context Pages</h4>
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-gray-300 mb-3">
                 Provide URLs to key pages of your website. We'll extract the main content from each page and convert it to markdown format for use in content generation.
+              </p>
+              <Button
+                type="button"
+                data-testid="button-discover-context-pages"
+                onClick={handleDiscoverPages}
+                disabled={isDiscoveringPages || !formData.domain_url}
+                className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+              >
+                {isDiscoveringPages ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                    Discovering Pages...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Auto-Discover Context Pages
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-gray-400 mt-2">
+                {formData.domain_url 
+                  ? "We'll crawl your website to find About, Services, and Blog pages automatically."
+                  : "Enter a Domain URL in the Basic Info tab first to use auto-discovery."}
               </p>
             </div>
 
