@@ -1218,6 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/guideline-profiles/auto-populate", requireAuth, async (req: any, res) => {
     try {
       const { domainUrl } = req.body;
+      const userId = req.user.id;
       
       if (!domainUrl || typeof domainUrl !== 'string') {
         return res.status(400).json({ 
@@ -1258,6 +1259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: any, res) => {
     try {
       const { pdfBase64 } = req.body;
+      const userId = req.user.id;
       
       if (!pdfBase64 || typeof pdfBase64 !== 'string') {
         return res.status(400).json({ 
