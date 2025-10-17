@@ -292,11 +292,11 @@ export const cmsPages = pgTable("cms_pages", {
 });
 
 // CMS Navigation - For managing site navigation
-export const cmsNavigation = pgTable("cms_navigation", {
+export const cmsNavigation: any = pgTable("cms_navigation", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   label: text("label").notNull(),
   url: text("url").notNull(),
-  parentId: varchar("parent_id").references(() => cmsNavigation.id),
+  parentId: varchar("parent_id").references((): any => cmsNavigation.id),
   sortOrder: integer("sort_order").default(0),
   isExternal: boolean("is_external").default(false),
   isActive: boolean("is_active").default(true),
