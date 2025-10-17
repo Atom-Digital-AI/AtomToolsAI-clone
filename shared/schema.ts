@@ -674,6 +674,33 @@ export const insertUserNotificationPreferenceSchema = createInsertSchema(userNot
   updatedAt: true,
 });
 
+// AI Usage Logs - Track token usage and costs for all AI API calls
+export const aiUsageLogs = pgTable("ai_usage_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id, { onDelete: 'set null' }),
+  provider: varchar("provider", { length: 50 }).notNull(), // 'openai' or 'anthropic'
+  model: varchar("model", { length: 100 }).notNull(), // e.g., 'gpt-4o-mini', 'claude-sonnet-4-20250514'
+  endpoint: varchar("endpoint", { length: 255 }).notNull(), // API endpoint/feature e.g., 'seo-meta-generate', 'content-writer-concepts'
+  promptTokens: integer("prompt_tokens").notNull().default(0),
+  completionTokens: integer("completion_tokens").notNull().default(0),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  estimatedCost: decimal("estimated_cost", { precision: 10, scale: 6 }).notNull().default('0'), // Cost in USD
+  durationMs: integer("duration_ms").notNull().default(0), // Duration in milliseconds
+  success: boolean("success").notNull().default(true),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"), // Additional context like input/output summary
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AiUsageLog = typeof aiUsageLogs.$inferSelect;
+export type InsertAiUsageLog = typeof aiUsageLogs.$inferInsert;
+
+export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type CompleteProfile = z.infer<typeof completeProfileSchema>;
 export type Contact = typeof contacts.$inferSelect;
