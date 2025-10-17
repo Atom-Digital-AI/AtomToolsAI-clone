@@ -56,6 +56,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     queryKey: ["/api/guideline-profiles?type=regulatory"],
   });
 
+  // Fetch existing extracted context
+  const { data: existingContext, refetch: refetchExtractedContext } = useQuery({
+    queryKey: ['/api/guideline-profiles', profileId, 'extracted-context'],
+    enabled: !!profileId,
+  });
+
   useEffect(() => {
     if (typeof value === "string") {
       setIsLegacy(true);
@@ -466,6 +472,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           title: "Context Extracted Successfully",
           description: `Processed ${response.processed} pages${response.failed > 0 ? `, ${response.failed} failed` : ''}.`,
         });
+        // Refetch the extracted context to update the UI
+        refetchExtractedContext();
       }
     } catch (error: any) {
       console.error("Extract context error:", error);
@@ -959,6 +967,29 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                 Add URLs to your blog posts or resource articles
               </p>
             </div>
+
+            {existingContext && existingContext.totalPages > 0 && (
+              <div className="p-4 bg-blue-950/30 border-2 border-blue-700/50 rounded-lg" data-testid="existing-context-info">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-blue-400 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-blue-300 mb-1">Existing Extracted Content</h4>
+                    <p className="text-xs text-gray-300 mb-2">
+                      {existingContext.totalPages} pages already extracted{existingContext.extractedAt && ` on ${new Date(existingContext.extractedAt).toLocaleDateString()}`}
+                    </p>
+                    <div className="text-xs text-gray-400 space-y-1">
+                      {existingContext.home && <div>• Home page</div>}
+                      {existingContext.about && <div>• About page</div>}
+                      {existingContext.services?.length > 0 && <div>• {existingContext.services.length} service page{existingContext.services.length > 1 ? 's' : ''}</div>}
+                      {existingContext.blogs?.length > 0 && <div>• {existingContext.blogs.length} blog article{existingContext.blogs.length > 1 ? 's' : ''}</div>}
+                    </div>
+                    <p className="text-xs text-yellow-400 mt-2">
+                      ⚠️ Extracting again will replace all existing content
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <Button
               type="button"
