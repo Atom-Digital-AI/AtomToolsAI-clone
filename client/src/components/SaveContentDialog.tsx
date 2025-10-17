@@ -19,7 +19,7 @@ interface SaveContentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTitle: string;
-  toolType: 'seo-meta' | 'google-ads' | 'content-generator';
+  toolType: 'seo-meta' | 'google-ads';
   inputData: any;
   outputData: any;
 }
