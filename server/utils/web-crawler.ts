@@ -14,6 +14,13 @@ interface CrawlResult {
   crawledUrls: string[];
 }
 
+interface CategorizedPages {
+  home_page: string;
+  about_page: string;
+  service_pages: string[];
+  blog_articles: string[];
+}
+
 /**
  * Crawls a website and extracts HTML and CSS from up to maxPages
  */
@@ -135,4 +142,85 @@ function extractUrls(html: string, domain: string, baseUrl: string): string[] {
   });
 
   return urls;
+}
+
+/**
+ * Categorizes crawled pages into home, about, services, and blog pages
+ */
+export function categorizePages(pages: CrawledPage[], homepageUrl: string): CategorizedPages {
+  const categorized: CategorizedPages = {
+    home_page: homepageUrl,
+    about_page: '',
+    service_pages: [],
+    blog_articles: []
+  };
+
+  // Keywords for categorization
+  const aboutKeywords = ['about', 'who-we-are', 'our-story', 'our-team', 'company', 'team', 'mission'];
+  const serviceKeywords = ['service', 'product', 'solution', 'offering', 'what-we-do', 'feature', 'plan', 'pricing'];
+  const blogKeywords = ['blog', 'article', 'news', 'resource', 'insight', 'post', 'guide', 'learn'];
+
+  for (const page of pages) {
+    const url = page.url.toLowerCase();
+    const title = page.title.toLowerCase();
+    const urlPath = new URL(page.url).pathname.toLowerCase();
+
+    // Skip homepage
+    if (page.url === homepageUrl || urlPath === '/' || urlPath === '') {
+      continue;
+    }
+
+    // Check if it's an about page
+    if (!categorized.about_page && aboutKeywords.some(keyword => 
+      urlPath.includes(keyword) || title.includes(keyword)
+    )) {
+      categorized.about_page = page.url;
+      continue;
+    }
+
+    // Check if it's a blog/article page
+    if (blogKeywords.some(keyword => 
+      urlPath.includes(keyword) || title.includes(keyword)
+    )) {
+      if (categorized.blog_articles.length < 20) {
+        categorized.blog_articles.push(page.url);
+      }
+      continue;
+    }
+
+    // Check if it's a service/product page
+    if (serviceKeywords.some(keyword => 
+      urlPath.includes(keyword) || title.includes(keyword)
+    )) {
+      if (categorized.service_pages.length < 5) {
+        categorized.service_pages.push(page.url);
+      }
+      continue;
+    }
+  }
+
+  return categorized;
+}
+
+/**
+ * Discovers and categorizes context pages from a homepage URL
+ */
+export async function discoverContextPages(homepageUrl: string): Promise<CategorizedPages> {
+  // Crawl more pages for better discovery (up to 30 pages)
+  const crawlResult = await crawlWebsite(homepageUrl, 30);
+  
+  if (crawlResult.pages.length === 0) {
+    throw new Error("Unable to crawl any pages from the provided URL");
+  }
+
+  const categorized = categorizePages(crawlResult.pages, homepageUrl);
+  
+  console.log(`Discovered context pages:`, {
+    total: crawlResult.pages.length,
+    about: categorized.about_page ? 1 : 0,
+    services: categorized.service_pages.length,
+    blogs: categorized.blog_articles.length
+  });
+
+  return categorized;
 }

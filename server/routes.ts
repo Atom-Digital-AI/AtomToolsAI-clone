@@ -1317,6 +1317,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Discover context pages from homepage URL
+  app.post("/api/guideline-profiles/discover-context-pages", requireAuth, async (req: any, res) => {
+    try {
+      const { homepageUrl } = req.body;
+      const userId = req.user.id;
+      
+      if (!homepageUrl || typeof homepageUrl !== 'string') {
+        return res.status(400).json({ 
+          message: "Homepage URL is required" 
+        });
+      }
+
+      // Import the web crawler utility
+      const { discoverContextPages } = await import("./utils/web-crawler");
+      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
+
+      // Validate and normalize the URL
+      const validatedUrl = await validateAndNormalizeUrl(homepageUrl);
+      
+      // Discover and categorize pages
+      const categorizedPages = await discoverContextPages(validatedUrl);
+      
+      res.json(categorizedPages);
+    } catch (error) {
+      console.error("Error discovering context pages:", error);
+      const errorMessage = (error as any)?.message || "Failed to discover context pages";
+      
+      // Return appropriate status code based on error type
+      const statusCode = errorMessage.includes('Invalid URL') || 
+                        errorMessage.includes('Cannot crawl') ||
+                        errorMessage.includes('Domain not found') ||
+                        errorMessage.includes('Only HTTPS')
+                        ? 400 : 500;
+      
+      res.status(statusCode).json({ message: errorMessage });
+    }
+  });
+
   // Extract and save brand context from URLs
   app.post("/api/guideline-profiles/:id/extract-context", requireAuth, async (req: any, res) => {
     try {
