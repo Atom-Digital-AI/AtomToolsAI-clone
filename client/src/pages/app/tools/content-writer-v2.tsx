@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ import { useBrand } from "@/contexts/BrandContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useLocation } from "wouter";
 
 interface Concept {
   id: string;
@@ -86,11 +88,22 @@ export default function ContentWriterV2() {
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedSubtopics, setSelectedSubtopics] = useState<Set<string>>(new Set());
+  const [showGenerationDialog, setShowGenerationDialog] = useState(false);
   
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
+  const [, setLocation] = useLocation();
+  const isMountedRef = useRef(true);
 
   const productId = "content-writer-v2"; // TODO: Add to products table
+
+  // Track mounted state to prevent state updates after unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Auto-populate from selected brand
   useEffect(() => {
@@ -295,25 +308,34 @@ export default function ContentWriterV2() {
   // Generate article mutation
   const generateArticleMutation = useMutation({
     mutationFn: async () => {
+      setShowGenerationDialog(true);
       const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/generate`, {
         matchStyle,
       });
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
-      setStage('article');
-      toast({
-        title: "Article Generated",
-        description: "Your article is ready!",
-      });
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setShowGenerationDialog(false);
+        queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+        setStage('article');
+        toast({
+          title: "Article Generated",
+          description: "Your article is ready!",
+        });
+      }
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to generate article",
-        variant: "destructive",
-      });
+      // Close dialog and show error if component is still mounted
+      if (isMountedRef.current) {
+        setShowGenerationDialog(false);
+        toast({
+          title: "Error",
+          description: "Failed to generate article. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -915,6 +937,29 @@ export default function ContentWriterV2() {
         {stage === 'concepts' && renderConceptsStage()}
         {stage === 'subtopics' && renderSubtopicsStage()}
         {stage === 'article' && renderArticleStage()}
+
+        {/* Article Generation Dialog */}
+        <AlertDialog open={showGenerationDialog} onOpenChange={setShowGenerationDialog}>
+          <AlertDialogContent data-testid="dialog-article-generating">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Article Being Generated</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your article is being generated. We'll notify you when it's ready. You can navigate away from this page and check your notifications.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                onClick={() => {
+                  setShowGenerationDialog(false);
+                  setLocation('/dashboard');
+                }}
+                data-testid="button-go-to-dashboard"
+              >
+                Go to Dashboard
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AccessGuard>
   );
