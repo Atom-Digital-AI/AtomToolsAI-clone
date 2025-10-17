@@ -1357,6 +1357,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get existing extracted context for a profile
+  app.get("/api/guideline-profiles/:id/extracted-context", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verify the guideline profile belongs to the user
+      const profile = await storage.getGuidelineProfile(id, req.user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Guideline profile not found" });
+      }
+
+      // Get all extracted context content
+      const contextContent = await storage.getBrandContextContent(id);
+      
+      // Group by URL type and get metadata
+      const groupedContent = {
+        home: contextContent.find(c => c.urlType === 'home'),
+        about: contextContent.find(c => c.urlType === 'about'),
+        services: contextContent.filter(c => c.urlType === 'service'),
+        blogs: contextContent.filter(c => c.urlType === 'blog'),
+        totalPages: contextContent.length,
+        extractedAt: contextContent.length > 0 ? contextContent[0].extractedAt : null
+      };
+
+      res.json(groupedContent);
+    } catch (error) {
+      console.error("Error fetching extracted context:", error);
+      res.status(500).json({ message: "Failed to fetch extracted context" });
+    }
+  });
+
   // Extract and save brand context from URLs
   app.post("/api/guideline-profiles/:id/extract-context", requireAuth, async (req: any, res) => {
     try {
