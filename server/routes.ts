@@ -739,7 +739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Detect language from available text
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
-      const languageInstruction = getLanguagePrompt(detectedLang);
+      const languageInstruction = getLanguageInstruction(detectedLang === 'en' ? 'en-US' : `${detectedLang}-${detectedLang.toUpperCase()}`);
       const caseInstruction = getCaseInstruction(caseType);
 
       // Fetch attached regulatory guideline if brand guideline has one
@@ -954,7 +954,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Detect language from available text
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
-      const languageInstruction = getLanguagePrompt(detectedLang);
+      const languageInstruction = getLanguageInstruction(detectedLang === 'en' ? 'en-US' : `${detectedLang}-${detectedLang.toUpperCase()}`);
       const caseInstruction = getCaseInstruction(caseType);
 
       // Fetch attached regulatory guideline if brand guideline has one

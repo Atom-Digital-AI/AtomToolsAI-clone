@@ -3,31 +3,53 @@ import { useRoute } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy, Download, ArrowLeft, FileText, Calendar, Clock } from 'lucide-react';
+import { Copy, Download, ArrowLeft, FileText, Calendar, Clock, Code, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'wouter';
 import type { ContentRequest } from '@shared/schema';
+import TurndownService from 'turndown';
 
 export default function ContentDisplay() {
   const [, params] = useRoute('/app/content/:requestId');
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState<'html' | 'markdown'>('html');
 
   const { data: contentRequest, isLoading, error } = useQuery<ContentRequest>({
     queryKey: ['/api/content-requests', params?.requestId],
     enabled: !!params?.requestId,
   });
 
+  const convertToMarkdown = (html: string): string => {
+    const turndownService = new TurndownService({
+      headingStyle: 'atx',
+      codeBlockStyle: 'fenced',
+    });
+    return turndownService.turndown(html);
+  };
+
+  const getDisplayContent = (): string => {
+    if (!contentRequest?.generatedContent) return '';
+    if (viewMode === 'markdown') {
+      return convertToMarkdown(contentRequest.generatedContent);
+    }
+    return contentRequest.generatedContent;
+  };
+
   const copyToClipboard = async () => {
     if (!contentRequest?.generatedContent) return;
 
+    const contentToCopy = viewMode === 'markdown' 
+      ? convertToMarkdown(contentRequest.generatedContent)
+      : contentRequest.generatedContent;
+
     try {
-      await navigator.clipboard.writeText(contentRequest.generatedContent);
+      await navigator.clipboard.writeText(contentToCopy);
       setCopied(true);
       toast({
         title: 'Content Copied',
-        description: 'The content has been copied to your clipboard.',
+        description: `The ${viewMode === 'markdown' ? 'Markdown' : 'HTML'} content has been copied to your clipboard.`,
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -195,8 +217,32 @@ export default function ContentDisplay() {
         {contentRequest.status === 'completed' && contentRequest.generatedContent ? (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between text-white">
-                <span>Generated Content</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-white">Generated Content</CardTitle>
+                  <div className="flex gap-1 bg-gray-700 rounded-lg p-1">
+                    <Button
+                      onClick={() => setViewMode('html')}
+                      variant={viewMode === 'html' ? 'default' : 'ghost'}
+                      size="sm"
+                      className={viewMode === 'html' ? 'bg-indigo-600 hover:bg-indigo-700' : 'text-gray-300 hover:bg-gray-600'}
+                      data-testid="button-view-html"
+                    >
+                      <Eye className="mr-1 h-4 w-4" />
+                      HTML
+                    </Button>
+                    <Button
+                      onClick={() => setViewMode('markdown')}
+                      variant={viewMode === 'markdown' ? 'default' : 'ghost'}
+                      size="sm"
+                      className={viewMode === 'markdown' ? 'bg-indigo-600 hover:bg-indigo-700' : 'text-gray-300 hover:bg-gray-600'}
+                      data-testid="button-view-markdown"
+                    >
+                      <Code className="mr-1 h-4 w-4" />
+                      Markdown
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Button
                     onClick={copyToClipboard}
@@ -216,14 +262,20 @@ export default function ContentDisplay() {
                     Download HTML
                   </Button>
                 </div>
-              </CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <div 
-                className="prose prose-invert max-w-none text-gray-300"
-                dangerouslySetInnerHTML={{ __html: contentRequest.generatedContent }}
-                data-testid="content-display"
-              />
+              {viewMode === 'html' ? (
+                <div 
+                  className="prose prose-invert max-w-none text-gray-300"
+                  dangerouslySetInnerHTML={{ __html: getDisplayContent() }}
+                  data-testid="content-display-html"
+                />
+              ) : (
+                <pre className="bg-gray-900 p-4 rounded-lg overflow-x-auto text-gray-300 font-mono text-sm whitespace-pre-wrap" data-testid="content-display-markdown">
+                  {getDisplayContent()}
+                </pre>
+              )}
             </CardContent>
           </Card>
         ) : contentRequest.status === 'pending' ? (

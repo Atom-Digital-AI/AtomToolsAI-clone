@@ -48,6 +48,7 @@ export interface TargetAudience {
   profession?: string;
   interests?: string[];
   other_keywords?: string[];
+  geography?: string; // Target geographical area (e.g., "UK", "United States", "Europe", "Asia-Pacific")
 }
 
 export interface BrandContextUrls {
@@ -89,6 +90,7 @@ export const targetAudienceSchema = z.object({
   profession: z.string().optional(),
   interests: z.array(z.string()).optional(),
   other_keywords: z.array(z.string()).optional(),
+  geography: z.string().optional(), // Target geographical area
 });
 
 export const brandContextUrlsSchema = z.object({

@@ -147,6 +147,7 @@ export function formatSelectedTargetAudiences(
     const audienceDescriptions = brandContent.target_audience.map(audience => {
       const parts: string[] = [];
       
+      if (audience.geography) parts.push(`Geography: ${audience.geography}`);
       if (audience.gender) parts.push(`${audience.gender}`);
       if (audience.age_range) {
         const { from_age, to_age } = audience.age_range;
@@ -186,6 +187,7 @@ export function formatSelectedTargetAudiences(
     const audienceDescriptions = selectedAudiences.map(audience => {
       const parts: string[] = [];
       
+      if (audience.geography) parts.push(`Geography: ${audience.geography}`);
       if (audience.gender) parts.push(`${audience.gender}`);
       if (audience.age_range) {
         const { from_age, to_age } = audience.age_range;

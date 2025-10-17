@@ -752,6 +752,18 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   </div>
 
                   <div>
+                    <Label htmlFor={`geography-${index}`} className="text-gray-300 text-xs">Target Geography</Label>
+                    <Input
+                      id={`geography-${index}`}
+                      data-testid={`input-audience-geography-${index}`}
+                      value={audience.geography || ""}
+                      onChange={(e) => updateTargetAudience(index, "geography", e.target.value)}
+                      placeholder="e.g., UK, United States, Europe, Asia-Pacific"
+                      className="mt-1 bg-gray-900 border-gray-600 text-white"
+                    />
+                  </div>
+
+                  <div>
                     <Label className="text-gray-300 text-xs">Age Range</Label>
                     <div className="grid grid-cols-2 gap-3 mt-1">
                       <Input
