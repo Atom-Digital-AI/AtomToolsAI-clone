@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit, FileText, AlertTriangle } from "lucide-react";
+import { Plus, Package, ShoppingCart, Users, Settings, Trash2, Edit, FileText, AlertTriangle, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { PackageCard } from "@/components/admin/PackageCard";
 import { PackageForm } from "@/components/admin/PackageForm";
@@ -261,6 +261,12 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex gap-2">
+              <Link href="/admin/ai-analytics">
+                <Button className="bg-green-600 hover:bg-green-700" data-testid="button-ai-analytics">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  AI Analytics
+                </Button>
+              </Link>
               <Link href="/admin/cms">
                 <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-cms-management">
                   <FileText className="w-4 h-4 mr-2" />
