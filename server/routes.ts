@@ -2109,7 +2109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/content-writer/sessions", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { topic, guidelineProfileId, matchStyle = false } = req.body;
+      const { topic, guidelineProfileId, matchStyle = false, styleMatchingMethod = 'continuous' } = req.body;
       
       if (!topic) {
         return res.status(400).json({ message: "Topic is required" });
@@ -2120,12 +2120,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         topic,
         guidelineProfileId: guidelineProfileId || null,
+        styleMatchingMethod,
         status: 'concepts'
       });
 
       // Generate 5 article concepts using ChatGPT
       const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', guidelineProfileId);
-      const brandContext = guidelineProfileId 
+      
+      // Skip brand context if using 'end-rewrite' method (will apply at the end instead)
+      const brandContext = (guidelineProfileId && styleMatchingMethod === 'continuous')
         ? await ragService.getBrandContextForPrompt(userId, guidelineProfileId, `Article concepts for: ${topic}`, { matchStyle })
         : '';
 
