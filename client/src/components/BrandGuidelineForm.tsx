@@ -903,9 +903,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             </div>
 
             <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-              <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages (up to 5)</Label>
-              <div className="mt-2 space-y-2">
-                {[...(formData.context_urls?.service_pages || []), ""].slice(0, 5).map((url, index) => (
+              <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages (up to 10)</Label>
+              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                {[...(formData.context_urls?.service_pages || []), ""].slice(0, 10).map((url, index) => (
                   <div key={index} className="flex gap-2">
                     <Input
                       data-testid={`input-context-service-page-${index}`}
