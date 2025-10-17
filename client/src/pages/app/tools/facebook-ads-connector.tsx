@@ -9,6 +9,7 @@ import { AccessGuard } from "@/components/access-guard";
 import { Facebook, Database, Download, CheckCircle2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_IDS } from "@shared/schema";
 
 export default function FacebookAdsConnector() {
   const [isConnected, setIsConnected] = useState(false);
@@ -50,7 +51,7 @@ export default function FacebookAdsConnector() {
   };
 
   return (
-    <AccessGuard productId="9dfbe2c0-1128-4ec1-891b-899e1b28e097" productName="Facebook Ads Looker Studio Connector">
+    <AccessGuard productId={PRODUCT_IDS.FACEBOOK_ADS_CONNECTOR} productName="Facebook Ads Looker Studio Connector">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

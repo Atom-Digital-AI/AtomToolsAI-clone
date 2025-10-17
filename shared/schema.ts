@@ -8,6 +8,36 @@ import { z } from "zod";
 export const TOOL_TYPES = ['seo-meta', 'google-ads', 'content-writer'] as const;
 export type ToolType = typeof TOOL_TYPES[number];
 
+// Product IDs - Centralized UUIDs for all products
+export const PRODUCT_IDS = {
+  SEO_META_GENERATOR: '531de90b-12ef-4169-b664-0d55428435a6',
+  GOOGLE_ADS_GENERATOR: 'c5985990-e94e-49b3-a86c-3076fd9d6b3f',
+  FACEBOOK_ADS_CONNECTOR: '9dfbe2c0-1128-4ec1-891b-899e1b28e097',
+} as const;
+
+// AI Model Names - Centralized model identifiers
+export const AI_MODELS = {
+  OPENAI: {
+    GPT_4O_MINI: 'gpt-4o-mini',
+    GPT_4_TURBO: 'gpt-4-turbo',
+    GPT_4: 'gpt-4',
+    GPT_3_5_TURBO: 'gpt-3.5-turbo',
+  },
+  ANTHROPIC: {
+    CLAUDE_OPUS_4: 'claude-opus-4-20250514',
+    CLAUDE_SONNET_4: 'claude-sonnet-4-20250514',
+    CLAUDE_3_5_SONNET: 'claude-3-5-sonnet-20240620',
+    CLAUDE_3_OPUS: 'claude-3-opus-20240229',
+    CLAUDE_3_SONNET: 'claude-3-sonnet-20240229',
+    CLAUDE_3_HAIKU: 'claude-3-haiku-20240307',
+  },
+  EMBEDDING: 'text-embedding-3-small',
+} as const;
+
+// Content Writer Status - Centralized status strings
+export const CONTENT_STATUS = ['pending', 'processing', 'completed', 'failed'] as const;
+export type ContentStatus = typeof CONTENT_STATUS[number];
+
 // Brand Guidelines Types
 export interface TargetAudience {
   gender?: string;

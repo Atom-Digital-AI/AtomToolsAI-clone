@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 import type { GuidelineContent } from "@shared/schema";
+import { PRODUCT_IDS } from "@shared/schema";
 import { useBrand } from "@/contexts/BrandContext";
 import { SaveContentDialog } from "@/components/SaveContentDialog";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
@@ -69,7 +70,7 @@ export default function SEOMetaGenerator() {
   const keywordsRef = useRef<HTMLTextAreaElement>(null);
   const brandNameRef = useRef<HTMLInputElement>(null);
 
-  const productId = "531de90b-12ef-4169-b664-0d55428435a6";
+  const productId = PRODUCT_IDS.SEO_META_GENERATOR;
 
   // Get user's tier permissions for this product
   const { data: accessInfo } = useQuery({
@@ -396,7 +397,7 @@ export default function SEOMetaGenerator() {
   };
 
   return (
-    <AccessGuard productId="531de90b-12ef-4169-b664-0d55428435a6" productName="SEO Meta Generator">
+    <AccessGuard productId={PRODUCT_IDS.SEO_META_GENERATOR} productName="SEO Meta Generator">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

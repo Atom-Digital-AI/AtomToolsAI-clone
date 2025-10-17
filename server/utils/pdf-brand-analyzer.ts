@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { BrandGuidelineContent } from "@shared/schema";
+import { BrandGuidelineContent, AI_MODELS } from "@shared/schema";
 import { loggedAnthropicCall } from "./ai-logger";
 
 export async function analyzePdfForBrandGuidelines(pdfBase64: string, userId?: string): Promise<BrandGuidelineContent> {
@@ -53,7 +53,7 @@ If any field cannot be determined from the document, use an empty array [] or om
 Respond ONLY with valid JSON matching the structure above. Do not include any explanatory text outside the JSON.`;
 
   // Try with the latest model first, fallback to older stable model if needed
-  const models = ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20240620"];
+  const models = [AI_MODELS.ANTHROPIC.CLAUDE_SONNET_4, AI_MODELS.ANTHROPIC.CLAUDE_3_5_SONNET];
   let lastError: Error | null = null;
 
   for (const model of models) {

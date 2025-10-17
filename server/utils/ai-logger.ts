@@ -1,7 +1,8 @@
 import { db } from "../db";
-import { aiUsageLogs, type InsertAiUsageLog } from "@shared/schema";
+import { aiUsageLogs, type InsertAiUsageLog, AI_MODELS } from "@shared/schema";
 
 // Pricing per 1M tokens (as of latest pricing)
+// Model names reference: AI_MODELS constant in @shared/schema
 const PRICING = {
   openai: {
     "gpt-4o": { input: 2.50, output: 10.00 },

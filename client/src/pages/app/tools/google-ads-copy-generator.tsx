@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import GuidelineProfileSelector from "@/components/guideline-profile-selector";
 import type { GuidelineContent } from "@shared/schema";
+import { PRODUCT_IDS } from "@shared/schema";
 import { useBrand } from "@/contexts/BrandContext";
 import { SaveContentDialog } from "@/components/SaveContentDialog";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
@@ -71,7 +72,7 @@ export default function GoogleAdsCopyGenerator() {
   const keywordsRef = useRef<HTMLTextAreaElement>(null);
   const brandNameRef = useRef<HTMLInputElement>(null);
 
-  const productId = "c5985990-e94e-49b3-a86c-3076fd9d6b3f";
+  const productId = PRODUCT_IDS.GOOGLE_ADS_GENERATOR;
 
   // Get user's tier permissions for this product
   const { data: accessInfo } = useQuery({
@@ -490,7 +491,7 @@ export default function GoogleAdsCopyGenerator() {
 
 
   return (
-    <AccessGuard productId="c5985990-e94e-49b3-a86c-3076fd9d6b3f" productName="Google Ads Copy Generator">
+    <AccessGuard productId={PRODUCT_IDS.GOOGLE_ADS_GENERATOR} productName="Google Ads Copy Generator">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

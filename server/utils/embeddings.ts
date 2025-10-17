@@ -1,6 +1,7 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
 import type { ChunkResult } from "./chunking";
 import type { InsertBrandEmbedding } from "@shared/schema";
+import { AI_MODELS } from "@shared/schema";
 import "./langsmith-config"; // Initialize LangSmith tracing if available
 
 /**
@@ -17,7 +18,7 @@ export class EmbeddingsService {
 
   constructor() {
     this.embeddings = new OpenAIEmbeddings({
-      modelName: "text-embedding-3-small", // 1536 dimensions
+      modelName: AI_MODELS.EMBEDDING,
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
   }

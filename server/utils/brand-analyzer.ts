@@ -3,6 +3,7 @@ import type { BrandGuidelineContent } from "@shared/schema";
 import { crawlWebsite } from "./web-crawler";
 import { validateAndNormalizeUrl } from "./url-validator";
 import { loggedAnthropicCall } from "./ai-logger";
+import { AI_MODELS } from "@shared/schema";
 
 /*
 <important_code_snippet_instructions>
@@ -11,7 +12,7 @@ If the user doesn't specify a model, always prefer using "claude-sonnet-4-202505
 </important_code_snippet_instructions>
 */
 
-const DEFAULT_MODEL_STR = "claude-sonnet-4-20250514";
+const DEFAULT_MODEL_STR = AI_MODELS.ANTHROPIC.CLAUDE_SONNET_4;
 
 /**
  * Analyzes a website and extracts brand guidelines using Claude AI

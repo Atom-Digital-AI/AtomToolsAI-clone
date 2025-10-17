@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertGeneratedContent } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertGeneratedContent, PRODUCT_IDS } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -787,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tools/seo-meta/generate", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
-      const productId = "531de90b-12ef-4169-b664-0d55428435a6"; // SEO Meta Generator product ID
+      const productId = PRODUCT_IDS.SEO_META_GENERATOR;
       
       const {
         url,
@@ -968,7 +968,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Increment usage for SEO Meta tool
-      const seoMetaProductId = '531de90b-12ef-4169-b664-0d55428435a6';
+      const seoMetaProductId = PRODUCT_IDS.SEO_META_GENERATOR;
       const usageAccessInfo = await storage.getUserProductAccess((req as any).user.id, seoMetaProductId);
       if (usageAccessInfo.tierLimit) {
         await storage.incrementUsage((req as any).user.id, seoMetaProductId, usageAccessInfo.tierLimit.periodicity);
@@ -1001,7 +1001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tools/google-ads/generate", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
-      const productId = "c5985990-e94e-49b3-a86c-3076fd9d6b3f"; // Google Ads Copy Generator product ID
+      const productId = PRODUCT_IDS.GOOGLE_ADS_GENERATOR;
       
       const {
         url,
@@ -1191,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Increment usage for Google Ads tool
-      const googleAdsProductId = 'c5985990-e94e-49b3-a86c-3076fd9d6b3f';
+      const googleAdsProductId = PRODUCT_IDS.GOOGLE_ADS_GENERATOR;
       const usageAccessInfo = await storage.getUserProductAccess((req as any).user.id, googleAdsProductId);
       if (usageAccessInfo.tierLimit) {
         await storage.incrementUsage((req as any).user.id, googleAdsProductId, usageAccessInfo.tierLimit.periodicity);
