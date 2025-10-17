@@ -14,7 +14,7 @@ interface ErrorContext {
  * Show an error toast with admin-only "Send to AI" button
  * This function checks if the user is admin and adds a report button to error toasts
  */
-export async function showAdminErrorToast(
+export function showAdminErrorToast(
   title: string,
   description: string,
   isAdmin: boolean,
