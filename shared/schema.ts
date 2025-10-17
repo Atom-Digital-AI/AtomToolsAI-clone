@@ -577,6 +577,7 @@ export const contentWriterSessions = pgTable("content_writer_sessions", {
   language: varchar("language"), // Custom language
   useBrandGuidelines: boolean("use_brand_guidelines").default(false), // Whether to use brand guidelines
   selectedTargetAudiences: jsonb("selected_target_audiences").$type<"all" | "none" | number[]>(), // Target audience selection: "all", "none", or array of indices
+  styleMatchingMethod: varchar("style_matching_method").default("continuous"), // 'continuous' (inject context throughout) or 'end-rewrite' (analyze and rewrite at end)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
