@@ -190,6 +190,11 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUserAdminStatus(id: string, isAdmin: boolean): Promise<void>;
   
+  // Error Report operations (admin only)
+  createErrorReport(reportedBy: string, errorTitle: string, errorMessage: string, errorContext?: any): Promise<any>;
+  getErrorReports(status?: string): Promise<any[]>;
+  updateErrorReportStatus(id: string, status: string): Promise<void>;
+  
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1651,6 +1656,41 @@ export class DatabaseStorage implements IStorage {
       .where(eq(cmsPages.id, id))
       .returning();
     return publishedPage;
+  }
+
+  // Error Report operations
+  async createErrorReport(reportedBy: string, errorTitle: string, errorMessage: string, errorContext?: any): Promise<any> {
+    const { errorReports } = await import("@shared/schema");
+    const [report] = await db.insert(errorReports)
+      .values({
+        reportedBy,
+        errorTitle,
+        errorMessage,
+        errorContext,
+      })
+      .returning();
+    return report;
+  }
+
+  async getErrorReports(status?: string): Promise<any[]> {
+    const { errorReports } = await import("@shared/schema");
+    let query = db.select().from(errorReports).orderBy(desc(errorReports.createdAt));
+    
+    if (status) {
+      query = query.where(eq(errorReports.status, status)) as any;
+    }
+    
+    return await query;
+  }
+
+  async updateErrorReportStatus(id: string, status: string): Promise<void> {
+    const { errorReports } = await import("@shared/schema");
+    await db.update(errorReports)
+      .set({ 
+        status,
+        resolvedAt: status === 'resolved' ? new Date() : null,
+      })
+      .where(eq(errorReports.id, id));
   }
 }
 

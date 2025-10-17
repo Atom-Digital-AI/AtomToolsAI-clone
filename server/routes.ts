@@ -1820,6 +1820,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Error Report Management - Admin can report errors from toast notifications
+  app.post("/api/error-reports", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { errorTitle, errorMessage, errorContext } = req.body;
+      
+      // Only allow admins to report errors
+      const isAdmin = await storage.isUserAdmin(userId);
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Only admins can report errors" });
+      }
+      
+      const report = await storage.createErrorReport(
+        userId,
+        errorTitle,
+        errorMessage,
+        errorContext
+      );
+      
+      res.json({ success: true, reportId: report.id });
+    } catch (error) {
+      console.error("Error creating error report:", error);
+      res.status(500).json({ message: "Failed to create error report" });
+    }
+  });
+
+  app.get("/api/admin/error-reports", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const reports = await storage.getErrorReports(status);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching error reports:", error);
+      res.status(500).json({ message: "Failed to fetch error reports" });
+    }
+  });
+
+  app.put("/api/admin/error-reports/:id/status", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { status } = req.body;
+      await storage.updateErrorReportStatus(req.params.id, status);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating error report status:", error);
+      res.status(500).json({ message: "Failed to update error report status" });
+    }
+  });
+
   // Error Log Management for Admin Portal
   app.get("/api/admin/error-logs", requireAuth, requireAdmin, async (req: any, res) => {
     try {
