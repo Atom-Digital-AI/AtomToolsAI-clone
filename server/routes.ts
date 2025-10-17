@@ -20,6 +20,7 @@ import { logToolError, getErrorTypeFromError } from "./errorLogger";
 import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuidelineFromBrand, formatSelectedTargetAudiences } from "./utils/format-guidelines";
 import { analyzeBrandGuidelines } from "./utils/brand-analyzer";
 import { ragService } from "./utils/rag-service";
+import { loggedOpenAICall, loggedAnthropicCall } from "./utils/ai-logger";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -918,14 +919,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `.trim();
 
       // Using gpt-4o-mini as requested by the user
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {"role": "system", "content": "You are an expert SEO copywriter."},
-          {"role": "user", "content": prompt}
-        ],
-        max_tokens: 1000,
-        temperature: 0.8
+      const response = await loggedOpenAICall({
+        userId: (req as any).user.id,
+        guidelineProfileId: brandGuidelines && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(brandGuidelines.trim()) ? brandGuidelines.trim() : undefined,
+        endpoint: 'seo-meta-generate',
+        metadata: { contentType, numVariations }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {"role": "system", "content": "You are an expert SEO copywriter."},
+            {"role": "user", "content": prompt}
+          ],
+          max_tokens: 1000,
+          temperature: 0.8
+        });
       });
 
       const content = response.choices[0].message.content?.trim() || "";
@@ -1133,14 +1141,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `.trim();
 
       // Using gpt-4o-mini as requested by the user
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {"role": "system", "content": "You are an expert copywriter specializing in Google Ads."},
-          {"role": "user", "content": prompt}
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
+      const response = await loggedOpenAICall({
+        userId: (req as any).user.id,
+        guidelineProfileId: brandGuidelines && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(brandGuidelines.trim()) ? brandGuidelines.trim() : undefined,
+        endpoint: 'google-ads-generate',
+        metadata: { numVariations }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {"role": "system", "content": "You are an expert copywriter specializing in Google Ads."},
+            {"role": "user", "content": prompt}
+          ],
+          max_tokens: 1000,
+          temperature: 0.7
+        });
       });
 
       const content = response.choices[0].message.content?.trim() || "";
@@ -2217,10 +2232,17 @@ Return the response as a JSON array with this exact structure:
   }
 ]`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: conceptPrompt }],
-        temperature: 0.8,
+      const completion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: guidelineProfileId || undefined,
+        endpoint: 'content-writer-concepts',
+        metadata: { topic }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: conceptPrompt }],
+          temperature: 0.8,
+        });
       });
 
       const conceptsText = completion.choices[0]?.message?.content || '[]';
@@ -2332,10 +2354,17 @@ Return the response as a JSON array with this exact structure:
   }
 ]`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: conceptPrompt }],
-        temperature: 0.8,
+      const completion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: session.guidelineProfileId || undefined,
+        endpoint: 'content-writer-concepts-regenerate',
+        metadata: { topic: session.topic, feedbackText }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: conceptPrompt }],
+          temperature: 0.8,
+        });
       });
 
       const conceptsText = completion.choices[0]?.message?.content || '[]';
@@ -2477,10 +2506,17 @@ Return the response as a JSON array with this exact structure:
   }
 ]`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: subtopicPrompt }],
-        temperature: 0.7,
+      const completion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: session.guidelineProfileId || undefined,
+        endpoint: 'content-writer-subtopics',
+        metadata: { conceptTitle: chosenConcept.title, targetLength, objective }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: subtopicPrompt }],
+          temperature: 0.7,
+        });
       });
 
       const subtopicsText = completion.choices[0]?.message?.content || '[]';
@@ -2555,10 +2591,17 @@ Return the response as a JSON array with this structure:
   }
 ]`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: morePrompt }],
-        temperature: 0.7,
+      const completion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: session.guidelineProfileId || undefined,
+        endpoint: 'content-writer-subtopics-more',
+        metadata: { conceptTitle: chosenConcept.title, existingCount: existingSubtopics.length }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: morePrompt }],
+          temperature: 0.7,
+        });
       });
 
       const subtopicsText = completion.choices[0]?.message?.content || '[]';
@@ -2670,10 +2713,17 @@ Provide a comprehensive brief covering:
 4. SEO considerations
 5. Call to action`;
 
-      const briefCompletion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: mainBriefPrompt }],
-        temperature: 0.5,
+      const briefCompletion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: session.guidelineProfileId || undefined,
+        endpoint: 'content-writer-main-brief',
+        metadata: { conceptTitle: chosenConcept.title }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: mainBriefPrompt }],
+          temperature: 0.5,
+        });
       });
 
       const mainBrief = briefCompletion.choices[0]?.message?.content || '';
@@ -2687,10 +2737,17 @@ This is part of the main article: "${chosenConcept.title}"
 
 Provide guidance on key points to cover.`;
 
-        const subtopicBriefCompletion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: subtopicBriefPrompt }],
-          temperature: 0.5,
+        const subtopicBriefCompletion = await loggedOpenAICall({
+          userId,
+          guidelineProfileId: session.guidelineProfileId || undefined,
+          endpoint: 'content-writer-subtopic-brief',
+          metadata: { subtopicTitle: subtopic.title }
+        }, async () => {
+          return await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: subtopicBriefPrompt }],
+            temperature: 0.5,
+          });
         });
 
         subtopicBriefs.push({
@@ -2714,10 +2771,17 @@ ${session.language ? `Language: ${session.language}` : ''}
 
 Write approximately ${Math.floor((session.targetLength || 1000) / selectedSubtopics.length)} words.`;
 
-        const contentCompletion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: contentPrompt }],
-          temperature: 0.7,
+        const contentCompletion = await loggedOpenAICall({
+          userId,
+          guidelineProfileId: session.guidelineProfileId || undefined,
+          endpoint: 'content-writer-subtopic-content',
+          metadata: { subtopicTitle: subtopic.title }
+        }, async () => {
+          return await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: contentPrompt }],
+            temperature: 0.7,
+          });
         });
 
         subtopicContents.push({
@@ -2738,10 +2802,17 @@ Provide:
 1. A compelling introduction (2-3 paragraphs)
 2. A strong conclusion with call to action`;
 
-      const topTailCompletion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: topTailPrompt }],
-        temperature: 0.7,
+      const topTailCompletion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: session.guidelineProfileId || undefined,
+        endpoint: 'content-writer-intro-conclusion',
+        metadata: { conceptTitle: chosenConcept.title }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: topTailPrompt }],
+          temperature: 0.7,
+        });
       });
 
       const topAndTail = topTailCompletion.choices[0]?.message?.content || '';
@@ -2769,10 +2840,17 @@ ${brandContext}
 
 Return the refined article maintaining the structure.`;
 
-      const reviewCompletion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: reviewPrompt }],
-        temperature: 0.3,
+      const reviewCompletion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: session.guidelineProfileId || undefined,
+        endpoint: 'content-writer-review-refine',
+        metadata: { conceptTitle: chosenConcept.title, wordCount: fullArticle.split(' ').length }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: reviewPrompt }],
+          temperature: 0.3,
+        });
       });
 
       const finalArticle = reviewCompletion.choices[0]?.message?.content || fullArticle;
