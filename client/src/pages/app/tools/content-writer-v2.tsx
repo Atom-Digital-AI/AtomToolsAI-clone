@@ -171,6 +171,28 @@ export default function ContentWriterV2() {
     },
   });
 
+  // Concept feedback mutation
+  const conceptFeedbackMutation = useMutation({
+    mutationFn: async ({ conceptId, rating }: { conceptId: string, rating: 'thumbs_up' | 'thumbs_down' }) => {
+      const concept = concepts.find(c => c.id === conceptId);
+      const guidelineId = (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : session?.guidelineProfileId;
+      return apiRequest('POST', '/api/content-feedback', {
+        toolType: 'content-writer',
+        rating,
+        feedbackText: null,
+        inputData: { topic, brandGuidelineId: guidelineId },
+        outputData: { concept },
+        guidelineProfileId: guidelineId || null,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Feedback Submitted',
+        description: 'Thank you! Your feedback helps improve future concepts.',
+      });
+    },
+  });
+
   // Choose concept mutation
   const chooseConceptMutation = useMutation({
     mutationFn: async ({ conceptId, rating, feedbackText }: { conceptId: string, rating?: string, feedbackText?: string }) => {
@@ -223,6 +245,28 @@ export default function ContentWriterV2() {
       toast({
         title: "More Subtopics Added",
         description: "5 additional subtopics generated",
+      });
+    },
+  });
+
+  // Subtopic feedback mutation
+  const subtopicFeedbackMutation = useMutation({
+    mutationFn: async ({ subtopicId, rating }: { subtopicId: string, rating: 'thumbs_up' | 'thumbs_down' }) => {
+      const subtopic = subtopics.find(s => s.id === subtopicId);
+      const guidelineId = (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : session?.guidelineProfileId;
+      return apiRequest('POST', '/api/content-feedback', {
+        toolType: 'content-writer',
+        rating,
+        feedbackText: null,
+        inputData: { topic, conceptId: selectedConcept?.id, brandGuidelineId: guidelineId },
+        outputData: { subtopic },
+        guidelineProfileId: guidelineId || null,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Feedback Submitted',
+        description: 'Thank you! Your feedback helps improve future subtopics.',
       });
     },
   });
@@ -475,6 +519,29 @@ export default function ContentWriterV2() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-2">{concept.title}</h3>
                   <p className="text-sm text-muted-foreground">{concept.summary}</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className="text-xs text-gray-400">Was this helpful?</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => conceptFeedbackMutation.mutate({ conceptId: concept.id, rating: 'thumbs_up' })}
+                      disabled={conceptFeedbackMutation.isPending}
+                      className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-gray-800"
+                      data-testid={`button-concept-thumbs-up-${concept.id}`}
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => conceptFeedbackMutation.mutate({ conceptId: concept.id, rating: 'thumbs_down' })}
+                      disabled={conceptFeedbackMutation.isPending}
+                      className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-gray-800"
+                      data-testid={`button-concept-thumbs-down-${concept.id}`}
+                    >
+                      <ThumbsDown className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <Button
                   onClick={() => handleChooseConcept(concept)}
@@ -685,6 +752,29 @@ export default function ContentWriterV2() {
                       <div className="flex-1">
                         <h4 className="font-medium">{subtopic.title}</h4>
                         <p className="text-sm text-muted-foreground mt-1">{subtopic.summary}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-gray-400">Was this helpful?</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => subtopicFeedbackMutation.mutate({ subtopicId: subtopic.id, rating: 'thumbs_up' })}
+                            disabled={subtopicFeedbackMutation.isPending}
+                            className="h-6 px-2 text-green-400 hover:text-green-300 hover:bg-gray-800"
+                            data-testid={`button-subtopic-thumbs-up-${subtopic.id}`}
+                          >
+                            <ThumbsUp className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => subtopicFeedbackMutation.mutate({ subtopicId: subtopic.id, rating: 'thumbs_down' })}
+                            disabled={subtopicFeedbackMutation.isPending}
+                            className="h-6 px-2 text-red-400 hover:text-red-300 hover:bg-gray-800"
+                            data-testid={`button-subtopic-thumbs-down-${subtopic.id}`}
+                          >
+                            <ThumbsDown className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
