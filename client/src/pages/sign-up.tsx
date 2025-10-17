@@ -138,7 +138,7 @@ export default function SignUp() {
                           type="email"
                           {...field}
                           className="bg-surface border-border focus:ring-accent"
-                          data-testid="signup-email"
+                          data-testid="input-email"
                         />
                       </FormControl>
                       <FormMessage />
@@ -159,7 +159,7 @@ export default function SignUp() {
                             type={showPassword ? "text" : "password"}
                             {...field}
                             className="bg-surface border-border focus:ring-accent pr-12"
-                            data-testid="signup-password"
+                            data-testid="input-password"
                           />
                           <Button
                             type="button"
@@ -246,7 +246,7 @@ export default function SignUp() {
                   type="submit"
                   className="w-full bg-accent hover:bg-accent-2 text-white"
                   disabled={signUpMutation.isPending}
-                  data-testid="create-account"
+                  data-testid="button-submit"
                 >
                   {signUpMutation.isPending ? "Creating account..." : "Create account"}
                 </Button>
