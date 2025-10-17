@@ -71,6 +71,12 @@ function getToneInstruction(tone: string): string {
   return `TONE OF VOICE: ${tone} - Ensure the copy reflects this tone throughout all headlines and descriptions.`;
 }
 
+// Helper function to strip markdown code blocks from AI responses
+function stripMarkdownCodeBlocks(text: string): string {
+  // Remove ```json and ``` wrappers if present
+  return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();
+}
+
 function getCaseInstruction(caseType: string): string {
   if (caseType === 'title') {
     return "Use Title Case formatting (capitalize the first letter of each major word)";
@@ -2134,7 +2140,7 @@ Return the response as a JSON array with this exact structure:
       });
 
       const conceptsText = completion.choices[0]?.message?.content || '[]';
-      const concepts = JSON.parse(conceptsText);
+      const concepts = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
 
       // Save concepts to database
       const conceptsToInsert = concepts.map((c: any, index: number) => ({
@@ -2258,7 +2264,7 @@ Return the response as a JSON array with this exact structure:
       });
 
       const conceptsText = completion.choices[0]?.message?.content || '[]';
-      const concepts = JSON.parse(conceptsText);
+      const concepts = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
 
       const conceptsToInsert = concepts.map((c: any, index: number) => ({
         sessionId: session.id,
@@ -2416,7 +2422,7 @@ Return the response as a JSON array with this exact structure:
       });
 
       const subtopicsText = completion.choices[0]?.message?.content || '[]';
-      const subtopics = JSON.parse(subtopicsText);
+      const subtopics = JSON.parse(stripMarkdownCodeBlocks(subtopicsText));
 
       const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
         sessionId: session.id,
@@ -2509,7 +2515,7 @@ Return the response as a JSON array with this structure:
       });
 
       const subtopicsText = completion.choices[0]?.message?.content || '[]';
-      const subtopics = JSON.parse(subtopicsText);
+      const subtopics = JSON.parse(stripMarkdownCodeBlocks(subtopicsText));
 
       const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
         sessionId: session.id,

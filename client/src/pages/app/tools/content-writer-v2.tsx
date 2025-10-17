@@ -951,7 +951,7 @@ export default function ContentWriterV2() {
               <Button
                 onClick={() => {
                   setShowGenerationDialog(false);
-                  setLocation('/dashboard');
+                  setLocation('/app');
                 }}
                 data-testid="button-go-to-dashboard"
               >
