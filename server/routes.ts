@@ -1926,6 +1926,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admin/error-logs/:id/status", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const { status } = req.body;
+      
+      // Validate status
+      if (!['to_do', 'investigated', 'fixed'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status. Must be 'to_do', 'investigated', or 'fixed'" });
+      }
+      
+      await db.update(errorLogs)
+        .set({ status })
+        .where(eq(errorLogs.id, req.params.id));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating error log status:", error);
+      res.status(500).json({ message: "Failed to update error log status" });
+    }
+  });
+
   app.delete("/api/admin/error-logs/:id", requireAuth, requireAdmin, async (req: any, res) => {
     try {
       const result = await db.delete(errorLogs).where(eq(errorLogs.id, req.params.id));
