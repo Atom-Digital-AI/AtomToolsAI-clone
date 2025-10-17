@@ -649,6 +649,10 @@ export const insertContentWriterDraftSchema = createInsertSchema(contentWriterDr
   updatedAt: true,
 });
 
+// Error Log Status - Centralized status strings
+export const ERROR_LOG_STATUS = ['to_do', 'investigated', 'fixed'] as const;
+export type ErrorLogStatus = typeof ERROR_LOG_STATUS[number];
+
 // Error logs table for tracking tool usage errors
 export const errorLogs = pgTable("error_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -664,11 +668,17 @@ export const errorLogs = pgTable("error_logs", {
   userAgent: varchar("user_agent"),
   ipAddress: varchar("ip_address"),
   responseHeaders: jsonb("response_headers"), // HTTP response headers from external API calls
+  status: varchar("status").notNull().default("to_do"), // 'to_do', 'investigated', 'fixed'
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type ErrorLog = typeof errorLogs.$inferSelect;
 export type InsertErrorLog = typeof errorLogs.$inferInsert;
+
+export const insertErrorLogSchema = createInsertSchema(errorLogs).omit({
+  id: true,
+  createdAt: true,
+});
 
 // Notifications table for in-app notifications
 export const notifications = pgTable("notifications", {
