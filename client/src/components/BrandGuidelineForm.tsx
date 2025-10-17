@@ -48,6 +48,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [showAutoPopulateDialog, setShowAutoPopulateDialog] = useState(false);
   const [pendingAutoPopulateData, setPendingAutoPopulateData] = useState<BrandGuidelineContent | null>(null);
   const [autoPopulateSource, setAutoPopulateSource] = useState<"url" | "pdf">("url");
+  const [showExtractWarningDialog, setShowExtractWarningDialog] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
@@ -439,7 +440,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     }
   };
 
-  const handleExtractContext = async () => {
+  const doExtractContext = async () => {
     if (!profileId) {
       toast({
         title: "Profile Not Saved",
@@ -490,6 +491,22 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     } finally {
       setIsExtractingContext(false);
     }
+  };
+
+  const handleExtractContext = async () => {
+    // Check if there's existing extracted content
+    if (existingContext && existingContext.totalPages > 0) {
+      // Show warning dialog
+      setShowExtractWarningDialog(true);
+    } else {
+      // No existing content, proceed directly
+      await doExtractContext();
+    }
+  };
+
+  const confirmExtractContext = async () => {
+    setShowExtractWarningDialog(false);
+    await doExtractContext();
   };
 
   if (isLegacy) {
@@ -1144,6 +1161,36 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
               data-testid="button-overwrite-all"
             >
               Overwrite All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Extract warning dialog */}
+      <AlertDialog open={showExtractWarningDialog} onOpenChange={setShowExtractWarningDialog}>
+        <AlertDialogContent className="bg-gray-900 border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-gray-100">Replace Existing Content?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              You have {existingContext?.totalPages || 0} pages of content already extracted. Extracting again will permanently delete all existing content and replace it with the new extraction.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="p-4 bg-amber-950/30 border border-amber-800 rounded-lg my-4">
+            <p className="text-sm text-amber-400 font-semibold mb-2">⚠️ This action cannot be undone</p>
+            <p className="text-xs text-gray-400">
+              All previously extracted page content and generated embeddings will be permanently deleted.
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-gray-200" data-testid="button-cancel-extract">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmExtractContext}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="button-confirm-extract"
+            >
+              Replace Content
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
