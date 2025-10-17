@@ -1,7 +1,7 @@
 import { storage } from "../storage";
 import { embeddingsService } from "./embeddings";
 import { documentChunker, type ChunkResult } from "./chunking";
-import type { InsertBrandEmbedding, BrandEmbedding } from "@shared/schema";
+import type { InsertBrandEmbedding, BrandEmbedding, ToolType } from "@shared/schema";
 import "./langsmith-config"; // Initialize LangSmith tracing if available
 
 /**
@@ -200,7 +200,7 @@ export class RAGService {
    */
   async retrieveUserFeedback(
     userId: string,
-    toolType: 'seo-meta' | 'google-ads' | 'content-writer',
+    toolType: ToolType,
     guidelineProfileId?: string,
     limit: number = 10
   ): Promise<string> {

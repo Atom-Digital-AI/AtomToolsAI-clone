@@ -6,6 +6,7 @@ atomtools.ai is a subscription-based web platform providing digital marketing an
 ## Recent Changes (October 2025)
 - **AI Analytics Module**: Added comprehensive AI usage analytics for super admin portal showing total API calls, tokens, costs, and breakdowns by provider and endpoint (October 17, 2025)
 - **Content Writer v2 Bug Fix**: Fixed RAG service type mismatch preventing Content Writer v2 usage from being logged to ai_usage_logs table. Updated tool type validation to accept 'content-writer' alongside 'seo-meta' and 'google-ads' (October 17, 2025)
+- **Centralized Tool Types**: Refactored hardcoded tool type strings to use centralized `ToolType` definition in shared/schema.ts. Ensures single source of truth for all tool types across the application (October 17, 2025)
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

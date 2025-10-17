@@ -4,6 +4,10 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Tool Types - Centralized definition for all AI tools
+export const TOOL_TYPES = ['seo-meta', 'google-ads', 'content-writer'] as const;
+export type ToolType = typeof TOOL_TYPES[number];
+
 // Brand Guidelines Types
 export interface TargetAudience {
   gender?: string;
@@ -495,7 +499,7 @@ export type InsertContentRequest = typeof contentRequests.$inferInsert;
 export const generatedContent = pgTable("generated_content", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads', 'content-writer'
+  toolType: varchar("tool_type").notNull(), // See TOOL_TYPES for valid values
   title: varchar("title").notNull(),
   inputData: jsonb("input_data").notNull(), // Store the input parameters
   outputData: jsonb("output_data").notNull(), // Store the generated results
@@ -510,7 +514,7 @@ export const contentFeedback = pgTable("content_feedback", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id), // Optional: associate with brand
-  toolType: varchar("tool_type").notNull(), // 'seo-meta', 'google-ads', 'content-writer'
+  toolType: varchar("tool_type").notNull(), // See TOOL_TYPES for valid values
   rating: varchar("rating").notNull(), // 'thumbs_up' or 'thumbs_down'
   feedbackText: text("feedback_text"), // Optional: only for thumbs down
   inputData: jsonb("input_data").notNull(), // The input that generated the content

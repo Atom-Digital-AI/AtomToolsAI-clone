@@ -41,7 +41,8 @@ import {
   type Notification,
   type InsertNotification,
   type UserNotificationPreference,
-  type InsertUserNotificationPreference
+  type InsertUserNotificationPreference,
+  type ToolType
 } from "@shared/schema";
 import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences } from "@shared/schema";
 import { db } from "./db";
@@ -119,7 +120,7 @@ export interface IStorage {
   deleteBrandEmbeddings(userId: string, guidelineProfileId: string): Promise<boolean>;
 
   // Content Feedback operations (SECURITY: Enforce userId for tenant isolation)
-  getUserFeedback(userId: string, toolType?: string, guidelineProfileId?: string, limit?: number): Promise<ContentFeedback[]>;
+  getUserFeedback(userId: string, toolType?: ToolType, guidelineProfileId?: string, limit?: number): Promise<ContentFeedback[]>;
 
   // Content Writer operations (SECURITY: All methods enforce userId for tenant isolation)
   createContentWriterSession(session: InsertContentWriterSession & { userId: string }): Promise<ContentWriterSession>;
@@ -980,7 +981,7 @@ export class DatabaseStorage implements IStorage {
   // Content Feedback operations
   async getUserFeedback(
     userId: string, 
-    toolType?: string, 
+    toolType?: ToolType, 
     guidelineProfileId?: string, 
     limit: number = 10
   ): Promise<ContentFeedback[]> {
