@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLocation } from "wouter";
 
 interface Concept {
@@ -83,6 +84,7 @@ export default function ContentWriterV2() {
   const [useBrandGuidelines, setUseBrandGuidelines] = useState(true);
   const [selectedTargetAudiences, setSelectedTargetAudiences] = useState<"all" | "none" | number[]>("none");
   const [matchStyle, setMatchStyle] = useState(false);
+  const [styleMatchingMethod, setStyleMatchingMethod] = useState<'continuous' | 'end-rewrite'>('continuous');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [regenerateFeedback, setRegenerateFeedback] = useState("");
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
@@ -132,6 +134,7 @@ export default function ContentWriterV2() {
         topic,
         guidelineProfileId: (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : undefined,
         matchStyle,
+        styleMatchingMethod,
       });
       return await res.json();
     },
@@ -431,19 +434,45 @@ export default function ContentWriterV2() {
         </div>
 
         {brandGuidelines && (
-          <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
-            <Checkbox
-              id="matchStyle"
-              data-testid="checkbox-match-style"
-              checked={matchStyle}
-              onCheckedChange={(checked) => setMatchStyle(checked === true)}
-            />
-            <Label
-              htmlFor="matchStyle"
-              className="text-sm font-normal cursor-pointer"
-            >
-              Match brand's writing style and tone
-            </Label>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <Checkbox
+                id="matchStyle"
+                data-testid="checkbox-match-style"
+                checked={matchStyle}
+                onCheckedChange={(checked) => setMatchStyle(checked === true)}
+              />
+              <Label
+                htmlFor="matchStyle"
+                className="text-sm font-normal cursor-pointer"
+              >
+                Match brand's writing style and tone
+              </Label>
+            </div>
+
+            {matchStyle && (
+              <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                <Label className="text-sm font-medium">Style Matching Method</Label>
+                <RadioGroup
+                  value={styleMatchingMethod}
+                  onValueChange={(value: 'continuous' | 'end-rewrite') => setStyleMatchingMethod(value)}
+                  data-testid="radio-style-method"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="continuous" id="continuous" data-testid="radio-continuous" />
+                    <Label htmlFor="continuous" className="text-sm font-normal cursor-pointer">
+                      Continuous (apply style throughout generation)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="end-rewrite" id="end-rewrite" data-testid="radio-end-rewrite" />
+                    <Label htmlFor="end-rewrite" className="text-sm font-normal cursor-pointer">
+                      End Rewrite (analyze brand style, then rewrite at end)
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
           </div>
         )}
 
