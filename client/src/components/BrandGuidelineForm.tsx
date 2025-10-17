@@ -443,6 +443,65 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         </div>
       )}
 
+      {/* Domain URL - Outside of tabs, applies to all sections */}
+      <div className="p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
+        <Label htmlFor="domain-url" className="text-gray-200 text-sm font-medium">Domain URL</Label>
+        <div className="flex gap-2 mt-2">
+          <Input
+            id="domain-url"
+            data-testid="input-domain-url"
+            type="url"
+            value={formData.domain_url || ""}
+            onChange={(e) => updateField("domain_url", e.target.value)}
+            placeholder="https://yourbrand.com"
+            className="flex-1 bg-gray-800 border-gray-700 text-white"
+          />
+          <Button
+            type="button"
+            data-testid="button-auto-populate"
+            onClick={handleAutoPopulate}
+            disabled={isAutoPopulating || !formData.domain_url}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap"
+          >
+            {isAutoPopulating ? (
+              <>
+                <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Auto Populate
+              </>
+            )}
+          </Button>
+          <div className="relative">
+            <input
+              type="file"
+              id="pdf-upload"
+              data-testid="input-pdf-upload"
+              accept="application/pdf"
+              onChange={handlePdfUpload}
+              disabled={isAutoPopulating}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              data-testid="button-upload-pdf"
+              onClick={() => document.getElementById('pdf-upload')?.click()}
+              disabled={isAutoPopulating}
+              className="bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload PDF
+            </Button>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          Enter your website URL and click Auto Populate, or upload a PDF brand guideline document to extract information automatically.
+        </p>
+      </div>
+
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="flex flex-wrap w-full bg-gray-800 h-auto p-1 gap-1">
           <TabsTrigger value="basic" data-testid="tab-basic-info" className="flex-1 min-w-[120px]">Basic Info</TabsTrigger>
@@ -453,67 +512,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           <TabsTrigger value="regulatory" data-testid="tab-regulatory" className="flex-1 min-w-[120px]">Regulatory</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="basic" className="space-y-4 mt-6">
-          <div>
-            <Label htmlFor="domain-url" className="text-gray-200">Domain URL</Label>
-            <div className="flex gap-2 mt-2">
-              <Input
-                id="domain-url"
-                data-testid="input-domain-url"
-                type="url"
-                value={formData.domain_url || ""}
-                onChange={(e) => updateField("domain_url", e.target.value)}
-                placeholder="https://yourbrand.com"
-                className="flex-1 bg-gray-800 border-gray-700 text-white"
-              />
-              <Button
-                type="button"
-                data-testid="button-auto-populate"
-                onClick={handleAutoPopulate}
-                disabled={isAutoPopulating || !formData.domain_url}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap"
-              >
-                {isAutoPopulating ? (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Auto Populate
-                  </>
-                )}
-              </Button>
-              <div className="relative">
-                <input
-                  type="file"
-                  id="pdf-upload"
-                  data-testid="input-pdf-upload"
-                  accept="application/pdf"
-                  onChange={handlePdfUpload}
-                  disabled={isAutoPopulating}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  data-testid="button-upload-pdf"
-                  onClick={() => document.getElementById('pdf-upload')?.click()}
-                  disabled={isAutoPopulating}
-                  className="bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload PDF
-                </Button>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Enter your website URL and click Auto Populate, or upload a PDF brand guideline document to extract information automatically.
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="tone-of-voice" className="text-gray-200">Tone of Voice</Label>
+        <TabsContent value="basic" className="space-y-6 mt-6">
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label htmlFor="tone-of-voice" className="text-gray-200 font-semibold text-sm">Tone of Voice</Label>
             <Textarea
               id="tone-of-voice"
               data-testid="textarea-tone-of-voice"
@@ -525,8 +526,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             />
           </div>
 
-          <div>
-            <Label htmlFor="style-preferences" className="text-gray-200">Style Preferences</Label>
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label htmlFor="style-preferences" className="text-gray-200 font-semibold text-sm">Style Preferences</Label>
             <Textarea
               id="style-preferences"
               data-testid="textarea-style-preferences"
@@ -539,9 +540,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
         </TabsContent>
 
-        <TabsContent value="visual" className="space-y-4 mt-6">
-          <div>
-            <Label className="text-gray-200">Color Palette</Label>
+        <TabsContent value="visual" className="space-y-6 mt-6">
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label className="text-gray-200 font-semibold text-sm">Color Palette</Label>
             <div className="space-y-2 mt-2">
               {(formData.color_palette || []).map((color, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -581,8 +582,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="visual-style" className="text-gray-200">Visual Style</Label>
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label htmlFor="visual-style" className="text-gray-200 font-semibold text-sm">Visual Style</Label>
             <Textarea
               id="visual-style"
               data-testid="textarea-visual-style"
@@ -595,10 +596,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
         </TabsContent>
 
-        <TabsContent value="audience" className="space-y-4 mt-6">
-          <div>
-            <Label className="text-gray-200">Target Audiences</Label>
-            <div className="space-y-4 mt-2">
+        <TabsContent value="audience" className="space-y-6 mt-6">
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label className="text-gray-200 font-semibold text-sm">Target Audiences</Label>
+            <div className="space-y-4 mt-3">
               {(formData.target_audience || []).map((audience, index) => (
                 <div
                   key={index}
@@ -716,9 +717,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
         </TabsContent>
 
-        <TabsContent value="voice" className="space-y-4 mt-6">
-          <div>
-            <Label className="text-gray-200">
+        <TabsContent value="voice" className="space-y-6 mt-6">
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label className="text-gray-200 font-semibold text-sm">
               Brand Personality
             </Label>
             <div className="mt-2">
@@ -731,8 +732,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             </div>
           </div>
 
-          <div>
-            <Label className="text-gray-200">
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label className="text-gray-200 font-semibold text-sm">
               Content Themes
             </Label>
             <div className="mt-2">
@@ -745,8 +746,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="language-style" className="text-gray-200">Language Style</Label>
+          <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+            <Label htmlFor="language-style" className="text-gray-200 font-semibold text-sm">Language Style</Label>
             <Textarea
               id="language-style"
               data-testid="textarea-language-style"
