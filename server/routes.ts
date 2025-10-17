@@ -21,6 +21,7 @@ import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuideli
 import { analyzeBrandGuidelines } from "./utils/brand-analyzer";
 import { ragService } from "./utils/rag-service";
 import { loggedOpenAICall, loggedAnthropicCall } from "./utils/ai-logger";
+import { aiUsageLogs } from "@shared/schema";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -3034,6 +3035,137 @@ Return the refined article maintaining the structure.`;
     } catch (error) {
       console.error("Error updating notification preferences:", error);
       res.status(500).json({ message: "Failed to update notification preferences" });
+    }
+  });
+
+  // AI Usage Logs API - Admin only
+  app.get("/api/admin/ai-usage-logs", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Check if user is admin
+      const user = await storage.getUserById(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { limit = 100, offset = 0, provider, endpoint } = req.query;
+
+      // Build query
+      let query = db
+        .select()
+        .from(aiUsageLogs)
+        .orderBy(sql`${aiUsageLogs.createdAt} DESC`)
+        .limit(parseInt(limit as string))
+        .offset(parseInt(offset as string));
+
+      // Add filters if provided
+      const conditions = [];
+      if (provider) {
+        conditions.push(eq(aiUsageLogs.provider, provider as string));
+      }
+      if (endpoint) {
+        conditions.push(eq(aiUsageLogs.endpoint, endpoint as string));
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(sql`${conditions.join(' AND ')}`);
+      }
+
+      const logs = await query;
+      const totalQuery = await db.select({ count: sql<number>`count(*)` }).from(aiUsageLogs);
+      const total = totalQuery[0]?.count || 0;
+
+      res.json({ 
+        logs, 
+        total,
+        pagination: {
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string)
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching AI usage logs:", error);
+      res.status(500).json({ message: "Failed to fetch AI usage logs" });
+    }
+  });
+
+  // AI Usage Summary API - Admin only
+  app.get("/api/admin/ai-usage-summary", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Check if user is admin
+      const user = await storage.getUserById(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { startDate, endDate } = req.query;
+
+      // Build date filter
+      const conditions = [];
+      if (startDate) {
+        conditions.push(sql`${aiUsageLogs.createdAt} >= ${new Date(startDate as string)}`);
+      }
+      if (endDate) {
+        conditions.push(sql`${aiUsageLogs.createdAt} <= ${new Date(endDate as string)}`);
+      }
+
+      const whereClause = conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+
+      // Get summary by provider
+      const summaryByProvider = await db.execute(sql`
+        SELECT 
+          provider,
+          COUNT(*) as call_count,
+          SUM(total_tokens) as total_tokens,
+          SUM(prompt_tokens) as total_prompt_tokens,
+          SUM(completion_tokens) as total_completion_tokens,
+          SUM(CAST(estimated_cost AS DECIMAL)) as total_cost,
+          AVG(duration_ms) as avg_duration_ms
+        FROM ai_usage_logs
+        ${whereClause}
+        GROUP BY provider
+      `);
+
+      // Get summary by endpoint
+      const summaryByEndpoint = await db.execute(sql`
+        SELECT 
+          endpoint,
+          provider,
+          COUNT(*) as call_count,
+          SUM(total_tokens) as total_tokens,
+          SUM(CAST(estimated_cost AS DECIMAL)) as total_cost
+        FROM ai_usage_logs
+        ${whereClause}
+        GROUP BY endpoint, provider
+        ORDER BY total_cost DESC
+        LIMIT 20
+      `);
+
+      // Get overall totals
+      const overallTotal = await db.execute(sql`
+        SELECT 
+          COUNT(*) as total_calls,
+          SUM(total_tokens) as total_tokens,
+          SUM(CAST(estimated_cost AS DECIMAL)) as total_cost
+        FROM ai_usage_logs
+        ${whereClause}
+      `);
+
+      res.json({
+        overall: overallTotal.rows[0] || { total_calls: 0, total_tokens: 0, total_cost: 0 },
+        byProvider: summaryByProvider.rows || [],
+        byEndpoint: summaryByEndpoint.rows || [],
+        dateRange: {
+          startDate: startDate || null,
+          endDate: endDate || null
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching AI usage summary:", error);
+      res.status(500).json({ message: "Failed to fetch AI usage summary" });
     }
   });
 
