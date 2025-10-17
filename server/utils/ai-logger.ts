@@ -125,19 +125,17 @@ export async function loggedOpenAICall<T>(
   } finally {
     const durationMs = Date.now() - startTime;
 
-    // Extract usage from response
-    if (response?.usage) {
-      await logAiUsage({
-        ...params,
-        provider: "openai",
-        model: response.model || "unknown",
-        promptTokens: response.usage.prompt_tokens || 0,
-        completionTokens: response.usage.completion_tokens || 0,
-        durationMs,
-        success,
-        errorMessage,
-      });
-    }
+    // Always log, even for failures
+    await logAiUsage({
+      ...params,
+      provider: "openai",
+      model: response?.model || "unknown",
+      promptTokens: response?.usage?.prompt_tokens || 0,
+      completionTokens: response?.usage?.completion_tokens || 0,
+      durationMs,
+      success,
+      errorMessage,
+    });
   }
 }
 
@@ -169,18 +167,16 @@ export async function loggedAnthropicCall<T extends { usage?: any; model?: strin
   } finally {
     const durationMs = Date.now() - startTime;
 
-    // Extract usage from response
-    if (response?.usage) {
-      await logAiUsage({
-        ...params,
-        provider: "anthropic",
-        model: response.model || params.model,
-        promptTokens: response.usage.input_tokens || 0,
-        completionTokens: response.usage.output_tokens || 0,
-        durationMs,
-        success,
-        errorMessage,
-      });
-    }
+    // Always log, even for failures
+    await logAiUsage({
+      ...params,
+      provider: "anthropic",
+      model: response?.model || params.model,
+      promptTokens: response?.usage?.input_tokens || 0,
+      completionTokens: response?.usage?.output_tokens || 0,
+      durationMs,
+      success,
+      errorMessage,
+    });
   }
 }
