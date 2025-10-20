@@ -7,7 +7,7 @@ import { z } from "zod";
 import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertGeneratedContent, PRODUCT_IDS } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { db } from "./db";
 import OpenAI from "openai";
 import axios from "axios";
@@ -2090,7 +2090,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const [deletedContent] = await db
         .delete(generatedContent)
-        .where(eq(generatedContent.id, id) && eq(generatedContent.userId, userId))
+        .where(and(
+          eq(generatedContent.id, id),
+          eq(generatedContent.userId, userId)
+        ))
         .returning();
       
       if (!deletedContent) {
