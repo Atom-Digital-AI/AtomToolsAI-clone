@@ -154,9 +154,137 @@ function extractUrls(html: string, domain: string, baseUrl: string): string[] {
 }
 
 /**
+ * Checks if a URL returns 200 status
+ */
+async function checkUrlExists(url: string): Promise<boolean> {
+  try {
+    const https = await import('https');
+    const agent = new https.default.Agent({
+      rejectUnauthorized: false,
+    });
+    
+    const response = await axios.head(url, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
+      },
+      httpsAgent: agent,
+      validateStatus: (status) => status === 200
+    });
+    
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extracts navigation links with their text from HTML
+ */
+function extractNavigationLinks(html: string, baseUrl: string): Array<{ url: string; text: string }> {
+  const $ = cheerio.load(html);
+  const links: Array<{ url: string; text: string }> = [];
+  
+  // Extract links from nav, header, and footer elements
+  $('nav a, header a, footer a').each((_, elem) => {
+    const href = $(elem).attr('href');
+    const text = $(elem).text().trim().toLowerCase();
+    
+    if (href && text) {
+      try {
+        const absoluteUrl = new URL(href, baseUrl).href;
+        links.push({ url: absoluteUrl, text });
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+  });
+  
+  return links;
+}
+
+/**
+ * Finds the about page URL using a 4-step fallback approach
+ */
+async function findAboutPageUrl(domain: string, homepageHtml: string, baseUrl: string): Promise<string> {
+  // Step 1: Try domain/about
+  console.log('Trying /about...');
+  const aboutUrl = `${domain}/about`;
+  if (await checkUrlExists(aboutUrl)) {
+    console.log('Found about page at /about');
+    return aboutUrl;
+  }
+  
+  // Step 2: Try domain/about-us
+  console.log('Trying /about-us...');
+  const aboutUsUrl = `${domain}/about-us`;
+  if (await checkUrlExists(aboutUsUrl)) {
+    console.log('Found about page at /about-us');
+    return aboutUsUrl;
+  }
+  
+  // Extract navigation links from homepage
+  const navLinks = extractNavigationLinks(homepageHtml, baseUrl);
+  
+  // Step 3: Check main navigation (nav/header) for "About" or "About Us" links
+  console.log('Checking main navigation...');
+  const $ = cheerio.load(homepageHtml);
+  const mainNavLinks: Array<{ url: string; text: string }> = [];
+  
+  $('nav a, header a').each((_, elem) => {
+    const href = $(elem).attr('href');
+    const text = $(elem).text().trim().toLowerCase();
+    
+    if (href && text) {
+      try {
+        const absoluteUrl = new URL(href, baseUrl).href;
+        mainNavLinks.push({ url: absoluteUrl, text });
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+  });
+  
+  for (const link of mainNavLinks) {
+    if (link.text === 'about' || link.text === 'about us') {
+      console.log(`Found about page in main navigation: ${link.url}`);
+      return link.url;
+    }
+  }
+  
+  // Step 4: Check footer navigation for "About" or "About Us" links
+  console.log('Checking footer navigation...');
+  const footerLinks: Array<{ url: string; text: string }> = [];
+  
+  $('footer a').each((_, elem) => {
+    const href = $(elem).attr('href');
+    const text = $(elem).text().trim().toLowerCase();
+    
+    if (href && text) {
+      try {
+        const absoluteUrl = new URL(href, baseUrl).href;
+        footerLinks.push({ url: absoluteUrl, text });
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+  });
+  
+  for (const link of footerLinks) {
+    if (link.text === 'about' || link.text === 'about us') {
+      console.log(`Found about page in footer: ${link.url}`);
+      return link.url;
+    }
+  }
+  
+  console.log('No about page found through fallback methods');
+  return '';
+}
+
+/**
  * Categorizes crawled pages into home, about, services, and blog pages
  */
-export function categorizePages(pages: CrawledPage[], homepageUrl: string): CategorizedPages {
+export async function categorizePages(pages: CrawledPage[], homepageUrl: string): Promise<CategorizedPages> {
   const categorized: CategorizedPages = {
     home_page: homepageUrl,
     about_page: '',
@@ -164,31 +292,21 @@ export function categorizePages(pages: CrawledPage[], homepageUrl: string): Cate
     blog_articles: []
   };
 
+  const domain = new URL(homepageUrl).origin;
+  
+  // Find the homepage in crawled pages to get its HTML
+  const homepageCrawled = pages.find(p => p.url === homepageUrl);
+  
+  // Use the new 4-step fallback logic to find about page
+  if (homepageCrawled) {
+    categorized.about_page = await findAboutPageUrl(domain, homepageCrawled.html, homepageUrl);
+  }
+
   // Keywords for categorization
-  const aboutKeywords = ['about', 'who-we-are', 'our-story', 'our-team', 'company', 'team', 'mission'];
   const serviceKeywords = ['service', 'product', 'solution', 'offering', 'what-we-do', 'feature', 'plan', 'pricing'];
   const blogKeywords = ['blog', 'article', 'news', 'resource', 'insight', 'post', 'guide', 'learn'];
 
-  // First pass - prioritize exact patterns for about page
-  for (const page of pages) {
-    const urlPath = new URL(page.url).pathname.toLowerCase();
-    
-    // Skip homepage
-    if (page.url === homepageUrl || urlPath === '/' || urlPath === '') {
-      continue;
-    }
-
-    // Prioritize exact about page patterns
-    if (!categorized.about_page) {
-      const exactAboutPatterns = ['/about', '/about-us', '/about/', '/about-us/'];
-      if (exactAboutPatterns.some(pattern => urlPath === pattern || urlPath.endsWith(pattern))) {
-        categorized.about_page = page.url;
-        continue;
-      }
-    }
-  }
-
-  // Second pass - categorize other pages
+  // Categorize other pages
   for (const page of pages) {
     const url = page.url.toLowerCase();
     const title = page.title.toLowerCase();
@@ -201,14 +319,6 @@ export function categorizePages(pages: CrawledPage[], homepageUrl: string): Cate
 
     // Skip if already set as about page
     if (page.url === categorized.about_page) {
-      continue;
-    }
-
-    // Check if it's an about page (fallback to keyword matching)
-    if (!categorized.about_page && aboutKeywords.some(keyword => 
-      urlPath.includes(keyword) || title.includes(keyword)
-    )) {
-      categorized.about_page = page.url;
       continue;
     }
 
@@ -257,7 +367,7 @@ export async function discoverContextPages(homepageUrl: string): Promise<Categor
     throw new Error("Unable to crawl any pages from the provided URL");
   }
 
-  const categorized = categorizePages(crawlResult.pages, homepageUrl);
+  const categorized = await categorizePages(crawlResult.pages, homepageUrl);
   
   console.log(`Discovered context pages:`, {
     total: crawlResult.pages.length,
