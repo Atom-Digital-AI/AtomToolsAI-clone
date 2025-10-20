@@ -60,9 +60,15 @@ export default function ContentHistory() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest('DELETE', `/api/generated-content/${id}`),
+    mutationFn: ({ id, toolType }: { id: string; toolType: string }) => {
+      const endpoint = toolType === 'content-writer-v2' 
+        ? `/api/content-writer/drafts/${id}`
+        : `/api/generated-content/${id}`;
+      return apiRequest('DELETE', endpoint);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/generated-content'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/content-writer/drafts'] });
       toast({
         title: 'Content Deleted',
         description: 'The generated content has been deleted successfully.',
@@ -436,7 +442,7 @@ export default function ContentHistory() {
                           Download
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => deleteMutation.mutate(content.id)}
+                          onClick={() => deleteMutation.mutate({ id: content.id, toolType: content.toolType })}
                           className="text-red-400 hover:text-red-300 hover:bg-gray-700"
                           data-testid={`button-delete-${content.id}`}
                         >
