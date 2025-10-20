@@ -2929,6 +2929,25 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     }
   });
 
+  // Delete a content writer draft
+  app.delete("/api/content-writer/drafts/:id", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      const success = await storage.deleteContentWriterDraft(id, userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Draft not found" });
+      }
+      
+      res.json({ success: true, message: "Draft deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting content writer draft:", error);
+      res.status(500).json({ message: "Failed to delete draft" });
+    }
+  });
+
   // Usage Statistics API
   app.get("/api/user/usage-stats", requireAuth, async (req: any, res) => {
     try {

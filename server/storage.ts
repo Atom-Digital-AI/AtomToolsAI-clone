@@ -128,6 +128,7 @@ export interface IStorage {
   getSessionDraft(sessionId: string, userId: string): Promise<ContentWriterDraft | undefined>;
   getUserContentWriterDrafts(userId: string): Promise<Array<ContentWriterDraft & { session: ContentWriterSession }>>;
   updateContentWriterDraft(id: string, userId: string, updates: Partial<InsertContentWriterDraft>): Promise<ContentWriterDraft | undefined>;
+  deleteContentWriterDraft(id: string, userId: string): Promise<boolean>;
 
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -1185,6 +1186,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(contentWriterDrafts.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteContentWriterDraft(id: string, userId: string): Promise<boolean> {
+    // SECURITY: Verify draft belongs to user's session
+    const [draft] = await db
+      .select({ sessionId: contentWriterDrafts.sessionId })
+      .from(contentWriterDrafts)
+      .where(eq(contentWriterDrafts.id, id));
+    
+    if (!draft) return false;
+    
+    const session = await this.getContentWriterSession(draft.sessionId, userId);
+    if (!session) return false;
+
+    const result = await db
+      .delete(contentWriterDrafts)
+      .where(eq(contentWriterDrafts.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Notification operations
