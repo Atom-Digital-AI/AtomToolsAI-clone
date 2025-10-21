@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ManualServiceUrlDialog, ManualBlogUrlDialog } from "@/components/ContextPageFallbackDialogs";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -49,6 +50,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [pendingAutoPopulateData, setPendingAutoPopulateData] = useState<BrandGuidelineContent | null>(null);
   const [autoPopulateSource, setAutoPopulateSource] = useState<"url" | "pdf">("url");
   const [showExtractWarningDialog, setShowExtractWarningDialog] = useState(false);
+  const [showServiceFallbackDialog, setShowServiceFallbackDialog] = useState(false);
+  const [showBlogFallbackDialog, setShowBlogFallbackDialog] = useState(false);
+  const [cachedHomepageUrl, setCachedHomepageUrl] = useState<string>("");
   const { toast } = useToast();
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
@@ -411,6 +415,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
     try {
       setIsDiscoveringPages(true);
+      setCachedHomepageUrl(homepageUrl); // Cache for fallback scenarios
       
       const res = await apiRequest(
         "POST",
@@ -422,6 +427,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         about_page: string;
         service_pages: string[];
         blog_articles: string[];
+        totalPagesCrawled?: number;
+        reachedLimit?: boolean;
       };
 
       setDiscoveredPages(discovered);
@@ -434,10 +441,24 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         blog_articles: discovered.blog_articles,
       });
 
+      const servicesMissing = discovered.service_pages.length === 0;
+      const blogsMissing = discovered.blog_articles.length === 0;
+      const reachedLimit = discovered.reachedLimit === true;
+
       toast({
         title: "Pages Discovered!",
-        description: `Found ${discovered.about_page ? 1 : 0} about page, ${discovered.service_pages.length} service pages, and ${discovered.blog_articles.length} blog articles. Review and edit before extracting.`,
+        description: `Found ${discovered.about_page ? 1 : 0} about page, ${discovered.service_pages.length} service pages, and ${discovered.blog_articles.length} blog articles after crawling ${discovered.totalPagesCrawled || 0} pages. Review and edit before extracting.`,
       });
+
+      // Show fallback dialogs ONLY if we reached the 250 page limit and fields are still missing
+      if (reachedLimit) {
+        if (servicesMissing) {
+          setShowServiceFallbackDialog(true);
+        } else if (blogsMissing) {
+          // Only show blog dialog if services were found or skipped
+          setShowBlogFallbackDialog(true);
+        }
+      }
     } catch (error: any) {
       console.error("Discover pages error:", error);
       showAdminErrorToast(
@@ -521,6 +542,71 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const confirmExtractContext = async () => {
     setShowExtractWarningDialog(false);
     await doExtractContext();
+  };
+
+  const handleServiceFallback = async (exampleServiceUrl: string) => {
+    try {
+      const res = await apiRequest(
+        "POST",
+        "/api/guideline-profiles/find-services-by-pattern",
+        { exampleServiceUrl, homepageUrl: cachedHomepageUrl }
+      );
+      const data = await res.json() as { service_pages: string[] };
+      
+      // Update context URLs with found service pages
+      const currentUrls = formData.context_urls || {};
+      updateField("context_urls", {
+        ...currentUrls,
+        service_pages: data.service_pages,
+      });
+      
+      toast({
+        title: "Service Pages Found!",
+        description: `Found ${data.service_pages.length} pages matching the URL pattern.`,
+      });
+      
+      // Show blog dialog next if blogs are missing
+      if (!formData.context_urls?.blog_articles || formData.context_urls.blog_articles.length === 0) {
+        setShowBlogFallbackDialog(true);
+      }
+    } catch (error: any) {
+      showAdminErrorToast(
+        "Pattern Matching Failed",
+        error.message || "Failed to find service pages by pattern.",
+        user?.isAdmin || false,
+        { exampleServiceUrl, feature: "find-services-by-pattern" }
+      );
+    }
+  };
+
+  const handleBlogFallback = async (blogHomeUrl: string) => {
+    try {
+      const res = await apiRequest(
+        "POST",
+        "/api/guideline-profiles/extract-blog-posts",
+        { blogHomeUrl }
+      );
+      const data = await res.json() as { blog_articles: string[] };
+      
+      // Update context URLs with found blog articles
+      const currentUrls = formData.context_urls || {};
+      updateField("context_urls", {
+        ...currentUrls,
+        blog_articles: data.blog_articles,
+      });
+      
+      toast({
+        title: "Blog Posts Found!",
+        description: `Extracted ${data.blog_articles.length} blog article links.`,
+      });
+    } catch (error: any) {
+      showAdminErrorToast(
+        "Blog Extraction Failed",
+        error.message || "Failed to extract blog posts.",
+        user?.isAdmin || false,
+        { blogHomeUrl, feature: "extract-blog-posts" }
+      );
+    }
   };
 
   if (isLegacy) {
@@ -1234,6 +1320,19 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Fallback Dialogs for Manual Input */}
+      <ManualServiceUrlDialog
+        open={showServiceFallbackDialog}
+        onOpenChange={setShowServiceFallbackDialog}
+        onSubmit={handleServiceFallback}
+      />
+      
+      <ManualBlogUrlDialog
+        open={showBlogFallbackDialog}
+        onOpenChange={setShowBlogFallbackDialog}
+        onSubmit={handleBlogFallback}
+      />
     </div>
   );
 }
