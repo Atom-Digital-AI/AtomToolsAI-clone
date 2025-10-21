@@ -1316,7 +1316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Discover context pages from homepage URL
+  // Discover context pages from homepage URL with intelligent crawling
   app.post("/api/guideline-profiles/discover-context-pages", requireAuth, async (req: any, res) => {
     try {
       const { homepageUrl } = req.body;
@@ -1335,10 +1335,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate and normalize the URL
       const validatedUrl = await validateAndNormalizeUrl(homepageUrl);
       
-      // Discover and categorize pages
-      const categorizedPages = await discoverContextPages(validatedUrl);
+      // Discover and categorize pages with intelligent crawling (up to 250 pages, early exit)
+      const result = await discoverContextPages(validatedUrl);
       
-      res.json(categorizedPages);
+      // Return result without crawledPages in response (keep it server-side if needed)
+      // Frontend will cache the result for fallback scenarios
+      res.json({
+        home_page: result.home_page,
+        about_page: result.about_page,
+        service_pages: result.service_pages,
+        blog_articles: result.blog_articles,
+        totalPagesCrawled: result.totalPagesCrawled,
+        reachedLimit: result.reachedLimit
+      });
     } catch (error) {
       console.error("Error discovering context pages:", error);
       const errorMessage = (error as any)?.message || "Failed to discover context pages";
@@ -1351,6 +1360,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         ? 400 : 500;
       
       res.status(statusCode).json({ message: errorMessage });
+    }
+  });
+
+  // Fallback: Find service pages by URL pattern from initial crawl
+  app.post("/api/guideline-profiles/find-services-by-pattern", requireAuth, async (req: any, res) => {
+    try {
+      const { exampleServiceUrl, homepageUrl } = req.body;
+      const userId = req.user.id;
+      
+      if (!exampleServiceUrl || typeof exampleServiceUrl !== 'string') {
+        return res.status(400).json({ 
+          message: "Example service page URL is required" 
+        });
+      }
+
+      if (!homepageUrl || typeof homepageUrl !== 'string') {
+        return res.status(400).json({ 
+          message: "Homepage URL is required" 
+        });
+      }
+
+      // Import the web crawler utility
+      const { findServicePagesByPattern, crawlWebsiteWithEarlyExit } = await import("./utils/web-crawler");
+      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
+
+      // Validate URLs
+      const validatedHomepage = await validateAndNormalizeUrl(homepageUrl);
+      const validatedExample = await validateAndNormalizeUrl(exampleServiceUrl);
+      
+      // Re-crawl the site (this should be fast if called immediately after initial crawl due to caching)
+      // In a production scenario, you'd cache this on the server or in a database
+      const result = await crawlWebsiteWithEarlyExit(validatedHomepage, 250);
+      
+      // Find service pages matching the pattern
+      const servicePages = findServicePagesByPattern(validatedExample, result.crawledPages, 10);
+      
+      res.json({ service_pages: servicePages });
+    } catch (error) {
+      console.error("Error finding service pages by pattern:", error);
+      const errorMessage = (error as any)?.message || "Failed to find service pages";
+      res.status(500).json({ message: errorMessage });
+    }
+  });
+
+  // Fallback: Extract blog posts from blog home page with pagination
+  app.post("/api/guideline-profiles/extract-blog-posts", requireAuth, async (req: any, res) => {
+    try {
+      const { blogHomeUrl } = req.body;
+      const userId = req.user.id;
+      
+      if (!blogHomeUrl || typeof blogHomeUrl !== 'string') {
+        return res.status(400).json({ 
+          message: "Blog home page URL is required" 
+        });
+      }
+
+      // Import the web crawler utility
+      const { extractBlogPostsFromPage } = await import("./utils/web-crawler");
+      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
+
+      // Validate URL
+      const validatedUrl = await validateAndNormalizeUrl(blogHomeUrl);
+      
+      // Extract blog posts with pagination
+      const blogPosts = await extractBlogPostsFromPage(validatedUrl, 20, 5);
+      
+      res.json({ blog_articles: blogPosts });
+    } catch (error) {
+      console.error("Error extracting blog posts:", error);
+      const errorMessage = (error as any)?.message || "Failed to extract blog posts";
+      res.status(500).json({ message: errorMessage });
     }
   });
 

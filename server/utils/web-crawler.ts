@@ -21,8 +21,165 @@ interface CategorizedPages {
   blog_articles: string[];
 }
 
+interface CategorizedPagesWithCache extends CategorizedPages {
+  crawledPages: CrawledPage[];
+  totalPagesCrawled: number;
+  reachedLimit: boolean;
+}
+
 /**
- * Crawls a website and extracts HTML and CSS from up to maxPages
+ * Checks if all required fields are populated
+ */
+function checkAllFieldsFound(categorized: CategorizedPages): boolean {
+  return (
+    categorized.home_page !== '' &&
+    categorized.about_page !== '' &&
+    categorized.service_pages.length >= 10 &&
+    categorized.blog_articles.length >= 20
+  );
+}
+
+/**
+ * Incrementally categorize a single page
+ */
+function categorizeSinglePage(
+  page: CrawledPage,
+  categorized: CategorizedPages,
+  homepageUrl: string,
+  serviceKeywords: string[],
+  blogKeywords: string[]
+): void {
+  const url = page.url.toLowerCase();
+  const title = page.title.toLowerCase();
+  const urlPath = new URL(page.url).pathname.toLowerCase();
+
+  // Skip homepage
+  if (page.url === homepageUrl || urlPath === '/' || urlPath === '') {
+    return;
+  }
+
+  // Skip if already set as about page
+  if (page.url === categorized.about_page) {
+    return;
+  }
+
+  // Check if it's a blog/article page
+  const isBlogIndexOrCategory = 
+    urlPath.endsWith('/blog') || 
+    urlPath.endsWith('/blog/') || 
+    urlPath === '/blog' ||
+    urlPath.includes('/category/') ||
+    urlPath.includes('/categories/') ||
+    urlPath.includes('/tag/') ||
+    urlPath.includes('/tags/');
+  
+  if (!isBlogIndexOrCategory && categorized.blog_articles.length < 20 && blogKeywords.some(keyword => 
+    urlPath.includes(keyword) || title.includes(keyword)
+  )) {
+    categorized.blog_articles.push(page.url);
+    return;
+  }
+
+  // Check if it's a service/product page
+  if (categorized.service_pages.length < 10 && serviceKeywords.some(keyword => 
+    urlPath.includes(keyword) || title.includes(keyword)
+  )) {
+    categorized.service_pages.push(page.url);
+    return;
+  }
+}
+
+/**
+ * Crawls a website with intelligent early exit
+ * Stops when all fields are found OR maxPages is reached
+ */
+export async function crawlWebsiteWithEarlyExit(
+  startUrl: string,
+  maxPages: number = 250
+): Promise<CategorizedPagesWithCache> {
+  const domain = new URL(startUrl).origin;
+  const visitedUrls = new Set<string>();
+  const pagesToCrawl: string[] = [startUrl];
+  const crawledPages: CrawledPage[] = [];
+
+  const categorized: CategorizedPages = {
+    home_page: startUrl,
+    about_page: '',
+    service_pages: [],
+    blog_articles: []
+  };
+
+  const serviceKeywords = ['service', 'product', 'solution', 'offering', 'what-we-do', 'feature', 'plan', 'pricing'];
+  const blogKeywords = ['blog', 'article', 'news', 'resource', 'insight', 'post', 'guide', 'learn'];
+
+  let homepageHtml = '';
+  let aboutPageChecked = false;
+
+  while (crawledPages.length < maxPages && pagesToCrawl.length > 0) {
+    const currentUrl = pagesToCrawl.shift()!;
+    
+    if (visitedUrls.has(currentUrl)) {
+      continue;
+    }
+
+    try {
+      visitedUrls.add(currentUrl);
+      console.log(`Crawling page ${crawledPages.length + 1}/${maxPages}: ${currentUrl}`);
+      const page = await fetchPage(currentUrl, domain);
+      crawledPages.push(page);
+
+      // Save homepage HTML for about page discovery
+      if (currentUrl === startUrl) {
+        homepageHtml = page.html;
+      }
+
+      // Run about page discovery after we have the homepage
+      if (!aboutPageChecked && homepageHtml) {
+        categorized.about_page = await findAboutPageUrl(domain, homepageHtml, startUrl);
+        aboutPageChecked = true;
+      }
+
+      // Incrementally categorize this page
+      categorizeSinglePage(page, categorized, startUrl, serviceKeywords, blogKeywords);
+
+      // Check if all fields are found
+      if (checkAllFieldsFound(categorized)) {
+        console.log(`✓ All fields found after ${crawledPages.length} pages. Stopping early.`);
+        return {
+          ...categorized,
+          crawledPages,
+          totalPagesCrawled: crawledPages.length,
+          reachedLimit: false
+        };
+      }
+
+      // Extract more URLs to crawl from this page
+      const newUrls = extractUrls(page.html, domain, currentUrl);
+      for (const url of newUrls) {
+        if (!visitedUrls.has(url) && !pagesToCrawl.includes(url)) {
+          pagesToCrawl.push(url);
+        }
+      }
+    } catch (error) {
+      console.error(`Error crawling ${currentUrl}:`, error);
+      // Continue with next URL
+    }
+  }
+
+  console.log(`Crawled ${crawledPages.length} pages from ${domain}`);
+  console.log(`Fields status: about=${!!categorized.about_page}, services=${categorized.service_pages.length}/10, blogs=${categorized.blog_articles.length}/20`);
+  
+  return {
+    ...categorized,
+    crawledPages,
+    totalPagesCrawled: crawledPages.length,
+    reachedLimit: crawledPages.length >= maxPages
+  };
+}
+
+/**
+ * OLD: Crawls a website and extracts HTML and CSS from up to maxPages
+ * @deprecated Use crawlWebsiteWithEarlyExit instead
  */
 export async function crawlWebsite(startUrl: string, maxPages: number = 5): Promise<CrawlResult> {
   const domain = new URL(startUrl).origin;
@@ -357,9 +514,227 @@ export async function categorizePages(pages: CrawledPage[], homepageUrl: string)
 }
 
 /**
- * Discovers and categorizes context pages from a homepage URL
+ * Extracts URL pattern from a service page URL
+ * Example: https://example.com/services/web-design -> /services/
  */
-export async function discoverContextPages(homepageUrl: string): Promise<CategorizedPages> {
+function extractUrlPattern(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/').filter(Boolean);
+    
+    if (pathParts.length >= 2) {
+      // Return the base path (e.g., /services/)
+      return `/${pathParts[0]}/`;
+    } else if (pathParts.length === 1) {
+      // Single segment, look for pages at root level
+      return '/';
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Finds service pages matching the URL pattern of the example URL
+ */
+export function findServicePagesByPattern(
+  exampleServiceUrl: string,
+  cachedPages: CrawledPage[],
+  limit: number = 10
+): string[] {
+  const pattern = extractUrlPattern(exampleServiceUrl);
+  if (!pattern) {
+    console.log('Could not extract URL pattern from example URL');
+    return [];
+  }
+
+  console.log(`Looking for service pages matching pattern: ${pattern}`);
+  
+  const matchingPages: string[] = [];
+  
+  for (const page of cachedPages) {
+    if (matchingPages.length >= limit) {
+      break;
+    }
+    
+    try {
+      const urlObj = new URL(page.url);
+      const path = urlObj.pathname;
+      
+      // Check if URL starts with the pattern and has additional segments
+      if (pattern === '/') {
+        // Root level pattern - look for single segment paths
+        const pathParts = path.split('/').filter(Boolean);
+        if (pathParts.length === 1 && !path.endsWith('.html') && !path.endsWith('.php')) {
+          matchingPages.push(page.url);
+        }
+      } else {
+        // Specific pattern like /services/
+        if (path.startsWith(pattern) && path !== pattern && path !== pattern.slice(0, -1)) {
+          matchingPages.push(page.url);
+        }
+      }
+    } catch {
+      // Invalid URL, skip
+    }
+  }
+  
+  console.log(`Found ${matchingPages.length} service pages matching pattern ${pattern}`);
+  return matchingPages;
+}
+
+/**
+ * Extracts blog post links from a blog home page, including pagination
+ */
+export async function extractBlogPostsFromPage(
+  blogHomeUrl: string,
+  limit: number = 20,
+  maxPaginationPages: number = 5
+): Promise<string[]> {
+  const blogPosts: string[] = [];
+  const visitedPages = new Set<string>();
+  const pagesToVisit: string[] = [blogHomeUrl];
+  
+  const domain = new URL(blogHomeUrl).origin;
+  const blogKeywords = ['blog', 'article', 'news', 'resource', 'insight', 'post', 'guide', 'learn'];
+
+  while (pagesToVisit.length > 0 && visitedPages.size < maxPaginationPages && blogPosts.length < limit) {
+    const currentUrl = pagesToVisit.shift()!;
+    
+    if (visitedPages.has(currentUrl)) {
+      continue;
+    }
+    
+    visitedPages.add(currentUrl);
+    console.log(`Extracting blog posts from: ${currentUrl}`);
+    
+    try {
+      const https = await import('https');
+      const agent = new https.default.Agent({
+        rejectUnauthorized: false,
+      });
+      
+      const response = await axios.get(currentUrl, {
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
+        },
+        httpsAgent: agent
+      });
+      
+      const $ = cheerio.load(response.data);
+      
+      // Extract all links from the page
+      $('a[href]').each((_, elem) => {
+        const href = $(elem).attr('href');
+        if (!href) return;
+        
+        try {
+          const absoluteUrl = new URL(href, currentUrl).href;
+          const urlObj = new URL(absoluteUrl);
+          
+          // Only include URLs from the same domain
+          if (urlObj.origin !== domain) return;
+          
+          const urlPath = urlObj.pathname.toLowerCase();
+          
+          // Check if it's a blog post (not index, category, tag, or pagination)
+          const isBlogIndexOrCategory = 
+            urlPath.endsWith('/blog') || 
+            urlPath.endsWith('/blog/') || 
+            urlPath === '/blog' ||
+            urlPath.includes('/category/') ||
+            urlPath.includes('/categories/') ||
+            urlPath.includes('/tag/') ||
+            urlPath.includes('/tags/') ||
+            urlPath.includes('/page/') ||
+            urlPath.includes('/author/');
+          
+          // Check if it looks like a blog post
+          const looksLikeBlogPost = blogKeywords.some(keyword => urlPath.includes(keyword));
+          
+          if (looksLikeBlogPost && !isBlogIndexOrCategory && !blogPosts.includes(absoluteUrl)) {
+            blogPosts.push(absoluteUrl);
+          }
+        } catch {
+          // Invalid URL, skip
+        }
+      });
+      
+      // Look for pagination links if we need more posts
+      if (blogPosts.length < limit && visitedPages.size < maxPaginationPages) {
+        $('a[href]').each((_, elem) => {
+          const href = $(elem).attr('href');
+          const text = $(elem).text().trim().toLowerCase();
+          
+          if (!href) return;
+          
+          try {
+            const absoluteUrl = new URL(href, currentUrl).href;
+            const urlObj = new URL(absoluteUrl);
+            
+            // Only include URLs from the same domain
+            if (urlObj.origin !== domain) return;
+            
+            const urlPath = urlObj.pathname.toLowerCase();
+            
+            // Check if it's a pagination link
+            const isPaginationLink = 
+              text.includes('next') ||
+              text.includes('older') ||
+              /page\s*\d+/.test(text) ||
+              /\d+/.test(text) ||
+              urlPath.includes('/page/') ||
+              urlObj.searchParams.has('page') ||
+              urlObj.searchParams.has('paged');
+            
+            if (isPaginationLink && !visitedPages.has(absoluteUrl) && !pagesToVisit.includes(absoluteUrl)) {
+              pagesToVisit.push(absoluteUrl);
+            }
+          } catch {
+            // Invalid URL, skip
+          }
+        });
+      }
+    } catch (error) {
+      console.error(`Error extracting blog posts from ${currentUrl}:`, error);
+    }
+  }
+  
+  console.log(`Extracted ${blogPosts.length} blog posts from ${visitedPages.size} pages`);
+  return blogPosts.slice(0, limit);
+}
+
+/**
+ * NEW: Discovers and categorizes context pages from a homepage URL
+ * Uses intelligent crawling with early exit
+ */
+export async function discoverContextPages(homepageUrl: string): Promise<CategorizedPagesWithCache> {
+  // Use new crawler with early exit at 250 pages
+  const result = await crawlWebsiteWithEarlyExit(homepageUrl, 250);
+  
+  if (result.totalPagesCrawled === 0) {
+    throw new Error("Unable to crawl any pages from the provided URL");
+  }
+
+  console.log(`Discovered context pages:`, {
+    total: result.totalPagesCrawled,
+    about: result.about_page ? 1 : 0,
+    services: result.service_pages.length,
+    blogs: result.blog_articles.length,
+    reachedLimit: result.reachedLimit
+  });
+
+  return result;
+}
+
+/**
+ * OLD: Discovers and categorizes context pages from a homepage URL
+ * @deprecated Use new discoverContextPages instead
+ */
+export async function discoverContextPagesOld(homepageUrl: string): Promise<CategorizedPages> {
   // Crawl more pages for better discovery (up to 30 pages)
   const crawlResult = await crawlWebsite(homepageUrl, 30);
   
