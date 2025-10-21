@@ -24,7 +24,12 @@ The backend is built with Node.js and Express.js. Data is managed using Drizzle 
 - **Notifications**: In-app notification system with real-time updates and user-configurable email preferences. Includes article generation status updates.
 - **Global Brand Context**: Application-wide brand selection system using React Context API for consistency across tools.
 - **AI Analytics Dashboard**: Super admin portal for monitoring AI usage (API calls, tokens, costs) across all tools, with breakdowns by provider and endpoint.
-- **Context Pages Auto-Discovery**: Automatically discovers and categorizes content pages (home, about, services, blog) from a given URL, allowing users to review and approve pages before content extraction. Features intelligent 4-step fallback logic for about page detection and prevents accidental overwrites during re-extraction.
+- **Context Pages Auto-Discovery**: Automatically discovers and categorizes content pages (home, about, services, blog) from a given URL with intelligent early-exit crawling (stops at 250 pages OR when all fields found). Features:
+  - **Smart Fallback System**: When 250-page limit is reached without finding services/blogs, shows sequential manual input dialogs
+  - **Service Pattern Matching**: Users provide one example service URL; system analyzes structure and finds similar pages from cached crawl
+  - **Blog Pagination Crawler**: Extracts blog posts from blog home page URL, follows "next page" links up to 5 pages to collect 20 articles
+  - **4-Step About Page Discovery**: Intelligent fallback logic for about page detection
+  - **Re-extraction Protection**: Prevents accidental overwrites during re-extraction with confirmation dialogs
 
 ## External Dependencies
 
