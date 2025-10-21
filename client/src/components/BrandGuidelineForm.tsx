@@ -45,6 +45,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     about_page: string;
     service_pages: string[];
     blog_articles: string[];
+    totalPagesCrawled?: number;
+    reachedLimit?: boolean;
   } | null>(null);
   const [showAutoPopulateDialog, setShowAutoPopulateDialog] = useState(false);
   const [pendingAutoPopulateData, setPendingAutoPopulateData] = useState<BrandGuidelineContent | null>(null);
