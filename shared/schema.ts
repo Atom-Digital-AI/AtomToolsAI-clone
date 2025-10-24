@@ -260,6 +260,7 @@ export const guidelineProfiles = pgTable("guideline_profiles", {
   name: text("name").notNull(),
   type: text("type").notNull(), // 'brand' or 'regulatory'
   content: jsonb("content").notNull(), // Structured JSON for brand/regulatory guidelines
+  crawledUrls: jsonb("crawled_urls"), // Cached crawl results: { url: string, title: string }[]
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
