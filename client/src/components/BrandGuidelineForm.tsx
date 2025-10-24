@@ -119,6 +119,16 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     ['running', 'pending'].includes(backgroundJobStatus.status) && 
     !showProgressModal;
 
+  // Handle background job completion
+  useEffect(() => {
+    if (backgroundJobStatus?.status === 'completed' && backgroundJobStatus.results && !showProgressModal) {
+      // Job completed in background - trigger the completion handler
+      handleCrawlComplete(backgroundJobStatus.results);
+      // Clear the job ID so we stop polling
+      setCrawlJobId(null);
+    }
+  }, [backgroundJobStatus?.status, showProgressModal]);
+
   useEffect(() => {
     if (typeof value === "string") {
       setIsLegacy(true);
