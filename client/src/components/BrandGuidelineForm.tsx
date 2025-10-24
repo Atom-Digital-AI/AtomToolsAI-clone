@@ -64,6 +64,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [cachedHomepageUrl, setCachedHomepageUrl] = useState<string>("");
   const [crawlJobId, setCrawlJobId] = useState<string | null>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
+  const [showRecrawlDialog, setShowRecrawlDialog] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
@@ -75,6 +76,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   // Fetch existing extracted context
   const { data: existingContext, refetch: refetchExtractedContext } = useQuery({
     queryKey: ['/api/guideline-profiles', profileId, 'extracted-context'],
+    enabled: !!profileId,
+  });
+
+  // Fetch the profile data to check for cached crawled URLs
+  const { data: profileData } = useQuery<GuidelineProfile>({
+    queryKey: ['/api/guideline-profiles', profileId],
     enabled: !!profileId,
   });
 
@@ -424,6 +431,18 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       updateField("domain_url", homepageUrl);
     }
 
+    // Check if we have cached crawled URLs
+    if (profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0) {
+      setCachedHomepageUrl(homepageUrl);
+      setShowRecrawlDialog(true);
+      return;
+    }
+
+    // No cached results, start fresh crawl
+    await startCrawl(homepageUrl);
+  };
+
+  const startCrawl = async (homepageUrl: string) => {
     try {
       setIsDiscoveringPages(true);
       setCachedHomepageUrl(homepageUrl); // Cache for fallback scenarios
@@ -456,6 +475,37 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       );
       setIsDiscoveringPages(false);
     }
+  };
+
+  const handleUsePreviousResults = () => {
+    setShowRecrawlDialog(false);
+    if (profileData?.crawledUrls && Array.isArray(profileData.crawledUrls)) {
+      // Determine which pages are missing from context_urls
+      const contextUrls = formData.context_urls || {};
+      const aboutMissing = !contextUrls.about_page;
+      const servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
+      const blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
+
+      if (aboutMissing || servicesMissing || blogsMissing) {
+        setMissingPages({
+          about: aboutMissing,
+          products: servicesMissing,
+          blogs: blogsMissing,
+        });
+        setCrawledUrlsForTagging(profileData.crawledUrls as { url: string; title: string }[]);
+        setShowTaggingMode(true);
+      } else {
+        toast({
+          title: "All Pages Already Set",
+          description: "You already have all context pages configured. You can use the tagging page to review them.",
+        });
+      }
+    }
+  };
+
+  const handleRecrawl = async () => {
+    setShowRecrawlDialog(false);
+    await startCrawl(cachedHomepageUrl || formData.domain_url || "");
   };
 
   const handleCrawlComplete = async (results: any) => {
@@ -1448,6 +1498,52 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         onAddManually={handleAddManually}
         missingPages={missingPages}
       />
+
+      {/* Recrawl dialog */}
+      <AlertDialog open={showRecrawlDialog} onOpenChange={setShowRecrawlDialog}>
+        <AlertDialogContent className="bg-gray-900 border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-gray-100">Use Previous Crawl Results?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              We found {profileData?.crawledUrls?.length || 0} previously crawled URLs from this website. 
+              You can use these to tag your pages, or run a fresh crawl.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 my-4">
+            <div className="p-3 bg-blue-950/30 border border-blue-800 rounded-lg">
+              <h4 className="text-sm font-semibold text-blue-400 mb-1">Use Previous Results</h4>
+              <p className="text-xs text-gray-400">
+                Open the tagging page with the previously crawled URLs to classify your pages.
+              </p>
+            </div>
+            <div className="p-3 bg-purple-950/30 border border-purple-800 rounded-lg">
+              <h4 className="text-sm font-semibold text-purple-400 mb-1">Re-crawl Website</h4>
+              <p className="text-xs text-gray-400">
+                Start a fresh crawl to discover the latest pages from your website (may take a few minutes).
+              </p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-gray-200" data-testid="button-cancel-recrawl">
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              onClick={handleUsePreviousResults}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              data-testid="button-use-previous"
+            >
+              Use Previous Results
+            </Button>
+            <AlertDialogAction
+              onClick={handleRecrawl}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              data-testid="button-recrawl"
+            >
+              Re-crawl Website
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ProgressModal
         jobId={crawlJobId}
