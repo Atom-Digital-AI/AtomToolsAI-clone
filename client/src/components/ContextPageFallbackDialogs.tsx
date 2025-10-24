@@ -46,34 +46,34 @@ export function ManualServiceUrlDialog({ open, onOpenChange, onSubmit }: ManualS
       <AlertDialogContent className="bg-gray-900 border-gray-700 max-w-2xl">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-gray-100">
-            No Service Pages Found
+            No Product/Service Pages Found
           </AlertDialogTitle>
           <AlertDialogDescription className="text-gray-300 space-y-3">
             <p>
-              We couldn't automatically find any service or product pages on your website after crawling {" "}
+              We couldn't automatically find any product or service pages on your website after crawling {" "}
               up to 250 pages.
             </p>
             <p className="font-semibold text-blue-400">
               Help us find them:
             </p>
             <p>
-              Provide the URL of <strong>one example service page</strong> from your website. We'll analyze its URL pattern (like <code className="bg-gray-800 px-1 rounded">/services/web-design</code>) and automatically find all similar pages across your site that match the same structure.
+              Provide the URL of <strong>one example product/service page</strong> from your website. We'll analyze its URL pattern (like <code className="bg-gray-800 px-1 rounded">/products/web-design</code>) and automatically find all similar pages across your site that match the same structure.
             </p>
             <div className="bg-blue-950/20 border border-blue-700 rounded p-3 text-sm">
               <p className="font-semibold text-blue-300 mb-1">Example:</p>
-              <p>If you provide <code className="bg-gray-800 px-1 rounded">https://example.com/services/web-design</code></p>
+              <p>If you provide <code className="bg-gray-800 px-1 rounded">https://example.com/products/web-design</code></p>
               <p className="mt-1">We'll find all pages like:</p>
               <ul className="list-disc list-inside ml-2 mt-1 text-gray-400">
-                <li>https://example.com/services/seo</li>
-                <li>https://example.com/services/branding</li>
-                <li>https://example.com/services/marketing</li>
+                <li>https://example.com/products/seo</li>
+                <li>https://example.com/products/branding</li>
+                <li>https://example.com/products/marketing</li>
               </ul>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="py-4">
           <Label htmlFor="example-service-url" className="text-gray-200">
-            Example Service Page URL
+            Example Product/Service Page URL
           </Label>
           <Input
             id="example-service-url"
@@ -81,7 +81,7 @@ export function ManualServiceUrlDialog({ open, onOpenChange, onSubmit }: ManualS
             type="url"
             value={exampleUrl}
             onChange={(e) => setExampleUrl(e.target.value)}
-            placeholder="https://yourbrand.com/services/web-design"
+            placeholder="https://yourbrand.com/products/web-design"
             className="mt-2 bg-gray-800 border-gray-700 text-white"
             disabled={isSubmitting}
           />

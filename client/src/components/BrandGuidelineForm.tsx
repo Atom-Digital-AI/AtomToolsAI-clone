@@ -473,7 +473,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
     toast({
       title: "Pages Discovered!",
-      description: `Found ${results.about_page ? 1 : 0} about page, ${results.service_pages.length} service pages, and ${results.blog_articles.length} blog articles after crawling ${results.totalPagesCrawled || 0} pages. Review and edit before extracting.`,
+      description: `Found ${results.about_page ? 1 : 0} about page, ${results.service_pages.length} product/service pages, and ${results.blog_articles.length} blog articles after crawling ${results.totalPagesCrawled || 0} pages. Review and edit before extracting.`,
     });
 
     // Show fallback dialogs ONLY if we reached the 250 page limit and fields are still missing
@@ -578,7 +578,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       });
       
       toast({
-        title: "Service Pages Found!",
+        title: "Product/Service Pages Found!",
         description: `Found ${data.service_pages.length} pages matching the URL pattern.`,
       });
       
@@ -589,7 +589,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     } catch (error: any) {
       showAdminErrorToast(
         "Pattern Matching Failed",
-        error.message || "Failed to find service pages by pattern.",
+        error.message || "Failed to find product/service pages by pattern.",
         user?.isAdmin || false,
         { exampleServiceUrl, feature: "find-services-by-pattern" }
       );
@@ -1163,7 +1163,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                     <div className="text-xs text-gray-400 space-y-1">
                       {existingContext.home && <div>• Home page</div>}
                       {existingContext.about && <div>• About page</div>}
-                      {existingContext.services?.length > 0 && <div>• {existingContext.services.length} service page{existingContext.services.length > 1 ? 's' : ''}</div>}
+                      {existingContext.services?.length > 0 && <div>• {existingContext.services.length} product/service page{existingContext.services.length > 1 ? 's' : ''}</div>}
                       {existingContext.blogs?.length > 0 && <div>• {existingContext.blogs.length} blog article{existingContext.blogs.length > 1 ? 's' : ''}</div>}
                     </div>
                     <p className="text-xs text-yellow-400 mt-2">

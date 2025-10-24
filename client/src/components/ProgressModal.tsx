@@ -172,7 +172,7 @@ export function ProgressModal({ jobId, open, onClose, onComplete }: ProgressModa
               <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                 <div>Home Page: {jobStatus.results.home_page ? '✓' : '—'}</div>
                 <div>About Page: {jobStatus.results.about_page ? '✓' : '—'}</div>
-                <div>Services: {jobStatus.results.service_pages?.length || 0}</div>
+                <div>Products/Services: {jobStatus.results.service_pages?.length || 0}</div>
                 <div>Blog Posts: {jobStatus.results.blog_articles?.length || 0}</div>
               </div>
               <div className="text-xs text-muted-foreground pt-2">
