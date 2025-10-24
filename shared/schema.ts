@@ -73,6 +73,7 @@ export interface BrandGuidelineContent {
   context_urls?: BrandContextUrls; // URLs for brand context pages
   analyzed_pages?: string[]; // URLs of pages analyzed during auto-populate
   exclusion_patterns?: string[]; // URL patterns to exclude during auto-discovery (e.g., */page=*, */category/*)
+  inclusion_patterns?: string[]; // URL patterns to include during auto-discovery - if set, only URLs matching these patterns will be crawled
 }
 
 export interface RegulatoryGuidelineContent {
@@ -116,6 +117,7 @@ export const brandGuidelineContentSchema = z.object({
   context_urls: brandContextUrlsSchema.optional(),
   analyzed_pages: z.array(z.string()).optional(),
   exclusion_patterns: z.array(z.string()).optional(),
+  inclusion_patterns: z.array(z.string()).optional(),
 });
 
 export const regulatoryGuidelineContentSchema = z.record(z.any());
