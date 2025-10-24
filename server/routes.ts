@@ -22,6 +22,7 @@ import { ragService } from "./utils/rag-service";
 import { loggedOpenAICall, loggedAnthropicCall } from "./utils/ai-logger";
 import { aiUsageLogs } from "@shared/schema";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
+import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -3296,6 +3297,75 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     } catch (error) {
       console.error("Error fetching AI usage summary:", error);
       res.status(500).json({ message: "Failed to fetch AI usage summary" });
+    }
+  });
+
+  // Crawl Job endpoints
+  // Start a new crawl job
+  app.post("/api/crawl/start", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { guidelineProfileId, homepageUrl, exclusionPatterns } = req.body;
+
+      // Validate inputs
+      if (!homepageUrl) {
+        return res.status(400).json({ message: "Homepage URL is required" });
+      }
+
+      // Validate URL format
+      try {
+        new URL(homepageUrl);
+      } catch {
+        return res.status(400).json({ message: "Invalid URL format" });
+      }
+
+      // Start the background crawl
+      const jobId = await startBackgroundCrawl(
+        userId,
+        guidelineProfileId || null,
+        homepageUrl,
+        exclusionPatterns || []
+      );
+
+      res.json({ jobId, message: "Crawl job started successfully" });
+    } catch (error) {
+      console.error("Error starting crawl job:", error);
+      res.status(500).json({ message: "Failed to start crawl job" });
+    }
+  });
+
+  // Get crawl job status
+  app.get("/api/crawl/:jobId/status", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { jobId } = req.params;
+
+      const status = await getCrawlJobStatus(jobId, userId);
+      res.json(status);
+    } catch (error: any) {
+      console.error("Error getting crawl job status:", error);
+      if (error.message === 'Crawl job not found') {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to get crawl job status" });
+    }
+  });
+
+  // Cancel a crawl job
+  app.post("/api/crawl/:jobId/cancel", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { jobId } = req.params;
+
+      const success = await cancelCrawlJob(jobId, userId);
+      if (success) {
+        res.json({ message: "Crawl job cancelled successfully" });
+      } else {
+        res.status(400).json({ message: "Unable to cancel crawl job. It may have already completed or been cancelled." });
+      }
+    } catch (error) {
+      console.error("Error cancelling crawl job:", error);
+      res.status(500).json({ message: "Failed to cancel crawl job" });
     }
   });
 
