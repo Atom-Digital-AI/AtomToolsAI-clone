@@ -66,6 +66,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showRecrawlDialog, setShowRecrawlDialog] = useState(false);
   const [showOverwriteConfirmDialog, setShowOverwriteConfirmDialog] = useState(false);
+  const [pendingDiscoverMode, setPendingDiscoverMode] = useState<"fillEmpty" | "overwrite" | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
@@ -570,10 +571,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
   const handleCancelOverwrite = () => {
     setShowOverwriteConfirmDialog(false);
+    setPendingDiscoverMode(null);
   };
 
-  const handleProceedWithOverwrite = async () => {
+  const handleProceedWithOverwrite = async (mode: "fillEmpty" | "overwrite") => {
     setShowOverwriteConfirmDialog(false);
+    setPendingDiscoverMode(mode);
     
     // Check if we have cached crawled URLs
     if (profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0) {
@@ -590,13 +593,32 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     setShowProgressModal(false);
     setDiscoveredPages(results);
     
-    // Auto-populate the form with discovered URLs
-    updateField("context_urls", {
-      home_page: results.home_page,
-      about_page: results.about_page,
-      service_pages: results.service_pages,
-      blog_articles: results.blog_articles,
-    });
+    // Apply discovered URLs based on pendingDiscoverMode
+    let updatedContextUrls;
+    if (pendingDiscoverMode === "fillEmpty") {
+      // Fill empty fields only - keep existing URLs
+      const existing = formData.context_urls || {};
+      updatedContextUrls = {
+        home_page: existing.home_page || results.home_page,
+        about_page: existing.about_page || results.about_page,
+        service_pages: existing.service_pages && existing.service_pages.length > 0 
+          ? existing.service_pages 
+          : results.service_pages,
+        blog_articles: existing.blog_articles && existing.blog_articles.length > 0
+          ? existing.blog_articles
+          : results.blog_articles,
+      };
+    } else {
+      // Overwrite all or no mode set (default behavior)
+      updatedContextUrls = {
+        home_page: results.home_page,
+        about_page: results.about_page,
+        service_pages: results.service_pages,
+        blog_articles: results.blog_articles,
+      };
+    }
+    
+    updateField("context_urls", updatedContextUrls);
 
     // Save crawled URLs to the database if we have them
     if (profileId && results.crawledUrls && results.crawledUrls.length > 0) {
@@ -607,21 +629,25 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           { crawledUrls: results.crawledUrls }
         );
         // Invalidate profile cache to show saved results immediately
-        queryClient.invalidateQueries({ queryKey: ['/api/guideline-profiles', profileId] });
+        queryClient.invalidateQueries({ queryKey: [`/api/guideline-profiles/${profileId}`] });
       } catch (error) {
         console.error("Failed to save crawled URLs:", error);
       }
     }
 
-    const aboutMissing = !results.about_page;
-    const servicesMissing = results.service_pages.length < 10;
-    const blogsMissing = results.blog_articles.length < 20;
+    const aboutMissing = !updatedContextUrls.about_page;
+    const servicesMissing = !updatedContextUrls.service_pages || updatedContextUrls.service_pages.length < 10;
+    const blogsMissing = !updatedContextUrls.blog_articles || updatedContextUrls.blog_articles.length < 20;
     const reachedLimit = results.reachedLimit === true;
 
+    const mode = pendingDiscoverMode === "fillEmpty" ? " (filled empty fields only)" : "";
     toast({
       title: "Pages Discovered!",
-      description: `Found ${results.about_page ? 1 : 0} about page, ${results.service_pages.length} product/service pages, and ${results.blog_articles.length} blog articles after crawling ${results.totalPagesCrawled || 0} pages. Review and edit before extracting.`,
+      description: `Found ${results.about_page ? 1 : 0} about page, ${results.service_pages.length} product/service pages, and ${results.blog_articles.length} blog articles after crawling ${results.totalPagesCrawled || 0} pages${mode}. Review and edit before extracting.`,
     });
+
+    // Reset pending mode
+    setPendingDiscoverMode(null);
 
     // Show unified fallback modal if we reached the limit and have missing pages
     if (reachedLimit && (aboutMissing || servicesMissing || blogsMissing)) {
@@ -1766,23 +1792,46 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       <AlertDialog open={showOverwriteConfirmDialog} onOpenChange={setShowOverwriteConfirmDialog}>
         <AlertDialogContent className="bg-gray-900 border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-100">Overwrite Existing Context Pages?</AlertDialogTitle>
+            <AlertDialogTitle className="text-gray-100">Auto-Discovery Options</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              You already have context pages configured. Auto-discovery will replace your existing URLs with newly discovered pages.
+              You have existing context pages configured. How would you like to apply the newly discovered pages?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="p-3 bg-yellow-950/30 border border-yellow-800 rounded-lg my-4">
-            <h4 className="text-sm font-semibold text-yellow-400 mb-2">Current Pages Will Be Replaced:</h4>
-            <div className="text-xs text-gray-300 space-y-1">
-              {formData.context_urls?.about_page && (
-                <div>• About page: {formData.context_urls.about_page.substring(0, 50)}...</div>
-              )}
-              {formData.context_urls?.service_pages && formData.context_urls.service_pages.length > 0 && (
-                <div>• {formData.context_urls.service_pages.length} service/product page{formData.context_urls.service_pages.length > 1 ? 's' : ''}</div>
-              )}
-              {formData.context_urls?.blog_articles && formData.context_urls.blog_articles.length > 0 && (
-                <div>• {formData.context_urls.blog_articles.length} blog article{formData.context_urls.blog_articles.length > 1 ? 's' : ''}</div>
-              )}
+          <div className="space-y-3 py-4">
+            <div className="p-3 bg-blue-950/30 border border-blue-800 rounded-lg">
+              <h4 className="text-sm font-semibold text-blue-400 mb-1">Fill Empty Fields Only</h4>
+              <p className="text-xs text-gray-400">
+                Keep your existing pages and only add newly discovered pages to empty fields.
+              </p>
+              <div className="text-xs text-gray-300 mt-2 space-y-1">
+                {!formData.context_urls?.about_page && <div>• Will add About page</div>}
+                {(!formData.context_urls?.service_pages || formData.context_urls.service_pages.length === 0) && <div>• Will add Service/Product pages</div>}
+                {(!formData.context_urls?.blog_articles || formData.context_urls.blog_articles.length === 0) && <div>• Will add Blog articles</div>}
+                {formData.context_urls?.about_page && <div className="text-gray-500">• About page will be kept</div>}
+                {formData.context_urls?.service_pages && formData.context_urls.service_pages.length > 0 && (
+                  <div className="text-gray-500">• {formData.context_urls.service_pages.length} existing service page{formData.context_urls.service_pages.length > 1 ? 's' : ''} will be kept</div>
+                )}
+                {formData.context_urls?.blog_articles && formData.context_urls.blog_articles.length > 0 && (
+                  <div className="text-gray-500">• {formData.context_urls.blog_articles.length} existing blog article{formData.context_urls.blog_articles.length > 1 ? 's' : ''} will be kept</div>
+                )}
+              </div>
+            </div>
+            <div className="p-3 bg-amber-950/30 border border-amber-800 rounded-lg">
+              <h4 className="text-sm font-semibold text-amber-400 mb-1">Overwrite All Fields</h4>
+              <p className="text-xs text-gray-400">
+                Replace all existing pages with newly discovered pages from your website.
+              </p>
+              <div className="text-xs text-gray-300 mt-2 space-y-1">
+                {formData.context_urls?.about_page && (
+                  <div>• About page will be replaced</div>
+                )}
+                {formData.context_urls?.service_pages && formData.context_urls.service_pages.length > 0 && (
+                  <div>• {formData.context_urls.service_pages.length} service page{formData.context_urls.service_pages.length > 1 ? 's' : ''} will be replaced</div>
+                )}
+                {formData.context_urls?.blog_articles && formData.context_urls.blog_articles.length > 0 && (
+                  <div>• {formData.context_urls.blog_articles.length} blog article{formData.context_urls.blog_articles.length > 1 ? 's' : ''} will be replaced</div>
+                )}
+              </div>
             </div>
           </div>
           <AlertDialogFooter>
@@ -1793,12 +1842,19 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleProceedWithOverwrite}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-              data-testid="button-proceed-overwrite"
+            <Button
+              onClick={() => handleProceedWithOverwrite("fillEmpty")}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              data-testid="button-fill-empty-context"
             >
-              Proceed with Auto-Discovery
+              Fill Empty Only
+            </Button>
+            <AlertDialogAction
+              onClick={() => handleProceedWithOverwrite("overwrite")}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              data-testid="button-overwrite-context"
+            >
+              Overwrite All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
