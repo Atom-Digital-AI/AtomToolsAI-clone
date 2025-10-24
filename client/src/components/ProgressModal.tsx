@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -39,6 +39,7 @@ interface ProgressModalProps {
 export function ProgressModal({ jobId, open, onClose, onComplete }: ProgressModalProps) {
   const [runningInBackground, setRunningInBackground] = useState(false);
   const queryClient = useQueryClient();
+  const completedRef = useRef(false);
 
   // Poll for job status every second
   const { data: jobStatus, isLoading } = useQuery<CrawlJobStatus>({
@@ -65,16 +66,22 @@ export function ProgressModal({ jobId, open, onClose, onComplete }: ProgressModa
     },
   });
 
-  // Handle completion
+  // Reset completedRef when jobId changes
   useEffect(() => {
-    if (jobStatus?.status === 'completed' && jobStatus.results && !runningInBackground) {
+    completedRef.current = false;
+  }, [jobId]);
+
+  // Handle completion - only call onComplete ONCE
+  useEffect(() => {
+    if (jobStatus?.status === 'completed' && jobStatus.results && !runningInBackground && !completedRef.current) {
+      completedRef.current = true;
       // Auto-call onComplete after a short delay to show success message
       const timer = setTimeout(() => {
         onComplete?.(jobStatus.results);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [jobStatus?.status, jobStatus?.results, runningInBackground, onComplete]);
+  }, [jobStatus?.status, jobStatus?.results, runningInBackground]);
 
   const handleRunInBackground = () => {
     setRunningInBackground(true);
