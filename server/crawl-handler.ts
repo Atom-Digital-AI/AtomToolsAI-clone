@@ -105,6 +105,11 @@ async function runCrawlJob(
   }
 
   // Update job with final results (include all crawled URLs for manual tagging)
+  // Defensive check to ensure crawledPages is a valid array
+  const crawledUrls = Array.isArray(result.crawledPages) 
+    ? result.crawledPages.map(p => ({ url: p.url, title: p.title }))
+    : [];
+  
   await storage.updateCrawlJob(jobId, userId, {
     status: 'completed',
     progress: 100,
@@ -115,10 +120,44 @@ async function runCrawlJob(
       blog_articles: result.blog_articles,
       totalPagesCrawled: result.totalPagesCrawled,
       reachedLimit: result.reachedLimit,
-      crawledUrls: result.crawledPages.map(p => ({ url: p.url, title: p.title })),
+      crawledUrls,
     },
     completedAt: new Date(),
   });
+
+  // Copy crawled URLs to the guideline profile for UI display with retry logic
+  if (finalCheck.guidelineProfileId && crawledUrls.length > 0) {
+    let retryCount = 0;
+    const maxRetries = 3;
+    let lastError: any;
+    
+    while (retryCount < maxRetries) {
+      try {
+        await storage.updateGuidelineProfile(finalCheck.guidelineProfileId, userId, {
+          crawledUrls,
+        });
+        console.log(`✓ Updated guideline profile ${finalCheck.guidelineProfileId} with ${crawledUrls.length} crawled URLs`);
+        break; // Success - exit retry loop
+      } catch (error) {
+        lastError = error;
+        retryCount++;
+        console.warn(`⚠️  Attempt ${retryCount}/${maxRetries} failed to update guideline profile ${finalCheck.guidelineProfileId}:`, error);
+        
+        if (retryCount < maxRetries) {
+          // Wait before retry with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+        }
+      }
+    }
+    
+    if (retryCount === maxRetries) {
+      // All retries exhausted - log critical error
+      console.error(`🚨 CRITICAL: Failed to update guideline profile ${finalCheck.guidelineProfileId} after ${maxRetries} attempts`);
+      console.error(`Last error:`, lastError);
+      console.error(`Crawl job ${jobId} completed successfully. URLs are available in crawl job results (job.results.crawledUrls).`);
+      console.error(`Manual intervention required: sync crawled_urls from crawl job to guideline profile.`);
+    }
+  }
 
   // TODO: Send notification to user that crawl is complete
 }
