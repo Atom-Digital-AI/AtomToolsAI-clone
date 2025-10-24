@@ -58,8 +58,9 @@ export function UnifiedFallbackModal({
               <div className="bg-blue-950/20 border border-blue-700 rounded p-3 text-sm">
                 <p className="font-semibold text-blue-300 mb-1">Option 1: Tag Crawled Pages</p>
                 <p className="text-gray-400">
-                  Review all {250} crawled URLs and manually classify them by selecting
+                  Review all crawled URLs and manually classify them by selecting
                   "About", "Blog", or "Product/Service" from the dropdown next to each URL.
+                  You'll need to tag at least one page for each missing category.
                 </p>
               </div>
               <div className="bg-gray-800 border border-gray-600 rounded p-3 text-sm">

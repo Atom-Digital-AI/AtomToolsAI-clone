@@ -60,16 +60,16 @@ export default function UrlTaggingPage({
     const products = Object.keys(tags).filter(url => tags[url] === "product");
     const blogs = Object.keys(tags).filter(url => tags[url] === "blog");
 
-    // Check if we have the minimum required pages
+    // Check if we have at least one of each required page type
     const errors = [];
     if (missingPages.about && !about) {
       errors.push("Please select at least one About page");
     }
-    if (missingPages.products && products.length < 10) {
-      errors.push(`Please select at least 10 Product/Service pages (currently: ${products.length})`);
+    if (missingPages.products && products.length === 0) {
+      errors.push("Please select at least one Product/Service page");
     }
-    if (missingPages.blogs && blogs.length < 20) {
-      errors.push(`Please select at least 20 Blog articles (currently: ${blogs.length})`);
+    if (missingPages.blogs && blogs.length === 0) {
+      errors.push("Please select at least one Blog article");
     }
 
     if (errors.length > 0) {
@@ -92,8 +92,8 @@ export default function UrlTaggingPage({
 
   const requirementsMet = {
     about: !missingPages.about || stats.about >= 1,
-    products: !missingPages.products || stats.products >= 10,
-    blogs: !missingPages.blogs || stats.blogs >= 20,
+    products: !missingPages.products || stats.products >= 1,
+    blogs: !missingPages.blogs || stats.blogs >= 1,
   };
 
   return (
@@ -137,7 +137,7 @@ export default function UrlTaggingPage({
                 <p className="text-sm text-gray-400">About Page</p>
                 <p className="text-2xl font-bold">{stats.about}</p>
                 <p className="text-xs text-gray-500">
-                  {missingPages.about ? "Required: 1" : "Not required"}
+                  {missingPages.about ? "Required: at least 1" : "Not required"}
                 </p>
               </div>
               {requirementsMet.about && <Check className="w-6 h-6 text-green-500" />}
@@ -149,7 +149,7 @@ export default function UrlTaggingPage({
                 <p className="text-sm text-gray-400">Product/Service Pages</p>
                 <p className="text-2xl font-bold">{stats.products}</p>
                 <p className="text-xs text-gray-500">
-                  {missingPages.products ? "Required: 10" : "Not required"}
+                  {missingPages.products ? "Required: at least 1" : "Not required"}
                 </p>
               </div>
               {requirementsMet.products && <Check className="w-6 h-6 text-green-500" />}
@@ -161,7 +161,7 @@ export default function UrlTaggingPage({
                 <p className="text-sm text-gray-400">Blog Articles</p>
                 <p className="text-2xl font-bold">{stats.blogs}</p>
                 <p className="text-xs text-gray-500">
-                  {missingPages.blogs ? "Required: 20" : "Not required"}
+                  {missingPages.blogs ? "Required: at least 1" : "Not required"}
                 </p>
               </div>
               {requirementsMet.blogs && <Check className="w-6 h-6 text-green-500" />}
