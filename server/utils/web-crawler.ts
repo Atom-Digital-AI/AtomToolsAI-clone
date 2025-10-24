@@ -90,12 +90,49 @@ function categorizeSinglePage(
 }
 
 /**
+ * Checks if a URL matches any exclusion pattern
+ * Supports wildcards like: star-slash-page=star, star-slash-category-slash-star, etc.
+ */
+function matchesExclusionPattern(url: string, patterns: string[]): boolean {
+  if (!patterns || patterns.length === 0) return false;
+  
+  for (const pattern of patterns) {
+    // Convert pattern to regex: * becomes .*
+    const regexPattern = pattern
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
+      .replace(/\*/g, '.*'); // Convert * to .*
+    
+    const regex = new RegExp('^' + regexPattern + '$', 'i');
+    if (regex.test(url)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Progress callback type for crawling updates
+ */
+export type CrawlProgressCallback = (progress: {
+  currentPage: number;
+  totalPages: number;
+  currentUrl: string;
+  foundSoFar: {
+    aboutPage: boolean;
+    servicePages: number;
+    blogArticles: number;
+  };
+}) => void | Promise<void>;
+
+/**
  * Crawls a website with intelligent early exit
  * Stops when all fields are found OR maxPages is reached
  */
 export async function crawlWebsiteWithEarlyExit(
   startUrl: string,
-  maxPages: number = 250
+  maxPages: number = 250,
+  exclusionPatterns: string[] = [],
+  onProgress?: CrawlProgressCallback
 ): Promise<CategorizedPagesWithCache> {
   const domain = new URL(startUrl).origin;
   const visitedUrls = new Set<string>();
@@ -122,11 +159,32 @@ export async function crawlWebsiteWithEarlyExit(
       continue;
     }
 
+    // Check exclusion patterns
+    if (matchesExclusionPattern(currentUrl, exclusionPatterns)) {
+      console.log(`Skipping excluded URL: ${currentUrl}`);
+      visitedUrls.add(currentUrl);
+      continue;
+    }
+
     try {
       visitedUrls.add(currentUrl);
       console.log(`Crawling page ${crawledPages.length + 1}/${maxPages}: ${currentUrl}`);
       const page = await fetchPage(currentUrl, domain);
       crawledPages.push(page);
+
+      // Report progress if callback provided
+      if (onProgress) {
+        await onProgress({
+          currentPage: crawledPages.length,
+          totalPages: maxPages,
+          currentUrl,
+          foundSoFar: {
+            aboutPage: !!categorized.about_page,
+            servicePages: categorized.service_pages.length,
+            blogArticles: categorized.blog_articles.length
+          }
+        });
+      }
 
       // Save homepage HTML for about page discovery
       if (currentUrl === startUrl) {
