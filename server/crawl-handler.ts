@@ -100,7 +100,7 @@ async function runCrawlJob(
     return; // Don't update if status changed (cancelled, failed, etc.)
   }
 
-  // Update job with final results
+  // Update job with final results (include all crawled URLs for manual tagging)
   await storage.updateCrawlJob(jobId, userId, {
     status: 'completed',
     progress: 100,
@@ -111,6 +111,7 @@ async function runCrawlJob(
       blog_articles: result.blog_articles,
       totalPagesCrawled: result.totalPagesCrawled,
       reachedLimit: result.reachedLimit,
+      crawledUrls: result.crawledPages.map(p => ({ url: p.url, title: p.title })),
     },
     completedAt: new Date(),
   });

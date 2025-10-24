@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ManualServiceUrlDialog, ManualBlogUrlDialog } from "@/components/ContextPageFallbackDialogs";
 import { ProgressModal } from "@/components/ProgressModal";
+import { UnifiedFallbackModal } from "@/components/UnifiedFallbackModal";
+import UrlTaggingPage from "@/pages/UrlTaggingPage";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -55,6 +57,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [showExtractWarningDialog, setShowExtractWarningDialog] = useState(false);
   const [showServiceFallbackDialog, setShowServiceFallbackDialog] = useState(false);
   const [showBlogFallbackDialog, setShowBlogFallbackDialog] = useState(false);
+  const [showUnifiedFallbackModal, setShowUnifiedFallbackModal] = useState(false);
+  const [missingPages, setMissingPages] = useState<{ about?: boolean; products?: boolean; blogs?: boolean }>({});
+  const [showTaggingMode, setShowTaggingMode] = useState(false);
+  const [crawledUrlsForTagging, setCrawledUrlsForTagging] = useState<{ url: string; title: string }[]>([]);
   const [cachedHomepageUrl, setCachedHomepageUrl] = useState<string>("");
   const [crawlJobId, setCrawlJobId] = useState<string | null>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -467,8 +473,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       blog_articles: results.blog_articles,
     });
 
-    const servicesMissing = results.service_pages.length === 0;
-    const blogsMissing = results.blog_articles.length === 0;
+    const aboutMissing = !results.about_page;
+    const servicesMissing = results.service_pages.length < 10;
+    const blogsMissing = results.blog_articles.length < 20;
     const reachedLimit = results.reachedLimit === true;
 
     toast({
@@ -476,14 +483,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       description: `Found ${results.about_page ? 1 : 0} about page, ${results.service_pages.length} product/service pages, and ${results.blog_articles.length} blog articles after crawling ${results.totalPagesCrawled || 0} pages. Review and edit before extracting.`,
     });
 
-    // Show fallback dialogs ONLY if we reached the 250 page limit and fields are still missing
-    if (reachedLimit) {
-      if (servicesMissing) {
-        setShowServiceFallbackDialog(true);
-      } else if (blogsMissing) {
-        // Only show blog dialog if services were found or skipped
-        setShowBlogFallbackDialog(true);
-      }
+    // Show unified fallback modal if we reached the limit and have missing pages
+    if (reachedLimit && (aboutMissing || servicesMissing || blogsMissing)) {
+      setMissingPages({
+        about: aboutMissing,
+        products: servicesMissing,
+        blogs: blogsMissing,
+      });
+      setCrawledUrlsForTagging(results.crawledUrls || []);
+      setShowUnifiedFallbackModal(true);
     }
   };
 
@@ -625,6 +633,50 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       );
     }
   };
+
+  const handleTagCrawledPages = () => {
+    setShowUnifiedFallbackModal(false);
+    setShowTaggingMode(true);
+  };
+
+  const handleAddManually = () => {
+    setShowUnifiedFallbackModal(false);
+    // The user is already on the form, they can navigate to the Context Pages tab
+  };
+
+  const handleTaggingSubmit = (taggedUrls: { about?: string; products: string[]; blogs: string[] }) => {
+    // Merge tagged URLs with existing context_urls
+    const currentUrls = formData.context_urls || {};
+    updateField("context_urls", {
+      ...currentUrls,
+      about_page: taggedUrls.about || currentUrls.about_page,
+      service_pages: taggedUrls.products.length > 0 ? taggedUrls.products : currentUrls.service_pages,
+      blog_articles: taggedUrls.blogs.length > 0 ? taggedUrls.blogs : currentUrls.blog_articles,
+    });
+
+    toast({
+      title: "URLs Tagged Successfully!",
+      description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${taggedUrls.products.length} product/service pages, and ${taggedUrls.blogs.length} blog articles.`,
+    });
+
+    setShowTaggingMode(false);
+  };
+
+  const handleTaggingBack = () => {
+    setShowTaggingMode(false);
+  };
+
+  // Show URL tagging page if in tagging mode
+  if (showTaggingMode) {
+    return (
+      <UrlTaggingPage
+        crawledUrls={crawledUrlsForTagging}
+        onSubmit={handleTaggingSubmit}
+        onBack={handleTaggingBack}
+        missingPages={missingPages}
+      />
+    );
+  }
 
   if (isLegacy) {
     return (
@@ -1373,6 +1425,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         open={showBlogFallbackDialog}
         onOpenChange={setShowBlogFallbackDialog}
         onSubmit={handleBlogFallback}
+      />
+
+      {/* Unified Fallback Modal */}
+      <UnifiedFallbackModal
+        open={showUnifiedFallbackModal}
+        onOpenChange={setShowUnifiedFallbackModal}
+        onTagCrawledPages={handleTagCrawledPages}
+        onAddManually={handleAddManually}
+        missingPages={missingPages}
       />
 
       <ProgressModal
