@@ -541,11 +541,21 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const handleUsePreviousResults = () => {
     setShowRecrawlDialog(false);
     if (profileData?.crawledUrls && Array.isArray(profileData.crawledUrls)) {
-      // Determine which pages are missing from context_urls
+      // Determine which pages are missing based on pendingDiscoverMode
       const contextUrls = formData.context_urls || {};
-      const aboutMissing = !contextUrls.about_page;
-      const servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
-      const blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
+      let aboutMissing, servicesMissing, blogsMissing;
+      
+      if (pendingDiscoverMode === "fillEmpty") {
+        // Only check for empty fields
+        aboutMissing = !contextUrls.about_page;
+        servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
+        blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
+      } else {
+        // For overwrite mode or default, all fields are considered "missing" and will be replaced
+        aboutMissing = true;
+        servicesMissing = true;
+        blogsMissing = true;
+      }
 
       if (aboutMissing || servicesMissing || blogsMissing) {
         setMissingPages({
@@ -562,10 +572,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         });
       }
     }
+    // Reset pending mode after use
+    setPendingDiscoverMode(null);
   };
 
   const handleRecrawl = async () => {
     setShowRecrawlDialog(false);
+    // pendingDiscoverMode is already set by handleProceedWithOverwrite if applicable
     await startCrawl(cachedHomepageUrl || formData.domain_url || "");
   };
 
@@ -827,13 +840,29 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       const currentContent = currentProfile.content || {};
       const currentUrls = currentContent.context_urls || {};
       
-      // Merge tagged URLs with existing context_urls
-      const updatedContextUrls = {
-        ...currentUrls,
-        about_page: taggedUrls.about || currentUrls.about_page,
-        service_pages: taggedUrls.products.length > 0 ? taggedUrls.products : currentUrls.service_pages,
-        blog_articles: taggedUrls.blogs.length > 0 ? taggedUrls.blogs : currentUrls.blog_articles,
-      };
+      // Apply tagged URLs based on pendingDiscoverMode
+      let updatedContextUrls;
+      if (pendingDiscoverMode === "fillEmpty") {
+        // Fill empty fields only - keep existing URLs
+        updatedContextUrls = {
+          ...currentUrls,
+          about_page: currentUrls.about_page || taggedUrls.about,
+          service_pages: currentUrls.service_pages && currentUrls.service_pages.length > 0 
+            ? currentUrls.service_pages 
+            : taggedUrls.products,
+          blog_articles: currentUrls.blog_articles && currentUrls.blog_articles.length > 0
+            ? currentUrls.blog_articles
+            : taggedUrls.blogs,
+        };
+      } else {
+        // Overwrite mode or default - replace with tagged URLs
+        updatedContextUrls = {
+          ...currentUrls,
+          about_page: taggedUrls.about || currentUrls.about_page,
+          service_pages: taggedUrls.products.length > 0 ? taggedUrls.products : currentUrls.service_pages,
+          blog_articles: taggedUrls.blogs.length > 0 ? taggedUrls.blogs : currentUrls.blog_articles,
+        };
+      }
       
       // Update local state
       updateField("context_urls", updatedContextUrls);
@@ -845,7 +874,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       });
       
       // Invalidate cache to refresh the profile data
-      queryClient.invalidateQueries({ queryKey: ['/api/guideline-profiles', profileId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/guideline-profiles/${profileId}`] });
+      
+      // Reset pending mode after successful tagging
+      setPendingDiscoverMode(null);
       
       toast({
         title: "URLs Tagged & Saved!",
