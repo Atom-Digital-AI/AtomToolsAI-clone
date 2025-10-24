@@ -44,8 +44,9 @@ export function ProgressModal({ jobId, open, onClose, onComplete }: ProgressModa
   const { data: jobStatus, isLoading } = useQuery<CrawlJobStatus>({
     queryKey: ['/api/crawl', jobId, 'status'],
     enabled: !!jobId && open,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Stop polling if job is complete, failed, or cancelled
+      const data = query.state.data;
       if (!data) return 1000;
       if (['completed', 'failed', 'cancelled'].includes(data.status)) {
         return false;

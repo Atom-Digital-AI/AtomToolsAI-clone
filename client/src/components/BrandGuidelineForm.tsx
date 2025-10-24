@@ -1029,6 +1029,30 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             </div>
 
             <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
+              <Label htmlFor="exclusion-patterns" className="text-gray-200 font-semibold text-sm">
+                URL Exclusion Patterns (Optional)
+              </Label>
+              <p className="text-xs text-gray-400 mt-1 mb-2">
+                Skip unwanted pages during auto-discovery. Use * as wildcard. One pattern per line.
+              </p>
+              <Textarea
+                id="exclusion-patterns"
+                data-testid="textarea-exclusion-patterns"
+                value={formData.exclusion_patterns?.join('\n') || ''}
+                onChange={(e) => {
+                  const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
+                  updateField('exclusion_patterns', patterns.length > 0 ? patterns : undefined);
+                }}
+                placeholder={`*/page=*\n*/category/*\n*/tag/*\n*/author/*\n*/search*`}
+                rows={4}
+                className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Examples: <code className="bg-gray-800 px-1 py-0.5 rounded">*/page=*</code> excludes paginated pages, <code className="bg-gray-800 px-1 py-0.5 rounded">*/category/*</code> excludes category pages
+              </p>
+            </div>
+
+            <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
               <Label htmlFor="context-home-page" className="text-gray-200 font-semibold text-sm">Home Page URL</Label>
               <Input
                 id="context-home-page"
