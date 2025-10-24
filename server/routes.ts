@@ -1162,6 +1162,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single guideline profile by ID
+  app.get("/api/guideline-profiles/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const profile = await storage.getGuidelineProfile(id, req.user.id);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Guideline profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching guideline profile:", error);
+      res.status(500).json({ message: "Failed to fetch guideline profile" });
+    }
+  });
+
   // Create new guideline profile
   app.post("/api/guideline-profiles", requireAuth, async (req: any, res) => {
     try {
