@@ -9,7 +9,7 @@ import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, Gui
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TagInput from "@/components/TagInput";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { showAdminErrorToast } from "@/lib/admin-toast";
@@ -565,6 +565,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           `/api/guideline-profiles/${profileId}`,
           { crawledUrls: results.crawledUrls }
         );
+        // Invalidate profile cache to show saved results immediately
+        queryClient.invalidateQueries({ queryKey: ['/api/guideline-profiles', profileId] });
       } catch (error) {
         console.error("Failed to save crawled URLs:", error);
       }
@@ -1217,6 +1219,71 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   : "Enter a Domain URL in the Basic Info tab first to use auto-discovery."}
               </p>
             </div>
+
+            {/* Saved Crawl Results Section */}
+            {profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0 ? (
+              <div className="p-5 bg-green-950/20 border-2 border-green-700 rounded-lg">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="text-green-400 font-semibold mb-1">Saved Crawl Results</h4>
+                    <p className="text-sm text-gray-300">
+                      {profileData.crawledUrls.length} URLs discovered from your website
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                      <div className="text-gray-400 text-xs mb-1">Current Context</div>
+                      <div className="text-white">
+                        <div>Home: {formData.context_urls?.home_page ? '✓' : '—'}</div>
+                        <div>About: {formData.context_urls?.about_page ? '✓' : '—'}</div>
+                        <div>Services: {formData.context_urls?.service_pages?.length || 0}</div>
+                        <div>Blogs: {formData.context_urls?.blog_articles?.length || 0}</div>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                      <div className="text-gray-400 text-xs mb-1">Saved URLs</div>
+                      <div className="text-white">
+                        {profileData.crawledUrls.length} pages crawled
+                      </div>
+                      <div className="text-gray-400 text-xs mt-1">
+                        Ready to tag
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const contextUrls = formData.context_urls || {};
+                      const aboutMissing = !contextUrls.about_page;
+                      const servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
+                      const blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
+                      
+                      setMissingPages({
+                        about: aboutMissing,
+                        products: servicesMissing,
+                        blogs: blogsMissing,
+                      });
+                      setCrawledUrlsForTagging(profileData.crawledUrls as { url: string; title: string }[]);
+                      setShowTaggingMode(true);
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    data-testid="button-view-saved-results"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    View & Tag Saved URLs
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-5 bg-gray-800/30 border-2 border-gray-600 rounded-lg">
+                <h4 className="text-gray-400 font-semibold mb-1">No Saved Crawl Results</h4>
+                <p className="text-sm text-gray-400">
+                  Run "Auto-Discover Context Pages" above to crawl your website and save the results for easy tagging.
+                </p>
+              </div>
+            )}
 
             <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
               <Label htmlFor="exclusion-patterns" className="text-gray-200 font-semibold text-sm">
