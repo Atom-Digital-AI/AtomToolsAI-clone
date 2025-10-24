@@ -96,26 +96,32 @@ export default function UrlTaggingPage({
     blogs: !missingPages.blogs || stats.blogs >= 1,
   };
 
+  const getUrlPath = (fullUrl: string): string => {
+    try {
+      const url = new URL(fullUrl);
+      return url.pathname + url.search + url.hash;
+    } catch {
+      return fullUrl;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[90%] mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-                className="text-gray-400 hover:text-white"
-                data-testid="button-back"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Manual Entry
-              </Button>
-            </div>
-            <h1 className="text-3xl font-bold mt-4">Tag Crawled URLs</h1>
-            <p className="text-gray-400 mt-2">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="text-gray-400 hover:text-white"
+              data-testid="button-back"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Manual Entry
+            </Button>
+            <p className="text-gray-400">
               Review and classify the {crawledUrls.length} crawled URLs to help us understand your website structure.
             </p>
           </div>
@@ -190,7 +196,7 @@ export default function UrlTaggingPage({
                   >
                     <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
                     <td className="px-4 py-3 text-sm text-blue-400 font-mono truncate max-w-md" title={crawledUrl.url}>
-                      {crawledUrl.url}
+                      {getUrlPath(crawledUrl.url)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-300 truncate max-w-xs" title={crawledUrl.title}>
                       {crawledUrl.title || <span className="text-gray-600 italic">No title</span>}
