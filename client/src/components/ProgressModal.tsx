@@ -194,7 +194,7 @@ export function ProgressModal({ jobId, open, onClose, onComplete }: ProgressModa
             {isRunning && (
               <>
                 <Button
-                  variant="outline"
+                  variant="default"
                   onClick={handleRunInBackground}
                   data-testid="button-run-background"
                 >
