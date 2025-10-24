@@ -91,7 +91,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
   // Fetch the profile data to check for cached crawled URLs
   const { data: profileData } = useQuery<GuidelineProfile>({
-    queryKey: ['/api/guideline-profiles', profileId],
+    queryKey: profileId ? [`/api/guideline-profiles/${profileId}`] : [],
     enabled: !!profileId,
   });
 
