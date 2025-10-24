@@ -21,8 +21,16 @@ export async function startBackgroundCrawl(
   });
 
   // Start the crawl in the background (don't await)
-  runCrawlJob(job.id, userId, homepageUrl, exclusionPatterns).catch((error) => {
+  runCrawlJob(job.id, userId, homepageUrl, exclusionPatterns).catch(async (error) => {
     console.error(`Background crawl job ${job.id} failed:`, error);
+    
+    // Check if the job was cancelled (don't overwrite cancelled status with failed)
+    const currentJob = await storage.getCrawlJob(job.id, userId);
+    if (currentJob?.status === 'cancelled') {
+      console.log(`Job ${job.id} was cancelled, not marking as failed`);
+      return;
+    }
+
     // Update job status to failed
     storage.updateCrawlJob(job.id, userId, {
       status: 'failed',
@@ -37,6 +45,7 @@ export async function startBackgroundCrawl(
 /**
  * Runs the actual crawl job
  * Updates progress in the database as it runs
+ * Checks for cancellation periodically
  */
 async function runCrawlJob(
   jobId: string,
@@ -44,11 +53,25 @@ async function runCrawlJob(
   homepageUrl: string,
   exclusionPatterns: string[]
 ): Promise<void> {
-  // Update status to running
+  // Check and transition to running atomically
+  const preCheck = await storage.getCrawlJob(jobId, userId);
+  if (preCheck?.status !== 'pending') {
+    console.log(`Job ${jobId} is not pending (status: ${preCheck?.status}), skipping`);
+    return; // Don't start if already cancelled or in unexpected state
+  }
+
+  // Immediately update to running (minimize race window)
   await storage.updateCrawlJob(jobId, userId, {
     status: 'running',
     startedAt: new Date(),
   });
+  
+  // Double-check status immediately after update
+  const postRunningCheck = await storage.getCrawlJob(jobId, userId);
+  if (postRunningCheck?.status !== 'running') {
+    console.log(`Job ${jobId} was cancelled during startup, aborting`);
+    return;
+  }
 
   // Run the crawler with progress updates
   const result = await crawlWebsiteWithEarlyExit(
@@ -56,12 +79,26 @@ async function runCrawlJob(
     250, // max pages
     exclusionPatterns,
     async (progress) => {
+      // Check if job has been cancelled
+      const job = await storage.getCrawlJob(jobId, userId);
+      if (job?.status === 'cancelled') {
+        // Stop the crawl by throwing an error
+        throw new Error('Crawl cancelled by user');
+      }
+
       // Update progress in database (as percentage)
       await storage.updateCrawlJob(jobId, userId, {
         progress: Math.round((progress.currentPage / 250) * 100),
       });
     }
   );
+
+  // Final atomic check and update - only update if still running
+  const finalCheck = await storage.getCrawlJob(jobId, userId);
+  if (finalCheck?.status !== 'running') {
+    console.log(`Job ${jobId} status changed to ${finalCheck?.status}, not marking as completed`);
+    return; // Don't update if status changed (cancelled, failed, etc.)
+  }
 
   // Update job with final results
   await storage.updateCrawlJob(jobId, userId, {

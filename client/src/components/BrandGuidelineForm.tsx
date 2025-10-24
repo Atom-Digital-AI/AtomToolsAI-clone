@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ManualServiceUrlDialog, ManualBlogUrlDialog } from "@/components/ContextPageFallbackDialogs";
+import { ProgressModal } from "@/components/ProgressModal";
 
 interface BrandGuidelineFormProps {
   value: BrandGuidelineContent | string;
@@ -55,6 +56,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const [showServiceFallbackDialog, setShowServiceFallbackDialog] = useState(false);
   const [showBlogFallbackDialog, setShowBlogFallbackDialog] = useState(false);
   const [cachedHomepageUrl, setCachedHomepageUrl] = useState<string>("");
+  const [crawlJobId, setCrawlJobId] = useState<string | null>(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
@@ -419,62 +422,74 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       setIsDiscoveringPages(true);
       setCachedHomepageUrl(homepageUrl); // Cache for fallback scenarios
       
+      // Start the background crawl job
       const res = await apiRequest(
         "POST",
-        "/api/guideline-profiles/discover-context-pages",
-        { homepageUrl }
-      );
-      const discovered = await res.json() as {
-        home_page: string;
-        about_page: string;
-        service_pages: string[];
-        blog_articles: string[];
-        totalPagesCrawled?: number;
-        reachedLimit?: boolean;
-      };
-
-      setDiscoveredPages(discovered);
-      
-      // Auto-populate the form with discovered URLs
-      updateField("context_urls", {
-        home_page: discovered.home_page,
-        about_page: discovered.about_page,
-        service_pages: discovered.service_pages,
-        blog_articles: discovered.blog_articles,
-      });
-
-      const servicesMissing = discovered.service_pages.length === 0;
-      const blogsMissing = discovered.blog_articles.length === 0;
-      const reachedLimit = discovered.reachedLimit === true;
-
-      toast({
-        title: "Pages Discovered!",
-        description: `Found ${discovered.about_page ? 1 : 0} about page, ${discovered.service_pages.length} service pages, and ${discovered.blog_articles.length} blog articles after crawling ${discovered.totalPagesCrawled || 0} pages. Review and edit before extracting.`,
-      });
-
-      // Show fallback dialogs ONLY if we reached the 250 page limit and fields are still missing
-      if (reachedLimit) {
-        if (servicesMissing) {
-          setShowServiceFallbackDialog(true);
-        } else if (blogsMissing) {
-          // Only show blog dialog if services were found or skipped
-          setShowBlogFallbackDialog(true);
+        "/api/crawl/start",
+        { 
+          homepageUrl,
+          guidelineProfileId: profileId,
+          exclusionPatterns: formData.exclusion_patterns || []
         }
-      }
+      );
+      const { jobId } = await res.json() as { jobId: string; message: string };
+
+      // Show progress modal
+      setCrawlJobId(jobId);
+      setShowProgressModal(true);
     } catch (error: any) {
       console.error("Discover pages error:", error);
       showAdminErrorToast(
         "Discovery Failed",
-        error.message || "Failed to discover pages. Please check the URL and try again.",
+        error.message || "Failed to start page discovery. Please check the URL and try again.",
         user?.isAdmin || false,
         {
           homepageUrl,
           feature: "discover-context-pages"
         }
       );
-    } finally {
       setIsDiscoveringPages(false);
     }
+  };
+
+  const handleCrawlComplete = (results: any) => {
+    if (!results) return;
+
+    setIsDiscoveringPages(false);
+    setShowProgressModal(false);
+    setDiscoveredPages(results);
+    
+    // Auto-populate the form with discovered URLs
+    updateField("context_urls", {
+      home_page: results.home_page,
+      about_page: results.about_page,
+      service_pages: results.service_pages,
+      blog_articles: results.blog_articles,
+    });
+
+    const servicesMissing = results.service_pages.length === 0;
+    const blogsMissing = results.blog_articles.length === 0;
+    const reachedLimit = results.reachedLimit === true;
+
+    toast({
+      title: "Pages Discovered!",
+      description: `Found ${results.about_page ? 1 : 0} about page, ${results.service_pages.length} service pages, and ${results.blog_articles.length} blog articles after crawling ${results.totalPagesCrawled || 0} pages. Review and edit before extracting.`,
+    });
+
+    // Show fallback dialogs ONLY if we reached the 250 page limit and fields are still missing
+    if (reachedLimit) {
+      if (servicesMissing) {
+        setShowServiceFallbackDialog(true);
+      } else if (blogsMissing) {
+        // Only show blog dialog if services were found or skipped
+        setShowBlogFallbackDialog(true);
+      }
+    }
+  };
+
+  const handleProgressModalClose = () => {
+    setShowProgressModal(false);
+    setIsDiscoveringPages(false);
   };
 
   const doExtractContext = async () => {
@@ -1358,6 +1373,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         open={showBlogFallbackDialog}
         onOpenChange={setShowBlogFallbackDialog}
         onSubmit={handleBlogFallback}
+      />
+
+      <ProgressModal
+        jobId={crawlJobId}
+        open={showProgressModal}
+        onClose={handleProgressModalClose}
+        onComplete={handleCrawlComplete}
       />
     </div>
   );
