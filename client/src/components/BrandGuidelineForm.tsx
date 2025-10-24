@@ -74,7 +74,16 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   });
 
   // Fetch existing extracted context
-  const { data: existingContext, refetch: refetchExtractedContext } = useQuery({
+  interface ExtractedContext {
+    home?: any;
+    about?: any;
+    services?: any[];
+    blogs?: any[];
+    totalPages: number;
+    extractedAt: string | null;
+  }
+
+  const { data: existingContext, refetch: refetchExtractedContext } = useQuery<ExtractedContext>({
     queryKey: ['/api/guideline-profiles', profileId, 'extracted-context'],
     enabled: !!profileId,
   });
@@ -1505,7 +1514,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           <AlertDialogHeader>
             <AlertDialogTitle className="text-gray-100">Use Previous Crawl Results?</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              We found {profileData?.crawledUrls?.length || 0} previously crawled URLs from this website. 
+              We found {Array.isArray(profileData?.crawledUrls) ? profileData.crawledUrls.length : 0} previously crawled URLs from this website. 
               You can use these to tag your pages, or run a fresh crawl.
             </AlertDialogDescription>
           </AlertDialogHeader>
