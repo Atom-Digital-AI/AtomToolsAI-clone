@@ -1292,233 +1292,239 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                 <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
                 Brand Context Pages
               </h3>
-              <p className="text-sm text-gray-300 mb-4">
+              <p className="text-sm text-gray-300 mb-6">
                 Provide URLs to key pages of your website. We'll extract the main content from each page and convert it to markdown format for use in content generation.
               </p>
-              
-              <Button
-                type="button"
-                data-testid="button-discover-context-pages"
-                onClick={handleDiscoverPages}
-                disabled={isDiscoveringPages || !formData.domain_url}
-                className="bg-purple-600 hover:bg-purple-700 text-white w-full mb-4"
-              >
-                {isDiscoveringPages ? (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                    Discovering Pages...
-                  </>
+
+              {/* Subdivision A: Auto-Discovery & Crawl Tools */}
+              <div className="mb-6 p-4 bg-purple-950/30 border border-purple-700/50 rounded-lg">
+                <h4 className="text-md font-semibold text-purple-300 mb-3">Auto-Discovery & Crawl Tools</h4>
+                <p className="text-xs text-gray-400 mb-4">
+                  Use our crawler to automatically discover pages from your website, then tag them for use in content generation.
+                </p>
+                
+                {/* Auto-Discover Button */}
+                <Button
+                  type="button"
+                  data-testid="button-discover-context-pages"
+                  onClick={handleDiscoverPages}
+                  disabled={isDiscoveringPages || !formData.domain_url}
+                  className="bg-purple-600 hover:bg-purple-700 text-white w-full mb-4"
+                >
+                  {isDiscoveringPages ? (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                      Discovering Pages...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Auto-Discover Context Pages
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-gray-400 mb-6">
+                  {formData.domain_url 
+                    ? "We'll crawl your website to find About, Services, and Blog pages automatically."
+                    : "Enter a Domain URL in the Basic Info tab first to use auto-discovery."}
+                </p>
+
+                {/* Saved Crawl Results */}
+                {profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0 ? (
+                  <div className="mb-6 p-4 bg-green-950/30 border border-green-700/50 rounded-lg">
+                    <h5 className="text-sm font-semibold text-green-300 mb-2">Saved Crawl Results</h5>
+                    <p className="text-xs text-gray-300 mb-3">
+                      {profileData.crawledUrls.length} URLs discovered from your website
+                    </p>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="p-2 bg-gray-800/50 rounded">
+                          <div className="text-gray-400 mb-1">Current Context</div>
+                          <div className="text-white">
+                            <div>Home: {formData.context_urls?.home_page ? '✓' : '—'}</div>
+                            <div>About: {formData.context_urls?.about_page ? '✓' : '—'}</div>
+                            <div>Services: {formData.context_urls?.service_pages?.length || 0}</div>
+                            <div>Blogs: {formData.context_urls?.blog_articles?.length || 0}</div>
+                          </div>
+                        </div>
+                        <div className="p-2 bg-gray-800/50 rounded">
+                          <div className="text-gray-400 mb-1">Saved URLs</div>
+                          <div className="text-white">
+                            {profileData.crawledUrls.length} pages crawled
+                          </div>
+                          <div className="text-gray-400 mt-1">
+                            Ready to tag
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const contextUrls = formData.context_urls || {};
+                          const aboutMissing = !contextUrls.about_page;
+                          const servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
+                          const blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
+                          
+                          setMissingPages({
+                            about: aboutMissing,
+                            products: servicesMissing,
+                            blogs: blogsMissing,
+                          });
+                          setCrawledUrlsForTagging(profileData.crawledUrls as { url: string; title: string }[]);
+                          setShowTaggingMode(true);
+                        }}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white text-sm"
+                        data-testid="button-view-saved-results"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View & Tag Saved URLs
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Auto-Discover Context Pages
-                  </>
+                  <div className="mb-6 p-4 bg-gray-800/30 border border-gray-600 rounded-lg">
+                    <h5 className="text-sm font-semibold text-gray-400 mb-1">No Saved Crawl Results</h5>
+                    <p className="text-xs text-gray-400">
+                      Run "Auto-Discover Context Pages" above to crawl your website and save the results for easy tagging.
+                    </p>
+                  </div>
                 )}
-              </Button>
-              <p className="text-xs text-gray-400 mb-4">
-                {formData.domain_url 
-                  ? "We'll crawl your website to find About, Services, and Blog pages automatically."
-                  : "Enter a Domain URL in the Basic Info tab first to use auto-discovery."}
-              </p>
 
-              <div className="space-y-4 mt-4">
-                <div className="bg-gray-800/30 p-4 rounded-lg">
-                  <Label htmlFor="context-about-page" className="text-gray-200 font-semibold text-sm">About Us Page URL</Label>
-                  <Input
-                    id="context-about-page"
-                    data-testid="input-context-about-page"
-                    type="url"
-                    value={formData.context_urls?.about_page || ""}
-                    onChange={(e) => updateField("context_urls", { ...formData.context_urls, about_page: e.target.value })}
-                    placeholder="https://yourbrand.com/about"
-                    className="mt-2 bg-gray-800 border-gray-700 text-white"
-                  />
-                </div>
-
-                <div className="bg-gray-800/30 p-4 rounded-lg">
-                  <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages (up to 10)</Label>
-                  <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-                    {[...(formData.context_urls?.service_pages || []), ""].slice(0, 10).map((url, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          data-testid={`input-context-service-page-${index}`}
-                          type="url"
-                          value={url}
-                          onChange={(e) => {
-                            const pages = [...(formData.context_urls?.service_pages || [])];
-                            if (e.target.value) {
-                              pages[index] = e.target.value;
-                            } else {
-                              pages.splice(index, 1);
-                            }
-                            updateField("context_urls", { ...formData.context_urls, service_pages: pages.filter(p => p) });
-                          }}
-                          placeholder={`Service/Product page ${index + 1}`}
-                          className="flex-1 bg-gray-800 border-gray-700 text-white"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Add URLs to your key service or product pages
+                {/* URL Patterns */}
+                <div className="space-y-4">
+                  <h5 className="text-sm font-semibold text-gray-200">URL Patterns</h5>
+                  <p className="text-xs text-gray-400 -mt-2">
+                    Control which pages are crawled during auto-discovery. Use wildcards (*) to match URL patterns.
                   </p>
-                </div>
 
-                <div className="bg-gray-800/30 p-4 rounded-lg">
-                  <Label className="text-gray-200 font-semibold text-sm">Blog Articles/Resources (up to 20)</Label>
-                  <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-                    {[...(formData.context_urls?.blog_articles || []), ""].slice(0, 20).map((url, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          data-testid={`input-context-blog-article-${index}`}
-                          type="url"
-                          value={url}
-                          onChange={(e) => {
-                            const articles = [...(formData.context_urls?.blog_articles || [])];
-                            if (e.target.value) {
-                              articles[index] = e.target.value;
-                            } else {
-                              articles.splice(index, 1);
-                            }
-                            updateField("context_urls", { ...formData.context_urls, blog_articles: articles.filter(a => a) });
-                          }}
-                          placeholder={`Blog article/resource ${index + 1}`}
-                          className="flex-1 bg-gray-800 border-gray-700 text-white"
-                        />
-                      </div>
-                    ))}
+                  <div className="bg-gray-800/30 p-3 rounded-lg">
+                    <Label htmlFor="exclusion-patterns" className="text-gray-200 font-semibold text-sm">
+                      Exclusion Patterns (Skip These URLs)
+                    </Label>
+                    <p className="text-xs text-gray-400 mt-1 mb-2">
+                      Pages matching these patterns will be ignored. One pattern per line.
+                    </p>
+                    <Textarea
+                      id="exclusion-patterns"
+                      data-testid="textarea-exclusion-patterns"
+                      value={formData.exclusion_patterns?.join('\n') || ''}
+                      onChange={(e) => {
+                        const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
+                        updateField('exclusion_patterns', patterns.length > 0 ? patterns : undefined);
+                      }}
+                      placeholder={`*/page=*\n*/category/*\n*/tag/*\n*/author/*\n*/search*`}
+                      rows={3}
+                      className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-xs"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Examples: <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/page=*</code>, <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/category/*</code>
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Add URLs to your blog posts or resource articles
-                  </p>
+
+                  <div className="bg-gray-800/30 p-3 rounded-lg">
+                    <Label htmlFor="inclusion-patterns" className="text-gray-200 font-semibold text-sm">
+                      Inclusion Patterns (Only Crawl These URLs)
+                    </Label>
+                    <p className="text-xs text-gray-400 mt-1 mb-2">
+                      If specified, only pages matching these patterns will be crawled. One pattern per line.
+                    </p>
+                    <Textarea
+                      id="inclusion-patterns"
+                      data-testid="textarea-inclusion-patterns"
+                      value={formData.inclusion_patterns?.join('\n') || ''}
+                      onChange={(e) => {
+                        const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
+                        updateField('inclusion_patterns', patterns.length > 0 ? patterns : undefined);
+                      }}
+                      placeholder={`*/blog/*\n*/products/*\n*/services/*`}
+                      rows={3}
+                      className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-xs"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Examples: <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/blog/*</code>, <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/products/*</code>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Section 3: Saved Crawl Results */}
-            {profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0 ? (
-              <div className="p-5 bg-green-950/20 border-2 border-green-700 rounded-lg">
-                <h3 className="text-lg font-semibold text-green-300 mb-4 flex items-center gap-2">
-                  <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
-                  Saved Crawl Results
-                </h3>
-                <p className="text-sm text-gray-300 mb-3">
-                  {profileData.crawledUrls.length} URLs discovered from your website
+              {/* Subdivision B: Manual Page URLs */}
+              <div className="p-4 bg-gray-800/20 border border-gray-600 rounded-lg">
+                <h4 className="text-md font-semibold text-gray-200 mb-3">Manual Page URLs</h4>
+                <p className="text-xs text-gray-400 mb-4">
+                  Manually enter URLs for your About, Service, and Blog pages. These will be used to extract content for AI generation.
                 </p>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="p-3 bg-gray-800/50 rounded-lg">
-                      <div className="text-gray-400 text-xs mb-1">Current Context</div>
-                      <div className="text-white">
-                        <div>Home: {formData.context_urls?.home_page ? '✓' : '—'}</div>
-                        <div>About: {formData.context_urls?.about_page ? '✓' : '—'}</div>
-                        <div>Services: {formData.context_urls?.service_pages?.length || 0}</div>
-                        <div>Blogs: {formData.context_urls?.blog_articles?.length || 0}</div>
-                      </div>
-                    </div>
-                    <div className="p-3 bg-gray-800/50 rounded-lg">
-                      <div className="text-gray-400 text-xs mb-1">Saved URLs</div>
-                      <div className="text-white">
-                        {profileData.crawledUrls.length} pages crawled
-                      </div>
-                      <div className="text-gray-400 text-xs mt-1">
-                        Ready to tag
-                      </div>
-                    </div>
+
+                <div className="space-y-4">
+                  <div className="p-3 bg-gray-900/50 rounded-lg">
+                    <Label htmlFor="context-about-page" className="text-gray-200 font-semibold text-sm">About Us Page URL</Label>
+                    <Input
+                      id="context-about-page"
+                      data-testid="input-context-about-page"
+                      type="url"
+                      value={formData.context_urls?.about_page || ""}
+                      onChange={(e) => updateField("context_urls", { ...formData.context_urls, about_page: e.target.value })}
+                      placeholder="https://yourbrand.com/about"
+                      className="mt-2 bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const contextUrls = formData.context_urls || {};
-                      const aboutMissing = !contextUrls.about_page;
-                      const servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
-                      const blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
-                      
-                      setMissingPages({
-                        about: aboutMissing,
-                        products: servicesMissing,
-                        blogs: blogsMissing,
-                      });
-                      setCrawledUrlsForTagging(profileData.crawledUrls as { url: string; title: string }[]);
-                      setShowTaggingMode(true);
-                    }}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    data-testid="button-view-saved-results"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View & Tag Saved URLs
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-5 bg-gray-800/30 border-2 border-gray-600 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-400 mb-2 flex items-center gap-2">
-                  <span className="bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
-                  Saved Crawl Results
-                </h3>
-                <p className="text-sm text-gray-400">
-                  Run "Auto-Discover Context Pages" above to crawl your website and save the results for easy tagging.
-                </p>
-              </div>
-            )}
 
-            {/* Section 4: URL Patterns */}
-            <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
-                URL Patterns
-              </h3>
-              <p className="text-sm text-gray-300 mb-4">
-                Control which pages are crawled during auto-discovery. Use wildcards (*) to match URL patterns.
-              </p>
+                  <div className="p-3 bg-gray-900/50 rounded-lg">
+                    <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages (up to 10)</Label>
+                    <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                      {[...(formData.context_urls?.service_pages || []), ""].slice(0, 10).map((url, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            data-testid={`input-context-service-page-${index}`}
+                            type="url"
+                            value={url}
+                            onChange={(e) => {
+                              const pages = [...(formData.context_urls?.service_pages || [])];
+                              if (e.target.value) {
+                                pages[index] = e.target.value;
+                              } else {
+                                pages.splice(index, 1);
+                              }
+                              updateField("context_urls", { ...formData.context_urls, service_pages: pages.filter(p => p) });
+                            }}
+                            placeholder={`Service/Product page ${index + 1}`}
+                            className="flex-1 bg-gray-800 border-gray-700 text-white"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Add URLs to your key service or product pages
+                    </p>
+                  </div>
 
-              <div className="space-y-4">
-                <div className="bg-gray-800/30 p-4 rounded-lg">
-                  <Label htmlFor="exclusion-patterns" className="text-gray-200 font-semibold text-sm">
-                    Exclusion Patterns (Skip These URLs)
-                  </Label>
-                  <p className="text-xs text-gray-400 mt-1 mb-2">
-                    Pages matching these patterns will be ignored. One pattern per line.
-                  </p>
-                  <Textarea
-                    id="exclusion-patterns"
-                    data-testid="textarea-exclusion-patterns"
-                    value={formData.exclusion_patterns?.join('\n') || ''}
-                    onChange={(e) => {
-                      const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
-                      updateField('exclusion_patterns', patterns.length > 0 ? patterns : undefined);
-                    }}
-                    placeholder={`*/page=*\n*/category/*\n*/tag/*\n*/author/*\n*/search*`}
-                    rows={4}
-                    className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Examples: <code className="bg-gray-800 px-1 py-0.5 rounded">*/page=*</code> excludes paginated pages, <code className="bg-gray-800 px-1 py-0.5 rounded">*/category/*</code> excludes category pages
-                  </p>
-                </div>
-
-                <div className="bg-gray-800/30 p-4 rounded-lg">
-                  <Label htmlFor="inclusion-patterns" className="text-gray-200 font-semibold text-sm">
-                    Inclusion Patterns (Only Crawl These URLs)
-                  </Label>
-                  <p className="text-xs text-gray-400 mt-1 mb-2">
-                    If specified, only pages matching these patterns will be crawled. One pattern per line.
-                  </p>
-                  <Textarea
-                    id="inclusion-patterns"
-                    data-testid="textarea-inclusion-patterns"
-                    value={formData.inclusion_patterns?.join('\n') || ''}
-                    onChange={(e) => {
-                      const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
-                      updateField('inclusion_patterns', patterns.length > 0 ? patterns : undefined);
-                    }}
-                    placeholder={`*/blog/*\n*/products/*\n*/services/*`}
-                    rows={4}
-                    className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Examples: <code className="bg-gray-800 px-1 py-0.5 rounded">*/blog/*</code> only crawls blog pages, <code className="bg-gray-800 px-1 py-0.5 rounded">*/products/*</code> only crawls product pages
-                  </p>
+                  <div className="p-3 bg-gray-900/50 rounded-lg">
+                    <Label className="text-gray-200 font-semibold text-sm">Blog Articles/Resources (up to 20)</Label>
+                    <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                      {[...(formData.context_urls?.blog_articles || []), ""].slice(0, 20).map((url, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            data-testid={`input-context-blog-article-${index}`}
+                            type="url"
+                            value={url}
+                            onChange={(e) => {
+                              const articles = [...(formData.context_urls?.blog_articles || [])];
+                              if (e.target.value) {
+                                articles[index] = e.target.value;
+                              } else {
+                                articles.splice(index, 1);
+                              }
+                              updateField("context_urls", { ...formData.context_urls, blog_articles: articles.filter(a => a) });
+                            }}
+                            placeholder={`Blog article/resource ${index + 1}`}
+                            className="flex-1 bg-gray-800 border-gray-700 text-white"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Add URLs to your blog posts or resource articles
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
