@@ -3305,7 +3305,7 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
   app.post("/api/crawl/start", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { guidelineProfileId, homepageUrl, exclusionPatterns } = req.body;
+      const { guidelineProfileId, homepageUrl, exclusionPatterns, inclusionPatterns } = req.body;
 
       // Validate inputs
       if (!homepageUrl) {
@@ -3324,7 +3324,8 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
         userId,
         guidelineProfileId || null,
         homepageUrl,
-        exclusionPatterns || []
+        exclusionPatterns || [],
+        inclusionPatterns || []
       );
 
       res.json({ jobId, message: "Crawl job started successfully" });

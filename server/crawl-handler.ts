@@ -10,7 +10,8 @@ export async function startBackgroundCrawl(
   userId: string,
   guidelineProfileId: string,
   homepageUrl: string,
-  exclusionPatterns: string[] = []
+  exclusionPatterns: string[] = [],
+  inclusionPatterns: string[] = []
 ): Promise<string> {
   // Create the crawl job
   const job = await storage.createCrawlJob({
@@ -18,10 +19,11 @@ export async function startBackgroundCrawl(
     guidelineProfileId,
     homepageUrl,
     exclusionPatterns,
+    inclusionPatterns,
   });
 
   // Start the crawl in the background (don't await)
-  runCrawlJob(job.id, userId, homepageUrl, exclusionPatterns).catch(async (error) => {
+  runCrawlJob(job.id, userId, homepageUrl, exclusionPatterns, inclusionPatterns).catch(async (error) => {
     console.error(`Background crawl job ${job.id} failed:`, error);
     
     // Check if the job was cancelled (don't overwrite cancelled status with failed)
@@ -51,7 +53,8 @@ async function runCrawlJob(
   jobId: string,
   userId: string,
   homepageUrl: string,
-  exclusionPatterns: string[]
+  exclusionPatterns: string[],
+  inclusionPatterns: string[]
 ): Promise<void> {
   // Check and transition to running atomically
   const preCheck = await storage.getCrawlJob(jobId, userId);
@@ -78,6 +81,7 @@ async function runCrawlJob(
     homepageUrl,
     250, // max pages
     exclusionPatterns,
+    inclusionPatterns,
     async (progress) => {
       // Check if job has been cancelled
       const job = await storage.getCrawlJob(jobId, userId);

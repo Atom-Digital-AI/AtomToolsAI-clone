@@ -183,7 +183,6 @@ export default function UrlTaggingPage({
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-16">#</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">URL</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Page Title</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 w-48">Classification</th>
                 </tr>
               </thead>
@@ -195,11 +194,8 @@ export default function UrlTaggingPage({
                     data-testid={`row-url-${index}`}
                   >
                     <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
-                    <td className="px-4 py-3 text-sm text-blue-400 font-mono truncate max-w-md" title={crawledUrl.url}>
+                    <td className="px-4 py-3 text-sm text-blue-400 font-mono break-all" title={crawledUrl.url}>
                       {getUrlPath(crawledUrl.url)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-300 truncate max-w-xs" title={crawledUrl.title}>
-                      {crawledUrl.title || <span className="text-gray-600 italic">No title</span>}
                     </td>
                     <td className="px-4 py-3">
                       <Select

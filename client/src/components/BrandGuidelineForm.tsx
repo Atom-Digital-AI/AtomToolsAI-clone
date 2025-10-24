@@ -571,7 +571,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     if (profileId && results.crawledUrls && results.crawledUrls.length > 0) {
       try {
         await apiRequest(
-          "PATCH",
+          "PUT",
           `/api/guideline-profiles/${profileId}`,
           { crawledUrls: results.crawledUrls }
         );
@@ -753,20 +753,55 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     // The user is already on the form, they can navigate to the Context Pages tab
   };
 
-  const handleTaggingSubmit = (taggedUrls: { about?: string; products: string[]; blogs: string[] }) => {
-    // Merge tagged URLs with existing context_urls
-    const currentUrls = formData.context_urls || {};
-    updateField("context_urls", {
-      ...currentUrls,
-      about_page: taggedUrls.about || currentUrls.about_page,
-      service_pages: taggedUrls.products.length > 0 ? taggedUrls.products : currentUrls.service_pages,
-      blog_articles: taggedUrls.blogs.length > 0 ? taggedUrls.blogs : currentUrls.blog_articles,
-    });
+  const handleTaggingSubmit = async (taggedUrls: { about?: string; products: string[]; blogs: string[] }) => {
+    // Get current profile to merge with
+    if (!profileId) {
+      toast({
+        title: "URLs Tagged Successfully!",
+        description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${taggedUrls.products.length} product/service pages, and ${taggedUrls.blogs.length} blog articles.`,
+      });
+      setShowTaggingMode(false);
+      return;
+    }
 
-    toast({
-      title: "URLs Tagged Successfully!",
-      description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${taggedUrls.products.length} product/service pages, and ${taggedUrls.blogs.length} blog articles.`,
-    });
+    try {
+      // Fetch current profile to get latest content
+      const currentProfile = await fetch(`/api/guideline-profiles/${profileId}`).then(r => r.json());
+      const currentContent = currentProfile.content || {};
+      const currentUrls = currentContent.context_urls || {};
+      
+      // Merge tagged URLs with existing context_urls
+      const updatedContextUrls = {
+        ...currentUrls,
+        about_page: taggedUrls.about || currentUrls.about_page,
+        service_pages: taggedUrls.products.length > 0 ? taggedUrls.products : currentUrls.service_pages,
+        blog_articles: taggedUrls.blogs.length > 0 ? taggedUrls.blogs : currentUrls.blog_articles,
+      };
+      
+      // Update local state
+      updateField("context_urls", updatedContextUrls);
+
+      // Save merged content to database
+      const updatedContent = { ...currentContent, context_urls: updatedContextUrls };
+      await apiRequest("PUT", `/api/guideline-profiles/${profileId}`, {
+        content: updatedContent,
+      });
+      
+      // Invalidate cache to refresh the profile data
+      queryClient.invalidateQueries({ queryKey: ['/api/guideline-profiles', profileId] });
+      
+      toast({
+        title: "URLs Tagged & Saved!",
+        description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${taggedUrls.products.length} product/service pages, and ${taggedUrls.blogs.length} blog articles.`,
+      });
+    } catch (error) {
+      console.error("Failed to save tagged URLs:", error);
+      toast({
+        title: "Tagged but Not Saved",
+        description: `Tagged URLs successfully, but failed to save to database. Please manually save your profile.`,
+        variant: "destructive",
+      });
+    }
 
     setShowTaggingMode(false);
   };

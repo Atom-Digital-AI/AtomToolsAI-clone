@@ -111,6 +111,27 @@ function matchesExclusionPattern(url: string, patterns: string[]): boolean {
 }
 
 /**
+ * Checks if a URL matches any inclusion pattern
+ * If inclusionPatterns is empty, all URLs are included by default
+ */
+function matchesInclusionPattern(url: string, patterns: string[]): boolean {
+  if (!patterns || patterns.length === 0) return true; // Include all if no patterns set
+  
+  for (const pattern of patterns) {
+    // Convert pattern to regex: * becomes .*
+    const regexPattern = pattern
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
+      .replace(/\*/g, '.*'); // Convert * to .*
+    
+    const regex = new RegExp('^' + regexPattern + '$', 'i');
+    if (regex.test(url)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Progress callback type for crawling updates
  */
 export type CrawlProgressCallback = (progress: {
@@ -132,6 +153,7 @@ export async function crawlWebsiteWithEarlyExit(
   startUrl: string,
   maxPages: number = 250,
   exclusionPatterns: string[] = [],
+  inclusionPatterns: string[] = [],
   onProgress?: CrawlProgressCallback
 ): Promise<CategorizedPagesWithCache> {
   const domain = new URL(startUrl).origin;
@@ -162,6 +184,13 @@ export async function crawlWebsiteWithEarlyExit(
     // Check exclusion patterns
     if (matchesExclusionPattern(currentUrl, exclusionPatterns)) {
       console.log(`Skipping excluded URL: ${currentUrl}`);
+      visitedUrls.add(currentUrl);
+      continue;
+    }
+
+    // Check inclusion patterns
+    if (!matchesInclusionPattern(currentUrl, inclusionPatterns)) {
+      console.log(`Skipping URL not matching inclusion patterns: ${currentUrl}`);
       visitedUrls.add(currentUrl);
       continue;
     }

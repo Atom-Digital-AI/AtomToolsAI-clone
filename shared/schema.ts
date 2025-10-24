@@ -272,6 +272,7 @@ export const crawlJobs = pgTable("crawl_jobs", {
   guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id, { onDelete: "cascade" }),
   homepageUrl: text("homepage_url").notNull(),
   exclusionPatterns: text("exclusion_patterns").array(), // URL patterns to exclude (e.g., */page=*, */category/*)
+  inclusionPatterns: text("inclusion_patterns").array(), // URL patterns to include - if set, only URLs matching these patterns will be crawled
   status: text("status").notNull().default("pending"), // 'pending', 'running', 'completed', 'failed', 'cancelled'
   progress: integer("progress").notNull().default(0), // Current page number being crawled
   totalPages: integer("total_pages").notNull().default(250), // Max pages to crawl
@@ -399,6 +400,7 @@ export const insertGuidelineProfileSchema = createInsertSchema(guidelineProfiles
 export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles).pick({
   name: true,
   content: true,
+  crawledUrls: true,
 }).extend({
   content: guidelineContentSchema,
 }).partial();
@@ -407,10 +409,12 @@ export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles
 export const insertCrawlJobSchema = createInsertSchema(crawlJobs).pick({
   homepageUrl: true,
   exclusionPatterns: true,
+  inclusionPatterns: true,
   guidelineProfileId: true,
 }).extend({
   homepageUrl: z.string().url(),
   exclusionPatterns: z.array(z.string()).optional(),
+  inclusionPatterns: z.array(z.string()).optional(),
   guidelineProfileId: z.string().optional(),
 });
 
