@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, AlertCircle, Sparkles, Upload, Copy } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Sparkles, Upload, Copy, Loader2 as LoaderIcon, Eye } from "lucide-react";
 import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, GuidelineProfile } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -93,6 +93,31 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     queryKey: ['/api/guideline-profiles', profileId],
     enabled: !!profileId,
   });
+
+  // Poll for background job status
+  interface CrawlJobStatus {
+    id: string;
+    status: string;
+    progress: number;
+    results: any;
+  }
+
+  const { data: backgroundJobStatus } = useQuery<CrawlJobStatus>({
+    queryKey: ['/api/crawl', crawlJobId, 'status'],
+    enabled: !!crawlJobId && !showProgressModal,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return false;
+      if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+        return false;
+      }
+      return 2000; // Poll every 2 seconds when in background
+    },
+  });
+
+  const isJobRunningInBackground = backgroundJobStatus && 
+    ['running', 'pending'].includes(backgroundJobStatus.status) && 
+    !showProgressModal;
 
   useEffect(() => {
     if (typeof value === "string") {
@@ -789,6 +814,32 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
               <li key={i}>{error}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Background Crawl Job Indicator */}
+      {isJobRunningInBackground && (
+        <div className="sticky top-4 z-10 p-4 bg-indigo-600 border border-indigo-500 rounded-lg shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <LoaderIcon className="w-5 h-5 animate-spin text-white" />
+              <div>
+                <h4 className="text-white font-semibold">Auto Discovery Running in Background</h4>
+                <p className="text-indigo-100 text-sm">
+                  Progress: {backgroundJobStatus?.progress || 0}% complete
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setShowProgressModal(true)}
+              variant="outline"
+              className="bg-white text-indigo-600 hover:bg-indigo-50 border-white"
+              data-testid="button-view-progress"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Progress
+            </Button>
+          </div>
         </div>
       )}
 
@@ -1559,6 +1610,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         open={showProgressModal}
         onClose={handleProgressModalClose}
         onComplete={handleCrawlComplete}
+        allowBackgroundPolling={true}
       />
     </div>
   );

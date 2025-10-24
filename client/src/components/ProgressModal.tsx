@@ -34,9 +34,10 @@ interface ProgressModalProps {
   open: boolean;
   onClose: () => void;
   onComplete?: (results: CrawlJobStatus['results']) => void;
+  allowBackgroundPolling?: boolean; // Poll even when modal is closed
 }
 
-export function ProgressModal({ jobId, open, onClose, onComplete }: ProgressModalProps) {
+export function ProgressModal({ jobId, open, onClose, onComplete, allowBackgroundPolling = false }: ProgressModalProps) {
   const [runningInBackground, setRunningInBackground] = useState(false);
   const queryClient = useQueryClient();
   const completedRef = useRef(false);
@@ -44,7 +45,7 @@ export function ProgressModal({ jobId, open, onClose, onComplete }: ProgressModa
   // Poll for job status every second
   const { data: jobStatus, isLoading } = useQuery<CrawlJobStatus>({
     queryKey: ['/api/crawl', jobId, 'status'],
-    enabled: !!jobId && open,
+    enabled: !!jobId && (open || (allowBackgroundPolling && runningInBackground)),
     refetchInterval: (query) => {
       // Stop polling if job is complete, failed, or cancelled
       const data = query.state.data;
