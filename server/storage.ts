@@ -29,6 +29,9 @@ import {
   type UpdateCmsPage,
   type BrandEmbedding,
   type InsertBrandEmbedding,
+  type CrawlJob,
+  type InsertCrawlJob,
+  type UpdateCrawlJob,
   type ContentFeedback,
   type ContentWriterSession,
   type InsertContentWriterSession,
@@ -44,7 +47,7 @@ import {
   type InsertUserNotificationPreference,
   type ToolType
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray, cosineDistance, desc } from "drizzle-orm";
 
@@ -105,6 +108,13 @@ export interface IStorage {
   getBrandEmbeddings(guidelineProfileId: string): Promise<BrandEmbedding[]>;
   searchSimilarEmbeddings(userId: string, guidelineProfileId: string, queryEmbedding: number[], limit?: number): Promise<Array<BrandEmbedding & { similarity: number }>>;
   deleteBrandEmbeddings(userId: string, guidelineProfileId: string): Promise<boolean>;
+
+  // Crawl Job operations (SECURITY: All methods enforce userId for tenant isolation)
+  createCrawlJob(job: InsertCrawlJob & { userId: string }): Promise<CrawlJob>;
+  getCrawlJob(id: string, userId: string): Promise<CrawlJob | undefined>;
+  getUserCrawlJobs(userId: string, limit?: number): Promise<CrawlJob[]>;
+  updateCrawlJob(id: string, userId: string, updates: UpdateCrawlJob): Promise<CrawlJob | undefined>;
+  cancelCrawlJob(id: string, userId: string): Promise<boolean>;
 
   // Content Feedback operations (SECURITY: Enforce userId for tenant isolation)
   getUserFeedback(userId: string, toolType?: ToolType, guidelineProfileId?: string, limit?: number): Promise<ContentFeedback[]>;
@@ -926,6 +936,63 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(brandEmbeddings.userId, userId), // SECURITY: Enforce user ownership
         eq(brandEmbeddings.guidelineProfileId, guidelineProfileId)
+      ));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Crawl Job operations
+  async createCrawlJob(job: InsertCrawlJob & { userId: string }): Promise<CrawlJob> {
+    const [crawlJob] = await db
+      .insert(crawlJobs)
+      .values(job)
+      .returning();
+    return crawlJob;
+  }
+
+  async getCrawlJob(id: string, userId: string): Promise<CrawlJob | undefined> {
+    const [job] = await db
+      .select()
+      .from(crawlJobs)
+      .where(and(
+        eq(crawlJobs.id, id),
+        eq(crawlJobs.userId, userId) // SECURITY: Enforce user ownership
+      ));
+    return job || undefined;
+  }
+
+  async getUserCrawlJobs(userId: string, limit: number = 10): Promise<CrawlJob[]> {
+    return await db
+      .select()
+      .from(crawlJobs)
+      .where(eq(crawlJobs.userId, userId))
+      .orderBy(desc(crawlJobs.createdAt))
+      .limit(limit);
+  }
+
+  async updateCrawlJob(id: string, userId: string, updates: UpdateCrawlJob): Promise<CrawlJob | undefined> {
+    const [updatedJob] = await db
+      .update(crawlJobs)
+      .set({ ...updates, updatedAt: sql`NOW()` })
+      .where(and(
+        eq(crawlJobs.id, id),
+        eq(crawlJobs.userId, userId) // SECURITY: Enforce user ownership
+      ))
+      .returning();
+    return updatedJob || undefined;
+  }
+
+  async cancelCrawlJob(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .update(crawlJobs)
+      .set({ 
+        status: 'cancelled',
+        completedAt: sql`NOW()`,
+        updatedAt: sql`NOW()`
+      })
+      .where(and(
+        eq(crawlJobs.id, id),
+        eq(crawlJobs.userId, userId), // SECURITY: Enforce user ownership
+        inArray(crawlJobs.status, ['pending', 'running']) // Only cancel if not already completed
       ));
     return (result.rowCount ?? 0) > 0;
   }
