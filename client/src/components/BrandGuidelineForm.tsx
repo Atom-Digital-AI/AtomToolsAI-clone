@@ -458,7 +458,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     }
   };
 
-  const handleCrawlComplete = (results: any) => {
+  const handleCrawlComplete = async (results: any) => {
     if (!results) return;
 
     setIsDiscoveringPages(false);
@@ -472,6 +472,19 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       service_pages: results.service_pages,
       blog_articles: results.blog_articles,
     });
+
+    // Save crawled URLs to the database if we have them
+    if (profileId && results.crawledUrls && results.crawledUrls.length > 0) {
+      try {
+        await apiRequest(
+          "PATCH",
+          `/api/guideline-profiles/${profileId}`,
+          { crawledUrls: results.crawledUrls }
+        );
+      } catch (error) {
+        console.error("Failed to save crawled URLs:", error);
+      }
+    }
 
     const aboutMissing = !results.about_page;
     const servicesMissing = results.service_pages.length < 10;
