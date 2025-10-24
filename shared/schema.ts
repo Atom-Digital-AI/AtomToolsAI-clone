@@ -262,6 +262,24 @@ export const guidelineProfiles = pgTable("guideline_profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Crawl Jobs - Stores background crawling jobs with progress tracking
+export const crawlJobs = pgTable("crawl_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id, { onDelete: "cascade" }),
+  homepageUrl: text("homepage_url").notNull(),
+  exclusionPatterns: text("exclusion_patterns").array(), // URL patterns to exclude (e.g., */page=*, */category/*)
+  status: text("status").notNull().default("pending"), // 'pending', 'running', 'completed', 'failed', 'cancelled'
+  progress: integer("progress").notNull().default(0), // Current page number being crawled
+  totalPages: integer("total_pages").notNull().default(250), // Max pages to crawl
+  results: jsonb("results"), // Discovered pages: {home_page, about_page, service_pages[], blog_articles[], reachedLimit, totalPagesCrawled}
+  error: text("error"), // Error message if failed
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Brand Context Content - Stores extracted markdown content from brand URLs
 export const brandContextContent = pgTable("brand_context_content", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -380,6 +398,26 @@ export const updateGuidelineProfileSchema = createInsertSchema(guidelineProfiles
   content: true,
 }).extend({
   content: guidelineContentSchema,
+}).partial();
+
+// Crawl Job schemas
+export const insertCrawlJobSchema = createInsertSchema(crawlJobs).pick({
+  homepageUrl: true,
+  exclusionPatterns: true,
+  guidelineProfileId: true,
+}).extend({
+  homepageUrl: z.string().url(),
+  exclusionPatterns: z.array(z.string()).optional(),
+  guidelineProfileId: z.string().optional(),
+});
+
+export const updateCrawlJobSchema = createInsertSchema(crawlJobs).pick({
+  status: true,
+  progress: true,
+  results: true,
+  error: true,
+  startedAt: true,
+  completedAt: true,
 }).partial();
 
 // Brand Context Content schemas
@@ -777,6 +815,10 @@ export type GuidelineProfile = Omit<typeof guidelineProfiles.$inferSelect, 'cont
 };
 export type InsertGuidelineProfile = z.infer<typeof insertGuidelineProfileSchema>;
 export type UpdateGuidelineProfile = z.infer<typeof updateGuidelineProfileSchema>;
+
+export type CrawlJob = typeof crawlJobs.$inferSelect;
+export type InsertCrawlJob = z.infer<typeof insertCrawlJobSchema>;
+export type UpdateCrawlJob = z.infer<typeof updateCrawlJobSchema>;
 
 export type BrandContextContent = typeof brandContextContent.$inferSelect;
 export type InsertBrandContextContent = z.infer<typeof insertBrandContextContentSchema>;
