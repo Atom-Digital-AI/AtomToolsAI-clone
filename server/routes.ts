@@ -23,6 +23,7 @@ import { loggedOpenAICall, loggedAnthropicCall } from "./utils/ai-logger";
 import { aiUsageLogs } from "@shared/schema";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
 import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
+import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } from "./langgraph/content-writer-graph";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -89,6 +90,31 @@ const contactSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   message: z.string().min(10),
+});
+
+// LangGraph Content Writer API Validation Schemas
+const langgraphStartSchema = z.object({
+  topic: z.string().min(1, "Topic is required"),
+  guidelineProfileId: z.string().optional(),
+  objective: z.string().optional(),
+  targetLength: z.number().optional(),
+  toneOfVoice: z.string().optional(),
+  language: z.string().optional(),
+  internalLinks: z.array(z.string()).optional(),
+  useBrandGuidelines: z.boolean().optional(),
+  selectedTargetAudiences: z.union([
+    z.literal("all"),
+    z.literal("none"),
+    z.array(z.number()),
+    z.null(),
+  ]).optional(),
+  styleMatchingMethod: z.enum(['continuous', 'end-rewrite']).optional(),
+  matchStyle: z.boolean().optional(),
+});
+
+const langgraphResumeSchema = z.object({
+  selectedConceptId: z.string().optional(),
+  selectedSubtopicIds: z.array(z.string()).optional(),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -3043,6 +3069,271 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     } catch (error) {
       console.error("Error deleting content writer draft:", error);
       res.status(500).json({ message: "Failed to delete draft" });
+    }
+  });
+
+  // LangGraph-powered Content Writer v2 API Routes
+  // 1. Start new LangGraph workflow
+  app.post("/api/langgraph/content-writer/start", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Validate request body with Zod
+      const validationResult = langgraphStartSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid request body", 
+          errors: validationResult.error.errors 
+        });
+      }
+
+      const { 
+        topic, 
+        guidelineProfileId,
+        objective,
+        targetLength,
+        toneOfVoice,
+        language,
+        internalLinks,
+        useBrandGuidelines,
+        selectedTargetAudiences,
+        styleMatchingMethod,
+        matchStyle
+      } = validationResult.data;
+
+      // Create content_writer_session for backward compatibility
+      const session = await storage.createContentWriterSession({
+        userId,
+        topic,
+        guidelineProfileId: guidelineProfileId || null,
+        styleMatchingMethod: styleMatchingMethod || 'continuous',
+        status: 'concepts',
+        objective,
+        targetLength,
+        toneOfVoice,
+        language,
+        internalLinks,
+        selectedTargetAudiences
+      });
+
+      // Create initial state for LangGraph
+      const initialState = {
+        topic,
+        guidelineProfileId,
+        userId,
+        sessionId: session.id,
+        concepts: [],
+        subtopics: [],
+        selectedSubtopicIds: [],
+        errors: [],
+        metadata: {
+          currentStep: 'concepts' as const,
+          startedAt: new Date().toISOString()
+        },
+        objective,
+        targetLength,
+        toneOfVoice,
+        language,
+        internalLinks,
+        useBrandGuidelines,
+        selectedTargetAudiences,
+        styleMatchingMethod: styleMatchingMethod || 'continuous',
+        matchStyle,
+        status: 'pending' as const
+      };
+
+      // Execute LangGraph workflow
+      const result = await executeContentWriterGraph(initialState, {
+        userId,
+        sessionId: session.id
+      });
+
+      // Determine thread status based on result state
+      const threadStatus = result.state.status === 'completed' 
+        ? 'completed' 
+        : result.state.status === 'failed' 
+        ? 'error' 
+        : result.state.metadata?.humanApprovalPending 
+        ? 'paused' 
+        : 'active';
+
+      // Create langgraph_thread record with initial status
+      await storage.createLanggraphThread({
+        id: result.threadId,
+        userId,
+        sessionId: session.id,
+        status: threadStatus,
+        metadata: {
+          topic,
+          guidelineProfileId,
+          currentStep: result.state.metadata?.currentStep || 'concepts',
+          completed: result.state.status === 'completed',
+          errors: result.state.errors || []
+        }
+      });
+
+      res.json({
+        threadId: result.threadId,
+        sessionId: session.id,
+        state: result.state
+      });
+    } catch (error) {
+      console.error("Error starting LangGraph workflow:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to start workflow";
+      res.status(500).json({ message: `Failed to start workflow: ${errorMessage}` });
+    }
+  });
+
+  // 2. Resume existing workflow with user inputs
+  app.post("/api/langgraph/content-writer/resume/:threadId", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { threadId } = req.params;
+      
+      // Validate request body with Zod
+      const validationResult = langgraphResumeSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid request body", 
+          errors: validationResult.error.errors 
+        });
+      }
+
+      const { selectedConceptId, selectedSubtopicIds } = validationResult.data;
+
+      // Verify thread belongs to user (security)
+      const thread = await storage.getLanggraphThread(threadId, userId);
+      if (!thread) {
+        return res.status(404).json({ message: "Thread not found" });
+      }
+
+      // Prepare updates
+      const updates: any = {};
+      if (selectedConceptId !== undefined) {
+        updates.selectedConceptId = selectedConceptId;
+      }
+      if (selectedSubtopicIds !== undefined) {
+        updates.selectedSubtopicIds = selectedSubtopicIds;
+      }
+
+      // Resume LangGraph workflow
+      const result = await resumeContentWriterGraph(
+        threadId,
+        {
+          userId,
+          sessionId: thread.sessionId || undefined
+        },
+        updates
+      );
+
+      // Determine thread status based on result state
+      const threadStatus = result.state.status === 'completed' 
+        ? 'completed' 
+        : result.state.status === 'failed' 
+        ? 'error' 
+        : result.state.metadata?.humanApprovalPending 
+        ? 'paused' 
+        : 'active';
+
+      // Update thread with comprehensive metadata
+      await storage.updateLanggraphThread(threadId, userId, {
+        status: threadStatus,
+        lastCheckpointId: result.threadId,
+        metadata: {
+          ...thread.metadata,
+          currentStep: result.state.metadata?.currentStep || thread.metadata?.currentStep,
+          completed: result.state.status === 'completed',
+          errors: result.state.errors || [],
+          lastUpdatedAt: new Date().toISOString(),
+          regenerationCount: result.state.metadata?.regenerationCount || 0
+        }
+      });
+
+      res.json({
+        threadId: result.threadId,
+        state: result.state
+      });
+    } catch (error) {
+      console.error("Error resuming LangGraph workflow:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to resume workflow";
+      res.status(500).json({ message: `Failed to resume workflow: ${errorMessage}` });
+    }
+  });
+
+  // 3. Get current workflow state
+  app.get("/api/langgraph/content-writer/status/:threadId", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { threadId } = req.params;
+
+      // Verify thread belongs to user (security)
+      const thread = await storage.getLanggraphThread(threadId, userId);
+      if (!thread) {
+        return res.status(404).json({ message: "Thread not found" });
+      }
+
+      // Get graph state
+      const state = await getGraphState(threadId, {
+        userId,
+        sessionId: thread.sessionId || undefined
+      });
+
+      if (!state) {
+        return res.status(404).json({ message: "State not found for thread" });
+      }
+
+      // Determine current step and completion status
+      const currentStep = state.metadata?.currentStep || 'concepts';
+      const completed = state.status === 'completed' || state.metadata?.currentStep === 'completed';
+
+      res.json({
+        threadId,
+        state,
+        currentStep,
+        completed
+      });
+    } catch (error) {
+      console.error("Error getting workflow status:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to get workflow status";
+      res.status(500).json({ message: `Failed to get workflow status: ${errorMessage}` });
+    }
+  });
+
+  // 4. List user's threads
+  app.get("/api/langgraph/content-writer/threads", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { sessionId } = req.query;
+
+      // Get threads with optional sessionId filter
+      const threads = await storage.getUserLanggraphThreads(
+        userId,
+        sessionId as string | undefined
+      );
+
+      // Format response
+      const formattedThreads = threads.map(thread => ({
+        threadId: thread.id,
+        sessionId: thread.sessionId,
+        status: thread.status,
+        createdAt: thread.createdAt,
+        updatedAt: thread.updatedAt,
+        metadata: thread.metadata,
+        session: thread.session ? {
+          id: thread.session.id,
+          topic: thread.session.topic,
+          status: thread.session.status,
+          guidelineProfileId: thread.session.guidelineProfileId
+        } : undefined
+      }));
+
+      res.json({
+        threads: formattedThreads
+      });
+    } catch (error) {
+      console.error("Error listing threads:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to list threads";
+      res.status(500).json({ message: `Failed to list threads: ${errorMessage}` });
     }
   });
 

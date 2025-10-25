@@ -45,9 +45,11 @@ import {
   type InsertNotification,
   type UserNotificationPreference,
   type InsertUserNotificationPreference,
-  type ToolType
+  type ToolType,
+  type LanggraphThread,
+  type InsertLanggraphThread
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences, langgraphThreads } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray, cosineDistance, desc } from "drizzle-orm";
 
@@ -151,6 +153,12 @@ export interface IStorage {
   // User notification preferences
   getUserNotificationPreferences(userId: string): Promise<UserNotificationPreference | undefined>;
   upsertUserNotificationPreferences(userId: string, preferences: Partial<InsertUserNotificationPreference>): Promise<UserNotificationPreference>;
+
+  // LangGraph Thread operations (SECURITY: All methods enforce userId for tenant isolation)
+  createLanggraphThread(thread: InsertLanggraphThread & { userId: string, id?: string }): Promise<LanggraphThread>;
+  getLanggraphThread(id: string, userId: string): Promise<LanggraphThread | undefined>;
+  getUserLanggraphThreads(userId: string, sessionId?: string): Promise<Array<LanggraphThread & { session?: ContentWriterSession }>>;
+  updateLanggraphThread(id: string, userId: string, updates: Partial<InsertLanggraphThread>): Promise<LanggraphThread | undefined>;
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
@@ -1360,6 +1368,64 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  // LangGraph Thread operations
+  async createLanggraphThread(thread: InsertLanggraphThread & { userId: string, id?: string }): Promise<LanggraphThread> {
+    const [created] = await db
+      .insert(langgraphThreads)
+      .values(thread)
+      .returning();
+    return created;
+  }
+
+  async getLanggraphThread(id: string, userId: string): Promise<LanggraphThread | undefined> {
+    const [thread] = await db
+      .select()
+      .from(langgraphThreads)
+      .where(and(
+        eq(langgraphThreads.id, id),
+        eq(langgraphThreads.userId, userId)
+      ));
+    return thread;
+  }
+
+  async getUserLanggraphThreads(userId: string, sessionId?: string): Promise<Array<LanggraphThread & { session?: ContentWriterSession }>> {
+    const query = db
+      .select({
+        thread: langgraphThreads,
+        session: contentWriterSessions
+      })
+      .from(langgraphThreads)
+      .leftJoin(contentWriterSessions, eq(langgraphThreads.sessionId, contentWriterSessions.id))
+      .where(
+        sessionId 
+          ? and(
+              eq(langgraphThreads.userId, userId),
+              eq(langgraphThreads.sessionId, sessionId)
+            )
+          : eq(langgraphThreads.userId, userId)
+      )
+      .orderBy(desc(langgraphThreads.createdAt));
+
+    const results = await query;
+    
+    return results.map(r => ({
+      ...r.thread,
+      session: r.session || undefined
+    }));
+  }
+
+  async updateLanggraphThread(id: string, userId: string, updates: Partial<InsertLanggraphThread>): Promise<LanggraphThread | undefined> {
+    const [updated] = await db
+      .update(langgraphThreads)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(
+        eq(langgraphThreads.id, id),
+        eq(langgraphThreads.userId, userId)
+      ))
+      .returning();
+    return updated;
   }
 
   // Admin operations
