@@ -666,6 +666,53 @@ export const contentWriterDrafts = pgTable("content_writer_drafts", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// LangGraph Threads - Stores LangGraph execution threads for Content Writer
+export const langgraphThreads = pgTable("langgraph_threads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`), // thread_id
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sessionId: varchar("session_id").references(() => contentWriterSessions.id, { onDelete: 'cascade' }), // Link to content writer session
+  status: varchar("status").notNull().default("active"), // active, paused, completed, failed, cancelled
+  lastCheckpointId: varchar("last_checkpoint_id"),
+  metadata: jsonb("metadata"), // Additional thread metadata
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("langgraph_threads_user_id_idx").on(table.userId),
+  sessionIdIdx: index("langgraph_threads_session_id_idx").on(table.sessionId),
+  statusIdx: index("langgraph_threads_status_idx").on(table.status),
+}));
+
+// LangGraph Checkpoints - Stores checkpoint data for resume capability
+export const langgraphCheckpoints = pgTable("langgraph_checkpoints", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  threadId: varchar("thread_id").notNull().references(() => langgraphThreads.id, { onDelete: 'cascade' }),
+  checkpointId: varchar("checkpoint_id").notNull(), // LangGraph checkpoint ID
+  parentCheckpointId: varchar("parent_checkpoint_id"), // Parent checkpoint for history
+  stateData: jsonb("state_data").notNull(), // Serialized graph state
+  metadata: jsonb("metadata"), // Checkpoint metadata
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  threadIdIdx: index("langgraph_checkpoints_thread_id_idx").on(table.threadId),
+  checkpointIdIdx: index("langgraph_checkpoints_checkpoint_id_idx").on(table.checkpointId),
+  threadCheckpointUnique: unique("thread_checkpoint_unique").on(table.threadId, table.checkpointId),
+}));
+
+export type LanggraphThread = typeof langgraphThreads.$inferSelect;
+export type InsertLanggraphThread = typeof langgraphThreads.$inferInsert;
+export type LanggraphCheckpoint = typeof langgraphCheckpoints.$inferSelect;
+export type InsertLanggraphCheckpoint = typeof langgraphCheckpoints.$inferInsert;
+
+export const insertLanggraphThreadSchema = createInsertSchema(langgraphThreads).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLanggraphCheckpointSchema = createInsertSchema(langgraphCheckpoints).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type ContentWriterSession = typeof contentWriterSessions.$inferSelect;
 export type InsertContentWriterSession = typeof contentWriterSessions.$inferInsert;
 export type ContentWriterConcept = typeof contentWriterConcepts.$inferSelect;
