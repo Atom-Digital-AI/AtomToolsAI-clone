@@ -68,7 +68,7 @@ export interface ContentWriterState {
   }>;
   
   metadata: {
-    currentStep?: 'concepts' | 'subtopics' | 'article' | 'completed';
+    currentStep?: 'concepts' | 'awaitConceptApproval' | 'conceptApproved' | 'subtopics' | 'awaitSubtopicApproval' | 'subtopicsApproved' | 'article' | 'completed';
     regenerationCount?: number;
     qualityDecision?: 'regenerate' | 'human_review' | 'complete';
     humanApprovalPending?: boolean;
@@ -161,7 +161,7 @@ export const contentWriterStateSchema = z.object({
   })),
   
   metadata: z.object({
-    currentStep: z.enum(['concepts', 'subtopics', 'article', 'completed']).optional(),
+    currentStep: z.enum(['concepts', 'awaitConceptApproval', 'conceptApproved', 'subtopics', 'awaitSubtopicApproval', 'subtopicsApproved', 'article', 'completed']).optional(),
     regenerationCount: z.number().optional(),
     qualityDecision: z.enum(['regenerate', 'human_review', 'complete']).optional(),
     humanApprovalPending: z.boolean().optional(),

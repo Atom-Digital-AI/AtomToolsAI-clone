@@ -220,7 +220,7 @@ Provide:
       },
       metadata: {
         ...state.metadata,
-        currentStep: 'completed',
+        currentStep: 'article',
         completedAt: new Date().toISOString(),
       },
       status: 'completed',

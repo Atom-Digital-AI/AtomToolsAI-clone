@@ -2,7 +2,11 @@ import { StateGraph, Annotation, END } from "@langchain/langgraph";
 import { PostgresCheckpointer } from "./postgres-checkpointer";
 import { ContentWriterState, contentWriterStateSchema } from "./types";
 import { generateConcepts } from "./nodes/generateConcepts";
+import { setAwaitConceptApproval } from "./nodes/setAwaitConceptApproval";
+import { awaitConceptApproval } from "./nodes/awaitConceptApproval";
 import { generateSubtopics } from "./nodes/generateSubtopics";
+import { setAwaitSubtopicApproval } from "./nodes/setAwaitSubtopicApproval";
+import { awaitSubtopicApproval } from "./nodes/awaitSubtopicApproval";
 import { generateArticle } from "./nodes/generateArticle";
 import { checkBrandMatch } from "./nodes/checkBrandMatch";
 import { verifyFacts } from "./nodes/verifyFacts";
@@ -58,7 +62,11 @@ function createContentWriterGraph() {
   const workflow = new StateGraph(ContentWriterAnnotation);
 
   workflow.addNode("generateConcepts", generateConcepts as any);
+  workflow.addNode("setAwaitConceptApproval", setAwaitConceptApproval as any);
+  workflow.addNode("awaitConceptApproval", awaitConceptApproval as any);
   workflow.addNode("generateSubtopics", generateSubtopics as any);
+  workflow.addNode("setAwaitSubtopicApproval", setAwaitSubtopicApproval as any);
+  workflow.addNode("awaitSubtopicApproval", awaitSubtopicApproval as any);
   workflow.addNode("generateArticle", generateArticle as any);
   workflow.addNode("checkBrandMatch", checkBrandMatch as any);
   workflow.addNode("verifyFacts", verifyFacts as any);
@@ -94,8 +102,12 @@ function createContentWriterGraph() {
 
   (workflow as any).setEntryPoint("generateConcepts");
   
-  (workflow as any).addEdge("generateConcepts", "generateSubtopics");
-  (workflow as any).addEdge("generateSubtopics", "generateArticle");
+  (workflow as any).addEdge("generateConcepts", "setAwaitConceptApproval");
+  (workflow as any).addEdge("setAwaitConceptApproval", "awaitConceptApproval");
+  (workflow as any).addEdge("awaitConceptApproval", "generateSubtopics");
+  (workflow as any).addEdge("generateSubtopics", "setAwaitSubtopicApproval");
+  (workflow as any).addEdge("setAwaitSubtopicApproval", "awaitSubtopicApproval");
+  (workflow as any).addEdge("awaitSubtopicApproval", "generateArticle");
   (workflow as any).addEdge("generateArticle", "checkBrandMatch");
   (workflow as any).addEdge("checkBrandMatch", "verifyFacts");
   (workflow as any).addEdge("verifyFacts", "qualityDecision");

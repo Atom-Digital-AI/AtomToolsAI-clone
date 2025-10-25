@@ -204,6 +204,25 @@ export default function ContentWriterV2() {
     ? { ...threadState.articleDraft, id: sessionId || '', sessionId: sessionId || '' } as Draft
     : (sessionData as any)?.draft as Draft | undefined;
 
+  // Handle approval states - automatically update stage when workflow pauses for approval
+  useEffect(() => {
+    if (!currentStep) return;
+    
+    if (currentStep === 'awaitConceptApproval' || currentStep === 'concepts') {
+      if (stage !== 'concepts') {
+        setStage('concepts');
+      }
+    } else if (currentStep === 'awaitSubtopicApproval' || currentStep === 'subtopics') {
+      if (stage !== 'subtopics') {
+        setStage('subtopics');
+      }
+    } else if (currentStep === 'article' || currentStep === 'generateArticle') {
+      if (stage !== 'article') {
+        setStage('article');
+      }
+    }
+  }, [currentStep, stage]);
+
   // Create session mutation - Using LangGraph API
   const createSessionMutation = useMutation({
     mutationFn: async () => {
@@ -695,6 +714,15 @@ export default function ContentWriterV2() {
 
   const renderConceptsStage = () => (
     <div className="space-y-4">
+      {currentStep === 'awaitConceptApproval' && (
+        <Alert data-testid="alert-approval-required">
+          <AlertDescription className="flex items-center gap-2">
+            <Badge variant="default" className="mr-2">Approval Required</Badge>
+            Workflow paused. Please select a concept to continue with article generation.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -991,6 +1019,15 @@ export default function ContentWriterV2() {
 
         {hasGeneratedSubtopics && (
           <>
+            {currentStep === 'awaitSubtopicApproval' && (
+              <Alert data-testid="alert-subtopic-approval-required">
+                <AlertDescription className="flex items-center gap-2">
+                  <Badge variant="default" className="mr-2">Approval Required</Badge>
+                  Workflow paused. Please select at least one subtopic and click "Generate Complete Article" to continue.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
