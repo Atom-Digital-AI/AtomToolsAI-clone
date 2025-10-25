@@ -680,6 +680,8 @@ export const langgraphThreads = pgTable("langgraph_threads", {
   userIdIdx: index("langgraph_threads_user_id_idx").on(table.userId),
   sessionIdIdx: index("langgraph_threads_session_id_idx").on(table.sessionId),
   statusIdx: index("langgraph_threads_status_idx").on(table.status),
+  createdAtIdx: index("langgraph_threads_created_at_idx").on(table.createdAt),
+  statusCreatedAtIdx: index("langgraph_threads_status_created_at_idx").on(table.status, table.createdAt),
 }));
 
 // LangGraph Checkpoints - Stores checkpoint data for resume capability
