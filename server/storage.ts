@@ -49,9 +49,9 @@ import {
   type LanggraphThread,
   type InsertLanggraphThread
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences, langgraphThreads } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences, langgraphThreads, langgraphCheckpoints, aiUsageLogs } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, inArray, cosineDistance, desc } from "drizzle-orm";
+import { eq, and, sql, inArray, cosineDistance, desc, gte, lte, like, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -162,6 +162,12 @@ export interface IStorage {
 
   // Admin operations
   isUserAdmin(userId: string): Promise<boolean>;
+  
+  // LangGraph Thread Admin operations
+  getAllLanggraphThreads(filters?: { status?: string; startDate?: string; endDate?: string; search?: string }): Promise<Array<LanggraphThread & { user: { email: string } }>>;
+  getLanggraphThreadDetails(threadId: string): Promise<{ thread: LanggraphThread & { user: { email: string } }; checkpoints: any[]; aiLogs: any[] } | undefined>;
+  cancelLanggraphThread(threadId: string, adminUserId: string): Promise<LanggraphThread | undefined>;
+  deleteLanggraphThread(threadId: string): Promise<boolean>;
   
   // Package management with tiers
   getAllPackages(): Promise<Package[]>;
@@ -1434,6 +1440,119 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.id, userId));
     return user?.isAdmin || false;
+  }
+
+  // LangGraph Thread Admin operations
+  async getAllLanggraphThreads(filters?: { status?: string; startDate?: string; endDate?: string; search?: string }): Promise<Array<LanggraphThread & { user: { email: string } }>> {
+    let query = db
+      .select({
+        thread: langgraphThreads,
+        userEmail: users.email
+      })
+      .from(langgraphThreads)
+      .innerJoin(users, eq(langgraphThreads.userId, users.id))
+      .$dynamic();
+
+    const conditions = [];
+
+    if (filters?.status) {
+      conditions.push(eq(langgraphThreads.status, filters.status));
+    }
+
+    if (filters?.startDate) {
+      conditions.push(gte(langgraphThreads.createdAt, new Date(filters.startDate)));
+    }
+
+    if (filters?.endDate) {
+      conditions.push(lte(langgraphThreads.createdAt, new Date(filters.endDate)));
+    }
+
+    if (filters?.search) {
+      conditions.push(
+        or(
+          like(users.email, `%${filters.search}%`),
+          like(langgraphThreads.id, `%${filters.search}%`)
+        )!
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)!);
+    }
+
+    const results = await query.orderBy(desc(langgraphThreads.createdAt));
+
+    return results.map(r => ({
+      ...r.thread,
+      user: { email: r.userEmail }
+    }));
+  }
+
+  async getLanggraphThreadDetails(threadId: string): Promise<{ thread: LanggraphThread & { user: { email: string } }; checkpoints: any[]; aiLogs: any[] } | undefined> {
+    // Get thread with user email
+    const threadResult = await db
+      .select({
+        thread: langgraphThreads,
+        userEmail: users.email
+      })
+      .from(langgraphThreads)
+      .innerJoin(users, eq(langgraphThreads.userId, users.id))
+      .where(eq(langgraphThreads.id, threadId));
+
+    if (threadResult.length === 0) {
+      return undefined;
+    }
+
+    const threadData = threadResult[0];
+
+    // Get all checkpoints for this thread
+    const checkpoints = await db
+      .select()
+      .from(langgraphCheckpoints)
+      .where(eq(langgraphCheckpoints.threadId, threadId))
+      .orderBy(desc(langgraphCheckpoints.createdAt));
+
+    // Get AI usage logs for this thread/session
+    const aiLogs = await db
+      .select()
+      .from(aiUsageLogs)
+      .where(eq(aiUsageLogs.threadId, threadId))
+      .orderBy(desc(aiUsageLogs.createdAt));
+
+    return {
+      thread: {
+        ...threadData.thread,
+        user: { email: threadData.userEmail }
+      },
+      checkpoints,
+      aiLogs
+    };
+  }
+
+  async cancelLanggraphThread(threadId: string, adminUserId: string): Promise<LanggraphThread | undefined> {
+    const [updated] = await db
+      .update(langgraphThreads)
+      .set({
+        status: 'cancelled',
+        metadata: sql`jsonb_set(
+          COALESCE(metadata, '{}'::jsonb),
+          '{cancelledAt}',
+          to_jsonb(${new Date().toISOString()}::text)
+        ) || jsonb_build_object('cancelledBy', ${adminUserId})`,
+        updatedAt: new Date()
+      })
+      .where(eq(langgraphThreads.id, threadId))
+      .returning();
+    return updated;
+  }
+
+  async deleteLanggraphThread(threadId: string): Promise<boolean> {
+    // Delete checkpoints first (foreign key constraint)
+    await db.delete(langgraphCheckpoints).where(eq(langgraphCheckpoints.threadId, threadId));
+    
+    // Delete thread
+    const result = await db.delete(langgraphThreads).where(eq(langgraphThreads.id, threadId));
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Package management with tiers

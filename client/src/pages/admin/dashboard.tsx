@@ -267,6 +267,12 @@ export default function AdminDashboard() {
                   AI Analytics
                 </Button>
               </Link>
+              <Link href="/admin/langgraph-threads">
+                <Button className="bg-purple-600 hover:bg-purple-700" data-testid="button-thread-monitor">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Thread Monitor
+                </Button>
+              </Link>
               <Link href="/admin/cms">
                 <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-cms-management">
                   <FileText className="w-4 h-4 mr-2" />

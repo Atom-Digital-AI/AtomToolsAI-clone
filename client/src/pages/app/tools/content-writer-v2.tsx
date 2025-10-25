@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Sparkles, RefreshCw, ChevronRight, ChevronLeft, Save, ThumbsUp, ThumbsDown, Check, X, Download, Copy, Plus, Loader2 } from "lucide-react";
+import { Sparkles, RefreshCw, ChevronRight, ChevronLeft, Save, ThumbsUp, ThumbsDown, Check, X, Download, Copy, Plus, Loader2, CheckCircle, AlertTriangle, XCircle, ChevronDown } from "lucide-react";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLocation } from "wouter";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface Concept {
   id: string;
@@ -53,6 +54,8 @@ interface Draft {
   topAndTail: string;
   finalArticle: string;
   metadata: any;
+  brandScore?: number;
+  factScore?: number;
 }
 
 interface Session {
@@ -102,8 +105,13 @@ interface ThreadState {
   metadata?: {
     currentStep?: string;
     startedAt?: string;
+    brandIssues?: string[];
+    factIssues?: string[];
+    regenerationCount?: number;
   };
   status?: 'pending' | 'processing' | 'completed' | 'failed';
+  brandScore?: number;
+  factScore?: number;
 }
 
 type Stage = 'topic' | 'concepts' | 'subtopics' | 'article';
@@ -1118,6 +1126,32 @@ export default function ContentWriterV2() {
     );
   };
 
+  // Helper function to get score styling
+  const getScoreStyle = (score: number) => {
+    if (score >= 80) {
+      return {
+        color: 'bg-green-500',
+        icon: CheckCircle,
+        variant: 'default' as const,
+        textColor: 'text-green-500'
+      };
+    } else if (score >= 70) {
+      return {
+        color: 'bg-yellow-500',
+        icon: AlertTriangle,
+        variant: 'default' as const,
+        textColor: 'text-yellow-500'
+      };
+    } else {
+      return {
+        color: 'bg-red-500',
+        icon: XCircle,
+        variant: 'destructive' as const,
+        textColor: 'text-red-500'
+      };
+    }
+  };
+
   const renderArticleStage = () => (
     <div className="space-y-4">
       <Card>
@@ -1168,6 +1202,120 @@ export default function ContentWriterV2() {
           </div>
           
           <Separator />
+          
+          {/* Quality Analysis Section */}
+          {(threadState?.brandScore !== undefined || threadState?.factScore !== undefined || draft?.brandScore !== undefined || draft?.factScore !== undefined || 
+            threadState?.metadata?.brandIssues?.length || threadState?.metadata?.factIssues?.length ||
+            (threadState?.metadata?.regenerationCount && threadState.metadata.regenerationCount > 0)) && (
+            <Card data-testid="card-quality-analysis">
+              <CardHeader>
+                <CardTitle>Quality Analysis</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Score Badges */}
+                <div className="flex flex-wrap gap-3">
+                  {/* Brand Consistency Score */}
+                  {(threadState?.brandScore !== undefined || draft?.brandScore !== undefined) && (() => {
+                    const score = threadState?.brandScore ?? draft?.brandScore ?? 0;
+                    const style = getScoreStyle(score);
+                    const Icon = style.icon;
+                    return (
+                      <div className="flex items-center gap-2" data-testid="score-brand-consistency">
+                        <span className="text-sm font-medium">Brand Consistency:</span>
+                        <Badge 
+                          className={`${style.color} text-white flex items-center gap-1`}
+                          data-testid="badge-brand-score"
+                        >
+                          <Icon className="w-3 h-3" />
+                          {score}
+                        </Badge>
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Fact Verification Score */}
+                  {(threadState?.factScore !== undefined || draft?.factScore !== undefined) && (() => {
+                    const score = threadState?.factScore ?? draft?.factScore ?? 0;
+                    const style = getScoreStyle(score);
+                    const Icon = style.icon;
+                    return (
+                      <div className="flex items-center gap-2" data-testid="score-fact-verification">
+                        <span className="text-sm font-medium">Fact Verification:</span>
+                        <Badge 
+                          className={`${style.color} text-white flex items-center gap-1`}
+                          data-testid="badge-fact-score"
+                        >
+                          <Icon className="w-3 h-3" />
+                          {score}
+                        </Badge>
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Regeneration Count */}
+                  {threadState?.metadata?.regenerationCount !== undefined && 
+                   threadState.metadata.regenerationCount > 0 && (
+                    <div className="flex items-center gap-2" data-testid="regeneration-count">
+                      <Badge variant="secondary" data-testid="badge-regeneration-count">
+                        Regenerated {threadState.metadata.regenerationCount} {threadState.metadata.regenerationCount === 1 ? 'time' : 'times'}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Issues Lists */}
+                <div className="space-y-3">
+                  {/* Brand Issues */}
+                  {threadState?.metadata?.brandIssues && threadState.metadata.brandIssues.length > 0 && (
+                    <Collapsible data-testid="collapsible-brand-issues">
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-md transition-colors">
+                        <ChevronDown className="w-4 h-4" />
+                        <span className="font-medium text-sm">
+                          Brand Issues ({threadState.metadata.brandIssues.length} {threadState.metadata.brandIssues.length === 1 ? 'issue' : 'issues'})
+                        </span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2 ml-6 space-y-1" data-testid="content-brand-issues">
+                        {threadState.metadata.brandIssues.map((issue, index) => (
+                          <div 
+                            key={index} 
+                            className="text-sm text-muted-foreground flex items-start gap-2"
+                            data-testid={`brand-issue-${index}`}
+                          >
+                            <span className="mt-1">•</span>
+                            <span>{issue}</span>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                  
+                  {/* Fact Issues */}
+                  {threadState?.metadata?.factIssues && threadState.metadata.factIssues.length > 0 && (
+                    <Collapsible data-testid="collapsible-fact-issues">
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-md transition-colors">
+                        <ChevronDown className="w-4 h-4" />
+                        <span className="font-medium text-sm">
+                          Fact Issues ({threadState.metadata.factIssues.length} {threadState.metadata.factIssues.length === 1 ? 'issue' : 'issues'})
+                        </span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2 ml-6 space-y-1" data-testid="content-fact-issues">
+                        {threadState.metadata.factIssues.map((issue, index) => (
+                          <div 
+                            key={index} 
+                            className="text-sm text-muted-foreground flex items-start gap-2"
+                            data-testid={`fact-issue-${index}`}
+                          >
+                            <span className="mt-1">•</span>
+                            <span>{issue}</span>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           {draft && (
             <FeedbackButtons
