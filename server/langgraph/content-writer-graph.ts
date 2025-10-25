@@ -1,9 +1,12 @@
-import { StateGraph, Annotation } from "@langchain/langgraph";
+import { StateGraph, Annotation, END } from "@langchain/langgraph";
 import { PostgresCheckpointer } from "./postgres-checkpointer";
 import { ContentWriterState, contentWriterStateSchema } from "./types";
 import { generateConcepts } from "./nodes/generateConcepts";
 import { generateSubtopics } from "./nodes/generateSubtopics";
 import { generateArticle } from "./nodes/generateArticle";
+import { checkBrandMatch } from "./nodes/checkBrandMatch";
+import { verifyFacts } from "./nodes/verifyFacts";
+import { shouldRegenerate } from "./nodes/shouldRegenerate";
 import { nanoid } from "nanoid";
 
 const ContentWriterAnnotation = Annotation.Root({
@@ -57,12 +60,57 @@ function createContentWriterGraph() {
   workflow.addNode("generateConcepts", generateConcepts as any);
   workflow.addNode("generateSubtopics", generateSubtopics as any);
   workflow.addNode("generateArticle", generateArticle as any);
+  workflow.addNode("checkBrandMatch", checkBrandMatch as any);
+  workflow.addNode("verifyFacts", verifyFacts as any);
+  workflow.addNode("qualityDecision", async (state: ContentWriterState) => {
+    const decision = shouldRegenerate(state);
+    
+    if (decision === "regenerate") {
+      const currentCount = state.metadata?.regenerationCount ?? 0;
+      return {
+        metadata: {
+          ...state.metadata,
+          qualityDecision: decision,
+          regenerationCount: currentCount + 1,
+        },
+      };
+    } else if (decision === "human_review") {
+      return {
+        metadata: {
+          ...state.metadata,
+          qualityDecision: decision,
+          humanApprovalPending: true,
+        },
+      };
+    }
+    
+    return {
+      metadata: {
+        ...state.metadata,
+        qualityDecision: decision,
+      },
+    };
+  });
 
   (workflow as any).setEntryPoint("generateConcepts");
-  (workflow as any).setFinishPoint("generateArticle");
   
   (workflow as any).addEdge("generateConcepts", "generateSubtopics");
   (workflow as any).addEdge("generateSubtopics", "generateArticle");
+  (workflow as any).addEdge("generateArticle", "checkBrandMatch");
+  (workflow as any).addEdge("checkBrandMatch", "verifyFacts");
+  (workflow as any).addEdge("verifyFacts", "qualityDecision");
+  
+  (workflow as any).addConditionalEdges(
+    "qualityDecision",
+    (state: ContentWriterState) => {
+      return state.metadata?.qualityDecision || "complete";
+    },
+    {
+      regenerate: "generateArticle",
+      human_review: END,
+      complete: END,
+    }
+  );
 
   return workflow;
 }

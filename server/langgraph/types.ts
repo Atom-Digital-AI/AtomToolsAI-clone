@@ -70,7 +70,10 @@ export interface ContentWriterState {
   metadata: {
     currentStep?: 'concepts' | 'subtopics' | 'article' | 'completed';
     regenerationCount?: number;
+    qualityDecision?: 'regenerate' | 'human_review' | 'complete';
     humanApprovalPending?: boolean;
+    brandIssues?: string[];
+    factIssues?: string[];
     startedAt?: string;
     completedAt?: string;
     [key: string]: any;
@@ -160,7 +163,10 @@ export const contentWriterStateSchema = z.object({
   metadata: z.object({
     currentStep: z.enum(['concepts', 'subtopics', 'article', 'completed']).optional(),
     regenerationCount: z.number().optional(),
+    qualityDecision: z.enum(['regenerate', 'human_review', 'complete']).optional(),
     humanApprovalPending: z.boolean().optional(),
+    brandIssues: z.array(z.string()).optional(),
+    factIssues: z.array(z.string()).optional(),
     startedAt: z.string().optional(),
     completedAt: z.string().optional(),
   }).catchall(z.any()),
