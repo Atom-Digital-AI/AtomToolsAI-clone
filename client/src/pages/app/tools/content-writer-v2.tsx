@@ -70,6 +70,42 @@ interface Session {
   useBrandGuidelines?: boolean;
 }
 
+interface LangGraphThread {
+  threadId: string;
+  sessionId: string;
+  status: 'active' | 'paused' | 'completed' | 'error';
+  createdAt: string;
+  updatedAt: string;
+  metadata?: {
+    topic?: string;
+    currentStep?: string;
+    completed?: boolean;
+    errors?: any[];
+  };
+  session?: {
+    id: string;
+    topic: string;
+    status: string;
+    guidelineProfileId?: string;
+  };
+}
+
+interface ThreadState {
+  concepts?: Concept[];
+  subtopics?: Subtopic[];
+  articleDraft?: {
+    finalArticle: string;
+    metadata?: any;
+  };
+  selectedConceptId?: string;
+  selectedSubtopicIds?: string[];
+  metadata?: {
+    currentStep?: string;
+    startedAt?: string;
+  };
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
 type Stage = 'topic' | 'concepts' | 'subtopics' | 'article';
 
 export default function ContentWriterV2() {
@@ -86,11 +122,14 @@ export default function ContentWriterV2() {
   const [matchStyle, setMatchStyle] = useState(false);
   const [styleMatchingMethod, setStyleMatchingMethod] = useState<'continuous' | 'end-rewrite'>('continuous');
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const [regenerateFeedback, setRegenerateFeedback] = useState("");
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedSubtopics, setSelectedSubtopics] = useState<Set<string>>(new Set());
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
+  const [showResumeBanner, setShowResumeBanner] = useState(false);
+  const [incompleteThread, setIncompleteThread] = useState<LangGraphThread | null>(null);
   
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
@@ -116,32 +155,77 @@ export default function ContentWriterV2() {
     }
   }, [selectedBrand]);
 
-  // Fetch session data
+  // Check for incomplete threads on mount
+  const { data: threadsData } = useQuery<{ threads: LangGraphThread[] }>({
+    queryKey: ['/api/langgraph/content-writer/threads'],
+    enabled: !threadId && !sessionId,
+  });
+
+  // Show resume banner if there are incomplete threads
+  useEffect(() => {
+    if (threadsData?.threads && threadsData.threads.length > 0) {
+      const incomplete = threadsData.threads.find((t: LangGraphThread) => 
+        t.status !== 'completed' && t.status !== 'error'
+      );
+      if (incomplete) {
+        setIncompleteThread(incomplete);
+        setShowResumeBanner(true);
+      }
+    }
+  }, [threadsData]);
+
+  // Fetch session data (for backward compatibility)
   const { data: sessionData, isLoading: isSessionLoading } = useQuery({
     queryKey: [`/api/content-writer/sessions/${sessionId}`],
     enabled: !!sessionId,
   });
 
-  const session = (sessionData as any)?.session as Session | undefined;
-  const concepts = ((sessionData as any)?.concepts || []) as Concept[];
-  const subtopics = ((sessionData as any)?.subtopics || []) as Subtopic[];
-  const draft = (sessionData as any)?.draft as Draft | undefined;
+  // Poll thread status when thread is active
+  const { data: statusData } = useQuery<{
+    threadId: string;
+    state: ThreadState;
+    currentStep: string;
+    completed: boolean;
+  }>({
+    queryKey: ['/api/langgraph/content-writer/status', threadId],
+    enabled: !!threadId,
+    refetchInterval: 2000,
+  });
 
-  // Create session mutation
+  const threadState = statusData?.state;
+  const currentStep = statusData?.currentStep || threadState?.metadata?.currentStep;
+  const isThreadCompleted = statusData?.completed || threadState?.status === 'completed';
+
+  // Extract data from either thread state (LangGraph) or session (legacy)
+  const session = (sessionData as any)?.session as Session | undefined;
+  const concepts = (threadState?.concepts || (sessionData as any)?.concepts || []) as Concept[];
+  const subtopics = (threadState?.subtopics || (sessionData as any)?.subtopics || []) as Subtopic[];
+  const draft = threadState?.articleDraft 
+    ? { ...threadState.articleDraft, id: sessionId || '', sessionId: sessionId || '' } as Draft
+    : (sessionData as any)?.draft as Draft | undefined;
+
+  // Create session mutation - Using LangGraph API
   const createSessionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/content-writer/sessions', {
+      const res = await apiRequest('POST', '/api/langgraph/content-writer/start', {
         topic,
         guidelineProfileId: (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : undefined,
-        matchStyle,
+        objective,
+        targetLength: parseInt(targetLength),
+        toneOfVoice,
+        language,
+        internalLinks: internalLinks.split(',').map(l => l.trim()).filter(Boolean),
+        useBrandGuidelines,
+        selectedTargetAudiences,
         styleMatchingMethod,
+        matchStyle,
       });
       return await res.json();
     },
     onSuccess: (data: any) => {
-      console.log("Session creation response:", data);
-      if (!data || !data.session || !data.session.id) {
-        console.error("Invalid session response:", data);
+      console.log("LangGraph workflow started:", data);
+      if (!data || !data.threadId || !data.sessionId) {
+        console.error("Invalid LangGraph response:", data);
         toast({
           title: "Error",
           description: "Invalid response from server",
@@ -149,7 +233,8 @@ export default function ContentWriterV2() {
         });
         return;
       }
-      setSessionId(data.session.id);
+      setThreadId(data.threadId);
+      setSessionId(data.sessionId);
       setStage('concepts');
       toast({
         title: "Concepts Generated",
@@ -157,11 +242,66 @@ export default function ContentWriterV2() {
       });
     },
     onError: (error: any) => {
-      console.error("Concept generation error:", error);
-      const errorMessage = error?.message || "Failed to generate concepts";
+      console.error("LangGraph workflow error:", error);
+      const errorMessage = error?.message || "Failed to start workflow";
       toast({
         title: "Error",
         description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Resume workflow mutation - Using LangGraph API
+  const resumeWorkflowMutation = useMutation({
+    mutationFn: async ({ threadId: tid, selectedConceptId, selectedSubtopicIds }: { 
+      threadId: string, 
+      selectedConceptId?: string, 
+      selectedSubtopicIds?: string[] 
+    }) => {
+      const payload: any = {};
+      if (selectedConceptId) payload.selectedConceptId = selectedConceptId;
+      if (selectedSubtopicIds) payload.selectedSubtopicIds = selectedSubtopicIds;
+      
+      const res = await apiRequest('POST', `/api/langgraph/content-writer/resume/${tid}`, payload);
+      return await res.json();
+    },
+    onSuccess: (data: any, variables) => {
+      console.log("LangGraph workflow resumed:", data);
+      if (!data || !data.threadId) {
+        toast({
+          title: "Error",
+          description: "Invalid response from server",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setThreadId(data.threadId);
+      
+      // Update stage based on what was resumed
+      if (variables.selectedConceptId) {
+        setStage('subtopics');
+        toast({
+          title: "Workflow Resumed",
+          description: "Continuing with subtopic selection",
+        });
+      } else if (variables.selectedSubtopicIds) {
+        setStage('article');
+        toast({
+          title: "Workflow Resumed",
+          description: "Generating article...",
+        });
+      }
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/langgraph/content-writer/status', data.threadId] });
+    },
+    onError: (error: any) => {
+      console.error("Resume workflow error:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to resume workflow",
         variant: "destructive",
       });
     },
@@ -351,12 +491,56 @@ export default function ContentWriterV2() {
       });
       return;
     }
+    setShowResumeBanner(false);
     createSessionMutation.mutate();
+  };
+
+  const handleResumeThread = () => {
+    if (!incompleteThread) return;
+    
+    setShowResumeBanner(false);
+    setThreadId(incompleteThread.threadId);
+    setSessionId(incompleteThread.sessionId);
+    
+    // Set topic from thread metadata if available
+    if (incompleteThread.metadata?.topic) {
+      setTopic(incompleteThread.metadata.topic);
+    }
+    
+    // Determine stage based on current step
+    const step = incompleteThread.metadata?.currentStep;
+    if (step === 'generateConcepts' || step === 'concepts') {
+      setStage('concepts');
+    } else if (step === 'generateSubtopics' || step === 'subtopics') {
+      setStage('subtopics');
+    } else if (step === 'generateArticle' || step === 'article') {
+      setStage('article');
+    }
+    
+    toast({
+      title: "Workflow Resumed",
+      description: "Continuing where you left off",
+    });
+  };
+
+  const handleStartNewThread = () => {
+    setShowResumeBanner(false);
+    setIncompleteThread(null);
   };
 
   const handleChooseConcept = (concept: Concept) => {
     setSelectedConcept(concept);
-    chooseConceptMutation.mutate({ conceptId: concept.id, rating: 'thumbs_up' });
+    
+    if (threadId) {
+      // Use LangGraph resume with selected concept
+      resumeWorkflowMutation.mutate({ 
+        threadId, 
+        selectedConceptId: concept.id 
+      });
+    } else {
+      // Fallback to legacy method
+      chooseConceptMutation.mutate({ conceptId: concept.id, rating: 'thumbs_up' });
+    }
   };
 
   const handleGenerateSubtopics = () => {
@@ -368,7 +552,8 @@ export default function ContentWriterV2() {
   };
 
   const handleGenerateArticle = () => {
-    if (selectedSubtopics.size === 0) {
+    const selectedIds = Array.from(selectedSubtopics);
+    if (selectedIds.length === 0) {
       toast({
         title: "No Subtopics Selected",
         description: "Please select at least one subtopic",
@@ -376,7 +561,17 @@ export default function ContentWriterV2() {
       });
       return;
     }
-    generateArticleMutation.mutate();
+    
+    if (threadId) {
+      // Use LangGraph resume with selected subtopics
+      resumeWorkflowMutation.mutate({ 
+        threadId, 
+        selectedSubtopicIds: selectedIds 
+      });
+    } else {
+      // Fallback to legacy method
+      generateArticleMutation.mutate();
+    }
   };
 
   const handleCopyArticle = () => {
@@ -964,11 +1159,17 @@ export default function ContentWriterV2() {
         variant="outline"
         onClick={() => {
           setSessionId(null);
+          setThreadId(null);
           setStage('topic');
           setTopic("");
           setBrandGuidelines('');
           setSelectedConcept(null);
           setSelectedSubtopics(new Set());
+          setObjective("");
+          setTargetLength("1000");
+          setToneOfVoice("");
+          setLanguage("en-US");
+          setInternalLinks("");
         }}
         className="w-full"
         data-testid="button-create-another"
@@ -981,21 +1182,81 @@ export default function ContentWriterV2() {
   return (
     <AccessGuard productId={productId} productName="Content Writer v2">
       <div className="container max-w-5xl mx-auto p-6">
-        {/* Progress indicator */}
-        {sessionId && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex gap-2">
-                {(['topic', 'concepts', 'subtopics', 'article'] as Stage[]).map((s, i) => (
-                  <Badge
-                    key={s}
-                    variant={stage === s ? 'default' : 'outline'}
-                    className="capitalize"
-                  >
-                    {i + 1}. {s}
-                  </Badge>
-                ))}
+        {/* Resume Banner */}
+        {showResumeBanner && incompleteThread && (
+          <Alert className="mb-6" data-testid="alert-resume-banner">
+            <Sparkles className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Resume where you left off?</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  You have an incomplete article: "{incompleteThread.metadata?.topic || incompleteThread.session?.topic}"
+                </p>
               </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleResumeThread}
+                  size="sm"
+                  data-testid="button-resume-workflow"
+                >
+                  Resume
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleStartNewThread}
+                  size="sm"
+                  data-testid="button-start-new"
+                >
+                  Start New
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Progress indicator */}
+        {(sessionId || threadId) && (
+          <div className="mb-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  {(['concepts', 'subtopics', 'article'] as const).map((s, i) => {
+                    const stepMap: Record<string, string> = {
+                      'generateConcepts': 'concepts',
+                      'generateSubtopics': 'subtopics',
+                      'generateArticle': 'article'
+                    };
+                    const currentStepMapped = currentStep ? stepMap[currentStep] || currentStep : undefined;
+                    const isActive = stage === s || currentStepMapped === s;
+                    const isPast = ['concepts', 'subtopics', 'article'].indexOf(stage) > i;
+                    
+                    return (
+                      <Badge
+                        key={s}
+                        variant={isActive ? 'default' : isPast ? 'secondary' : 'outline'}
+                        className="capitalize"
+                        data-testid={`badge-step-${s}`}
+                      >
+                        {isActive && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                        {isPast && <Check className="w-3 h-3 mr-1" />}
+                        {i + 1}. {s}
+                      </Badge>
+                    );
+                  })}
+                </div>
+                {threadId && (
+                  <Badge variant="outline" className="text-xs">
+                    Thread: {threadId.slice(0, 8)}...
+                  </Badge>
+                )}
+              </div>
+              {threadId && !isThreadCompleted && (
+                <Progress value={
+                  currentStep === 'generateConcepts' || stage === 'concepts' ? 33 :
+                  currentStep === 'generateSubtopics' || stage === 'subtopics' ? 66 :
+                  currentStep === 'generateArticle' || stage === 'article' ? 100 : 0
+                } className="h-2" />
+              )}
             </div>
           </div>
         )}
