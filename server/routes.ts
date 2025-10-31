@@ -3157,20 +3157,38 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
         ? 'paused' 
         : 'active';
 
-      // Create langgraph_thread record with initial status
-      await storage.createLanggraphThread({
-        id: result.threadId,
-        userId,
-        sessionId: session.id,
-        status: threadStatus,
-        metadata: {
-          topic,
-          guidelineProfileId,
-          currentStep: result.state.metadata?.currentStep || 'concepts',
-          completed: result.state.status === 'completed',
-          errors: result.state.errors || []
-        }
-      });
+      // Check if thread already exists (created by checkpointer), then update or create
+      const existingThread = await storage.getLanggraphThread(result.threadId, userId);
+      
+      if (existingThread) {
+        // Update existing thread with metadata and sessionId
+        await storage.updateLanggraphThread(result.threadId, userId, {
+          sessionId: session.id,
+          status: threadStatus,
+          metadata: {
+            topic,
+            guidelineProfileId,
+            currentStep: result.state.metadata?.currentStep || 'concepts',
+            completed: result.state.status === 'completed',
+            errors: result.state.errors || []
+          }
+        });
+      } else {
+        // Create langgraph_thread record with initial status
+        await storage.createLanggraphThread({
+          id: result.threadId,
+          userId,
+          sessionId: session.id,
+          status: threadStatus,
+          metadata: {
+            topic,
+            guidelineProfileId,
+            currentStep: result.state.metadata?.currentStep || 'concepts',
+            completed: result.state.status === 'completed',
+            errors: result.state.errors || []
+          }
+        });
+      }
 
       res.json({
         threadId: result.threadId,
