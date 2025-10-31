@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { isSameSite } from './url-normalizer';
+import { isSameSite, generateContentHash } from './url-normalizer';
 
 interface CrawledPage {
   url: string;
@@ -8,6 +8,8 @@ interface CrawledPage {
   css: string[];
   title: string;
   canonicalUrl?: string;
+  metaDescription?: string;
+  contentHash?: string;
 }
 
 interface CrawlResult {
@@ -383,12 +385,34 @@ async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
     }
   }
 
+  // Extract meta description (case-insensitive name attribute)
+  let metaDescription: string | undefined;
+  const metaDesc = $('meta').filter((_, el) => {
+    const name = $(el).attr('name');
+    return name?.toLowerCase() === 'description';
+  }).first().attr('content')?.trim();
+
+  if (metaDesc) {
+    metaDescription = metaDesc;
+  } else {
+    // Fallback to og:description
+    const ogDesc = $('meta[property="og:description"]').attr('content')?.trim();
+    if (ogDesc) {
+      metaDescription = ogDesc;
+    }
+  }
+
+  // Generate content hash
+  const contentHash = generateContentHash(html);
+
   return {
     url,
     html: $.html(),
     css: [...cssContents, ...inlineStyles].filter(Boolean),
     title,
-    canonicalUrl
+    canonicalUrl,
+    metaDescription,
+    contentHash
   };
 }
 
