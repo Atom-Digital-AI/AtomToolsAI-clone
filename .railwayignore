@@ -1,0 +1,3 @@
+# Exclude Python app directory from Railway builds
+Ad Copy Generator App/
+
