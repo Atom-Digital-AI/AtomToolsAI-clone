@@ -1,11 +1,13 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { isSameSite } from './url-normalizer';
 
 interface CrawledPage {
   url: string;
   html: string;
   css: string[];
   title: string;
+  canonicalUrl?: string;
 }
 
 interface CrawlResult {
@@ -362,11 +364,31 @@ async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
 
   const title = $('title').text() || '';
 
+  // Extract canonical URL if present (case-insensitive rel attribute)
+  let canonicalUrl: string | undefined;
+  const canonicalLink = $('link').filter((_, el) => {
+    const rel = $(el).attr('rel');
+    return rel?.toLowerCase() === 'canonical';
+  }).first().attr('href');
+
+  if (canonicalLink) {
+    try {
+      const absoluteCanonicalUrl = new URL(canonicalLink, url).href;
+      // Only use canonical if it's same-site
+      if (isSameSite(url, absoluteCanonicalUrl)) {
+        canonicalUrl = absoluteCanonicalUrl;
+      }
+    } catch {
+      // Invalid canonical URL, ignore
+    }
+  }
+
   return {
     url,
     html: $.html(),
     css: [...cssContents, ...inlineStyles].filter(Boolean),
-    title
+    title,
+    canonicalUrl
   };
 }
 
