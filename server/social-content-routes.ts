@@ -15,6 +15,7 @@ import type { SocialContentState, Platform } from "./langgraph/social-content-ty
 import { calculateTotalFormats } from "./langgraph/social-content-types";
 import { nanoid } from "nanoid";
 import { logToolError } from "./errorLogger";
+import { checkSocialContentAccess, validatePlatformAccess } from "./utils/social-content-access";
 
 // Validation schemas
 const startSessionSchema = z.object({
@@ -84,19 +85,20 @@ export function registerSocialContentRoutes(app: Express): void {
       const validatedData = startSessionSchema.parse(req.body);
       const userId = req.user!.id;
       
-      // Check product access
-      const productId = PRODUCT_IDS.SOCIAL_CONTENT_GENERATOR;
-      const hasAccess = await db.query.userSubscriptions.findFirst({
-        where: (subscriptions, { eq, and }) =>
-          and(
-            eq(subscriptions.userId, userId),
-            eq(subscriptions.productId, productId),
-            eq(subscriptions.isActive, true)
-          ),
-      });
+      // Check product access and platform permissions
+      const accessControl = await checkSocialContentAccess(userId);
       
-      if (!hasAccess) {
-        return res.status(403).json({ error: "You don't have access to this tool" });
+      if (!accessControl.hasAccess) {
+        return res.status(403).json({ error: accessControl.message || "You don't have access to this tool" });
+      }
+      
+      // Validate platform access
+      const platformValidation = await validatePlatformAccess(userId, validatedData.selectedPlatforms);
+      if (!platformValidation.valid) {
+        return res.status(403).json({
+          error: "Access denied to some platforms",
+          deniedPlatforms: platformValidation.deniedPlatforms,
+        });
       }
       
       // Create session in database
