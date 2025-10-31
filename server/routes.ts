@@ -122,6 +122,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware
   app.use(sessionMiddleware);
 
+  // Health check endpoint (for Railway and monitoring)
+  app.get("/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development"
+    });
+  });
+
   // Login endpoint
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -3917,7 +3926,6 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     }
   });
 
-<<<<<<< HEAD
   // ============================================================================
   // QC (Quality Control) Routes
   // ============================================================================
