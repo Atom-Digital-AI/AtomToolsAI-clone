@@ -1,0 +1,18 @@
+# Exclude Python app directory and virtual environments
+Ad Copy Generator App/
+**/venv/
+**/.venv/
+venv/
+.venv/
+
+# Python cache files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Already ignored
+node_modules/
+dist/
+.DS_Store
+
