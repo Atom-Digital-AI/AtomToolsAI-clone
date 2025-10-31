@@ -1,11 +1,17 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { isSameSite, generateContentHash, normalizeUrlForDedup } from './url-normalizer';
+import { type DatabaseStorage as DbStorage } from '../storage';
+import type { InsertPage } from '@shared/schema';
 
 interface CrawledPage {
   url: string;
   html: string;
   css: string[];
   title: string;
+  canonicalUrl?: string;
+  metaDescription?: string;
+  contentHash?: string;
 }
 
 interface CrawlResult {
@@ -154,10 +160,14 @@ export async function crawlWebsiteWithEarlyExit(
   maxPages: number = 250,
   exclusionPatterns: string[] = [],
   inclusionPatterns: string[] = [],
-  onProgress?: CrawlProgressCallback
+  onProgress?: CrawlProgressCallback,
+  storage?: DbStorage,
+  crawlId?: string,
+  userId?: string
 ): Promise<CategorizedPagesWithCache> {
   const domain = new URL(startUrl).origin;
-  const visitedUrls = new Set<string>();
+  const visitedNormalizedUrls = new Set<string>(); // Track normalized URLs instead
+  const rawUrlsToNormalized = new Map<string, string>(); // Map raw URLs to normalized
   const pagesToCrawl: string[] = [startUrl];
   const crawledPages: CrawledPage[] = [];
 
@@ -177,29 +187,55 @@ export async function crawlWebsiteWithEarlyExit(
   while (crawledPages.length < maxPages && pagesToCrawl.length > 0) {
     const currentUrl = pagesToCrawl.shift()!;
     
-    if (visitedUrls.has(currentUrl)) {
+    // Normalize URL for deduplication
+    const normalizedUrl = normalizeUrlForDedup(currentUrl);
+    
+    // Check if we've already crawled this normalized URL
+    if (visitedNormalizedUrls.has(normalizedUrl)) {
+      console.log(`Skipping duplicate (normalized): ${currentUrl} -> ${normalizedUrl}`);
       continue;
     }
 
     // Check exclusion patterns
     if (matchesExclusionPattern(currentUrl, exclusionPatterns)) {
       console.log(`Skipping excluded URL: ${currentUrl}`);
-      visitedUrls.add(currentUrl);
+      visitedNormalizedUrls.add(normalizedUrl);
       continue;
     }
 
     // Check inclusion patterns
     if (!matchesInclusionPattern(currentUrl, inclusionPatterns)) {
       console.log(`Skipping URL not matching inclusion patterns: ${currentUrl}`);
-      visitedUrls.add(currentUrl);
+      visitedNormalizedUrls.add(normalizedUrl);
       continue;
     }
 
     try {
-      visitedUrls.add(currentUrl);
+      visitedNormalizedUrls.add(normalizedUrl);
+      rawUrlsToNormalized.set(currentUrl, normalizedUrl);
+      
       console.log(`Crawling page ${crawledPages.length + 1}/${maxPages}: ${currentUrl}`);
       const page = await fetchPage(currentUrl, domain);
       crawledPages.push(page);
+      
+      // Persist to database if storage is provided
+      if (storage && crawlId && userId) {
+        const pageData: InsertPage = {
+          crawlId,
+          userId,
+          rawUrl: currentUrl,
+          normalizedUrl,
+          canonicalUrl: page.canonicalUrl,
+          title: page.title,
+          metaDescription: page.metaDescription,
+          contentHash: page.contentHash,
+          htmlContent: page.html,
+          httpStatus: 200,
+        };
+        
+        await storage.createPage(pageData);
+        console.log(`Persisted page to database: ${currentUrl}`);
+      }
 
       // Report progress if callback provided
       if (onProgress) {
@@ -243,7 +279,8 @@ export async function crawlWebsiteWithEarlyExit(
       // Extract more URLs to crawl from this page
       const newUrls = extractUrls(page.html, domain, currentUrl);
       for (const url of newUrls) {
-        if (!visitedUrls.has(url) && !pagesToCrawl.includes(url)) {
+        const normalizedNewUrl = normalizeUrlForDedup(url);
+        if (!visitedNormalizedUrls.has(normalizedNewUrl) && !pagesToCrawl.includes(url)) {
           pagesToCrawl.push(url);
         }
       }
@@ -362,11 +399,53 @@ async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
 
   const title = $('title').text() || '';
 
+  // Extract canonical URL if present (case-insensitive rel attribute)
+  let canonicalUrl: string | undefined;
+  const canonicalLink = $('link').filter((_, el) => {
+    const rel = $(el).attr('rel');
+    return rel?.toLowerCase() === 'canonical';
+  }).first().attr('href');
+
+  if (canonicalLink) {
+    try {
+      const absoluteCanonicalUrl = new URL(canonicalLink, url).href;
+      // Only use canonical if it's same-site
+      if (isSameSite(url, absoluteCanonicalUrl)) {
+        canonicalUrl = absoluteCanonicalUrl;
+      }
+    } catch {
+      // Invalid canonical URL, ignore
+    }
+  }
+
+  // Extract meta description (case-insensitive name attribute)
+  let metaDescription: string | undefined;
+  const metaDesc = $('meta').filter((_, el) => {
+    const name = $(el).attr('name');
+    return name?.toLowerCase() === 'description';
+  }).first().attr('content')?.trim();
+
+  if (metaDesc) {
+    metaDescription = metaDesc;
+  } else {
+    // Fallback to og:description
+    const ogDesc = $('meta[property="og:description"]').attr('content')?.trim();
+    if (ogDesc) {
+      metaDescription = ogDesc;
+    }
+  }
+
+  // Generate content hash
+  const contentHash = generateContentHash(html);
+
   return {
     url,
     html: $.html(),
     css: [...cssContents, ...inlineStyles].filter(Boolean),
-    title
+    title,
+    canonicalUrl,
+    metaDescription,
+    contentHash
   };
 }
 

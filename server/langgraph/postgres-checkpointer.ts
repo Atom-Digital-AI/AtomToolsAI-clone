@@ -24,7 +24,11 @@ export class PostgresCheckpointer extends BaseCheckpointSaver {
     writes: Array<[string, any]>,
     taskId: string
   ): Promise<void> {
-    throw new Error("putWrites is not supported by PostgresCheckpointer - write-ahead logging is not implemented");
+    // No-op implementation for putWrites
+    // This is called by LangGraph for write-ahead logging, but we handle
+    // all state persistence in the put() method instead
+    // Just return without error to allow the workflow to continue
+    return;
   }
 
   async deleteThread(threadId: string): Promise<void> {

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey, integer, jsonb, unique, vector, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, decimal, boolean, primaryKey, integer, jsonb, unique, vector, index, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -126,6 +126,25 @@ export const guidelineContentSchema = z.union([
   brandGuidelineContentSchema,
   regulatoryGuidelineContentSchema,
   z.string(), // Backward compatibility for simple text
+]);
+
+// PostgreSQL enums for page classification
+export const pageClassificationEnum = pgEnum('page_classification', [
+  'homepage',
+  'product_category', 
+  'product_detail',
+  'blog',
+  'help_docs',
+  'legal',
+  'contact_about',
+  'navigation',
+  'other'
+]);
+
+export const exclusionRuleTypeEnum = pgEnum('exclusion_rule_type', [
+  'path_prefix',
+  'glob',
+  'regex'
 ]);
 
 export const users = pgTable("users", {
@@ -315,6 +334,45 @@ export const brandEmbeddings = pgTable("brand_embeddings", {
   index("embedding_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
 ]);
 
+// Pages - Stores individual crawled pages with full metadata
+export const pages = pgTable("pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  crawlId: varchar("crawl_id").notNull().references(() => crawlJobs.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // For tenant isolation
+  rawUrl: text("raw_url").notNull(), // Original URL as discovered
+  normalizedUrl: text("normalized_url").notNull(), // Normalized for deduplication
+  canonicalUrl: text("canonical_url"), // Canonical URL if present
+  title: text("title"), // Page <title> tag
+  metaDescription: text("meta_description"), // Meta description
+  contentHash: text("content_hash"), // MD5 hash of content for duplicate detection
+  htmlContent: text("html_content"), // Full HTML content
+  httpStatus: integer("http_status"), // HTTP status code (200, 404, etc.)
+  crawledAt: timestamp("crawled_at").defaultNow().notNull(),
+});
+
+// Page Reviews - User classification and tagging of crawled pages
+export const pageReviews = pgTable("page_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pageId: varchar("page_id").notNull().references(() => pages.id, { onDelete: "cascade" }).unique(), // One review per page
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // For tenant isolation
+  classification: pageClassificationEnum("classification").notNull(), // Use enum
+  description: varchar("description", { length: 200 }), // 200-char limit
+  exclude: boolean("exclude").notNull().default(false), // Exclude from RAG processing
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Exclusion Rules - Smart URL pattern exclusions with samples
+export const exclusionRules = pgTable("exclusion_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // For tenant isolation
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id, { onDelete: "cascade" }), // Optional: link to brand
+  ruleType: exclusionRuleTypeEnum("rule_type").notNull(), // Use enum
+  pattern: text("pattern").notNull(), // The pattern to match
+  sampleUrl: text("sample_url"), // Example URL that matched this rule
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // CMS Pages - For managing static pages and blog content
 export const cmsPages = pgTable("cms_pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -452,6 +510,47 @@ export const insertBrandEmbeddingSchema = createInsertSchema(brandEmbeddings).pi
 
 export type InsertBrandEmbedding = z.infer<typeof insertBrandEmbeddingSchema>;
 export type BrandEmbedding = typeof brandEmbeddings.$inferSelect;
+
+// Page schemas
+export const insertPageSchema = createInsertSchema(pages).pick({
+  crawlId: true,
+  userId: true,
+  rawUrl: true,
+  normalizedUrl: true,
+  canonicalUrl: true,
+  title: true,
+  metaDescription: true,
+  contentHash: true,
+  htmlContent: true,
+  httpStatus: true,
+});
+
+export const insertPageReviewSchema = createInsertSchema(pageReviews).pick({
+  pageId: true,
+  userId: true,
+  classification: true,
+  description: true,
+  exclude: true,
+}).extend({
+  classification: z.enum(['homepage', 'product_category', 'product_detail', 'blog', 'help_docs', 'legal', 'contact_about', 'navigation', 'other']),
+  description: z.string().max(200).optional(),
+});
+
+export const updatePageReviewSchema = insertPageReviewSchema.partial().pick({
+  classification: true,
+  description: true,
+  exclude: true,
+});
+
+export const insertExclusionRuleSchema = createInsertSchema(exclusionRules).pick({
+  userId: true,
+  guidelineProfileId: true,
+  ruleType: true,
+  pattern: true,
+  sampleUrl: true,
+}).extend({
+  ruleType: z.enum(['path_prefix', 'glob', 'regex']),
+});
 
 // CMS Page schemas
 export const insertCmsPageSchema = createInsertSchema(cmsPages).pick({
@@ -1032,6 +1131,16 @@ export type UpdateCrawlJob = z.infer<typeof updateCrawlJobSchema>;
 export type BrandContextContent = typeof brandContextContent.$inferSelect;
 export type InsertBrandContextContent = z.infer<typeof insertBrandContextContentSchema>;
 
+export type Page = typeof pages.$inferSelect;
+export type InsertPage = z.infer<typeof insertPageSchema>;
+
+export type PageReview = typeof pageReviews.$inferSelect;
+export type InsertPageReview = z.infer<typeof insertPageReviewSchema>;
+export type UpdatePageReview = z.infer<typeof updatePageReviewSchema>;
+
+export type ExclusionRule = typeof exclusionRules.$inferSelect;
+export type InsertExclusionRule = z.infer<typeof insertExclusionRuleSchema>;
+
 // CMS Types
 export type CmsPage = typeof cmsPages.$inferSelect;
 export type InsertCmsPage = z.infer<typeof insertCmsPageSchema>;
@@ -1131,6 +1240,43 @@ export const guidelineProfilesRelations = relations(guidelineProfiles, ({ one, m
 export const brandContextContentRelations = relations(brandContextContent, ({ one }) => ({
   guidelineProfile: one(guidelineProfiles, {
     fields: [brandContextContent.guidelineProfileId],
+    references: [guidelineProfiles.id],
+  }),
+}));
+
+export const pagesRelations = relations(pages, ({ one, many }) => ({
+  crawlJob: one(crawlJobs, {
+    fields: [pages.crawlId],
+    references: [crawlJobs.id],
+  }),
+  user: one(users, {
+    fields: [pages.userId],
+    references: [users.id],
+  }),
+  review: one(pageReviews, {
+    fields: [pages.id],
+    references: [pageReviews.pageId],
+  }),
+}));
+
+export const pageReviewsRelations = relations(pageReviews, ({ one }) => ({
+  page: one(pages, {
+    fields: [pageReviews.pageId],
+    references: [pages.id],
+  }),
+  user: one(users, {
+    fields: [pageReviews.userId],
+    references: [users.id],
+  }),
+}));
+
+export const exclusionRulesRelations = relations(exclusionRules, ({ one }) => ({
+  user: one(users, {
+    fields: [exclusionRules.userId],
+    references: [users.id],
+  }),
+  guidelineProfile: one(guidelineProfiles, {
+    fields: [exclusionRules.guidelineProfileId],
     references: [guidelineProfiles.id],
   }),
 }));

@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertGeneratedContent, PRODUCT_IDS } from "@shared/schema";
+import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertGeneratedContent, PRODUCT_IDS, insertPageReviewSchema, updatePageReviewSchema, pageClassificationEnum } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
@@ -4057,6 +4057,129 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     } catch (error) {
       console.error("Error getting QC decisions:", error);
       res.status(500).json({ message: "Failed to get QC decisions" });
+    }
+  });
+
+  // ============================================================================
+  // Page Review Routes
+  // ============================================================================
+
+  // Get pages for a crawl with optional filters and pagination
+  app.get("/api/crawls/:id/pages", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const crawlId = req.params.id;
+      
+      // Verify crawl belongs to user
+      const crawl = await storage.getCrawlJob(crawlId, userId);
+      if (!crawl) {
+        return res.status(404).json({ message: "Crawl not found" });
+      }
+      
+      // Get all pages with reviews
+      const pagesWithReviews = await storage.getPageReviews(crawlId, userId);
+      
+      // Apply filters
+      let filteredPages = pagesWithReviews;
+      
+      const { search, classification, exclude, page, limit } = req.query;
+      
+      // Filter by search query (URL, title, description)
+      if (search && typeof search === 'string') {
+        const searchLower = search.toLowerCase();
+        filteredPages = filteredPages.filter((p: any) => 
+          p.rawUrl.toLowerCase().includes(searchLower) ||
+          p.title?.toLowerCase().includes(searchLower) ||
+          p.metaDescription?.toLowerCase().includes(searchLower) ||
+          p.review?.description?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Filter by classification
+      if (classification && typeof classification === 'string') {
+        filteredPages = filteredPages.filter((p: any) => p.review?.classification === classification);
+      }
+      
+      // Filter by exclude flag
+      if (exclude !== undefined) {
+        const excludeValue = exclude === 'true';
+        filteredPages = filteredPages.filter((p: any) => p.review?.exclude === excludeValue);
+      }
+      
+      // Get total count before pagination
+      const totalCount = filteredPages.length;
+      
+      // Apply pagination
+      const pageNum = page ? parseInt(page as string, 10) : 1;
+      const pageLimit = limit ? parseInt(limit as string, 10) : 50;
+      const offset = (pageNum - 1) * pageLimit;
+      
+      const paginatedPages = filteredPages.slice(offset, offset + pageLimit);
+      
+      res.json({ 
+        pages: paginatedPages,
+        total: totalCount,
+        page: pageNum,
+        limit: pageLimit,
+        totalPages: Math.ceil(totalCount / pageLimit)
+      });
+    } catch (error) {
+      console.error("Error getting crawl pages:", error);
+      res.status(500).json({ message: "Failed to get crawl pages" });
+    }
+  });
+
+  // Create or update page review
+  app.patch("/api/pages/:id/review", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const pageId = req.params.id;
+      
+      // Validate using shared schema
+      const validatedData = updatePageReviewSchema.parse(req.body);
+      
+      // Ensure at least one field is provided
+      if (Object.keys(validatedData).length === 0) {
+        return res.status(400).json({ message: "At least one field must be provided" });
+      }
+      
+      // Verify page belongs to user
+      const page = await storage.getPageById(pageId, userId);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      
+      // Check if review exists
+      const existingReview = await storage.getPageReview(pageId, userId);
+      
+      if (existingReview) {
+        // Update existing review
+        const updated = await storage.updatePageReview(existingReview.id, userId, validatedData);
+        return res.json(updated);
+      } else {
+        // Create new review - ensure required fields
+        if (!validatedData.classification) {
+          return res.status(400).json({ message: "Classification is required for new review" });
+        }
+        
+        const created = await storage.createPageReview({
+          pageId,
+          userId,
+          classification: validatedData.classification,
+          description: validatedData.description,
+          exclude: validatedData.exclude ?? false,
+        });
+        return res.json(created);
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error",
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating page review:", error);
+      res.status(500).json({ message: "Failed to update page review" });
     }
   });
 
