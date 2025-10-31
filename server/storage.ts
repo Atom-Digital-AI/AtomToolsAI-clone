@@ -47,9 +47,15 @@ import {
   type InsertUserNotificationPreference,
   type ToolType,
   type LanggraphThread,
-  type InsertLanggraphThread
+  type InsertLanggraphThread,
+  type QCReport,
+  type InsertQCReport,
+  type QCUserDecision,
+  type InsertQCUserDecision,
+  type QCConfiguration,
+  type InsertQCConfiguration
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences, langgraphThreads, langgraphCheckpoints, aiUsageLogs } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences, langgraphThreads, langgraphCheckpoints, aiUsageLogs, qcReports, qcUserDecisions, qcConfigurations } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray, cosineDistance, desc, gte, lte, like, or } from "drizzle-orm";
 
@@ -148,6 +154,21 @@ export interface IStorage {
   getUnreadNotificationCount(userId: string): Promise<number>;
   markNotificationAsRead(notificationId: string, userId: string): Promise<boolean>;
   markAllNotificationsAsRead(userId: string): Promise<boolean>;
+
+  // QC Reports operations
+  createQCReport(report: InsertQCReport & { userId: string }): Promise<QCReport>;
+  getQCReports(contentId: string, userId: string): Promise<QCReport[]>;
+  getQCReportsByThread(threadId: string, userId: string): Promise<QCReport[]>;
+  
+  // QC User Decisions operations
+  createQCUserDecision(decision: InsertQCUserDecision & { userId: string }): Promise<QCUserDecision>;
+  getQCUserDecisions(userId: string, guidelineProfileId?: string, filters?: { conflictType?: string; applyToFuture?: boolean }): Promise<QCUserDecision[]>;
+  incrementQCDecisionUsage(decisionId: string): Promise<void>;
+  
+  // QC Configuration operations
+  getQCConfiguration(userId: string, guidelineProfileId?: string, toolType?: string): Promise<QCConfiguration | null>;
+  createQCConfiguration(config: InsertQCConfiguration & { userId: string }): Promise<QCConfiguration>;
+  updateQCConfiguration(id: string, userId: string, updates: Partial<InsertQCConfiguration>): Promise<QCConfiguration | undefined>;
   deleteNotification(notificationId: string, userId: string): Promise<boolean>;
   
   // User notification preferences
@@ -1968,6 +1989,146 @@ export class DatabaseStorage implements IStorage {
         resolvedAt: status === 'resolved' ? new Date() : null,
       })
       .where(eq(errorReports.id, id));
+  }
+
+  // QC Reports operations
+  async createQCReport(report: InsertQCReport & { userId: string }): Promise<QCReport> {
+    const [created] = await db
+      .insert(qcReports)
+      .values(report)
+      .returning();
+    
+    return created;
+  }
+
+  async getQCReports(contentId: string, userId: string): Promise<QCReport[]> {
+    return await db
+      .select()
+      .from(qcReports)
+      .where(and(
+        eq(qcReports.contentId, contentId),
+        eq(qcReports.userId, userId)
+      ))
+      .orderBy(qcReports.executionOrder);
+  }
+
+  async getQCReportsByThread(threadId: string, userId: string): Promise<QCReport[]> {
+    return await db
+      .select()
+      .from(qcReports)
+      .where(and(
+        eq(qcReports.threadId, threadId),
+        eq(qcReports.userId, userId)
+      ))
+      .orderBy(qcReports.executionOrder);
+  }
+
+  // QC User Decisions operations
+  async createQCUserDecision(decision: InsertQCUserDecision & { userId: string }): Promise<QCUserDecision> {
+    const [created] = await db
+      .insert(qcUserDecisions)
+      .values(decision)
+      .returning();
+    
+    return created;
+  }
+
+  async getQCUserDecisions(
+    userId: string, 
+    guidelineProfileId?: string, 
+    filters?: { conflictType?: string; applyToFuture?: boolean }
+  ): Promise<QCUserDecision[]> {
+    const conditions = [eq(qcUserDecisions.userId, userId)];
+    
+    if (guidelineProfileId) {
+      conditions.push(eq(qcUserDecisions.guidelineProfileId, guidelineProfileId));
+    }
+    
+    if (filters?.conflictType) {
+      conditions.push(eq(qcUserDecisions.conflictType, filters.conflictType));
+    }
+    
+    if (filters?.applyToFuture !== undefined) {
+      conditions.push(eq(qcUserDecisions.applyToFuture, filters.applyToFuture));
+    }
+    
+    return await db
+      .select()
+      .from(qcUserDecisions)
+      .where(and(...conditions))
+      .orderBy(desc(qcUserDecisions.timesApplied), desc(qcUserDecisions.createdAt));
+  }
+
+  async incrementQCDecisionUsage(decisionId: string): Promise<void> {
+    await db
+      .update(qcUserDecisions)
+      .set({
+        timesApplied: sql`${qcUserDecisions.timesApplied} + 1`,
+        lastAppliedAt: new Date(),
+      })
+      .where(eq(qcUserDecisions.id, decisionId));
+  }
+
+  // QC Configuration operations
+  async getQCConfiguration(
+    userId: string, 
+    guidelineProfileId?: string, 
+    toolType?: string
+  ): Promise<QCConfiguration | null> {
+    const conditions = [eq(qcConfigurations.userId, userId)];
+    
+    if (guidelineProfileId !== undefined) {
+      conditions.push(
+        guidelineProfileId 
+          ? eq(qcConfigurations.guidelineProfileId, guidelineProfileId)
+          : sql`${qcConfigurations.guidelineProfileId} IS NULL`
+      );
+    }
+    
+    if (toolType !== undefined) {
+      conditions.push(
+        toolType 
+          ? eq(qcConfigurations.toolType, toolType)
+          : sql`${qcConfigurations.toolType} IS NULL`
+      );
+    }
+    
+    const [config] = await db
+      .select()
+      .from(qcConfigurations)
+      .where(and(...conditions))
+      .limit(1);
+    
+    return config || null;
+  }
+
+  async createQCConfiguration(config: InsertQCConfiguration & { userId: string }): Promise<QCConfiguration> {
+    const [created] = await db
+      .insert(qcConfigurations)
+      .values(config)
+      .returning();
+    
+    return created;
+  }
+
+  async updateQCConfiguration(
+    id: string, 
+    userId: string, 
+    updates: Partial<InsertQCConfiguration>
+  ): Promise<QCConfiguration | undefined> {
+    const [updated] = await db
+      .update(qcConfigurations)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(qcConfigurations.id, id),
+        eq(qcConfigurations.userId, userId)
+      ))
+      .returning();
+    
+    return updated;
   }
 }
 

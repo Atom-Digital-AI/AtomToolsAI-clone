@@ -836,12 +836,163 @@ export const aiUsageLogs = pgTable("ai_usage_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// QC Agent Types
+export const QC_AGENT_TYPES = ['proofreader', 'brand_guardian', 'fact_checker', 'regulatory'] as const;
+export type QCAgentType = typeof QC_AGENT_TYPES[number];
+
+export const QC_SEVERITY_LEVELS = ['critical', 'high', 'medium', 'low'] as const;
+export type QCSeverity = typeof QC_SEVERITY_LEVELS[number];
+
+// QC Issue and Change Types
+export interface QCIssue {
+  id: string;
+  type: string;
+  severity: QCSeverity;
+  message: string;
+  location?: { start: number; end: number; line?: number };
+  affectedText?: string;
+  suggestedFix?: string;
+}
+
+export interface QCChange {
+  id: string;
+  agentId: string;
+  agentType: QCAgentType;
+  type: string;
+  severity: QCSeverity;
+  original: string;
+  suggested: string;
+  reason: string;
+  confidence: number;
+  location?: { start: number; end: number };
+  appliedAt?: string;
+  rejectedAt?: string;
+  conflictsWith?: string[];
+}
+
+export interface QCConflict {
+  id: string;
+  type: string;
+  description: string;
+  severity: QCSeverity;
+  conflictingChanges: QCChange[];
+  recommendation?: {
+    preferredChangeId: string;
+    reason: string;
+  };
+}
+
+// QC Reports - Stores quality control analysis results
+export const qcReports = pgTable("qc_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  contentId: varchar("content_id"), // Link to generated content
+  threadId: varchar("thread_id"), // Link to langgraph thread
+  agentType: varchar("agent_type", { length: 50 }).notNull(), // 'proofreader', 'brand_guardian', 'fact_checker', 'regulatory'
+  
+  score: integer("score").notNull(), // 0-100
+  issues: jsonb("issues").$type<QCIssue[]>(),
+  suggestions: jsonb("suggestions").$type<QCChange[]>(),
+  appliedChanges: jsonb("applied_changes").$type<QCChange[]>(),
+  
+  executionOrder: integer("execution_order"), // Order in which agent ran
+  executionTimeMs: integer("execution_time_ms"),
+  
+  metadata: jsonb("metadata"), // Agent-specific metadata
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("qc_reports_user_id_idx").on(table.userId),
+  threadIdIdx: index("qc_reports_thread_id_idx").on(table.threadId),
+  contentIdIdx: index("qc_reports_content_id_idx").on(table.contentId),
+}));
+
+// QC User Decisions - Stores user preferences for future conflict resolution
+export const qcUserDecisions = pgTable("qc_user_decisions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id, { onDelete: "cascade" }),
+  
+  conflictType: varchar("conflict_type", { length: 255 }).notNull(), // 'proofreader_vs_brand', 'regulatory_vs_fact', etc.
+  conflictDescription: text("conflict_description").notNull(),
+  
+  // The conflicting suggestions
+  option1: jsonb("option1").$type<QCChange>().notNull(),
+  option2: jsonb("option2").$type<QCChange>().notNull(),
+  
+  selectedOption: integer("selected_option").notNull(), // 1 or 2
+  applyToFuture: boolean("apply_to_future").notNull().default(false),
+  
+  // Pattern matching for future conflicts
+  pattern: jsonb("pattern"), // { issueTypes: [], severities: [], agentPriority: {} }
+  
+  timesApplied: integer("times_applied").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastAppliedAt: timestamp("last_applied_at"),
+}, (table) => ({
+  userIdIdx: index("qc_user_decisions_user_id_idx").on(table.userId),
+  guidelineProfileIdIdx: index("qc_user_decisions_guideline_profile_id_idx").on(table.guidelineProfileId),
+}));
+
+// QC Configurations - User/brand-specific QC preferences
+export const qcConfigurations = pgTable("qc_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id, { onDelete: "cascade" }),
+  toolType: varchar("tool_type", { length: 50 }), // 'google-ads', 'seo-meta', 'content-writer', null = global
+  
+  enabled: boolean("enabled").default(true),
+  enabledAgents: jsonb("enabled_agents").$type<QCAgentType[]>().default(sql`'["proofreader", "brand_guardian", "fact_checker", "regulatory"]'::jsonb`),
+  
+  agentSettings: jsonb("agent_settings").$type<{
+    proofreader?: { strictness: 'low' | 'medium' | 'high' };
+    brand_guardian?: { enforceStyle: boolean };
+    fact_checker?: { requireCitations: boolean };
+    regulatory?: { selectedRulesetIds?: string[] };
+  }>(),
+  
+  autoApplyThreshold: integer("auto_apply_threshold").default(90), // Auto-apply changes with confidence >= this
+  conflictResolutionStrategy: varchar("conflict_resolution_strategy", { length: 50 }).default("human_review"), // 'human_review', 'learned_preferences', 'priority_based'
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userToolUnique: unique("user_tool_qc_config_unique").on(table.userId, table.guidelineProfileId, table.toolType),
+  userIdIdx: index("qc_configurations_user_id_idx").on(table.userId),
+}));
+
 export type AiUsageLog = typeof aiUsageLogs.$inferSelect;
 export type InsertAiUsageLog = typeof aiUsageLogs.$inferInsert;
 
 export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs).omit({
   id: true,
   createdAt: true,
+});
+
+// QC Types
+export type QCReport = typeof qcReports.$inferSelect;
+export type InsertQCReport = typeof qcReports.$inferInsert;
+
+export const insertQCReportSchema = createInsertSchema(qcReports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type QCUserDecision = typeof qcUserDecisions.$inferSelect;
+export type InsertQCUserDecision = typeof qcUserDecisions.$inferInsert;
+
+export const insertQCUserDecisionSchema = createInsertSchema(qcUserDecisions).omit({
+  id: true,
+  createdAt: true,
+  lastAppliedAt: true,
+});
+
+export type QCConfiguration = typeof qcConfigurations.$inferSelect;
+export type InsertQCConfiguration = typeof qcConfigurations.$inferInsert;
+
+export const insertQCConfigurationSchema = createInsertSchema(qcConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
