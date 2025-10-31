@@ -1470,6 +1470,11 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                         const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
                         updateField('exclusion_patterns', patterns.length > 0 ? patterns : undefined);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.stopPropagation();
+                        }
+                      }}
                       placeholder={`*/page=*\n*/category/*\n*/tag/*\n*/author/*\n*/search*`}
                       rows={3}
                       className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-xs"
@@ -1493,6 +1498,11 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                       onChange={(e) => {
                         const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
                         updateField('inclusion_patterns', patterns.length > 0 ? patterns : undefined);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.stopPropagation();
+                        }
                       }}
                       placeholder={`*/blog/*\n*/products/*\n*/services/*`}
                       rows={3}
