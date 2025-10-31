@@ -838,8 +838,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
         ${ragContext}
-        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
+        ${brandGuidelines ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
+        ${finalRegulatoryGuidelines ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
         Generate ${numVariations} variations.
 
@@ -857,10 +857,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Approach this logically, step by step.
 
         CRITICAL PRE-OUTPUT REVIEW CHECKLIST:
-        1. ✅ All brand guidelines have been strictly followed
-        2. ✅ All regulatory requirements have been met  
-        3. ✅ Content adheres to all formatting and character requirements
-        4. ✅ No negative prompts appear in the content
+        1. ? All brand guidelines have been strictly followed
+        2. ? All regulatory requirements have been met  
+        3. ? Content adheres to all formatting and character requirements
+        4. ? No negative prompts appear in the content
         
         Before outputting, thoroughly review your results against ALL instructions provided, with special emphasis on brand and regulatory compliance.
 
@@ -1053,8 +1053,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints || "None"}
         ${languageInstruction}
         ${ragContext}
-        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
+        ${brandGuidelines ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
+        ${finalRegulatoryGuidelines ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
         Generate Google Ads copy with EXACTLY this format:
         - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)
@@ -1081,10 +1081,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Approach this logically, step by step.
 
         CRITICAL PRE-OUTPUT REVIEW CHECKLIST:
-        1. ✅ All brand guidelines have been strictly followed
-        2. ✅ All regulatory requirements have been met  
-        3. ✅ Content adheres to all formatting and character requirements
-        4. ✅ No negative prompts appear in the content
+        1. ? All brand guidelines have been strictly followed
+        2. ? All regulatory requirements have been met  
+        3. ? Content adheres to all formatting and character requirements
+        4. ? No negative prompts appear in the content
         
         Before outputting, thoroughly review your results against ALL instructions provided, with special emphasis on brand and regulatory compliance.
 
@@ -3913,6 +3913,150 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     } catch (error) {
       console.error("Error cancelling crawl job:", error);
       res.status(500).json({ message: "Failed to cancel crawl job" });
+    }
+  });
+
+  // ============================================================================
+  // QC (Quality Control) Routes
+  // ============================================================================
+
+  // Get QC configuration
+  app.get("/api/qc/config", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { guidelineProfileId, toolType } = req.query;
+
+      const config = await storage.getQCConfiguration(
+        userId,
+        guidelineProfileId || undefined,
+        toolType || undefined
+      );
+
+      if (config) {
+        res.json(config);
+      } else {
+        // Return default configuration
+        res.json({
+          enabled: false,
+          enabledAgents: ['proofreader', 'brand_guardian', 'fact_checker', 'regulatory'],
+          autoApplyThreshold: 90,
+          conflictResolutionStrategy: 'human_review',
+        });
+      }
+    } catch (error) {
+      console.error("Error getting QC configuration:", error);
+      res.status(500).json({ message: "Failed to get QC configuration" });
+    }
+  });
+
+  // Create or update QC configuration
+  app.post("/api/qc/config", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { guidelineProfileId, toolType, enabled, enabledAgents, autoApplyThreshold, conflictResolutionStrategy, agentSettings } = req.body;
+
+      // Check if config exists
+      const existing = await storage.getQCConfiguration(userId, guidelineProfileId, toolType);
+
+      let config;
+      if (existing) {
+        // Update existing
+        config = await storage.updateQCConfiguration(existing.id, userId, {
+          enabled,
+          enabledAgents,
+          autoApplyThreshold,
+          conflictResolutionStrategy,
+          agentSettings,
+        });
+      } else {
+        // Create new
+        config = await storage.createQCConfiguration({
+          userId,
+          guidelineProfileId: guidelineProfileId || undefined,
+          toolType: toolType || undefined,
+          enabled,
+          enabledAgents,
+          autoApplyThreshold,
+          conflictResolutionStrategy,
+          agentSettings,
+        });
+      }
+
+      res.json(config);
+    } catch (error) {
+      console.error("Error saving QC configuration:", error);
+      res.status(500).json({ message: "Failed to save QC configuration" });
+    }
+  });
+
+  // Get QC reports for a thread
+  app.get("/api/qc/reports/:threadId", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { threadId } = req.params;
+
+      const reports = await storage.getQCReportsByThread(threadId, userId);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error getting QC reports:", error);
+      res.status(500).json({ message: "Failed to get QC reports" });
+    }
+  });
+
+  // Save user's conflict resolution decision
+  app.post("/api/qc/decisions", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { 
+        guidelineProfileId,
+        conflictType,
+        conflictDescription,
+        option1,
+        option2,
+        selectedOption,
+        applyToFuture,
+        pattern
+      } = req.body;
+
+      const decision = await storage.createQCUserDecision({
+        userId,
+        guidelineProfileId: guidelineProfileId || undefined,
+        conflictType,
+        conflictDescription,
+        option1,
+        option2,
+        selectedOption,
+        applyToFuture,
+        pattern: pattern || null,
+      });
+
+      res.json(decision);
+    } catch (error) {
+      console.error("Error saving QC decision:", error);
+      res.status(500).json({ message: "Failed to save QC decision" });
+    }
+  });
+
+  // Get user's saved QC decisions
+  app.get("/api/qc/decisions", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { guidelineProfileId, conflictType, applyToFuture } = req.query;
+
+      const filters: any = {};
+      if (conflictType) filters.conflictType = conflictType;
+      if (applyToFuture !== undefined) filters.applyToFuture = applyToFuture === 'true';
+
+      const decisions = await storage.getQCUserDecisions(
+        userId,
+        guidelineProfileId || undefined,
+        filters
+      );
+
+      res.json(decisions);
+    } catch (error) {
+      console.error("Error getting QC decisions:", error);
+      res.status(500).json({ message: "Failed to get QC decisions" });
     }
   });
 

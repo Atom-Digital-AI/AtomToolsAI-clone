@@ -12,6 +12,7 @@ import { checkBrandMatch } from "./nodes/checkBrandMatch";
 import { verifyFacts } from "./nodes/verifyFacts";
 import { shouldRegenerate } from "./nodes/shouldRegenerate";
 import { nanoid } from "nanoid";
+import { executeQCSubgraph, getQCConfig } from "./qc/qc-subgraph";
 
 const ContentWriterAnnotation = Annotation.Root({
   topic: Annotation<string>(),
@@ -68,6 +69,96 @@ function createContentWriterGraph() {
   workflow.addNode("setAwaitSubtopicApproval", setAwaitSubtopicApproval as any);
   workflow.addNode("awaitSubtopicApproval", awaitSubtopicApproval as any);
   workflow.addNode("generateArticle", generateArticle as any);
+  workflow.addNode("qualityControl", async (state: ContentWriterState) => {
+    // Run QC if article was generated and QC is enabled
+    if (!state.articleDraft?.finalArticle) {
+      return {
+        metadata: {
+          ...state.metadata,
+          qcEnabled: false,
+        },
+      };
+    }
+    
+    // Get user's QC configuration
+    const qcConfig = await getQCConfig(
+      state.userId,
+      state.guidelineProfileId,
+      'content-writer'
+    );
+    
+    if (!qcConfig.enabled || qcConfig.enabledAgents.length === 0) {
+      return {
+        metadata: {
+          ...state.metadata,
+          qcEnabled: false,
+          currentStep: 'article',
+        },
+      };
+    }
+    
+    try {
+      // Execute QC subgraph
+      const qcResult = await executeQCSubgraph({
+        content: state.articleDraft.finalArticle,
+        contentType: 'markdown',
+        userId: state.userId,
+        guidelineProfileId: state.guidelineProfileId,
+        enabledAgents: qcConfig.enabledAgents as any[],
+        autoApplyThreshold: qcConfig.autoApplyThreshold,
+      }, {
+        userId: state.userId,
+        threadId: state.threadId,
+      });
+      
+      // Update article with QC changes (if any were applied)
+      const updatedArticle = qcResult.processedContent || state.articleDraft.finalArticle;
+      const hasChanges = updatedArticle !== state.articleDraft.finalArticle;
+      
+      return {
+        articleDraft: {
+          ...state.articleDraft,
+          finalArticle: updatedArticle,
+          metadata: {
+            ...state.articleDraft.metadata,
+            qcOverallScore: qcResult.overallScore,
+            qcRequiresReview: qcResult.requiresHumanReview,
+          },
+        },
+        metadata: {
+          ...state.metadata,
+          currentStep: 'qc',
+          qcEnabled: true,
+          qcReports: {
+            proofreader: qcResult.proofreaderReport,
+            brandGuardian: qcResult.brandGuardianReport,
+            factChecker: qcResult.factCheckerReport,
+            regulatory: qcResult.regulatoryReport,
+          },
+          qcConflicts: qcResult.unresolvedConflicts,
+          qcChangesApplied: hasChanges,
+          qcOverallScore: qcResult.overallScore,
+        },
+      };
+    } catch (error) {
+      console.error("Error running QC:", error);
+      return {
+        errors: [
+          ...state.errors,
+          {
+            step: 'qualityControl',
+            message: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          },
+        ],
+        metadata: {
+          ...state.metadata,
+          qcEnabled: true,
+          qcError: true,
+        },
+      };
+    }
+  });
   workflow.addNode("checkBrandMatch", checkBrandMatch as any);
   workflow.addNode("verifyFacts", verifyFacts as any);
   workflow.addNode("qualityDecision", async (state: ContentWriterState) => {
@@ -108,7 +199,8 @@ function createContentWriterGraph() {
   (workflow as any).addEdge("generateSubtopics", "setAwaitSubtopicApproval");
   (workflow as any).addEdge("setAwaitSubtopicApproval", "awaitSubtopicApproval");
   (workflow as any).addEdge("awaitSubtopicApproval", "generateArticle");
-  (workflow as any).addEdge("generateArticle", "checkBrandMatch");
+  (workflow as any).addEdge("generateArticle", "qualityControl");
+  (workflow as any).addEdge("qualityControl", "checkBrandMatch");
   (workflow as any).addEdge("checkBrandMatch", "verifyFacts");
   (workflow as any).addEdge("verifyFacts", "qualityDecision");
   

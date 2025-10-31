@@ -30,6 +30,8 @@ export interface ArticleDraft {
     generatedAt?: string;
     brandScore?: number;
     factScore?: number;
+    qcOverallScore?: number;
+    qcRequiresReview?: boolean;
   };
 }
 
@@ -68,12 +70,20 @@ export interface ContentWriterState {
   }>;
   
   metadata: {
-    currentStep?: 'concepts' | 'awaitConceptApproval' | 'conceptApproved' | 'subtopics' | 'awaitSubtopicApproval' | 'subtopicsApproved' | 'article' | 'completed';
+    currentStep?: 'concepts' | 'awaitConceptApproval' | 'conceptApproved' | 'subtopics' | 'awaitSubtopicApproval' | 'subtopicsApproved' | 'article' | 'qc' | 'completed';
     regenerationCount?: number;
     qualityDecision?: 'regenerate' | 'human_review' | 'complete';
     humanApprovalPending?: boolean;
     brandIssues?: string[];
     factIssues?: string[];
+    qcReports?: {
+      proofreader?: any;
+      brandGuardian?: any;
+      factChecker?: any;
+      regulatory?: any;
+    };
+    qcConflicts?: any[];
+    qcEnabled?: boolean;
     startedAt?: string;
     completedAt?: string;
     [key: string]: any;
