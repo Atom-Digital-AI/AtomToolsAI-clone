@@ -24,6 +24,7 @@ import { aiUsageLogs, langgraphThreads } from "@shared/schema";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
 import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
 import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } from "./langgraph/content-writer-graph";
+import { registerSocialContentRoutes } from "./social-content-routes";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -838,8 +839,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
         ${ragContext}
-        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
+        ${brandGuidelines ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
+        ${finalRegulatoryGuidelines ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
         Generate ${numVariations} variations.
 
@@ -857,10 +858,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Approach this logically, step by step.
 
         CRITICAL PRE-OUTPUT REVIEW CHECKLIST:
-        1. ✅ All brand guidelines have been strictly followed
-        2. ✅ All regulatory requirements have been met  
-        3. ✅ Content adheres to all formatting and character requirements
-        4. ✅ No negative prompts appear in the content
+        1. ? All brand guidelines have been strictly followed
+        2. ? All regulatory requirements have been met  
+        3. ? Content adheres to all formatting and character requirements
+        4. ? No negative prompts appear in the content
         
         Before outputting, thoroughly review your results against ALL instructions provided, with special emphasis on brand and regulatory compliance.
 
@@ -1053,8 +1054,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELLING POINTS: ${sellingPoints || "None"}
         ${languageInstruction}
         ${ragContext}
-        ${brandGuidelines ? `🚨 CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${finalRegulatoryGuidelines ? `🚨 CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
+        ${brandGuidelines ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
+        ${finalRegulatoryGuidelines ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
 
         Generate Google Ads copy with EXACTLY this format:
         - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)
@@ -1081,10 +1082,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Approach this logically, step by step.
 
         CRITICAL PRE-OUTPUT REVIEW CHECKLIST:
-        1. ✅ All brand guidelines have been strictly followed
-        2. ✅ All regulatory requirements have been met  
-        3. ✅ Content adheres to all formatting and character requirements
-        4. ✅ No negative prompts appear in the content
+        1. ? All brand guidelines have been strictly followed
+        2. ? All regulatory requirements have been met  
+        3. ? Content adheres to all formatting and character requirements
+        4. ? No negative prompts appear in the content
         
         Before outputting, thoroughly review your results against ALL instructions provided, with special emphasis on brand and regulatory compliance.
 
@@ -3915,6 +3916,9 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
       res.status(500).json({ message: "Failed to cancel crawl job" });
     }
   });
+
+  // Register Social Content Generator routes
+  registerSocialContentRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;
