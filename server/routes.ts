@@ -24,6 +24,7 @@ import { aiUsageLogs, langgraphThreads } from "@shared/schema";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
 import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
 import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } from "./langgraph/content-writer-graph";
+import { registerSocialContentRoutes } from "./social-content-routes";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -3916,6 +3917,7 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     }
   });
 
+<<<<<<< HEAD
   // ============================================================================
   // QC (Quality Control) Routes
   // ============================================================================
@@ -4182,6 +4184,13 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
       res.status(500).json({ message: "Failed to update page review" });
     }
   });
+
+  // ============================================================================
+  // Social Content Generator Routes
+  // ============================================================================
+  
+  // Register Social Content Generator routes
+  registerSocialContentRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

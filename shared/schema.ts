@@ -5,7 +5,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Tool Types - Centralized definition for all AI tools
-export const TOOL_TYPES = ['seo-meta', 'google-ads', 'content-writer'] as const;
+export const TOOL_TYPES = ['seo-meta', 'google-ads', 'content-writer', 'social-content'] as const;
 export type ToolType = typeof TOOL_TYPES[number];
 
 // Product IDs - Centralized UUIDs for all products
@@ -13,6 +13,7 @@ export const PRODUCT_IDS = {
   SEO_META_GENERATOR: '531de90b-12ef-4169-b664-0d55428435a6',
   GOOGLE_ADS_GENERATOR: 'c5985990-e94e-49b3-a86c-3076fd9d6b3f',
   FACEBOOK_ADS_CONNECTOR: '9dfbe2c0-1128-4ec1-891b-899e1b28e097',
+  SOCIAL_CONTENT_GENERATOR: '7a3c8f1e-9b2d-4e6a-8f7c-1d2e3f4a5b6c',
 } as const;
 
 // AI Model Names - Centralized model identifiers
@@ -914,6 +915,87 @@ export const insertUserNotificationPreferenceSchema = createInsertSchema(userNot
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+// Ad Specs - Platform ad format specifications
+export const adSpecs = pgTable("ad_specs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  platform: varchar("platform", { length: 50 }).notNull(), // 'Facebook', 'Instagram', 'TikTok', 'X', 'YouTube'
+  format: varchar("format", { length: 100 }).notNull(), // 'Feed Image Ad', 'Stories Ad', etc.
+  specJson: jsonb("spec_json").notNull(), // Full spec including fields, media, limits
+  version: integer("version").notNull().default(1),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  platformFormatIdx: index("ad_specs_platform_format_idx").on(table.platform, table.format),
+  platformFormatVersionUnique: unique("platform_format_version_unique").on(table.platform, table.format, table.version),
+}));
+
+export type AdSpec = typeof adSpecs.$inferSelect;
+export type InsertAdSpec = typeof adSpecs.$inferInsert;
+
+export const insertAdSpecSchema = createInsertSchema(adSpecs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Social Content Sessions - Multi-stage social content generation
+export const socialContentSessions = pgTable("social_content_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  guidelineProfileId: varchar("guideline_profile_id").references(() => guidelineProfiles.id), // Optional brand
+  subject: text("subject").notNull(), // Main topic/description
+  objective: text("objective"), // User's goal
+  selectedPlatforms: jsonb("selected_platforms").$type<string[]>().notNull(), // ['Facebook', 'Instagram', ...]
+  selectedFormats: jsonb("selected_formats").$type<Record<string, string[]>>().notNull(), // { 'Facebook': ['Feed Image Ad', ...], ... }
+  scrapedUrlData: jsonb("scraped_url_data").$type<Array<{url: string, summary: string, keyPoints: string[]}>>, // Session URL scraping results
+  status: varchar("status").notNull().default("wireframes"), // 'wireframes', 'awaitApproval', 'approved', 'generating', 'completed', 'failed'
+  useBrandGuidelines: boolean("use_brand_guidelines").default(false),
+  selectedTargetAudiences: jsonb("selected_target_audiences").$type<"all" | "none" | number[]>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type SocialContentSession = typeof socialContentSessions.$inferSelect;
+export type InsertSocialContentSession = typeof socialContentSessions.$inferInsert;
+
+export const insertSocialContentSessionSchema = createInsertSchema(socialContentSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Social Content Wireframes - Generated concepts per platform/format
+export const socialContentWireframes = pgTable("social_content_wireframes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => socialContentSessions.id, { onDelete: 'cascade' }),
+  platform: varchar("platform").notNull(),
+  format: varchar("format").notNull(),
+  adSpecId: varchar("ad_spec_id").references(() => adSpecs.id), // Link to spec used
+  optionLabel: varchar("option_label").notNull(), // 'A', 'B', 'C'
+  textFields: jsonb("text_fields").notNull(), // { 'Primary Text': { text: '...', charCount: 120, limit: 125 }, ... }
+  ctaButton: varchar("cta_button"), // Selected CTA from enum
+  mediaSpecs: jsonb("media_specs").notNull(), // Technical specs for media (aspect ratio, dimensions, etc.)
+  mediaConcept: text("media_concept"), // Description of visual concept
+  altText: text("alt_text"), // Accessibility text
+  rationale: text("rationale"), // Why this concept works
+  complianceChecks: jsonb("compliance_checks").$type<Array<{rule: string, passed: boolean, note?: string}>>(),
+  brandAlignmentScore: integer("brand_alignment_score"), // 0-100
+  isApproved: boolean("is_approved").default(false),
+  userFeedback: text("user_feedback"), // If rejected, why?
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  sessionPlatformFormatIdx: index("wireframes_session_platform_format_idx").on(table.sessionId, table.platform, table.format),
+}));
+
+export type SocialContentWireframe = typeof socialContentWireframes.$inferSelect;
+export type InsertSocialContentWireframe = typeof socialContentWireframes.$inferInsert;
+
+export const insertSocialContentWireframeSchema = createInsertSchema(socialContentWireframes).omit({
+  id: true,
+  createdAt: true,
 });
 
 // AI Usage Logs - Track token usage and costs for all AI API calls
