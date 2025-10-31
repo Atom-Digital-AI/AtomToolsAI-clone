@@ -47,9 +47,14 @@ import {
   type InsertUserNotificationPreference,
   type ToolType,
   type LanggraphThread,
-  type InsertLanggraphThread
+  type InsertLanggraphThread,
+  type Page,
+  type InsertPage,
+  type PageReview,
+  type InsertPageReview,
+  type UpdatePageReview
 } from "@shared/schema";
-import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences, langgraphThreads, langgraphCheckpoints, aiUsageLogs } from "@shared/schema";
+import { users, products, packages, packageProducts, tiers, tierPrices, tierLimits, userSubscriptions, userTierSubscriptions, guidelineProfiles, cmsPages, generatedContent, contentFeedback, brandContextContent, brandEmbeddings, crawlJobs, pages, pageReviews, contentWriterSessions, contentWriterConcepts, contentWriterSubtopics, contentWriterDrafts, notifications, userNotificationPreferences, langgraphThreads, langgraphCheckpoints, aiUsageLogs } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, inArray, cosineDistance, desc, gte, lte, like, or } from "drizzle-orm";
 
@@ -117,6 +122,17 @@ export interface IStorage {
   getUserCrawlJobs(userId: string, limit?: number): Promise<CrawlJob[]>;
   updateCrawlJob(id: string, userId: string, updates: UpdateCrawlJob): Promise<CrawlJob | undefined>;
   cancelCrawlJob(id: string, userId: string): Promise<boolean>;
+
+  // Page operations (SECURITY: All methods enforce userId for tenant isolation)
+  createPage(page: InsertPage): Promise<Page>;
+  getCrawlPages(crawlId: string, userId: string): Promise<Page[]>;
+  getPageById(id: string, userId: string): Promise<Page | undefined>;
+
+  // Page Review operations (SECURITY: All methods enforce userId for tenant isolation)
+  createPageReview(review: InsertPageReview): Promise<PageReview>;
+  updatePageReview(id: string, userId: string, updates: UpdatePageReview): Promise<PageReview | undefined>;
+  getPageReview(pageId: string, userId: string): Promise<PageReview | undefined>;
+  getPageReviews(crawlId: string, userId: string): Promise<Array<Page & { review: PageReview | null }>>;
 
   // Content Feedback operations (SECURITY: Enforce userId for tenant isolation)
   getUserFeedback(userId: string, toolType?: ToolType, guidelineProfileId?: string, limit?: number): Promise<ContentFeedback[]>;
@@ -1009,6 +1025,53 @@ export class DatabaseStorage implements IStorage {
         inArray(crawlJobs.status, ['pending', 'running']) // Only cancel if not already completed
       ));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Page operations
+  async createPage(page: InsertPage): Promise<Page> {
+    const [created] = await db.insert(pages).values(page).returning();
+    return created;
+  }
+
+  async getCrawlPages(crawlId: string, userId: string): Promise<Page[]> {
+    return db.select().from(pages).where(and(eq(pages.crawlId, crawlId), eq(pages.userId, userId)));
+  }
+
+  async getPageById(id: string, userId: string): Promise<Page | undefined> {
+    const [page] = await db.select().from(pages).where(and(eq(pages.id, id), eq(pages.userId, userId)));
+    return page;
+  }
+
+  // Page Review operations
+  async createPageReview(review: InsertPageReview): Promise<PageReview> {
+    const [created] = await db.insert(pageReviews).values(review).returning();
+    return created;
+  }
+
+  async updatePageReview(id: string, userId: string, updates: UpdatePageReview): Promise<PageReview | undefined> {
+    const [updated] = await db.update(pageReviews)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(pageReviews.id, id), eq(pageReviews.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async getPageReview(pageId: string, userId: string): Promise<PageReview | undefined> {
+    const [review] = await db.select().from(pageReviews).where(and(eq(pageReviews.pageId, pageId), eq(pageReviews.userId, userId)));
+    return review;
+  }
+
+  async getPageReviews(crawlId: string, userId: string): Promise<Array<Page & { review: PageReview | null }>> {
+    const crawlPages = await db.select().from(pages).where(and(eq(pages.crawlId, crawlId), eq(pages.userId, userId)));
+    
+    const pagesWithReviews = await Promise.all(
+      crawlPages.map(async (page) => {
+        const [review] = await db.select().from(pageReviews).where(and(eq(pageReviews.pageId, page.id), eq(pageReviews.userId, userId)));
+        return { ...page, review: review || null };
+      })
+    );
+    
+    return pagesWithReviews;
   }
 
   // Content Feedback operations
