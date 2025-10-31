@@ -4,3 +4,19 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Python virtual environments
+venv/
+**/venv/
+.venv/
+**/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Ad Copy Generator App (legacy Python app - not part of main deployment)
+Ad Copy Generator App/venv/
+Ad Copy Generator App/*.pyc
+Ad Copy Generator App/__pycache__/
