@@ -30,13 +30,10 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 expressjs
 
-# Copy built application and source files
+# Copy built application
 COPY --from=builder --chown=expressjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=expressjs:nodejs /app/server ./server
-COPY --from=builder --chown=expressjs:nodejs /app/shared ./shared
 COPY --from=builder --chown=expressjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=expressjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=expressjs:nodejs /app/tsconfig.json ./tsconfig.json
 
 USER expressjs
 
@@ -48,4 +45,4 @@ ENV PORT=5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "const port = process.env.PORT || '5000'; require('http').get(`http://localhost:${port}/health/live`, (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
 
-CMD ["node_modules/.bin/tsx", "server/index.ts"]
+CMD ["node", "dist/index.js"]
