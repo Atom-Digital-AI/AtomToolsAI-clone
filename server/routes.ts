@@ -25,6 +25,8 @@ import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricat
 import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
 import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } from "./langgraph/content-writer-graph";
 import { registerSocialContentRoutes } from "./social-content-routes";
+import { authLimiter, signupLimiter, aiLimiter } from "./rate-limit";
+import { validateURL } from "./utils/sanitize";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -123,16 +125,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(sessionMiddleware);
 
   // Health check endpoint (for Railway and monitoring)
-  app.get("/health", (req, res) => {
-    res.json({ 
-      status: "ok", 
+  app.get("/health", async (req, res) => {
+    const checks: Record<string, { status: string; latency?: number }> = {};
+
+    // Check database
+    try {
+      const start = Date.now();
+      await db.execute(sql`SELECT 1`);
+      checks.database = { status: 'ok', latency: Date.now() - start };
+    } catch (error) {
+      checks.database = { status: 'error' };
+      return res.status(503).json({ status: 'unhealthy', checks, timestamp: new Date().toISOString() });
+    }
+
+    // Check session store
+    try {
+      const start = Date.now();
+      await db.execute(sql`SELECT COUNT(*) FROM sessions LIMIT 1`);
+      checks.sessionStore = { status: 'ok', latency: Date.now() - start };
+    } catch (error) {
+      checks.sessionStore = { status: 'error' };
+    }
+
+    const allHealthy = Object.values(checks).every(c => c.status === 'ok');
+
+    res.status(allHealthy ? 200 : 503).json({
+      status: allHealthy ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || "development"
+      environment: process.env.NODE_ENV || 'development',
+      checks,
     });
   });
 
+  // Lightweight liveness check (doesn't test dependencies)
+  app.get("/health/live", (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Login endpoint
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", authLimiter, async (req, res) => {
     try {
       const { email, password } = req.body;
 
@@ -147,20 +178,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      req.session.userId = user.id;
-      console.log(
-        "Login successful for user:",
-        user.id,
-        "Session ID:",
-        req.sessionID
-      );
+      // SECURITY: Regenerate session ID after successful authentication
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Session regeneration error:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
 
-      res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-        },
+        req.session.userId = user.id;
+        console.log(
+          "Login successful for user:",
+          user.id,
+          "New Session ID:",
+          req.sessionID
+        );
+
+        res.json({
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+          },
+        });
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -271,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Change password endpoint
-  app.post("/api/auth/change-password", requireAuth, async (req, res) => {
+  app.post("/api/auth/change-password", authLimiter, requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
       const { currentPassword, newPassword } = req.body;
@@ -282,22 +321,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Current password and new password are required" });
       }
 
-      if (newPassword.length < 6) {
+      if (newPassword.length < 8) {
         return res
           .status(400)
-          .json({ message: "New password must be at least 6 characters long" });
+          .json({ message: "New password must be at least 8 characters long" });
       }
 
       // Get current user to verify password
       const user = await storage.getUser(userId);
-      if (!user || user.password !== currentPassword) {
-        return res
-          .status(401)
-          .json({ message: "Current password is incorrect" });
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Invalid user" });
       }
 
+      // SECURITY FIX: Use bcrypt.compare instead of direct comparison
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
       // Update password
-      await storage.updateUserPassword(userId, newPassword);
+      await storage.updateUserPassword(userId, hashedNewPassword);
       res.json({ message: "Password changed successfully" });
     } catch (error) {
       console.error("Change password error:", error);
@@ -577,7 +623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User registration endpoint
-  app.post("/api/auth/signup", async (req, res) => {
+  app.post("/api/auth/signup", signupLimiter, async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
 

@@ -4,6 +4,7 @@ import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { pool } from "./db";
 import bcrypt from "bcryptjs";
+import { env } from "./config";
 
 declare module "express-session" {
   interface SessionData {
@@ -19,15 +20,15 @@ export const sessionMiddleware = session({
     tableName: 'sessions',
     createTableIfMissing: false,
   }),
-  secret: process.env.SESSION_SECRET || "development-secret-key",
+  secret: env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   name: "connect.sid",
   cookie: {
-    secure: false, // Set to true in production with HTTPS
+    secure: env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: "lax",
+    maxAge: 4 * 60 * 60 * 1000, // 4 hours (reduced from 24 for security)
+    sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
   },
 });
 

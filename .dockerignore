@@ -1,18 +1,16 @@
-# Exclude Python app directory and virtual environments
-Ad Copy Generator App/
-**/venv/
-**/.venv/
-venv/
-.venv/
-
-# Python cache files
-**/__pycache__/
-**/*.pyc
-**/*.pyo
-**/*.pyd
-
-# Already ignored
-node_modules/
-dist/
+node_modules
+npm-debug.log
+.env
+.env.local
+.git
+.gitignore
+README.md
+.vscode
+.idea
+*.md
 .DS_Store
-
+dist
+build
+coverage
+.nyc_output
+*.log

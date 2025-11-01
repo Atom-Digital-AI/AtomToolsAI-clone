@@ -1,16 +1,72 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
+import { env } from "./config";
+import { apiLimiter } from "./rate-limit";
 
 const app = express();
-app.use(cors({
-  origin: true,
-  credentials: true,
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Vite in dev
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://api.openai.com", "https://api.anthropic.com", "https://api.cohere.ai"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: env.NODE_ENV === 'production' ? [] : null,
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
 }));
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: false, limit: '20mb' }));
+
+// CORS configuration
+const ALLOWED_ORIGINS = [
+  env.FRONTEND_URL,
+  env.REPLIT_DOMAIN ? `https://${env.REPLIT_DOMAIN}` : null,
+  env.NODE_ENV === 'development' ? 'http://localhost:5173' : null,
+  env.NODE_ENV === 'development' ? 'http://localhost:5000' : null,
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400, // 24 hours
+}));
+
+// Rate limiting for API routes
+app.use('/api', apiLimiter);
+
+// Body parsers with different limits
+app.use('/api/tools', express.json({ limit: '5mb' })); // AI tools
+app.use('/api/admin', express.json({ limit: '1mb' })); // Admin operations
+app.use('/api', express.json({ limit: '500kb' })); // General API
+app.use(express.json({ limit: '100kb' })); // Default fallback
+
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 app.use((req, res, next) => {
   const start = Date.now();
