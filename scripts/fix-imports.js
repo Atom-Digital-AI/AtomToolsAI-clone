@@ -5,7 +5,7 @@
  * doesn't understand TypeScript path aliases at runtime.
  */
 
-import { readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, dirname, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -26,17 +26,28 @@ function transformImports(content, filePath) {
     const cleanPath = importPath.replace(/^@/, '');
     
     // Extract the path part (e.g., "shared/schema" from "shared/schema.js")
-    const pathMatch = cleanPath.match(/^shared\/(.+?)(\.js)?$/);
+    const pathMatch = cleanPath.match(/^shared\/(.+?)(\.(js|ts))?$/);
     if (!pathMatch) return importPath;
     
     const schemaPath = pathMatch[1];
-    const targetPath = resolve(distDir, 'shared', schemaPath + '.js');
+    // When using tsx, prefer .ts file, otherwise use .js
+    const tsPath = resolve(dirname(distDir), 'shared', schemaPath + '.ts');
+    const jsPath = resolve(distDir, 'shared', schemaPath + '.js');
+    const useTs = existsSync(tsPath);
+    const targetPath = useTs ? tsPath : jsPath;
     const relativePath = relative(dirname(filePath), targetPath);
     let normalizedPath = relativePath.replace(/\\/g, '/');
     
-    // Ensure .js extension for ESM
-    if (!normalizedPath.endsWith('.js')) {
-      normalizedPath += '.js';
+    // Use .ts extension if TypeScript file exists and we're using tsx, otherwise .js
+    if (useTs) {
+      if (!normalizedPath.endsWith('.ts')) {
+        normalizedPath = normalizedPath.replace(/\.js$/, '.ts');
+      }
+    } else {
+      // Ensure .js extension for ESM
+      if (!normalizedPath.endsWith('.js') && !normalizedPath.endsWith('.ts')) {
+        normalizedPath += '.js';
+      }
     }
     
     // Ensure it starts with ./ or ../ for relative paths

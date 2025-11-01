@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 /**
- * Copy schema.ts as .js with TypeScript loader comment
- * OR use tsx/ts-node to load it at runtime
- * Since all build approaches break drizzle-orm objects, we'll import the .ts file directly
- * This requires tsx to be available at runtime OR we need a different solution
+ * Transpile schema.ts to JavaScript using TypeScript compiler
+ * This preserves drizzle-orm imports correctly without bundling
  */
 
-import { readFileSync, writeFileSync, copyFileSync } from 'fs';
+import { mkdirSync, writeFileSync, readFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -16,16 +14,66 @@ const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 const schemaTsPath = join(rootDir, 'shared/schema.ts');
 const schemaJsPath = join(rootDir, 'dist/shared/schema.js');
+const distSharedDir = join(rootDir, 'dist/shared');
 
-// Try using esbuild to ONLY transpile (not bundle) by making everything external
-// The key is to NOT bundle but just convert TypeScript syntax to JavaScript
+// Ensure dist/shared directory exists
+mkdirSync(distSharedDir, { recursive: true });
+
+// Use TypeScript compiler with proper module resolution
 try {
+  // Create a minimal tsconfig just for schema transpilation
+  const tsConfigPath = join(rootDir, 'tsconfig.schema.build.json');
+  const tsConfig = {
+    compilerOptions: {
+      outDir: distSharedDir,
+      rootDir: join(rootDir, 'shared'),
+      module: 'ESNext',
+      target: 'ES2020',
+      moduleResolution: 'bundler',
+      esModuleInterop: true,
+      skipLibCheck: true,
+      declaration: false,
+      noEmit: false,
+      allowImportingTsExtensions: false,
+      resolveJsonModule: true,
+      allowSyntheticDefaultImports: true
+    },
+    include: ['shared/schema.ts']
+  };
+  
+  writeFileSync(tsConfigPath, JSON.stringify(tsConfig, null, 2));
+  
+  // Transpile using tsc with isolatedModules to preserve drizzle-orm objects
   execSync(
-    `npx esbuild "${schemaTsPath}" --format=esm --target=es2020 --outfile="${schemaJsPath}" --platform=node --external:"*" --loader:.ts=ts --bundle=false 2>/dev/null || npx tsc "${schemaTsPath}" --outDir dist/shared --module esnext --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck --noEmit false --declaration false 2>&1 | grep -v 'error TS' || true`,
-    { stdio: 'inherit', cwd: rootDir, shell: true }
+    `npx tsc --project "${tsConfigPath}" --isolatedModules false`,
+    { stdio: 'pipe', cwd: rootDir }
   );
-  console.log('✓ Processed schema.ts (preserving drizzle-orm imports)');
+  
+  // Clean up temp config
+  try {
+    unlinkSync(tsConfigPath);
+  } catch (e) {
+    // Ignore cleanup errors
+  }
+  
+  // Rename the output file if needed (tsc might output to different location)
+  const tscOutputPath = join(distSharedDir, 'schema.js');
+  if (require('fs').existsSync(tscOutputPath) && tscOutputPath !== schemaJsPath) {
+    require('fs').renameSync(tscOutputPath, schemaJsPath);
+  }
+  
+  console.log('✓ Processed schema.ts using TypeScript compiler (preserving drizzle-orm imports)');
 } catch (error) {
-  console.log('⚠ Schema processing had issues but continuing...');
+  console.error('⚠ Error transpiling schema with tsc:', error.message);
+  // Fallback: try esbuild with transformations disabled
+  try {
+    execSync(
+      `npx esbuild "${schemaTsPath}" --format=esm --target=es2020 --outfile="${schemaJsPath}" --platform=node --bundle=false --keep-names --preserve-symlinks`,
+      { stdio: 'inherit', cwd: rootDir }
+    );
+    console.log('✓ Processed schema.ts using esbuild fallback');
+  } catch (fallbackError) {
+    console.error('⚠ All schema transpilation methods failed');
+  }
 }
 
