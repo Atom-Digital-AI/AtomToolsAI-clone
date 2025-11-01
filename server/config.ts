@@ -4,18 +4,18 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('5000'),
   
-  // Database (optional with fallback for Railway setup)
-  DATABASE_URL: z.string().url().optional().default('postgresql://dummy:dummy@localhost:5432/dummy'),
+  // Database (required)
+  DATABASE_URL: z.string().url(),
   
-  // Security (auto-generate if missing in production)
-  SESSION_SECRET: z.string().min(1).default('please-set-a-real-session-secret-in-production'),
+  // Security (required)
+  SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   
-  // AI APIs (optional with fallback)
-  OPENAI_API_KEY: z.string().optional(),
+  // AI APIs (required)
+  OPENAI_API_KEY: z.string().startsWith('sk-'),
   ANTHROPIC_API_KEY: z.string().optional(), // Optional if using OpenAI only
   
-  // Email (optional with fallback)
-  SENDGRID_API_KEY: z.string().optional(),
+  // Email (required)
+  SENDGRID_API_KEY: z.string().startsWith('SG.'),
   
   // Object Storage (optional for local dev)
   PUBLIC_OBJECT_SEARCH_PATHS: z.string().optional(),
@@ -44,26 +44,7 @@ export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv(): Env {
   try {
-    const parsed = envSchema.parse(process.env);
-    
-    // Warn about missing critical variables in production
-    if (parsed.NODE_ENV === 'production') {
-      const warnings: string[] = [];
-      if (!process.env.DATABASE_URL) warnings.push('DATABASE_URL not set - using fallback');
-      if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'please-set-a-real-session-secret-in-production') {
-        warnings.push('SESSION_SECRET not set - INSECURE!');
-      }
-      if (!process.env.OPENAI_API_KEY) warnings.push('OPENAI_API_KEY not set - AI features disabled');
-      if (!process.env.SENDGRID_API_KEY) warnings.push('SENDGRID_API_KEY not set - email disabled');
-      
-      if (warnings.length > 0) {
-        console.warn('\n⚠️  Production environment warnings:');
-        warnings.forEach(w => console.warn(`  - ${w}`));
-        console.warn('\n💡 Set these variables in Railway for full functionality\n');
-      }
-    }
-    
-    return parsed;
+    return envSchema.parse(process.env);
   } catch (error) {
     console.error('? Environment variable validation failed:');
     if (error instanceof z.ZodError) {
