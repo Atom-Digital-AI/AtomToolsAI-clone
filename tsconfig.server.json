@@ -8,8 +8,12 @@
     "noEmit": false,
     "allowImportingTsExtensions": false,
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "downlevelIteration": true,
+    "target": "ES2020"
   },
-  "include": ["server/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "dist", "client"]
+  "include": ["server/**/*", "shared/**/*", "server/types/**/*"],
+  "exclude": ["node_modules", "dist", "client", "**/*.test.ts", "**/__tests__/**"]
 }

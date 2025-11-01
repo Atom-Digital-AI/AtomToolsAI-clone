@@ -951,7 +951,7 @@ export const socialContentSessions = pgTable("social_content_sessions", {
   objective: text("objective"), // User's goal
   selectedPlatforms: jsonb("selected_platforms").$type<string[]>().notNull(), // ['Facebook', 'Instagram', ...]
   selectedFormats: jsonb("selected_formats").$type<Record<string, string[]>>().notNull(), // { 'Facebook': ['Feed Image Ad', ...], ... }
-  scrapedUrlData: jsonb("scraped_url_data").$type<Array<{url: string, summary: string, keyPoints: string[]}>>, // Session URL scraping results
+  scrapedUrlData: jsonb("scraped_url_data").$type<Array<{url: string, summary: string, keyPoints: string[]}>>(), // Session URL scraping results
   status: varchar("status").notNull().default("wireframes"), // 'wireframes', 'awaitApproval', 'approved', 'generating', 'completed', 'failed'
   useBrandGuidelines: boolean("use_brand_guidelines").default(false),
   selectedTargetAudiences: jsonb("selected_target_audiences").$type<"all" | "none" | number[]>(),
