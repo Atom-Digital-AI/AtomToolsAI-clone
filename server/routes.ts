@@ -28,9 +28,8 @@ import { registerSocialContentRoutes } from "./social-content-routes";
 import { authLimiter, signupLimiter, aiLimiter } from "./rate-limit";
 import { validateURL } from "./utils/sanitize";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-loaded OpenAI client - use getOpenAIClient() when needed
+const getOpenai = () => getOpenAIClient();
 
 // Utility functions from original Python app
 async function fetchUrlContent(url: string): Promise<string | null> {
