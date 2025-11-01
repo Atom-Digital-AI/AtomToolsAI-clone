@@ -9,64 +9,76 @@ import { apiLimiter } from "./rate-limit";
 
 const app = express();
 
+// Trust proxy - REQUIRED when behind Railway/load balancers
+app.set("trust proxy", true);
+
 // Security headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Vite in dev
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.openai.com", "https://api.anthropic.com", "https://api.cohere.ai"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: env.NODE_ENV === 'production' ? [] : null,
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Vite in dev
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        connectSrc: [
+          "'self'",
+          "https://api.openai.com",
+          "https://api.anthropic.com",
+          "https://api.cohere.ai",
+        ],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: env.NODE_ENV === "production" ? [] : null,
+      },
     },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-}));
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
 // CORS configuration
 const ALLOWED_ORIGINS = [
   env.FRONTEND_URL,
   env.REPLIT_DOMAIN ? `https://${env.REPLIT_DOMAIN}` : null,
-  env.NODE_ENV === 'development' ? 'http://localhost:5173' : null,
-  env.NODE_ENV === 'development' ? 'http://localhost:5000' : null,
+  env.NODE_ENV === "development" ? "http://localhost:5173" : null,
+  env.NODE_ENV === "development" ? "http://localhost:5000" : null,
 ].filter(Boolean) as string[];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, server-to-server)
-    if (!origin) return callback(null, true);
-    
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400, // 24 hours
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      if (ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 86400, // 24 hours
+  })
+);
 
 // Rate limiting for API routes
-app.use('/api', apiLimiter);
+app.use("/api", apiLimiter);
 
 // Body parsers with different limits
-app.use('/api/tools', express.json({ limit: '5mb' })); // AI tools
-app.use('/api/admin', express.json({ limit: '1mb' })); // Admin operations
-app.use('/api', express.json({ limit: '500kb' })); // General API
-app.use(express.json({ limit: '100kb' })); // Default fallback
+app.use("/api/tools", express.json({ limit: "5mb" })); // AI tools
+app.use("/api/admin", express.json({ limit: "1mb" })); // Admin operations
+app.use("/api", express.json({ limit: "500kb" })); // General API
+app.use(express.json({ limit: "100kb" })); // Default fallback
 
-app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -101,37 +113,39 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  app.use(
+    async (err: any, req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-    // Log error to database
-    try {
-      const user = (req as any).user;
-      await logToolError({
-        userId: user?.id,
-        userEmail: user?.email,
-        toolName: 'system',
-        errorType: getErrorTypeFromError(err),
-        errorMessage: message,
-        errorStack: err.stack,
-        requestData: {
-          body: req.body,
-          query: req.query,
-          params: req.params,
-        },
-        httpStatus: status,
-        endpoint: `${req.method} ${req.path}`,
-        req,
-        status: 'to_do', // New errors start as "to_do"
-      });
-    } catch (logError) {
-      console.error('Failed to log error to database:', logError);
+      // Log error to database
+      try {
+        const user = (req as any).user;
+        await logToolError({
+          userId: user?.id,
+          userEmail: user?.email,
+          toolName: "system",
+          errorType: getErrorTypeFromError(err),
+          errorMessage: message,
+          errorStack: err.stack,
+          requestData: {
+            body: req.body,
+            query: req.query,
+            params: req.params,
+          },
+          httpStatus: status,
+          endpoint: `${req.method} ${req.path}`,
+          req,
+          status: "to_do", // New errors start as "to_do"
+        });
+      } catch (logError) {
+        console.error("Failed to log error to database:", logError);
+      }
+
+      res.status(status).json({ message });
+      console.error(`[Global Error Handler] ${req.method} ${req.path}:`, err);
     }
-
-    res.status(status).json({ message });
-    console.error(`[Global Error Handler] ${req.method} ${req.path}:`, err);
-  });
+  );
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -146,12 +160,15 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  const port = parseInt(process.env.PORT || "5000", 10);
+  server.listen(
+    {
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    },
+    () => {
+      log(`serving on port ${port}`);
+    }
+  );
 })();
