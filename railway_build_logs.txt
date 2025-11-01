@@ -1,0 +1,54 @@
+[Region: europe-west4]
+=========================
+Using Detected Dockerfile
+=========================
+
+context: 7fxt-OjX3
+[internal] load build definition from Dockerfile
+[internal] load build definition from Dockerfile
+[internal] load build definition from Dockerfile
+[internal] load build definition from Dockerfile
+[internal] load metadata for docker.io/library/node:20-alpine
+[auth] library/node:pull token for registry-1.docker.io
+[auth] library/node:pull token for registry-1.docker.io
+[internal] load metadata for docker.io/library/node:20-alpine
+[internal] load .dockerignore
+[internal] load .dockerignore
+[internal] load .dockerignore
+[internal] load .dockerignore
+[runner 5/6] COPY --from=builder --chown=expressjs:nodejs /app/node_modules ./node_modules
+[runner 4/6] COPY --from=builder --chown=expressjs:nodejs /app/shared ./shared
+[runner 3/6] COPY --from=builder --chown=expressjs:nodejs /app/dist ./dist
+[builder 4/4] RUN npm run build
+[builder 3/4] COPY . .
+[base 1/1] FROM docker.io/library/node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435
+[deps 3/3] RUN npm ci --production=false
+[deps 2/3] COPY package.json package-lock.json ./
+[internal] load build context
+[runner 2/6] RUN addgroup --system --gid 1001 nodejs &&     adduser --system --uid 1001 expressjs
+[deps 1/3] WORKDIR /app
+[runner 6/6] COPY --from=builder --chown=expressjs:nodejs /app/package.json ./package.json
+[builder 2/4] COPY --from=deps /app/node_modules ./node_modules
+[base 1/1] FROM docker.io/library/node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435
+[internal] load build context
+[internal] load build context
+[base 1/1] FROM docker.io/library/node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435
+[internal] load build context
+[internal] load build context
+[deps 1/3] WORKDIR /app
+[runner 2/6] RUN addgroup --system --gid 1001 nodejs &&     adduser --system --uid 1001 expressjs
+[deps 2/3] COPY package.json package-lock.json ./
+[deps 3/3] RUN npm ci --production=false
+[builder 2/4] COPY --from=deps /app/node_modules ./node_modules
+[builder 3/4] COPY . .
+[builder 4/4] RUN npm run build
+[runner 3/6] COPY --from=builder --chown=expressjs:nodejs /app/dist ./dist
+[runner 4/6] COPY --from=builder --chown=expressjs:nodejs /app/shared ./shared
+[runner 5/6] COPY --from=builder --chown=expressjs:nodejs /app/node_modules ./node_modules
+[runner 6/6] COPY --from=builder --chown=expressjs:nodejs /app/package.json ./package.json
+[auth] sharing credentials for production-europe-west4-drams3a.railway-registry.com
+[auth] sharing credentials for production-europe-west4-drams3a.railway-registry.com
+importing to docker
+importing to docker
+Build time: 11.81 seconds
+
