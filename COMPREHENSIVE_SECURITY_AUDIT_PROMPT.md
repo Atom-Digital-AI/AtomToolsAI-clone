@@ -1,7 +1,10 @@
 # Comprehensive Repository Security and Performance Audit Prompt
 ## AI Marketing Tools Platform - GDPR & SOC 2 Compliant Review
+### ? Enhanced with Functional Integrity Testing
 
 You are a senior staff engineer and security reviewer performing a comprehensive repository review for this project.
+
+**Key Enhancement**: This prompt now includes **Section 6: Functional Integrity and Integration Testing**, which ensures that when Component A calls Function B, Function B exists, has no bugs, and returns data in the expected format for Component A to continue its work. This prevents runtime breakages from missing functions, type mismatches, and API contract violations.
 
 ---
 
@@ -106,6 +109,8 @@ You are a senior staff engineer and security reviewer performing a comprehensive
 
 Review the entire repository including:
 - **Source code**: `/server`, `/client`, `/shared`, `/Ad Copy Generator App`
+- **Functional integrity**: ? **Verify all function calls have matching definitions, correct signatures, and proper return type handling**
+- **API contracts**: ? **Validate frontend-backend integration points and data flow correctness**
 - **Configuration scripts**: `vite.config.ts`, `drizzle.config.ts`, `tsconfig.json`, `tailwind.config.ts`
 - **Build files and deployment configs**: No Dockerfile in root yet for main app; Python app has Dockerfile
 - **Package manifests**: `package.json` with dependency versions, `requirements.txt` for Python app
@@ -113,13 +118,13 @@ Review the entire repository including:
 - **CI/CD files**: `.github/workflows/` (currently only covers Python app)
 - **Environment variables**: All `process.env` usage and secrets management
 - **Session and authentication**: Implementation and security configuration
-- **Database queries**: ORM usage patterns, migrations, sensitive data handling
+- **Database queries**: ORM usage patterns, migrations, sensitive data handling, result validation
 - **External API integrations**: OpenAI, Anthropic, Stripe, SendGrid, GCS, Cohere
 - **AI/ML workflow security**: LangGraph state, prompt injection risks, RAG access controls
 - **Container security**: Python app Docker configuration
 - **Documentation and tests**: README files, test coverage, implementation guides
 
-Examine both application security surfaces and operational security (deployment, monitoring, secrets rotation).
+Examine both application security surfaces, operational security (deployment, monitoring, secrets rotation), and **functional correctness** (preventing runtime failures from missing/mismatched functions).
 
 ---
 
@@ -362,7 +367,413 @@ Check for:
 - **Validation gaps**: Missing input validation, type mismatches
 - **Logic bugs**: Incorrect conditionals, off-by-one errors
 
-### 6. Dependency and Supply-Chain Review
+### 6. Functional Integrity and Integration Testing
+
+**CRITICAL**: This section ensures that when Component A calls Function B, Function B exists, works correctly, and returns data in the expected format for Component A to continue its work.
+
+#### 6.1 Function-Level Dependency Analysis
+
+For every function call in the codebase:
+
+**Verify Callee Exists:**
+- Trace all function calls to ensure the called function/method exists
+- Check for typos in function names that TypeScript might not catch (dynamic calls, string references)
+- Verify imported functions are exported from their source modules
+- Check for missing imports or incorrect import paths
+- Flag functions called via string keys (e.g., `obj[functionName]()`) and verify they exist
+
+**Example issues to find:**
+```typescript
+// In client/components/ToolA.tsx
+import { generateContent } from '@/lib/api';
+const result = await generateContent(params); // Does this function exist?
+
+// In server/services/contentService.ts
+export async function generateContent(params) {
+  const response = await aiService.generate(params); // Does aiService.generate exist?
+  return processResponse(response); // Does processResponse exist and handle this response type?
+}
+```
+
+**Verification steps:**
+1. List all function calls (including methods, callbacks, imported functions)
+2. Trace each call to its definition
+3. Verify the function signature matches the call site
+4. Check for conditional existence (optional chaining, try-catch that might hide missing functions)
+
+#### 6.2 API Contract Validation
+
+**Frontend-Backend Contract:**
+- List all API endpoints called from the frontend (fetch, axios, TanStack Query)
+- Verify each endpoint exists in the backend routes
+- Check request payload structure matches backend Zod schema expectations
+- Verify response structure matches frontend TypeScript types
+- Check error response handling (does frontend handle all error codes the backend returns?)
+
+**Example verification:**
+```typescript
+// Frontend: client/hooks/useGenerateAds.ts
+const response = await fetch('/api/ads/generate', {
+  method: 'POST',
+  body: JSON.stringify({ prompt, guidelines })
+});
+const data: AdGenerationResult = await response.json();
+
+// Backend: server/routes/ads.ts
+router.post('/api/ads/generate', validateRequest(adGenerationSchema), async (req, res) => {
+  const result = await generateAds(req.body);
+  res.json(result); // Does this match AdGenerationResult type?
+});
+```
+
+**Check for:**
+- Endpoint path mismatches (typos, different versions)
+- HTTP method mismatches (frontend calls POST, backend expects GET)
+- Request body schema mismatches
+- Response shape mismatches
+- Missing error handling
+- Undocumented status codes
+
+#### 6.3 Database Query Result Validation
+
+**ORM Query Results:**
+- Check all Drizzle ORM queries for proper result handling
+- Verify query results are checked for null/undefined before use
+- Ensure relations are properly loaded (not causing undefined access)
+- Check for N+1 query issues where data might be incomplete
+
+**Example issues:**
+```typescript
+// server/services/userService.ts
+const user = await db.query.users.findFirst({
+  where: eq(users.id, userId)
+});
+// Is user null checked before accessing user.email?
+
+const subscriptions = user.subscriptions.map(...); // Are subscriptions loaded? Or undefined?
+```
+
+**Verification steps:**
+1. Find all database queries
+2. Check if results are null-checked before use
+3. Verify required relations are included in the query
+4. Check if optional relations are safely accessed
+5. Verify filter conditions return expected data shapes
+
+#### 6.4 Type Safety and Interface Consistency
+
+**TypeScript Type Validation:**
+- Check for `any` types that bypass type safety
+- Verify function return types match caller expectations
+- Check for type assertions (` as `) that might hide type mismatches
+- Verify interface implementations are complete
+- Check for missing or incorrect generic type parameters
+
+**Example issues:**
+```typescript
+// server/services/aiService.ts
+async function generateContent(params: any): Promise<any> { // Too permissive
+  const result = await openai.chat.completions.create(params);
+  return result.choices[0].message.content; // What if choices is empty?
+}
+
+// client/components/ContentTool.tsx
+const content = await generateContent({ prompt: 'test' }) as string;
+// What if it's not a string? What if it's undefined?
+```
+
+**Check for:**
+- Functions with `any` types (input or output)
+- Type assertions without runtime validation
+- Optional properties accessed without checking
+- Array access without bounds checking
+- Object property access without existence checking
+- Incorrect generic type usage
+
+#### 6.5 External Service Integration Validation
+
+**Third-Party API Integration:**
+- Verify API client configuration matches service expectations
+- Check authentication token/key usage is correct
+- Verify request payload structure matches API documentation
+- Check response parsing handles all documented response shapes
+- Verify error responses are properly handled
+
+**Example verification:**
+```typescript
+// server/services/stripeService.ts
+const session = await stripe.checkout.sessions.create({
+  mode: 'subscription',
+  line_items: [{ price: priceId, quantity: 1 }],
+  success_url: `${process.env.APP_URL}/success`,
+  cancel_url: `${process.env.APP_URL}/cancel`,
+});
+// Does Stripe require other fields? Are URLs valid?
+```
+
+**Check for:**
+- Missing required fields in API requests
+- Incorrect field types or formats
+- Missing error handling for API failures
+- Improper parsing of API responses
+- Version mismatches between client SDK and API
+- Missing webhook signature verification
+- Incorrect API endpoint URLs
+
+#### 6.6 State Management and Data Flow Validation
+
+**React State and Props:**
+- Verify props passed to components match expected prop types
+- Check state updates are properly typed
+- Verify context values match consumer expectations
+- Check for stale closures in useEffect, useCallback
+
+**Example issues:**
+```typescript
+// client/components/Dashboard.tsx
+<ToolCard 
+  name={tool.name} 
+  onClick={() => navigate(tool.route)} 
+/>
+
+// client/components/ToolCard.tsx
+interface ToolCardProps {
+  name: string;
+  description: string; // Missing from parent!
+  onClick: () => void;
+}
+```
+
+**Check for:**
+- Missing required props
+- Incorrect prop types
+- Unused props (might indicate refactoring issues)
+- Context mismatches (provider value vs consumer expectations)
+- State update logic errors
+
+#### 6.7 Middleware and Chain of Responsibility Validation
+
+**Express Middleware Chain:**
+- Verify middleware functions call `next()` appropriately
+- Check authentication middleware runs before protected routes
+- Verify error handling middleware catches errors from previous middleware
+- Check request modifications persist through the chain
+
+**Example verification:**
+```typescript
+// server/middleware/auth.ts
+export function requireAuth(req, res, next) {
+  if (!req.session?.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next(); // Is next() called on success?
+}
+
+// server/routes/protected.ts
+router.get('/api/user/data', requireAuth, async (req, res) => {
+  const userId = req.session.user.id; // Is req.session.user guaranteed to exist?
+});
+```
+
+**Check for:**
+- Middleware that doesn't call `next()`
+- Middleware order issues (auth runs after route handler)
+- Request property assumptions (middleware adds property that route expects)
+- Error handling gaps in middleware chain
+
+#### 6.8 Event Handlers and Callbacks Validation
+
+**Async Callbacks:**
+- Verify event handlers exist and have correct signatures
+- Check callback functions are properly bound
+- Verify Promise-based callbacks are awaited or handled
+- Check for memory leaks from unremoved event listeners
+
+**Example issues:**
+```typescript
+// client/hooks/useWebSocket.ts
+useEffect(() => {
+  const ws = new WebSocket(url);
+  ws.onmessage = handleMessage; // Does handleMessage exist? Correct signature?
+  ws.onerror = handleError; // Is handleError defined?
+  
+  return () => ws.close(); // Cleanup OK?
+}, [url]); // Are dependencies correct?
+```
+
+#### 6.9 Configuration and Environment Variable Consistency
+
+**Environment Variable Usage:**
+- Verify all required env vars are documented
+- Check env vars are validated on startup
+- Verify default values are safe for production
+- Check for env var typos across the codebase
+
+**Example verification:**
+```typescript
+// server/config.ts
+export const config = {
+  database: process.env.DATABASE_URL, // Required?
+  openaiKey: process.env.OPENAI_API_KEY, // Validated?
+  sessionSecret: process.env.SESSION_SECRET || 'dev-secret', // Unsafe default!
+};
+
+// server/services/aiService.ts
+const apiKey = process.env.OPENAI_KEY; // Typo! Should be OPENAI_API_KEY
+```
+
+**Check for:**
+- Typos in env var names (different from config)
+- Missing validation for required vars
+- Unsafe defaults for sensitive vars
+- Inconsistent naming conventions
+
+#### 6.10 LangGraph and AI Workflow Validation
+
+**LangGraph State Management:**
+- Verify state schema matches node expectations
+- Check state transitions are properly typed
+- Verify node functions return expected state shapes
+- Check for state property access without checking existence
+
+**Example verification:**
+```typescript
+// server/workflows/contentGeneration.ts
+const workflow = new StateGraph({
+  channels: {
+    prompt: { value: null },
+    content: { value: null },
+    guidelines: { value: null },
+  }
+});
+
+workflow.addNode('generate', async (state) => {
+  const result = await generateContent(state.prompt); // Is prompt always defined?
+  return { content: result.text }; // Does result always have .text?
+});
+
+workflow.addNode('refine', async (state) => {
+  const refined = await refineContent(state.content, state.guidelines);
+  return { content: refined }; // Are content and guidelines guaranteed to exist?
+});
+```
+
+**Check for:**
+- State property access without null checks
+- Missing state properties in workflow nodes
+- Incorrect state updates (wrong property names)
+- Type mismatches in state transitions
+- Missing error handling in workflow nodes
+
+#### 6.11 Breaking Change Detection
+
+**Identify Potential Breaking Changes:**
+- Find functions that are called from multiple places
+- Check if function signature changes would break callers
+- Identify database schema changes that affect existing queries
+- Check API changes that affect frontend callers
+- Verify backward compatibility for session/cookie changes
+
+**Example scenarios:**
+```typescript
+// Scenario 1: Function signature change
+// Before: function generateAds(prompt: string): Promise<string[]>
+// After: function generateAds(params: AdParams): Promise<AdResult>
+// Impact: All callers need updating
+
+// Scenario 2: Database schema change
+// Before: users table has 'name' column
+// After: users table has 'firstName' and 'lastName' columns
+// Impact: All queries selecting 'name' will fail
+
+// Scenario 3: API response shape change
+// Before: GET /api/user returns { id, email, name }
+// After: GET /api/user returns { id, email, profile: { name } }
+// Impact: Frontend components accessing response.name will break
+```
+
+**Detection steps:**
+1. Find all definitions of frequently called functions
+2. List all call sites for each function
+3. Verify signatures match across all calls
+4. Flag any recent changes that might break existing code
+5. Check git history for recent refactorings
+
+#### 6.12 Functional Test Scenarios
+
+For each major feature, create test scenarios:
+
+**AI Content Generation Flow:**
+1. User enters prompt ? Frontend sends request ? Backend validates ? AI generates ? Response returned ? Frontend displays
+2. Verify each step exists and handles data correctly
+3. Check error paths (invalid prompt, AI API failure, rate limit)
+
+**User Authentication Flow:**
+1. User submits credentials ? Backend validates ? Session created ? Cookie set ? User redirected
+2. Verify session data structure
+3. Check protected route access
+4. Verify logout cleanup
+
+**Payment/Subscription Flow:**
+1. User clicks subscribe ? Stripe checkout created ? User redirects ? Webhook received ? Database updated ? Access granted
+2. Verify webhook signature
+3. Check subscription status updates
+4. Verify access control changes
+
+**Create Test Matrix:**
+
+| Feature | Component | Function Called | Expected Input | Expected Output | Error Handling | Test Status |
+|---------|-----------|----------------|----------------|-----------------|----------------|-------------|
+| Ad Generation | ToolA | generateContent() | {prompt, guidelines} | {ads: string[]} | Try-catch, user feedback | ? Missing |
+| User Login | AuthForm | login() | {email, password} | {user, session} | Error message display | ? Exists |
+| File Upload | Uploader | uploadToGCS() | File, metadata | {url, id} | Retry logic | ?? Incomplete |
+
+### 6.13 Deliverables for Functional Integrity Review
+
+For each issue found, report:
+- **Function/Component name**: Exact location
+- **Caller location**: Where it's being called from
+- **Issue type**: Missing function, type mismatch, incorrect return type, missing error handling
+- **Expected behavior**: What should happen
+- **Actual behavior**: What currently happens or would fail
+- **Impact**: What breaks if this isn't fixed (P0-P3)
+- **Fix**: Specific code changes needed
+- **Test**: How to verify the fix works
+
+**Example Report Format:**
+
+**Finding: Type Mismatch in AI Service Integration**
+- **Location**: `server/services/contentService.ts:45-52`
+- **Caller**: `server/routes/content.ts:23` calls `generateContent(params)`
+- **Issue**: Function returns `Promise<any>` but caller expects `Promise<ContentResult>`
+- **Evidence**:
+  ```typescript
+  // contentService.ts
+  async function generateContent(params): Promise<any> {
+    return await openai.completion.create(params);
+  }
+  
+  // routes/content.ts
+  const result: ContentResult = await generateContent(params);
+  result.content.forEach(...); // Breaks if result structure is wrong
+  ```
+- **Impact**: P1 - Runtime type errors, undefined access crashes
+- **Fix**: Add proper typing and validation:
+  ```typescript
+  async function generateContent(params: ContentParams): Promise<ContentResult> {
+    const response = await openai.completion.create(params);
+    return {
+      content: response.choices[0]?.message?.content ?? '',
+      tokens: response.usage?.total_tokens ?? 0,
+    };
+  }
+  ```
+- **Verification**: 
+  1. Add unit test that calls function and asserts return type
+  2. Add integration test that verifies full flow
+  3. Run TypeScript strict mode to catch type errors
+
+### 7. Dependency and Supply-Chain Review
 
 Run or check for:
 - `npm audit` (known CVEs in npm packages)
@@ -374,7 +785,7 @@ Run or check for:
 - Supply chain risks (typosquatting, malicious packages)
 - License compliance issues
 
-### 7. Operational Review
+### 8. Operational Review
 
 Check for:
 - **Logging**: 
@@ -432,7 +843,7 @@ Check for:
   - Security monitoring and alerting
   - Annual compliance audits
 
-### 8. Testing Review
+### 9. Testing Review
 
 Assess test coverage for:
 - **Unit tests**: Business logic, utilities, validators
@@ -442,10 +853,11 @@ Assess test coverage for:
 - **Performance tests**: Load testing, stress testing, scalability
 - **Contract tests**: External API integration validation
 - **Regression tests**: Bug fix verification, feature stability
+- **Functional integration tests**: Verify all function calls work end-to-end (new focus area from Section 6)
 
 Identify testing gaps and recommend essential tests.
 
-### 9. Documentation Review
+### 10. Documentation Review
 
 List missing or outdated documentation for:
 - **Setup**: Environment variable requirements, database setup, dependency installation
@@ -493,19 +905,26 @@ Group findings by category:
 
 1. **Critical Security Issues (P0)**
 2. **High-Priority Security (P1)**
-3. **Authentication and Authorization**
-4. **Data Protection and Privacy (GDPR, SOC 2)**
-5. **Input Validation and Injection Prevention**
-6. **AI/ML Workflow Security**
-7. **Dependency and Supply Chain Security**
-8. **Configuration and Secrets Management**
-9. **API Security and External Integrations**
-10. **Performance and Scalability**
-11. **Reliability and Error Handling**
-12. **Logging and Observability**
-13. **Container and Infrastructure Security**
-14. **Testing Gaps**
-15. **Documentation Issues**
+3. **Functional Integrity and Breaking Changes (P0-P2)** ? NEW
+   - Missing functions or incorrect function calls
+   - Type mismatches between callers and callees
+   - API contract violations (frontend-backend mismatches)
+   - Database query result handling errors
+   - Breaking changes that affect multiple components
+   - Missing error handling in integration points
+4. **Authentication and Authorization**
+5. **Data Protection and Privacy (GDPR, SOC 2)**
+6. **Input Validation and Injection Prevention**
+7. **AI/ML Workflow Security**
+8. **Dependency and Supply Chain Security**
+9. **Configuration and Secrets Management**
+10. **API Security and External Integrations**
+11. **Performance and Scalability**
+12. **Reliability and Error Handling**
+13. **Logging and Observability**
+14. **Container and Infrastructure Security**
+15. **Testing Gaps**
+16. **Documentation Issues**
 
 For each finding include:
 - **Title** (clear, actionable)
@@ -627,7 +1046,19 @@ Priority: P1 security and compliance requirements
 - **Dependencies**: Auth fixes required before GDPR features; audit logging depends on auth changes
 - **Total**: ~38 hours
 
-#### Phase 3: Input Validation, AI Security, and Injection Prevention (Week 4) - ~24 hours
+#### Phase 3: Functional Integrity and Integration Validation (Week 4) - ~32 hours
+Priority: P0-P1 functional correctness, prevent runtime breakages
+- [ ] Audit all function calls to verify callees exist and signatures match (8 hours)
+- [ ] Validate all API contracts (frontend-backend endpoint matching) (6 hours)
+- [ ] Review database query result handling (null checks, relation loading) (4 hours)
+- [ ] Fix type safety issues (remove `any` types, add proper interfaces) (6 hours)
+- [ ] Validate external service integrations (Stripe, OpenAI, GCS error handling) (4 hours)
+- [ ] Review React component props and state management consistency (2 hours)
+- [ ] Audit environment variable usage for typos and consistency (2 hours)
+- **Dependencies**: Must complete before AI security review to ensure foundations are solid
+- **Total**: ~32 hours
+
+#### Phase 4: Input Validation, AI Security, and Injection Prevention (Week 5) - ~24 hours
 Priority: P1 security, AI-specific risks
 - [ ] Add prompt injection protections (AI workflow security, input sanitization) (6 hours)
 - [ ] Enhance Zod validation coverage (all API endpoints, file uploads) (4 hours)
@@ -636,10 +1067,10 @@ Priority: P1 security, AI-specific risks
 - [ ] Review LangGraph state security (session isolation, sensitive data handling) (3 hours)
 - [ ] Implement cost controls for AI APIs (rate limiting, budget alerts) (3 hours)
 - [ ] Add pgvector access controls (embedding security) (2 hours)
-- **Dependencies**: Input validation required before AI security features
+- **Dependencies**: Input validation required before AI security features; functional integrity from Phase 3 must be complete
 - **Total**: ~24 hours
 
-#### Phase 4: Performance, Reliability, and Database Optimization (Week 5) - ~29 hours
+#### Phase 5: Performance, Reliability, and Database Optimization (Week 6) - ~29 hours
 Priority: P2 performance and reliability
 - [ ] Optimize database queries (N+1 fixes, missing indexes, query analysis) (8 hours)
 - [ ] Add caching layer (session data, RAG embeddings, static content) (6 hours)
@@ -650,7 +1081,7 @@ Priority: P2 performance and reliability
 - **Dependencies**: Database optimization before caching; error handling before retry logic
 - **Total**: ~29 hours
 
-#### Phase 5: Logging, Monitoring, and SOC 2 Controls (Week 6) - ~27 hours
+#### Phase 6: Logging, Monitoring, and SOC 2 Controls (Week 7) - ~27 hours
 Priority: P2 operations and compliance
 - [ ] Set up structured logging (JSON format, PII redaction) (4 hours)
 - [ ] Configure monitoring and alerting (security events, performance, errors) (4 hours)
@@ -663,20 +1094,22 @@ Priority: P2 operations and compliance
 - **Dependencies**: Logging before monitoring; monitoring before alerting
 - **Total**: ~27 hours
 
-#### Phase 6: Testing and Documentation (Week 7) - ~34 hours
+#### Phase 7: Testing and Documentation (Week 8) - ~42 hours
 Priority: P2-P3 quality assurance
 - [ ] Add unit tests for authentication and authorization (6 hours)
 - [ ] Add integration tests for API endpoints (8 hours)
+- [ ] Add functional integration tests for all major user flows (8 hours) ? NEW
+- [ ] Add contract tests for frontend-backend API integration (4 hours) ? NEW
 - [ ] Add security tests (input validation, auth bypass, CSRF, XSS) (6 hours)
 - [ ] Add GDPR compliance tests (data export, deletion, consent) (4 hours)
 - [ ] Set up test coverage reporting (2 hours)
 - [ ] Update documentation (README, API docs, deployment guide) (4 hours)
 - [ ] Document GDPR procedures (user rights, data breach response) (2 hours)
 - [ ] Document SOC 2 controls (security, availability, confidentiality) (2 hours)
-- **Dependencies**: All features should be implemented before comprehensive testing
-- **Total**: ~34 hours
+- **Dependencies**: All features and functional integrity fixes should be complete before comprehensive testing
+- **Total**: ~42 hours
 
-#### Phase 7: Final Hardening and Compliance Review (Week 8) - ~20 hours
+#### Phase 8: Final Hardening and Compliance Review (Week 9) - ~20 hours
 Priority: P3 final polish
 - [ ] Security review of all changes (4 hours)
 - [ ] Final compliance checklist review (GDPR + SOC 2) (3 hours)
@@ -687,10 +1120,10 @@ Priority: P3 final polish
 - **Total**: ~20 hours
 
 **Effort Summary:**
-- **Total estimated hours**: ~191 hours (~4.8 person-weeks for one developer, or 2.4 weeks for two developers)
-- **Critical path**: Phases 1-3 must be completed in sequence for security
-- **Parallelizable work**: Testing and documentation can start after Phase 4
-- **Risk level priority**: P0 (Phase 1) ? P1 (Phases 2-3) ? P2 (Phases 4-6) ? P3 (Phase 7)
+- **Total estimated hours**: ~233 hours (~5.8 person-weeks for one developer, or 2.9 weeks for two developers)
+- **Critical path**: Phases 1-4 must be completed in sequence (security ? compliance ? functional integrity ? AI security)
+- **Parallelizable work**: Performance optimization (Phase 5) can run parallel with compliance work; testing and documentation can start after Phase 5
+- **Risk level priority**: P0 (Phase 1) ? P1 (Phases 2-4) ? P2 (Phases 5-7) ? P3 (Phase 8)
 
 ### Nice-to-Have Improvements
 
@@ -941,12 +1374,21 @@ To use this prompt effectively:
 1. **Read entire codebase** starting with high-level files (package.json, README.md, server/index.ts)
 2. **Map architecture** before diving into detailed review
 3. **Run automated tools** (npm audit, ESLint, TypeScript compiler) to supplement manual review
-4. **Follow the process** sequentially (architecture ? dependencies ? security ? performance ? compliance)
-5. **Document findings** as you go using the structured format
-6. **Prioritize ruthlessly** using P0-P3 risk ratings
-7. **Provide actionable fixes** with code examples, not just descriptions
-8. **Estimate effort** realistically based on complexity and dependencies
-9. **Consider deployment context** (Railway primary, Lambda future consideration)
-10. **Verify compliance** against GDPR and SOC 2 requirements
+4. **Follow the process** sequentially (architecture ? dependencies ? security ? **functional integrity** ? performance ? compliance)
+5. **Trace function call chains** to ensure every function called actually exists and returns expected data (critical for preventing runtime failures)
+6. **Validate API contracts** between frontend and backend to prevent integration breakages
+7. **Document findings** as you go using the structured format
+8. **Prioritize ruthlessly** using P0-P3 risk ratings (functional integrity issues are often P0-P1)
+9. **Provide actionable fixes** with code examples, not just descriptions
+10. **Estimate effort** realistically based on complexity and dependencies
+11. **Consider deployment context** (Railway primary, Lambda future consideration)
+12. **Verify compliance** against GDPR and SOC 2 requirements
 
-The goal is a **production-ready security and compliance posture** with minimal technical debt and clear operational procedures.
+**Special focus on functional integrity:**
+- When you find a function call, trace it to the definition
+- Verify the function signature matches the call site
+- Check return types match caller expectations
+- Validate error handling at integration points
+- Test data flow through the entire stack (client ? server ? database ? external API)
+
+The goal is a **production-ready security and compliance posture** with minimal technical debt, clear operational procedures, and **zero runtime breakages from missing or mismatched functions**.
