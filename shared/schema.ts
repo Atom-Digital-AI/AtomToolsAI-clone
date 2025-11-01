@@ -705,10 +705,7 @@ export const contentFeedback = pgTable("content_feedback", {
 export type ContentFeedback = typeof contentFeedback.$inferSelect;
 export type InsertContentFeedback = typeof contentFeedback.$inferInsert;
 
-export const insertContentFeedbackSchema = createInsertSchema(contentFeedback).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertContentFeedbackSchema = createInsertSchema(contentFeedback).omit(['id', 'createdAt']);
 
 // Content Writer - Multi-stage article generation
 export const contentWriterSessions = pgTable("content_writer_sessions", {
@@ -805,16 +802,9 @@ export type InsertLanggraphThread = typeof langgraphThreads.$inferInsert;
 export type LanggraphCheckpoint = typeof langgraphCheckpoints.$inferSelect;
 export type InsertLanggraphCheckpoint = typeof langgraphCheckpoints.$inferInsert;
 
-export const insertLanggraphThreadSchema = createInsertSchema(langgraphThreads).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertLanggraphThreadSchema = createInsertSchema(langgraphThreads).omit(["id", "createdAt", "updatedAt"]);
 
-export const insertLanggraphCheckpointSchema = createInsertSchema(langgraphCheckpoints).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertLanggraphCheckpointSchema = createInsertSchema(langgraphCheckpoints).omit(["id", "createdAt"]);
 
 export type ContentWriterSession = typeof contentWriterSessions.$inferSelect;
 export type InsertContentWriterSession = typeof contentWriterSessions.$inferInsert;
@@ -825,27 +815,13 @@ export type InsertContentWriterSubtopic = typeof contentWriterSubtopics.$inferIn
 export type ContentWriterDraft = typeof contentWriterDrafts.$inferSelect;
 export type InsertContentWriterDraft = typeof contentWriterDrafts.$inferInsert;
 
-export const insertContentWriterSessionSchema = createInsertSchema(contentWriterSessions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertContentWriterSessionSchema = createInsertSchema(contentWriterSessions).omit(["id", "createdAt", "updatedAt"]);
 
-export const insertContentWriterConceptSchema = createInsertSchema(contentWriterConcepts).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertContentWriterConceptSchema = createInsertSchema(contentWriterConcepts).omit(["id", "createdAt"]);
 
-export const insertContentWriterSubtopicSchema = createInsertSchema(contentWriterSubtopics).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertContentWriterSubtopicSchema = createInsertSchema(contentWriterSubtopics).omit(["id", "createdAt"]);
 
-export const insertContentWriterDraftSchema = createInsertSchema(contentWriterDrafts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertContentWriterDraftSchema = createInsertSchema(contentWriterDrafts).omit(["id", "createdAt", "updatedAt"]);
 
 // Error Log Status - Centralized status strings
 export const ERROR_LOG_STATUS = ['to_do', 'investigated', 'fixed'] as const;
@@ -873,10 +849,7 @@ export const errorLogs = pgTable("error_logs", {
 export type ErrorLog = typeof errorLogs.$inferSelect;
 export type InsertErrorLog = typeof errorLogs.$inferInsert;
 
-export const insertErrorLogSchema = createInsertSchema(errorLogs).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertErrorLogSchema = createInsertSchema(errorLogs).omit(["id", "createdAt"]);
 
 // Notifications table for in-app notifications
 export const notifications = pgTable("notifications", {
@@ -894,10 +867,7 @@ export const notifications = pgTable("notifications", {
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
 
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertNotificationSchema = createInsertSchema(notifications).omit(["id", "createdAt"]);
 
 // User notification preferences for email notifications
 export const userNotificationPreferences = pgTable("user_notification_preferences", {
@@ -912,11 +882,7 @@ export const userNotificationPreferences = pgTable("user_notification_preference
 export type UserNotificationPreference = typeof userNotificationPreferences.$inferSelect;
 export type InsertUserNotificationPreference = typeof userNotificationPreferences.$inferInsert;
 
-export const insertUserNotificationPreferenceSchema = createInsertSchema(userNotificationPreferences).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertUserNotificationPreferenceSchema = createInsertSchema(userNotificationPreferences).omit(['id', 'createdAt', 'updatedAt']);
 
 // Ad Specs - Platform ad format specifications
 export const adSpecs = pgTable("ad_specs", {
@@ -936,11 +902,7 @@ export const adSpecs = pgTable("ad_specs", {
 export type AdSpec = typeof adSpecs.$inferSelect;
 export type InsertAdSpec = typeof adSpecs.$inferInsert;
 
-export const insertAdSpecSchema = createInsertSchema(adSpecs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertAdSpecSchema = createInsertSchema(adSpecs).omit(['id', 'createdAt', 'updatedAt']);
 
 // Social Content Sessions - Multi-stage social content generation
 export const socialContentSessions = pgTable("social_content_sessions", {
@@ -962,11 +924,7 @@ export const socialContentSessions = pgTable("social_content_sessions", {
 export type SocialContentSession = typeof socialContentSessions.$inferSelect;
 export type InsertSocialContentSession = typeof socialContentSessions.$inferInsert;
 
-export const insertSocialContentSessionSchema = createInsertSchema(socialContentSessions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertSocialContentSessionSchema = createInsertSchema(socialContentSessions).omit(['id', 'createdAt', 'updatedAt']);
 
 // Social Content Wireframes - Generated concepts per platform/format
 export const socialContentWireframes = pgTable("social_content_wireframes", {
@@ -994,10 +952,7 @@ export const socialContentWireframes = pgTable("social_content_wireframes", {
 export type SocialContentWireframe = typeof socialContentWireframes.$inferSelect;
 export type InsertSocialContentWireframe = typeof socialContentWireframes.$inferInsert;
 
-export const insertSocialContentWireframeSchema = createInsertSchema(socialContentWireframes).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSocialContentWireframeSchema = createInsertSchema(socialContentWireframes).omit(['id', 'createdAt']);
 
 // AI Usage Logs - Track token usage and costs for all AI API calls
 export const aiUsageLogs = pgTable("ai_usage_logs", {
@@ -1145,19 +1100,13 @@ export const qcConfigurations = pgTable("qc_configurations", {
 export type AiUsageLog = typeof aiUsageLogs.$inferSelect;
 export type InsertAiUsageLog = typeof aiUsageLogs.$inferInsert;
 
-export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs).omit(['id', 'createdAt']);
 
 // QC Types
 export type QCReport = typeof qcReports.$inferSelect;
 export type InsertQCReport = typeof qcReports.$inferInsert;
 
-export const insertQCReportSchema = createInsertSchema(qcReports).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertQCReportSchema = createInsertSchema(qcReports).omit(['id', 'createdAt']);
 
 export type QCUserDecision = typeof qcUserDecisions.$inferSelect;
 export type InsertQCUserDecision = typeof qcUserDecisions.$inferInsert;
@@ -1171,11 +1120,7 @@ export const insertQCUserDecisionSchema = createInsertSchema(qcUserDecisions).om
 export type QCConfiguration = typeof qcConfigurations.$inferSelect;
 export type InsertQCConfiguration = typeof qcConfigurations.$inferInsert;
 
-export const insertQCConfigurationSchema = createInsertSchema(qcConfigurations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertQCConfigurationSchema = createInsertSchema(qcConfigurations).omit(['id', 'createdAt', 'updatedAt']);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type CompleteProfile = z.infer<typeof completeProfileSchema>;
