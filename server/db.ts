@@ -1,16 +1,14 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import { env } from "./config";
-
-neonConfig.webSocketConstructor = ws;
 
 export const pool = new Pool({ 
   connectionString: env.DATABASE_URL,
   max: parseInt(env.DB_POOL_SIZE),
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('error', (err) => {
