@@ -48,4 +48,4 @@ ENV PORT=5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "const port = process.env.PORT || '5000'; require('http').get(`http://localhost:${port}/health/live`, (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
 
-CMD ["./node_modules/.bin/tsx", "server/index.ts"]
+CMD ["./node_modules/.bin/tsx", "--tsconfig", "tsconfig.json", "server/index.ts"]
