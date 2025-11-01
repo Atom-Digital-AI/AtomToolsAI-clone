@@ -2,6 +2,8 @@ import { storage } from "../storage";
 import { embeddingsService } from "./embeddings";
 import { documentChunker, type ChunkResult } from "./chunking";
 import type { InsertBrandEmbedding, BrandEmbedding, ToolType } from "@shared/schema";
+import { rerankingService } from "./reranking-service";
+import { hybridSearchService } from "./hybrid-search-service";
 import "./langsmith-config"; // Initialize LangSmith tracing if available
 
 /**
@@ -98,33 +100,122 @@ export class RAGService {
 
   /**
    * Retrieve relevant brand context chunks based on a query
-   * This is the core RAG retrieval function
+   * This is the core RAG retrieval function with optional reranking and hybrid search
    * SECURITY: Requires userId to enforce tenant isolation
+   * 
+   * @param useHybridSearch - Use hybrid search (vector + full-text) if enabled
+   * @param useReranking - Rerank results using Cohere Rerank API if enabled
+   * @param initialRetrievalLimit - Number of candidates to retrieve before reranking
    */
   async retrieveRelevantContext(
     userId: string,
     profileId: string,
     query: string,
-    limit: number = 5
+    limit: number = 5,
+    options?: {
+      useHybridSearch?: boolean;
+      useReranking?: boolean;
+      initialRetrievalLimit?: number;
+    }
   ): Promise<RetrievalResult[]> {
-    // Step 1: Generate embedding for the query
-    const queryEmbedding = await embeddingsService.generateQueryEmbedding(query);
+    const useHybridSearch = options?.useHybridSearch ?? (process.env.HYBRID_SEARCH_ENABLED === 'true');
+    const useReranking = options?.useReranking ?? (process.env.RERANKING_ENABLED === 'true');
+    const initialRetrievalLimit = options?.initialRetrievalLimit ?? (useReranking ? 50 : limit);
 
-    // Step 2: Search for similar embeddings in the database (with userId filtering for security)
-    const results = await storage.searchSimilarEmbeddings(
-      userId, // SECURITY: Enforce user ownership
-      profileId,
-      queryEmbedding,
-      limit
-    );
+    let results: RetrievalResult[] = [];
 
-    // Step 3: Format results
-    return results.map(result => ({
-      chunk: result.chunkText,
-      similarity: result.similarity,
-      metadata: result.metadata as Record<string, any> | undefined,
-      sourceType: result.sourceType,
-    }));
+    // Step 1: Hybrid Search or Vector Search
+    if (useHybridSearch && hybridSearchService) {
+      try {
+        const hybridResults = await hybridSearchService.search({
+          userId,
+          guidelineProfileId: profileId,
+          query,
+          limit: initialRetrievalLimit,
+        });
+
+        results = hybridResults.map(result => ({
+          chunk: result.chunk,
+          similarity: result.scores.combined,
+          metadata: result.metadata,
+          sourceType: result.sourceType,
+        }));
+      } catch (error) {
+        console.warn('[RAG] Hybrid search failed, falling back to vector search:', error);
+        // Fallback to vector search
+        const queryEmbedding = await embeddingsService.generateQueryEmbedding(query);
+        const vectorResults = await storage.searchSimilarEmbeddings(
+          userId,
+          profileId,
+          queryEmbedding,
+          initialRetrievalLimit
+        );
+        results = vectorResults.map(result => ({
+          chunk: result.chunkText,
+          similarity: result.similarity,
+          metadata: result.metadata as Record<string, any> | undefined,
+          sourceType: result.sourceType,
+        }));
+      }
+    } else {
+      // Step 1: Generate embedding for the query
+      const queryEmbedding = await embeddingsService.generateQueryEmbedding(query);
+
+      // Step 2: Search for similar embeddings in the database
+      const vectorResults = await storage.searchSimilarEmbeddings(
+        userId, // SECURITY: Enforce user ownership
+        profileId,
+        queryEmbedding,
+        initialRetrievalLimit
+      );
+
+      results = vectorResults.map(result => ({
+        chunk: result.chunkText,
+        similarity: result.similarity,
+        metadata: result.metadata as Record<string, any> | undefined,
+        sourceType: result.sourceType,
+      }));
+    }
+
+    // Step 2: Reranking (if enabled)
+    if (useReranking && results.length > limit && rerankingService) {
+      try {
+        const isAvailable = await rerankingService.isAvailable();
+        if (isAvailable) {
+          // Extract documents for reranking
+          const documents = results.map(r => r.chunk);
+          const originalScores = results.map(r => r.similarity);
+
+          // Rerank
+          const reranked = await rerankingService.rerank({
+            query,
+            documents,
+            topK: limit,
+            originalScores,
+          });
+
+          // Map reranked results back to RetrievalResult format
+          results = reranked.map(result => {
+            const original = results[result.index];
+            return {
+              chunk: result.document,
+              similarity: result.relevanceScore,
+              metadata: original.metadata,
+              sourceType: original.sourceType,
+            };
+          });
+        }
+      } catch (error) {
+        console.warn('[RAG] Reranking failed, using original results:', error);
+        // Fallback: just take top limit
+        results = results.slice(0, limit);
+      }
+    } else {
+      // No reranking: just take top limit
+      results = results.slice(0, limit);
+    }
+
+    return results;
   }
 
   /**

@@ -991,6 +991,43 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
+  // RAG Extensions: Full-text and hybrid search methods
+  // Imported from storage-rag-extensions.ts
+  async fullTextSearchEmbeddings(
+    userId: string,
+    guidelineProfileId: string,
+    query: string,
+    limit: number = 10
+  ): Promise<Array<BrandEmbedding & { rank: number }>> {
+    const { fullTextSearchEmbeddings } = await import("./storage-rag-extensions");
+    return fullTextSearchEmbeddings(userId, guidelineProfileId, query, limit);
+  }
+
+  async bm25SearchEmbeddings(
+    userId: string,
+    guidelineProfileId: string,
+    query: string,
+    limit: number = 10,
+    k1: number = 1.2,
+    b: number = 0.75
+  ): Promise<Array<BrandEmbedding & { score: number }>> {
+    const { bm25SearchEmbeddings } = await import("./storage-rag-extensions");
+    return bm25SearchEmbeddings(userId, guidelineProfileId, query, limit, k1, b);
+  }
+
+  async hybridSearchEmbeddings(
+    userId: string,
+    guidelineProfileId: string,
+    queryEmbedding: number[],
+    queryText: string,
+    limit: number = 10,
+    vectorWeight: number = 0.7,
+    textWeight: number = 0.3
+  ): Promise<Array<BrandEmbedding & { vectorScore: number; textScore: number; combinedScore: number }>> {
+    const { hybridSearchEmbeddings } = await import("./storage-rag-extensions");
+    return hybridSearchEmbeddings(userId, guidelineProfileId, queryEmbedding, queryText, limit, vectorWeight, textWeight);
+  }
+
   // Crawl Job operations
   async createCrawlJob(job: InsertCrawlJob & { userId: string }): Promise<CrawlJob> {
     const [crawlJob] = await db
