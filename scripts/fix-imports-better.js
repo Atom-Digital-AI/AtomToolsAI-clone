@@ -47,6 +47,15 @@ function addJsExtensions(dir) {
       }
     );
     
+    // Fix side-effect imports: import "./file" -> import "./file.js"
+    content = content.replace(
+      /import\s+['"](\.\.?\/[^'"]+?)(?<!\.js|\.json)['"]/g,
+      (match, importPath) => {
+        modified = true;
+        return `import "${importPath}.js"`;
+      }
+    );
+    
     // Also fix import() dynamic imports
     content = content.replace(
       /import\s*\(\s*['"](\.\.?\/[^'"]+?)(?<!\.js|\.json)['"]\s*\)/g,
