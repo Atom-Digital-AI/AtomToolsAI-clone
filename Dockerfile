@@ -36,6 +36,7 @@ COPY --from=builder --chown=expressjs:nodejs /app/server ./server
 COPY --from=builder --chown=expressjs:nodejs /app/shared ./shared
 COPY --from=builder --chown=expressjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=expressjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=expressjs:nodejs /app/tsconfig.json ./tsconfig.json
 
 USER expressjs
 
