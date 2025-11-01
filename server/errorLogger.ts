@@ -1,6 +1,7 @@
 import { db } from './db';
 import { errorLogs, type ErrorLogStatus } from '@shared/schema';
 import type { Request } from 'express';
+import { sanitizeForLogging } from './utils/sanitize';
 
 interface LogErrorParams {
   userId?: string;
@@ -41,7 +42,7 @@ export async function logToolError(params: LogErrorParams) {
       errorType,
       errorMessage,
       errorStack: errorStack || null,
-      requestData: requestData || null,
+      requestData: sanitizeForLogging(requestData) || null, // SECURITY: Sanitize before logging
       httpStatus: httpStatus || null,
       endpoint,
       userAgent: req?.get('User-Agent') || null,

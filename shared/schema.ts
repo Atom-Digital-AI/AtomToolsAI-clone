@@ -161,6 +161,7 @@ export const users = pgTable("users", {
   isProfileComplete: boolean("is_profile_complete").notNull().default(false),
   isEmailVerified: boolean("is_email_verified").notNull().default(false),
   emailVerificationToken: text("email_verification_token"),
+  emailVerificationTokenExpiry: timestamp("email_verification_token_expiry"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
