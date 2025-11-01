@@ -35,7 +35,7 @@ export function PackageManager() {
     isActive: true,
   });
 
-  const { data: packages, isLoading } = useQuery({
+  const { data: packages, isLoading } = useQuery<Package[]>({
     queryKey: ["/api/product-admin/packages"],
     retry: false,
   });

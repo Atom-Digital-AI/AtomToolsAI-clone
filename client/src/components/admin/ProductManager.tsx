@@ -56,12 +56,12 @@ export function ProductManager() {
     tags: [""],
   });
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ["/api/admin/products"],
     retry: false,
   });
 
-  const { data: packages } = useQuery({
+  const { data: packages } = useQuery<any[]>({
     queryKey: ["/api/admin/packages"],
     retry: false,
   });

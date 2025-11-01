@@ -29,7 +29,7 @@ export function UserManager() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     retry: false,
   });

@@ -333,6 +333,7 @@ export function CmsPageEditor({ page, onSave, onCancel }: CmsPageEditorProps) {
                       <FormControl>
                         <Input
                           {...field}
+                          value={field.value ?? ''}
                           className="bg-gray-700 border-gray-600 text-white"
                           placeholder="https://example.com/image.jpg"
                           data-testid="input-featured-image"
@@ -350,15 +351,16 @@ export function CmsPageEditor({ page, onSave, onCancel }: CmsPageEditorProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-300">Excerpt</FormLabel>
-                    <FormControl>
+                      <FormControl>
                       <Textarea
                         {...field}
+                        value={field.value ?? ''}
                         className="bg-gray-700 border-gray-600 text-white"
                         placeholder="Brief description of the page content"
                         rows={3}
                         data-testid="textarea-excerpt"
                       />
-                    </FormControl>
+                      </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

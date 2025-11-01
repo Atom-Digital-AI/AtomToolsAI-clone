@@ -40,7 +40,7 @@ export function SocialContentExport({ wireframes, sessionId }: SocialContentExpo
   const copyToClipboard = async (text: string, fieldId: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedFields(new Set([...copiedFields, fieldId]));
+      setCopiedFields(new Set(Array.from(copiedFields).concat(fieldId)));
       setTimeout(() => {
         setCopiedFields(prev => {
           const next = new Set(prev);
