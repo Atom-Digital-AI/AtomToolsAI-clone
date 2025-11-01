@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getOpenAIClient } from "../../utils/openai-client";
 import { nanoid } from "nanoid";
 import { ContentWriterState } from "../types";
 import { loggedOpenAICall } from "../../utils/ai-logger";
@@ -7,9 +7,9 @@ import { storage } from "../../storage";
 import { formatSelectedTargetAudiences } from "../../utils/format-guidelines";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "../../utils/language-helpers";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-loaded OpenAI client
+const getOpenai = () => getOpenAIClient();
+// removed
 
 function stripMarkdownCodeBlocks(text: string): string {
   return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();

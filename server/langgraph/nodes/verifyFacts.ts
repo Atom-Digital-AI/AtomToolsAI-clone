@@ -1,10 +1,10 @@
-import OpenAI from "openai";
+import { getOpenAIClient } from "../../utils/openai-client";
 import { ContentWriterState } from "../types";
 import { loggedOpenAICall } from "../../utils/ai-logger";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-loaded OpenAI client
+const getOpenai = () => getOpenAIClient();
+// removed
 
 export async function verifyFacts(state: ContentWriterState): Promise<Partial<ContentWriterState>> {
   try {

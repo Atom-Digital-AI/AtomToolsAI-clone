@@ -1,12 +1,12 @@
-import OpenAI from "openai";
+import { getOpenAIClient } from "../../utils/openai-client";
 import { ContentWriterState } from "../types";
 import { loggedOpenAICall } from "../../utils/ai-logger";
 import { storage } from "../../storage";
 import { formatBrandGuidelines } from "../../utils/format-guidelines";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-loaded OpenAI client
+const getOpenai = () => getOpenAIClient();
+// removed
 
 export async function checkBrandMatch(state: ContentWriterState): Promise<Partial<ContentWriterState>> {
   try {

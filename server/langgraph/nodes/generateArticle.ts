@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getOpenAIClient } from "../../utils/openai-client";
 import { ContentWriterState } from "../types";
 import { loggedOpenAICall } from "../../utils/ai-logger";
 import { ragService } from "../../utils/rag-service";
@@ -6,9 +6,9 @@ import { storage } from "../../storage";
 import { formatSelectedTargetAudiences } from "../../utils/format-guidelines";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "../../utils/language-helpers";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-loaded OpenAI client
+const getOpenai = () => getOpenAIClient();
+// removed
 
 export async function generateArticle(state: ContentWriterState): Promise<Partial<ContentWriterState>> {
   try {
