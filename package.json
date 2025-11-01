@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && mkdir -p dist/shared && esbuild shared/schema.ts --platform=node --format=esm --packages=external --external:drizzle-orm --external:drizzle-orm/* --external:drizzle-zod --bundle --outfile=dist/shared/schema.js --keep-names --tree-shaking=false && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:@shared/* --external:shared/* && node scripts/fix-imports.js",
+    "build": "vite build && mkdir -p dist/shared && node scripts/transpile-schema.js && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:@shared/* --external:shared/* && node scripts/fix-imports.js",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"

@@ -1,0 +1,166 @@
+Starting Container
+      colBuilder.setName(name2);
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+                 ^
+
+
+TypeError: colBuilder.setName is not a function
+Node.js v20.19.5
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at Array.map (<anonymous>)
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+                 ^
+
+    at Array.map (<anonymous>)
+TypeError: colBuilder.setName is not a function
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.5
+Node.js v20.19.5
+
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+                 ^
+
+    at Array.map (<anonymous>)
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+TypeError: colBuilder.setName is not a function
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+    at file:///app/dist/shared/schema.js:850:29
+Node.js v20.19.5
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+                 ^
+
+TypeError: colBuilder.setName is not a function
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at Array.map (<anonymous>)
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+                 ^
+
+TypeError: colBuilder.setName is not a function
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at Array.map (<anonymous>)
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.5
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+                 ^
+
+TypeError: colBuilder.setName is not a function
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at Array.map (<anonymous>)
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.5
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+                 ^
+
+TypeError: colBuilder.setName is not a function
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at Array.map (<anonymous>)
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.5
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+                 ^
+Node.js v20.19.5
+    at Array.map (<anonymous>)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+TypeError: colBuilder.setName is not a function
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+Node.js v20.19.5
+      colBuilder.setName(name2);
+                 ^
+
+TypeError: colBuilder.setName is not a function
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+    at Array.map (<anonymous>)
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+Node.js v20.19.5
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
+
+    at Array.map (<anonymous>)
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+      colBuilder.setName(name2);
+                 ^
+
+TypeError: colBuilder.setName is not a function
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.5
+    at Array.map (<anonymous>)
+file:///app/node_modules/drizzle-orm/pg-core/table.js:26
+    at pgTableWithSchema (file:///app/node_modules/drizzle-orm/pg-core/table.js:24:35)
+      colBuilder.setName(name2);
+    at pgTable (file:///app/node_modules/drizzle-orm/pg-core/table.js:54:10)
+    at file:///app/dist/shared/schema.js:850:29
+                 ^
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+
+TypeError: colBuilder.setName is not a function
+    at file:///app/node_modules/drizzle-orm/pg-core/table.js:26:18
