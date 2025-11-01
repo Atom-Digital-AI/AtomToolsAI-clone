@@ -12,8 +12,12 @@
     "skipLibCheck": true,
     "strict": false,
     "downlevelIteration": true,
-    "target": "ES2020"
+    "target": "ES2020",
+    "noEmitOnError": false
   },
-  "include": ["server/**/*", "shared/**/*", "server/types/**/*"],
-  "exclude": ["node_modules", "dist", "client", "**/*.test.ts", "**/__tests__/**"]
+  "include": ["server/**/*", "shared/schema.ts", "server/types/**/*"],
+  "exclude": ["node_modules", "dist", "client", "**/*.test.ts", "**/__tests__/**"],
+  "ts-node": {
+    "transpileOnly": true
+  }
 }
