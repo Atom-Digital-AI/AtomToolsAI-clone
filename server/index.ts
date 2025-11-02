@@ -75,6 +75,8 @@ app.use(
 app.use("/api", apiLimiter);
 
 // Body parsers with different limits
+// Note: More specific routes must come before catch-all routes
+app.use("/api/guideline-profiles/auto-populate-pdf", express.json({ limit: "15mb" })); // PDF upload (needs larger limit for base64)
 app.use("/api/tools", express.json({ limit: "5mb" })); // AI tools
 app.use("/api/admin", express.json({ limit: "1mb" })); // Admin operations
 app.use("/api", express.json({ limit: "500kb" })); // General API

@@ -1349,8 +1349,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auto-populate brand guidelines from PDF upload
+  // Note: Body parser limit (15mb) is set in server/index.ts to handle base64-encoded PDFs
   app.post("/api/guideline-profiles/auto-populate-pdf", 
-    express.json({ limit: '15mb' }), 
     requireAuth, 
     async (req: any, res) => {
     try {
