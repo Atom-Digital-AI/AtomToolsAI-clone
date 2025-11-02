@@ -73,7 +73,7 @@ This comprehensive security audit has identified **47 security, performance, and
        ????????????????????????????????????????????????????????
        ?      ?          ?          ?            ?            ?
 ???????????? ?  ?????????????  ??????????  ??????????  ???????????
-?PostgreSQL? ?  ?  OpenAI   ?  ?Anthropic? ? Stripe ?  ?SendGrid ?
+?PostgreSQL? ?  ?  OpenAI   ?  ?Anthropic? ? Stripe ?  ?Brevo ?
 ?  (Neon)  ? ?  ?GPT-4, etc ?  ? Claude  ? ?Payments?  ?  Email  ?
 ?+ pgvector? ?  ?Embeddings ?  ?  APIs   ?  ??????????  ???????????
 ???????????? ?  ?????????????  ???????????
@@ -107,7 +107,7 @@ This comprehensive security audit has identified **47 security, performance, and
 1. **Public ? Server:** Unauthenticated routes (login, signup, CMS pages)
 2. **Authenticated User ? Server:** Protected routes (requireAuth middleware)
 3. **Admin ? Server:** Admin routes (requireAdmin middleware)
-4. **Server ? External APIs:** OpenAI, Anthropic, Stripe, SendGrid, GCS
+4. **Server ? External APIs:** OpenAI, Anthropic, Stripe, Brevo, GCS
 5. **Server ? Database:** Drizzle ORM with parameterized queries
 
 ---
@@ -127,7 +127,7 @@ This comprehensive security audit has identified **47 security, performance, and
 | openai | ^5.12.2 | OpenAI SDK | ? Official SDK |
 | @anthropic-ai/sdk | ^0.37.0 | Anthropic SDK | ? Official SDK |
 | stripe | ^18.4.0 | Payment processing | ? Official SDK |
-| @sendgrid/mail | ^8.1.5 | Email service | ? Maintained |
+| axios | ^8.1.5 | Email service | ? Maintained |
 | nodemailer | ^7.0.5 | Email (alternative) | ?? **VULNERABLE** (GHSA-mm7p-fcc7-pg87) |
 | @langchain/langgraph | ^1.0.0 | AI workflows | ? LangChain ecosystem |
 | pgvector | ^0.2.1 | Vector search | ? PostgreSQL extension |
@@ -1292,7 +1292,7 @@ app.post('/api/webhooks/stripe',
 No retry logic for transient failures in:
 - OpenAI API calls
 - Anthropic API calls
-- SendGrid email sending
+- Brevo email sending
 - GCS file operations
 
 **Risk:** **MEDIUM** - Poor reliability, user-facing errors for transient issues.
@@ -1557,7 +1557,7 @@ No privacy policy or cookie consent mechanism visible in codebase.
    - Legal basis for processing
    - Data retention periods
    - User rights (access, erasure, portability)
-   - Third-party data processors (OpenAI, Anthropic, Stripe, SendGrid)
+   - Third-party data processors (OpenAI, Anthropic, Stripe, Brevo)
    - International data transfers
    - Contact details of data controller
 
@@ -1574,7 +1574,7 @@ No privacy policy or cookie consent mechanism visible in codebase.
 Using third-party processors without documented DPAs:
 - OpenAI (AI processing of user content)
 - Anthropic (AI processing)
-- SendGrid (email with PII)
+- Brevo (email with PII)
 - Google Cloud Storage (file storage)
 
 **GDPR:** Article 28 - Processor obligations
@@ -1955,7 +1955,7 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(), // Optional if using OpenAI only
   
   // Email (required)
-  SENDGRID_API_KEY: z.string().startsWith('SG.'),
+  BREVO_API_KEY: z.string(),
   
   // Object Storage (optional for local dev)
   PUBLIC_OBJECT_SEARCH_PATHS: z.string().optional(),
@@ -2294,7 +2294,7 @@ OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 
 # Email
-SENDGRID_API_KEY=SG....
+BREVO_API_KEY=...
 
 # Deployment
 FRONTEND_URL=https://atomtools.ai

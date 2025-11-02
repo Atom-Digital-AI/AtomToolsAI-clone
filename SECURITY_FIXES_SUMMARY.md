@@ -219,7 +219,7 @@ ALTER TABLE users ADD COLUMN email_verification_token_expiry TIMESTAMP;
 
 ### P1: GDPR DPAs
 - **Status:** Legal documentation required
-- **Action:** Execute Data Processing Agreements with OpenAI, Anthropic, Stripe, SendGrid, GCS
+- **Action:** Execute Data Processing Agreements with OpenAI, Anthropic, Stripe, Brevo, GCS
 - **Priority:** High for production launch
 
 ### P2: Monitoring (Sentry)
@@ -249,7 +249,7 @@ export DB_POOL_SIZE=10
 
 # AI APIs
 export OPENAI_API_KEY="sk-..."
-export SENDGRID_API_KEY="SG...."
+export BREVO_API_KEY="..."
 
 # Deployment
 export NODE_ENV=production

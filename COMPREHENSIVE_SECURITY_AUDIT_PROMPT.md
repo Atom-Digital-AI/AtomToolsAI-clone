@@ -27,7 +27,7 @@ You are a senior staff engineer and security reviewer performing a comprehensive
   - Cohere for reranking
 - **External Integrations**: 
   - Stripe (payments and subscriptions)
-  - SendGrid and Nodemailer (transactional emails)
+  - Brevo (transactional emails)
   - Google Cloud Storage (object storage)
   - Neon PostgreSQL (managed database)
 
@@ -119,7 +119,7 @@ Review the entire repository including:
 - **Environment variables**: All `process.env` usage and secrets management
 - **Session and authentication**: Implementation and security configuration
 - **Database queries**: ORM usage patterns, migrations, sensitive data handling, result validation
-- **External API integrations**: OpenAI, Anthropic, Stripe, SendGrid, GCS, Cohere
+- **External API integrations**: OpenAI, Anthropic, Stripe, Brevo, GCS, Cohere
 - **AI/ML workflow security**: LangGraph state, prompt injection risks, RAG access controls
 - **Container security**: Python app Docker configuration
 - **Documentation and tests**: README files, test coverage, implementation guides
@@ -178,7 +178,7 @@ List:
 - **Transitive dependencies** (use `npm ls` or dependency analysis)
 - **Python dependencies** from `Ad Copy Generator App/requirements.txt`
 - **Risky dependencies**: Packages with known CVEs, outdated major versions, or excessive permissions
-- **External services**: OpenAI, Anthropic, Stripe, SendGrid, Google Cloud Storage, Cohere, Neon
+- **External services**: OpenAI, Anthropic, Stripe, Brevo, Google Cloud Storage, Cohere, Neon
 - **Ports and endpoints**: Default port 5000, API routes under `/api`, static files, WebSocket
 - **Environment variables**: Required vs optional, default values, sensitive flags
 - **Database tables and sensitive fields**: From `shared/schema.ts`
@@ -261,7 +261,7 @@ Identify issues across these categories:
 - API versioning and breaking changes
 - Stripe webhook signature verification
 - External API error handling
-- API key exposure (OpenAI, Anthropic, Stripe, SendGrid, GCS)
+- API key exposure (OpenAI, Anthropic, Stripe, Brevo, GCS)
 
 #### AI/ML Workflow Security
 - Prompt injection in LangGraph nodes (user input ? LLM prompts without sanitization)
@@ -828,7 +828,7 @@ Check for:
   - OpenAI/Anthropic API key rotation
   - Stripe API key rotation
   - Google Cloud service account key rotation
-  - SendGrid API key rotation
+  - Brevo API key rotation
   - Automated rotation schedules
 - **GDPR compliance operations**: 
   - Data export automation
@@ -1004,7 +1004,7 @@ Include example test snippets for each category with framework (Node.js test run
 - OpenAI/Anthropic API key rotation
 - Stripe API key rotation (webhook secret)
 - Google Cloud service account key rotation
-- SendGrid API key rotation
+- Brevo API key rotation
 - Automated rotation schedules and monitoring
 
 #### Monitoring and Alerting

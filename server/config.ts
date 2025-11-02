@@ -15,7 +15,7 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   
   // Email - optional with fallback (Railway env vars should override)
-  SENDGRID_API_KEY: z.string().optional().default(''),
+  BREVO_API_KEY: z.string().optional().default(''),
   
   // Object Storage (optional for local dev)
   PUBLIC_OBJECT_SEARCH_PATHS: z.string().optional(),
@@ -55,7 +55,7 @@ export function validateEnv(): Env {
     console.error('\n?? Quick fix:');
     console.error('  1. Copy .env.example to .env (if it exists)');
     console.error('  2. Set SESSION_SECRET with: export SESSION_SECRET=$(openssl rand -base64 32)');
-    console.error('  3. Ensure DATABASE_URL, OPENAI_API_KEY, and SENDGRID_API_KEY are set');
+    console.error('  3. Ensure DATABASE_URL, OPENAI_API_KEY, and BREVO_API_KEY are set');
     process.exit(1);
   }
 }

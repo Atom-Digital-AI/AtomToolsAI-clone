@@ -1,20 +1,14 @@
-import { MailService } from '@sendgrid/mail';
+import axios from 'axios';
 
-// Email configuration using SendGrid
-const mailService = new MailService();
-
-if (process.env.SENDGRID_API_KEY) {
-  mailService.setApiKey(process.env.SENDGRID_API_KEY);
-} else {
-  console.warn('SENDGRID_API_KEY not found. Email sending will fail.');
-}
+// Email configuration using Brevo
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 export async function sendVerificationEmail(
   email: string, 
   verificationToken: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error('SENDGRID_API_KEY not configured');
+  if (!process.env.BREVO_API_KEY) {
+    console.error('BREVO_API_KEY not configured');
     return { success: false, error: 'Email service not configured' };
   }
   
@@ -26,13 +20,13 @@ export async function sendVerificationEmail(
   const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
   
   const emailData = {
-    to: email,
-    from: {
+    sender: {
       email: 'noreply@atomtools.ai',
       name: 'atomtools.ai'
     },
+    to: [{ email }],
     subject: 'Verify your atomtools.ai account',
-    html: `
+    htmlContent: `
       <!DOCTYPE html>
       <html>
         <head>
@@ -147,7 +141,7 @@ export async function sendVerificationEmail(
         </body>
       </html>
     `,
-    text: `
+    textContent: `
       Welcome to atomtools.ai!
       
       Thank you for signing up. To complete your account setup and start using our AI-powered marketing tools, please verify your email address by clicking the link below:
@@ -168,12 +162,21 @@ export async function sendVerificationEmail(
   };
 
   try {
-    const [response] = await mailService.send(emailData);
-    console.log('Verification email sent successfully:', response.headers['x-message-id']);
+    const response = await axios.post(BREVO_API_URL, emailData, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
     
-    return { success: true, messageId: response.headers['x-message-id'] };
+    console.log('Verification email sent successfully:', response.data.messageId);
+    
+    return { success: true, messageId: response.data.messageId };
   } catch (error) {
     console.error('Failed to send verification email:', error);
+    if (axios.isAxiosError(error)) {
+      return { success: false, error: error.response?.data?.message || error.message };
+    }
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

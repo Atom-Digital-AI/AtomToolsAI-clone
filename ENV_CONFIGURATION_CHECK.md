@@ -61,8 +61,8 @@ Based on `server/config.ts`, the following environment variables are **REQUIRED*
 
 ### 4. Email Service
 
-- **SENDGRID_API_KEY** (REQUIRED)
-  - Format: Must start with `SG.`
+- **BREVO_API_KEY** (REQUIRED)
+  - Format: Brevo API key string
   - Status: ⚠️ **NEEDS VERIFICATION**
   - Used in: server/email.ts for verification emails
 
@@ -197,7 +197,7 @@ Based on `server/config.ts`, the following environment variables are **REQUIRED*
 - ✅ drizzle-orm (PostgreSQL ORM)
 - ✅ pg (PostgreSQL client)
 - ✅ pgvector (Vector similarity search)
-- ✅ @sendgrid/mail (Email)
+- ✅ Brevo API (Email via axios)
 - ✅ openai (OpenAI SDK)
 - ✅ @anthropic-ai/sdk (Anthropic SDK)
 - ✅ express (Server framework)
@@ -224,8 +224,8 @@ Based on `server/config.ts`, the following environment variables are **REQUIRED*
    - Must start with `sk-`
    - Check in Railway environment variables
 
-4. ✅ Verify SENDGRID_API_KEY is set and valid
-   - Must start with `SG.`
+4. ✅ Verify BREVO_API_KEY is set and valid
+   - Brevo API key format
    - Check in Railway environment variables
 
 ### Important (Should Fix)
@@ -274,9 +274,9 @@ To test API keys:
 curl https://api.openai.com/v1/models \
   -H "Authorization: Bearer $OPENAI_API_KEY"
 
-# Test SendGrid
-curl -X GET "https://api.sendgrid.com/v3/user/profile" \
-  -H "Authorization: Bearer $SENDGRID_API_KEY"
+# Test Brevo
+curl -X GET "https://api.brevo.com/v3/account" \
+  -H "api-key: $BREVO_API_KEY"
 ```
 
 ---
@@ -292,7 +292,7 @@ curl -X GET "https://api.sendgrid.com/v3/user/profile" \
 ### ⚠️ Needs Verification
 
 - Database connection (DATABASE_URL)
-- All API keys (OpenAI, SendGrid, Anthropic)
+- All API keys (OpenAI, Brevo, Anthropic)
 - Session secret
 - Frontend URL for CORS
 
@@ -322,7 +322,7 @@ curl -X GET "https://api.sendgrid.com/v3/user/profile" \
 3. **Test API Keys**
 
    - Verify OpenAI key works
-   - Verify SendGrid key works
+   - Verify Brevo key works
    - Verify Anthropic key (if used)
 
 4. **Set Missing Variables**

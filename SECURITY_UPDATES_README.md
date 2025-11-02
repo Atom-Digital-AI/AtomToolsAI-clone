@@ -116,7 +116,7 @@ DB_POOL_SIZE=10
 
 # APIs
 OPENAI_API_KEY=sk-...
-SENDGRID_API_KEY=SG....
+BREVO_API_KEY=...
 ```
 
 #### 2. Verify Deployment
@@ -256,7 +256,7 @@ curl http://localhost:5000/health
    - OpenAI
    - Anthropic
    - Stripe
-   - SendGrid
+   - Brevo
    - Google Cloud Storage
 5. ?? Test deployment thoroughly
 

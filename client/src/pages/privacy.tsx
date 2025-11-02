@@ -95,7 +95,7 @@ export default function Privacy() {
                   <span className="text-sm text-muted-foreground">PCI DSS compliant</span>
                 </div>
                 <div>
-                  <strong>SendGrid</strong> - Transactional emails
+                  <strong>Brevo</strong> - Transactional emails
                   <br />
                   <span className="text-sm text-muted-foreground">Email verification, notifications</span>
                 </div>

@@ -18,7 +18,7 @@ Check these are set in Railway Variables:
 - [ ] `DATABASE_URL` - PostgreSQL connection string
 - [ ] `SESSION_SECRET` - At least 32 characters
 - [ ] `OPENAI_API_KEY` - Starts with `sk-`
-- [ ] `SENDGRID_API_KEY` - Starts with `SG.`
+- [ ] `BREVO_API_KEY` - Brevo API key
 
 #### Important (Features may not work without these)
 - [ ] `ANTHROPIC_API_KEY` - For brand analysis and social content
@@ -54,7 +54,7 @@ Check these are set in Railway Variables:
 ### 7. API Keys Test
 Test that API keys are working:
 - [ ] OpenAI API key is valid (test with a simple request)
-- [ ] SendGrid API key is valid (check email sending)
+- [ ] Brevo API key is valid (check email sending)
 - [ ] Anthropic API key is valid (if using brand analysis)
 
 ## Common Issues
@@ -75,7 +75,7 @@ Test that API keys are working:
 - **Symptom**: Validation errors for API keys
 - **Solution**: 
   - OpenAI key must start with `sk-`
-  - SendGrid key must start with `SG.`
+  - Brevo key must be valid API key format
   - Check no extra spaces or quotes
 
 ## Verification Commands
