@@ -14,6 +14,7 @@ export const PRODUCT_IDS = {
   GOOGLE_ADS_GENERATOR: 'c5985990-e94e-49b3-a86c-3076fd9d6b3f',
   FACEBOOK_ADS_CONNECTOR: '9dfbe2c0-1128-4ec1-891b-899e1b28e097',
   SOCIAL_CONTENT_GENERATOR: '7a3c8f1e-9b2d-4e6a-8f7c-1d2e3f4a5b6c',
+  CONTENT_WRITER_V2: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
 } as const;
 
 // AI Model Names - Centralized model identifiers

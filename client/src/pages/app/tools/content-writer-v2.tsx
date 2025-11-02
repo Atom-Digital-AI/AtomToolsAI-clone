@@ -23,6 +23,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PRODUCT_IDS } from "@shared/schema";
 
 interface Concept {
   id: string;
@@ -144,7 +145,7 @@ export default function ContentWriterV2() {
   const [, setLocation] = useLocation();
   const isMountedRef = useRef(true);
 
-  const productId = "content-writer-v2"; // TODO: Add to products table
+  const productId = PRODUCT_IDS.CONTENT_WRITER_V2;
 
   // Track mounted state to prevent state updates after unmount
   useEffect(() => {
