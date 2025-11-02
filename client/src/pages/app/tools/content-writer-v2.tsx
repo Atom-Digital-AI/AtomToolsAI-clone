@@ -395,6 +395,9 @@ export default function ContentWriterV2() {
   // Generate subtopics mutation
   const generateSubtopicsMutation = useMutation({
     mutationFn: async () => {
+      if (!sessionId) {
+        throw new Error("Session ID is required. Please start a session first.");
+      }
       const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics`, {
         objective,
         internalLinks: internalLinks.split(',').map(l => l.trim()).filter(Boolean),
@@ -412,6 +415,14 @@ export default function ContentWriterV2() {
       toast({
         title: "Subtopics Generated",
         description: "Select the subtopics to include in your article",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Error generating subtopics:", error);
+      toast({
+        title: "Error Generating Subtopics",
+        description: error?.message || "Failed to generate subtopics. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -572,6 +583,24 @@ export default function ContentWriterV2() {
   };
 
   const handleGenerateSubtopics = () => {
+    if (!sessionId) {
+      toast({
+        title: "Session Required",
+        description: "Please start a session first by generating concepts.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!selectedConcept) {
+      toast({
+        title: "Concept Required",
+        description: "Please select a concept first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     generateSubtopicsMutation.mutate();
   };
 
@@ -1006,7 +1035,7 @@ export default function ContentWriterV2() {
             {!hasGeneratedSubtopics && (
               <Button
                 onClick={handleGenerateSubtopics}
-                disabled={generateSubtopicsMutation.isPending}
+                disabled={generateSubtopicsMutation.isPending || !sessionId || !selectedConcept}
                 className="w-full"
                 data-testid="button-generate-subtopics"
               >
