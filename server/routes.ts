@@ -1577,7 +1577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Import utilities
-      const { validateUrl } = await import("./utils/url-validator");
+      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
       const { htmlToMarkdown } = await import("./utils/html-to-markdown");
       const axios = (await import("axios")).default;
 
@@ -1612,7 +1612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const { url, type } of urlsToProcess) {
         try {
           // Validate URL (security check)
-          const validatedUrl = await validateUrl(url);
+          const validatedUrl = await validateAndNormalizeUrl(url);
 
           // Fetch page content
           const response = await axios.get(validatedUrl, {
