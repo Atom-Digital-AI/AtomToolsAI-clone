@@ -129,7 +129,7 @@ function SignUpFormCard() {
 
   const signUpMutation = useMutation({
     mutationFn: async (data: SignUpFormData) => {
-      return await apiRequest("POST", "/api/auth/register", data);
+      return await apiRequest("POST", "/api/auth/signup", data);
     },
     onSuccess: () => {
       setShowSuccess(true);
