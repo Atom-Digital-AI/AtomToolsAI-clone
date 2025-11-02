@@ -79,7 +79,7 @@ function categorizeSinglePage(
     urlPath.includes('/tag/') ||
     urlPath.includes('/tags/');
   
-  if (!isBlogIndexOrCategory && categorized.blog_articles.length < 20 && blogKeywords.some(keyword => 
+  if (!isBlogIndexOrCategory && blogKeywords.some(keyword => 
     urlPath.includes(keyword) || title.includes(keyword)
   )) {
     categorized.blog_articles.push(page.url);
@@ -87,7 +87,7 @@ function categorizeSinglePage(
   }
 
   // Check if it's a service/product page
-  if (categorized.service_pages.length < 10 && serviceKeywords.some(keyword => 
+  if (serviceKeywords.some(keyword => 
     urlPath.includes(keyword) || title.includes(keyword)
   )) {
     categorized.service_pages.push(page.url);
@@ -291,7 +291,7 @@ export async function crawlWebsiteWithEarlyExit(
   }
 
   console.log(`Crawled ${crawledPages.length} pages from ${domain}`);
-  console.log(`Fields status: about=${!!categorized.about_page}, services=${categorized.service_pages.length}/10, blogs=${categorized.blog_articles.length}/20`);
+  console.log(`Fields status: about=${!!categorized.about_page}, services=${categorized.service_pages.length}, blogs=${categorized.blog_articles.length}`);
   
   return {
     ...categorized,
@@ -659,9 +659,7 @@ export async function categorizePages(pages: CrawledPage[], homepageUrl: string)
     if (!isBlogIndexOrCategory && blogKeywords.some(keyword => 
       urlPath.includes(keyword) || title.includes(keyword)
     )) {
-      if (categorized.blog_articles.length < 20) {
-        categorized.blog_articles.push(page.url);
-      }
+      categorized.blog_articles.push(page.url);
       continue;
     }
 
@@ -669,9 +667,7 @@ export async function categorizePages(pages: CrawledPage[], homepageUrl: string)
     if (serviceKeywords.some(keyword => 
       urlPath.includes(keyword) || title.includes(keyword)
     )) {
-      if (categorized.service_pages.length < 10) {
-        categorized.service_pages.push(page.url);
-      }
+      categorized.service_pages.push(page.url);
       continue;
     }
   }

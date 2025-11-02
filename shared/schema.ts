@@ -55,8 +55,8 @@ export interface TargetAudience {
 export interface BrandContextUrls {
   home_page?: string;
   about_page?: string;
-  service_pages?: string[]; // Up to 5 service/product pages
-  blog_articles?: string[]; // Up to 20 blog articles/resources
+  service_pages?: string[]; // Service/product pages
+  blog_articles?: string[]; // Blog articles/resources
 }
 
 export interface BrandGuidelineContent {
@@ -99,8 +99,8 @@ export const targetAudienceSchema = z.object({
 export const brandContextUrlsSchema = z.object({
   home_page: z.string().url().optional().or(z.literal('')),
   about_page: z.string().url().optional().or(z.literal('')),
-  service_pages: z.array(z.string().url()).max(5).optional(),
-  blog_articles: z.array(z.string().url()).max(20).optional(),
+  service_pages: z.array(z.string().url()).optional(),
+  blog_articles: z.array(z.string().url()).optional(),
 });
 
 export const brandGuidelineContentSchema = z.object({

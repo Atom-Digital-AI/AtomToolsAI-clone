@@ -1537,9 +1537,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   </div>
 
                   <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages (up to 10)</Label>
+                    <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages</Label>
                     <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-                      {[...(formData.context_urls?.service_pages || []), ""].slice(0, 10).map((url, index) => (
+                      {[...(formData.context_urls?.service_pages || []), ""].map((url, index) => (
                         <div key={index} className="flex gap-2">
                           <Input
                             data-testid={`input-context-service-page-${index}`}
@@ -1566,9 +1566,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   </div>
 
                   <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <Label className="text-gray-200 font-semibold text-sm">Blog Articles/Resources (up to 20)</Label>
+                    <Label className="text-gray-200 font-semibold text-sm">Blog Articles/Resources</Label>
                     <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-                      {[...(formData.context_urls?.blog_articles || []), ""].slice(0, 20).map((url, index) => (
+                      {[...(formData.context_urls?.blog_articles || []), ""].map((url, index) => (
                         <div key={index} className="flex gap-2">
                           <Input
                             data-testid={`input-context-blog-article-${index}`}
