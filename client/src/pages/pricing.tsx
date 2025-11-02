@@ -76,6 +76,12 @@ export default function Pricing() {
   const { data: packages, isLoading, error } = useQuery<PackageWithTiers[]>({
     queryKey: ["/api/packages"],
     staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (err) => {
+      console.error("Error fetching packages:", err);
+    },
+    onSuccess: (data) => {
+      console.log("Packages loaded:", data?.length || 0);
+    },
   });
 
   // Get user's current tier subscriptions
@@ -296,7 +302,15 @@ export default function Pricing() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <p className="text-gray-400">No pricing packages available at the moment.</p>
+              <p className="text-gray-400 mb-4">No pricing packages available at the moment.</p>
+              {error && (
+                <p className="text-red-400 text-sm mt-2">Error: {error instanceof Error ? error.message : String(error)}</p>
+              )}
+              {!isLoading && !error && (!packages || packages.length === 0) && (
+                <p className="text-gray-500 text-sm mt-2">
+                  Packages need to be created by an administrator. Please contact support if you need access.
+                </p>
+              )}
             </div>
           )}
 

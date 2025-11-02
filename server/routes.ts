@@ -1676,8 +1676,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/packages", async (req: any, res) => {
     try {
       const packages = await storage.getAllPackagesWithTiers();
+      console.log(`[API] /api/packages: Found ${packages.length} total packages`);
       // Filter to only active packages for public consumption
       const activePackages = packages.filter(pkg => pkg.isActive);
+      console.log(`[API] /api/packages: Returning ${activePackages.length} active packages`);
       res.json(activePackages);
     } catch (error) {
       console.error("Error fetching public packages:", error);
