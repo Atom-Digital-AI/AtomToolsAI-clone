@@ -31,13 +31,16 @@ function parseDatabaseUrl(url: string) {
     return null;
   }
   
+  // Decode the password in case it's URL-encoded in the DATABASE_URL
+  const decodedPassword = decodeURIComponent(password);
+  
   console.log(`Parsed DATABASE_URL: ${user}@${host}:${port}/${database.split('?')[0]}`);
   
   return {
     host,
     port: parseInt(port),
     user,
-    password, // Raw password, no encoding needed!
+    password: decodedPassword, // Decode URL-encoded password
     database: database.split('?')[0], // Remove query params
   };
 }
