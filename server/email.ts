@@ -13,9 +13,10 @@ export async function sendVerificationEmail(
   }
   
   // Get the base URL from environment or default to localhost
-  const baseUrl = process.env.REPLIT_DOMAIN 
-    ? `https://${process.env.REPLIT_DOMAIN}`
-    : 'http://localhost:5000';
+  const baseUrl = process.env.FRONTEND_URL 
+    || (process.env.REPLIT_DOMAIN ? `https://${process.env.REPLIT_DOMAIN}` : null)
+    || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null)
+    || 'http://localhost:5000';
   
   const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
   
