@@ -8,6 +8,11 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  // Validate that we have a trustworthy IP
+  validate: {
+    trustProxy: true,
+    xForwardedForHeader: true,
+  },
 });
 
 // Moderate rate limit for general API endpoints
@@ -17,6 +22,10 @@ export const apiLimiter = rateLimit({
   message: 'Too many requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: true,
+    xForwardedForHeader: true,
+  },
 });
 
 // Very strict for expensive AI operations
@@ -26,6 +35,10 @@ export const aiLimiter = rateLimit({
   message: 'AI request rate limit exceeded. Please wait before trying again.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: true,
+    xForwardedForHeader: true,
+  },
 });
 
 // Strict for signup to prevent abuse
@@ -35,4 +48,8 @@ export const signupLimiter = rateLimit({
   message: 'Too many accounts created from this IP. Please try again in an hour.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: true,
+    xForwardedForHeader: true,
+  },
 });

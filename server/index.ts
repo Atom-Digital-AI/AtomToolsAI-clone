@@ -10,7 +10,9 @@ import { apiLimiter } from "./rate-limit";
 const app = express();
 
 // Trust proxy - REQUIRED when behind Railway/load balancers
-app.set("trust proxy", true);
+// Set to 1 to trust only the first proxy (Railway's load balancer)
+// This prevents X-Forwarded-For spoofing attacks
+app.set("trust proxy", 1);
 
 // Security headers
 app.use(
