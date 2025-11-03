@@ -140,6 +140,7 @@ export default function ContentWriterV2() {
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
   const [showResumeBanner, setShowResumeBanner] = useState(false);
   const [incompleteThread, setIncompleteThread] = useState<LangGraphThread | null>(null);
+  const sessionCreatedAtRef = useRef<number | null>(null);
   
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
@@ -215,14 +216,26 @@ export default function ContentWriterV2() {
     : (sessionData as any)?.draft as Draft | undefined;
 
   // Handle approval states - automatically update stage when workflow pauses for approval
+  // Only auto-update if concepts exist (not for brand new sessions)
   useEffect(() => {
-    if (!currentStep) return;
+    if (!currentStep || !threadId) return;
+    
+    // Don't auto-update stage immediately after session creation (within 3 seconds)
+    // This prevents skipping the concepts stage if workflow moves quickly
+    const isNewSession = sessionCreatedAtRef.current && Date.now() - sessionCreatedAtRef.current < 3000;
+    if (isNewSession && stage === 'concepts') {
+      return; // Don't auto-advance during initial concepts stage
+    }
+    
+    // Only auto-advance if we already have concepts generated
+    const hasConcepts = concepts.length > 0;
     
     if (currentStep === 'awaitConceptApproval' || currentStep === 'concepts') {
       if (stage !== 'concepts') {
         setStage('concepts');
       }
-    } else if (currentStep === 'awaitSubtopicApproval' || currentStep === 'subtopics') {
+    } else if ((currentStep === 'awaitSubtopicApproval' || currentStep === 'subtopics') && hasConcepts) {
+      // Only advance to subtopics if concepts are already generated and we're not in a new session
       if (stage !== 'subtopics') {
         setStage('subtopics');
       }
@@ -231,7 +244,7 @@ export default function ContentWriterV2() {
         setStage('article');
       }
     }
-  }, [currentStep, stage]);
+  }, [currentStep, stage, threadId, concepts.length]);
 
   // Reset generateSubtopicsMutation state if stuck in pending and prerequisites are missing
   useEffect(() => {
@@ -271,6 +284,10 @@ export default function ContentWriterV2() {
       }
       setThreadId(data.threadId);
       setSessionId(data.sessionId);
+      // Track when session was created to prevent immediate stage auto-advancement
+      sessionCreatedAtRef.current = Date.now();
+      // Always start at concepts stage for new sessions
+      // The useEffect will handle advancing once concepts are loaded and workflow progresses
       setStage('concepts');
       toast({
         title: "Concepts Generated",
@@ -793,6 +810,7 @@ export default function ContentWriterV2() {
                 onClick={() => {
                   setStage('topic');
                   setSessionId(null);
+                  sessionCreatedAtRef.current = null;
                 }}
                 data-testid="button-back-to-topic"
               >
@@ -1414,6 +1432,7 @@ export default function ContentWriterV2() {
           setTopic("");
           setBrandGuidelines('');
           setSelectedConcept(null);
+          sessionCreatedAtRef.current = null;
           setSelectedSubtopics(new Set());
           setObjective("");
           setTargetLength("1000");
