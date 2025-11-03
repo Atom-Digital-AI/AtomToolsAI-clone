@@ -9,14 +9,14 @@
  * - Root cause investigation for 403 Forbidden errors
  * 
  * When LANGCHAIN_API_KEY is set:
- * - Validates API key format (should start with 'ls__')
+ * - Validates API key format (should start with 'ls__' or 'lsv2_')
  * - Tests API key by calling LangSmith projects endpoint
  * - Verifies project exists in LangSmith account
  * - Logs comprehensive diagnostic information
  * - Captures and logs tracing errors with full context
  * 
  * Common issues diagnosed:
- * - Invalid API key format
+ * - Invalid API key format (must start with 'ls__' or 'lsv2_')
  * - Project doesn't exist (default: 'atomtools-rag')
  * - API key lacks permissions
  * - Expired or invalid API key
@@ -57,11 +57,11 @@ async function validateLangSmithKey(): Promise<ValidationResult> {
     apiKeyFormat: apiKey.substring(0, Math.min(10, apiKey.length)),
   };
 
-  // Check format - LangSmith keys typically start with ls__
-  if (!apiKey.startsWith('ls__')) {
+  // Check format - LangSmith keys start with ls__ (legacy) or lsv2_ (v2 format including project tokens)
+  if (!apiKey.startsWith('ls__') && !apiKey.startsWith('lsv2_')) {
     return { 
       valid: false, 
-      error: `Invalid API key format. LangSmith keys typically start with 'ls__'. Detected format: ${apiKey.substring(0, 10)}...`,
+      error: `Invalid API key format. LangSmith keys should start with 'ls__' (legacy) or 'lsv2_' (v2 format). Detected format: ${apiKey.substring(0, 10)}...`,
       details
     };
   }
