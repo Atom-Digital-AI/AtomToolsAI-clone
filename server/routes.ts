@@ -3288,6 +3288,14 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
         updates.selectedSubtopicIds = selectedSubtopicIds;
       }
 
+      // Update session in database if sessionId exists
+      if (thread.sessionId && selectedConceptId !== undefined) {
+        await storage.updateContentWriterSession(thread.sessionId, userId, {
+          selectedConceptId: selectedConceptId,
+          status: 'subtopics'
+        });
+      }
+
       // Resume LangGraph workflow
       const result = await resumeContentWriterGraph(
         threadId,
