@@ -20,7 +20,19 @@ export async function awaitSubtopicApproval(state: ContentWriterState): Promise<
     );
     
     if (invalidSubtopics.length > 0) {
-      throw new Error(`Selected subtopic IDs not found: ${invalidSubtopics.join(', ')}`);
+      // Clear invalid subtopic IDs and interrupt again with current subtopics
+      // This prevents workflow failure when subtopics are regenerated
+      console.warn(`Selected subtopic IDs not found: ${invalidSubtopics.join(', ')}. Available IDs: ${subtopics.map(s => s.id).join(', ')}`);
+      
+      await interrupt({
+        message: "Some previously selected subtopics are no longer available. Please select subtopics from the updated list.",
+        subtopics: subtopics,
+        step: "awaitSubtopicApproval"
+      });
+
+      return {
+        selectedSubtopicIds: [], // Clear invalid selections
+      };
     }
 
     return {};
