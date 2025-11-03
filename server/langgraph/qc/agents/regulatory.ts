@@ -1,13 +1,10 @@
-import { getOpenAIClient } from "../../../utils/openai-client";
+import { openai } from "../../../utils/openai-client";
 import { nanoid } from "nanoid";
 import type { QCState, QCAgentReport } from "../types";
 import { loggedOpenAICall } from "../../../utils/ai-logger";
 import { storage } from "../../../storage";
 import { formatRegulatoryGuidelines } from "../../../utils/format-guidelines";
 import type { QCChange, QCIssue } from "@shared/schema";
-
-// Lazy-loaded OpenAI client
-const getOpenai = () => getOpenAIClient();
 
 /**
  * Regulatory Compliance Agent - Ensures content complies with regulatory requirements

@@ -1,11 +1,8 @@
-import { getOpenAIClient } from "../../../utils/openai-client";
+import { openai } from "../../../utils/openai-client";
 import { nanoid } from "nanoid";
 import type { QCState, QCAgentReport } from "../types";
 import { loggedOpenAICall } from "../../../utils/ai-logger";
 import type { QCChange, QCIssue } from "@shared/schema";
-
-// Lazy-loaded OpenAI client
-const getOpenai = () => getOpenAIClient();
 
 /**
  * Fact Checker Agent - Verifies factual accuracy and logical consistency

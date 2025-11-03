@@ -9,7 +9,6 @@ import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { db } from "./db";
-import OpenAI from "openai";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { sendVerificationEmail } from "./email";
@@ -27,9 +26,7 @@ import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } fr
 import { registerSocialContentRoutes } from "./social-content-routes";
 import { authLimiter, signupLimiter, aiLimiter } from "./rate-limit";
 import { validateURL } from "./utils/sanitize";
-
-// Lazy-loaded OpenAI client - use getOpenAIClient() when needed
-const getOpenai = () => getOpenAIClient();
+import { openai } from "./utils/openai-client";
 
 // Utility functions from original Python app
 async function fetchUrlContent(url: string): Promise<string | null> {

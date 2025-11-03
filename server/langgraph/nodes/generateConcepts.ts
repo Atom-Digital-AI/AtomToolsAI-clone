@@ -1,13 +1,9 @@
-import { getOpenAIClient } from "../../utils/openai-client";
+import { openai } from "../../utils/openai-client";
 import { nanoid } from "nanoid";
 import { ContentWriterState } from "../types";
 import { loggedOpenAICall } from "../../utils/ai-logger";
 import { ragService } from "../../utils/rag-service";
 import { getAntiFabricationInstructions } from "../../utils/language-helpers";
-
-// Lazy-loaded OpenAI client
-const getOpenai = () => getOpenAIClient();
-// removed
 
 function stripMarkdownCodeBlocks(text: string): string {
   return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();

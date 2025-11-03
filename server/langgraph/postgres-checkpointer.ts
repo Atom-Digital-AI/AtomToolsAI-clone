@@ -182,17 +182,37 @@ export class PostgresCheckpointer extends BaseCheckpointSaver {
     }
 
     try {
-      // Validate state before saving
+      // Validate state before saving (only if state appears complete)
       if (checkpoint.channel_values) {
-        try {
-          contentWriterStateSchema.parse(checkpoint.channel_values);
-        } catch (validationError) {
-          console.error("State validation failed before saving checkpoint:", {
-            threadId,
-            error: validationError instanceof Error ? validationError.message : String(validationError)
-          });
-          // Don't crash - log the error but still save the checkpoint
-          // This allows the workflow to continue and the issue can be debugged later
+        const state = checkpoint.channel_values as any;
+        
+        // Check if state has all required fields before validating
+        // Required fields: topic, userId, concepts, subtopics, selectedSubtopicIds, errors, metadata
+        const hasRequiredFields = 
+          typeof state.topic === 'string' &&
+          typeof state.userId === 'string' &&
+          Array.isArray(state.concepts) &&
+          Array.isArray(state.subtopics) &&
+          Array.isArray(state.selectedSubtopicIds) &&
+          Array.isArray(state.errors) &&
+          typeof state.metadata === 'object' &&
+          state.metadata !== null;
+        
+        if (hasRequiredFields) {
+          try {
+            contentWriterStateSchema.parse(state);
+          } catch (validationError) {
+            console.error("State validation failed before saving checkpoint:", {
+              threadId,
+              error: validationError instanceof Error ? validationError.message : String(validationError)
+            });
+            // Don't crash - log the error but still save the checkpoint
+            // This allows the workflow to continue and the issue can be debugged later
+          }
+        } else {
+          // State is partial (missing required fields) - skip validation
+          // LangGraph will merge the partial state with the full state properly
+          // This is expected when nodes return partial updates
         }
       }
 

@@ -1,10 +1,6 @@
-import { getOpenAIClient } from "../../utils/openai-client";
+import { openai } from "../../utils/openai-client";
 import { ContentWriterState } from "../types";
 import { loggedOpenAICall } from "../../utils/ai-logger";
-
-// Lazy-loaded OpenAI client
-const getOpenai = () => getOpenAIClient();
-// removed
 
 export async function verifyFacts(state: ContentWriterState): Promise<Partial<ContentWriterState>> {
   try {
