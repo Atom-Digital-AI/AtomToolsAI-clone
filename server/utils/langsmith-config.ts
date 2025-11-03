@@ -35,6 +35,7 @@ interface ValidationResult {
     availableProjects?: string[];
     responseStatus?: number;
     responseBody?: string;
+    isProjectToken?: boolean;
   };
 }
 
@@ -66,6 +67,39 @@ async function validateLangSmithKey(): Promise<ValidationResult> {
     };
   }
 
+  const isProjectToken = apiKey.startsWith('lsv2_pt_');
+  
+  // Project tokens (lsv2_pt_*) are scoped to a specific project and cannot access the projects endpoint
+  // They can only write traces to their assigned project.
+  // We can't fully validate them without actually creating a trace (which LangChain does),
+  // so we'll validate format and project name configuration only.
+  // Actual validation happens when traces are sent - if there's an error, we diagnose it in the error handler.
+  if (isProjectToken) {
+    const projectName = process.env.LANGCHAIN_PROJECT || "atomtools-rag";
+    if (!projectName) {
+      return {
+        valid: false,
+        error: "Project token detected but LANGCHAIN_PROJECT is not set. Project tokens require a project name.",
+        details: {
+          ...details,
+          isProjectToken: true,
+        }
+      };
+    }
+    
+    // For project tokens, we can't fully validate without creating a trace
+    // But we can check format and that project name is set
+    // If the token is invalid or lacks permissions, the error handler will diagnose it
+    return {
+      valid: true, // Assume valid - actual validation happens when traces are sent
+      details: {
+        ...details,
+        isProjectToken: true,
+        projectExists: true, // Assumed - will fail at trace time if invalid
+      }
+    };
+  }
+
   try {
     // Create timeout signal (with fallback for older Node.js versions)
     let timeoutSignal: AbortSignal;
@@ -78,7 +112,7 @@ async function validateLangSmithKey(): Promise<ValidationResult> {
       timeoutSignal = controller.signal;
     }
 
-    // Test API key by calling LangSmith projects endpoint
+    // Test API key by calling LangSmith projects endpoint (only for regular API keys)
     const response = await fetch('https://api.smith.langchain.com/api/v1/projects', {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -92,6 +126,19 @@ async function validateLangSmithKey(): Promise<ValidationResult> {
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unable to read error response');
       details.responseBody = errorText;
+      
+      // 404 could mean endpoint doesn't exist or key doesn't have access
+      // 401/403 means invalid key or insufficient permissions
+      if (response.status === 404) {
+        return {
+          valid: false,
+          error: `Projects endpoint returned 404. The API key may not have permission to list projects, or the endpoint may have changed.`,
+          details: {
+            ...details,
+            responseBody: errorText.substring(0, 500),
+          }
+        };
+      }
       
       return { 
         valid: false, 
@@ -161,6 +208,7 @@ function logLangChainDiagnostics() {
 
 /**
  * Captures and logs LangChain tracing errors with full context
+ * Now also attempts to diagnose the root cause
  */
 function setupLangChainErrorCapture() {
   // Add error listener for LangChain tracing errors
@@ -173,16 +221,49 @@ function setupLangChainErrorCapture() {
          errorStr.includes('langsmith') ||
          (errorStr.includes('403') && errorStr.includes('Forbidden'))) &&
         errorStr.includes('Failed to')) {
+      
+      const apiKey = process.env.LANGCHAIN_API_KEY;
+      const projectName = process.env.LANGCHAIN_PROJECT || "atomtools-rag";
+      
       console.error('⚠️  LangChain Tracing Error Detected:');
       console.error('Error:', reason);
       if (reason instanceof Error) {
-        console.error('Stack:', reason.stack);
-        // Log error name and message separately for better debugging
         console.error(`Error Name: ${reason.name}`);
         console.error(`Error Message: ${reason.message}`);
+        
+        // Diagnose 403 errors specifically
+        if (errorStr.includes('403') && apiKey) {
+          const isProjectToken = apiKey.startsWith('lsv2_pt_');
+          console.error('');
+          console.error('🔍 Root Cause Analysis:');
+          console.error(`   API Key Type: ${isProjectToken ? 'Project Token (lsv2_pt_*)' : 'Regular API Key'}`);
+          console.error(`   Project Name: ${projectName}`);
+          console.error('');
+          console.error('   Possible causes:');
+          if (isProjectToken) {
+            console.error('   1. Project token does not have write permission for the specified project');
+            console.error('   2. Project name does not match the token\'s assigned project');
+            console.error('   3. Project does not exist - tokens cannot create projects');
+          } else {
+            console.error('   1. API key does not have permission to write traces');
+            console.error('   2. Project does not exist and cannot be created automatically');
+            console.error('   3. API key is invalid or expired');
+          }
+          console.error('');
+          console.error('   Solution:');
+          if (isProjectToken) {
+            console.error('   - Verify the project name matches the token\'s assigned project');
+            console.error('   - Ensure the project exists in your LangSmith account');
+            console.error('   - Check that the token has write permissions');
+          } else {
+            console.error('   - Verify the project exists in LangSmith dashboard');
+            console.error('   - Create the project if it doesn\'t exist');
+            console.error('   - Ensure the API key has write permissions');
+          }
+        }
       }
-      console.error('This is a non-critical tracing error. The application will continue to function normally.');
-      console.error('To diagnose: Check LangSmith API key validity, project name, and permissions.');
+      console.error('');
+      console.error('This error does not affect application functionality, but tracing will not work.');
     }
   });
 }

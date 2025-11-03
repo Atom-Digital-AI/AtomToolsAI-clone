@@ -20,43 +20,47 @@ const ContentWriterAnnotation = Annotation.Root({
   userId: Annotation<string>(),
   sessionId: Annotation<string | undefined>(),
   threadId: Annotation<string | undefined>(),
-  
-  concepts: Annotation<ContentWriterState['concepts']>({
+
+  concepts: Annotation<ContentWriterState["concepts"]>({
     reducer: (existing, update) => update ?? existing ?? [],
   }),
   selectedConceptId: Annotation<string | undefined>(),
-  
-  subtopics: Annotation<ContentWriterState['subtopics']>({
+
+  subtopics: Annotation<ContentWriterState["subtopics"]>({
     reducer: (existing, update) => update ?? existing ?? [],
   }),
   selectedSubtopicIds: Annotation<string[]>({
     reducer: (existing, update) => update ?? existing ?? [],
   }),
-  
-  articleDraft: Annotation<ContentWriterState['articleDraft'] | undefined>(),
-  
+
+  articleDraft: Annotation<ContentWriterState["articleDraft"] | undefined>(),
+
   objective: Annotation<string | undefined>(),
   targetLength: Annotation<number | undefined>(),
   toneOfVoice: Annotation<string | undefined>(),
   language: Annotation<string | undefined>(),
   internalLinks: Annotation<string[] | undefined>(),
   useBrandGuidelines: Annotation<boolean | undefined>(),
-  selectedTargetAudiences: Annotation<"all" | "none" | number[] | null | undefined>(),
-  styleMatchingMethod: Annotation<'continuous' | 'end-rewrite' | undefined>(),
+  selectedTargetAudiences: Annotation<
+    "all" | "none" | number[] | null | undefined
+  >(),
+  styleMatchingMethod: Annotation<"continuous" | "end-rewrite" | undefined>(),
   matchStyle: Annotation<boolean | undefined>(),
-  
+
   brandScore: Annotation<number | undefined>(),
   factScore: Annotation<number | undefined>(),
-  
-  errors: Annotation<ContentWriterState['errors']>({
+
+  errors: Annotation<ContentWriterState["errors"]>({
     reducer: (existing, update) => [...(existing ?? []), ...(update ?? [])],
   }),
-  
-  metadata: Annotation<ContentWriterState['metadata']>({
+
+  metadata: Annotation<ContentWriterState["metadata"]>({
     reducer: (existing, update) => ({ ...(existing ?? {}), ...(update ?? {}) }),
   }),
-  
-  status: Annotation<'pending' | 'processing' | 'completed' | 'failed' | undefined>(),
+
+  status: Annotation<
+    "pending" | "processing" | "completed" | "failed" | undefined
+  >(),
 });
 
 function createContentWriterGraph() {
@@ -79,42 +83,46 @@ function createContentWriterGraph() {
         },
       };
     }
-    
+
     // Get user's QC configuration
     const qcConfig = await getQCConfig(
       state.userId,
       state.guidelineProfileId,
-      'content-writer'
+      "content-writer"
     );
-    
+
     if (!qcConfig.enabled || qcConfig.enabledAgents.length === 0) {
       return {
         metadata: {
           ...state.metadata,
           qcEnabled: false,
-          currentStep: 'article',
+          currentStep: "article",
         },
       };
     }
-    
+
     try {
       // Execute QC subgraph
-      const qcResult = await executeQCSubgraph({
-        content: state.articleDraft.finalArticle,
-        contentType: 'markdown',
-        userId: state.userId,
-        guidelineProfileId: state.guidelineProfileId,
-        enabledAgents: qcConfig.enabledAgents as any[],
-        autoApplyThreshold: qcConfig.autoApplyThreshold,
-      }, {
-        userId: state.userId,
-        threadId: state.threadId,
-      });
-      
+      const qcResult = await executeQCSubgraph(
+        {
+          content: state.articleDraft.finalArticle,
+          contentType: "markdown",
+          userId: state.userId,
+          guidelineProfileId: state.guidelineProfileId,
+          enabledAgents: qcConfig.enabledAgents as any[],
+          autoApplyThreshold: qcConfig.autoApplyThreshold,
+        },
+        {
+          userId: state.userId,
+          threadId: state.threadId,
+        }
+      );
+
       // Update article with QC changes (if any were applied)
-      const updatedArticle = qcResult.processedContent || state.articleDraft.finalArticle;
+      const updatedArticle =
+        qcResult.processedContent || state.articleDraft.finalArticle;
       const hasChanges = updatedArticle !== state.articleDraft.finalArticle;
-      
+
       return {
         articleDraft: {
           ...state.articleDraft,
@@ -127,7 +135,7 @@ function createContentWriterGraph() {
         },
         metadata: {
           ...state.metadata,
-          currentStep: 'qc',
+          currentStep: "qc",
           qcEnabled: true,
           qcReports: {
             proofreader: qcResult.proofreaderReport,
@@ -146,7 +154,7 @@ function createContentWriterGraph() {
         errors: [
           ...state.errors,
           {
-            step: 'qualityControl',
+            step: "qualityControl",
             message: error instanceof Error ? error.message : String(error),
             timestamp: new Date().toISOString(),
           },
@@ -163,7 +171,7 @@ function createContentWriterGraph() {
   workflow.addNode("verifyFacts", verifyFacts as any);
   workflow.addNode("qualityDecision", async (state: ContentWriterState) => {
     const decision = shouldRegenerate(state);
-    
+
     if (decision === "regenerate") {
       const currentCount = state.metadata?.regenerationCount ?? 0;
       return {
@@ -182,7 +190,7 @@ function createContentWriterGraph() {
         },
       };
     }
-    
+
     return {
       metadata: {
         ...state.metadata,
@@ -192,18 +200,66 @@ function createContentWriterGraph() {
   });
 
   (workflow as any).setEntryPoint("generateConcepts");
-  
+
   (workflow as any).addEdge("generateConcepts", "setAwaitConceptApproval");
   (workflow as any).addEdge("setAwaitConceptApproval", "awaitConceptApproval");
-  (workflow as any).addEdge("awaitConceptApproval", "generateSubtopics");
+  
+  // Conditional edge: only proceed if valid concept is selected
+  (workflow as any).addConditionalEdges(
+    "awaitConceptApproval",
+    (state: ContentWriterState) => {
+      const { selectedConceptId, concepts } = state;
+      
+      // If no concept selected or concept doesn't exist in current list, loop back
+      if (!selectedConceptId || !concepts.find(c => c.id === selectedConceptId)) {
+        return "waiting";
+      }
+      
+      return "proceed";
+    },
+    {
+      waiting: "awaitConceptApproval", // Loop back to wait for valid selection
+      proceed: "generateSubtopics",
+    }
+  );
+  
   (workflow as any).addEdge("generateSubtopics", "setAwaitSubtopicApproval");
-  (workflow as any).addEdge("setAwaitSubtopicApproval", "awaitSubtopicApproval");
-  (workflow as any).addEdge("awaitSubtopicApproval", "generateArticle");
+  (workflow as any).addEdge(
+    "setAwaitSubtopicApproval",
+    "awaitSubtopicApproval"
+  );
+  
+  // Conditional edge: only proceed if valid subtopics are selected
+  (workflow as any).addConditionalEdges(
+    "awaitSubtopicApproval",
+    (state: ContentWriterState) => {
+      const { selectedSubtopicIds, subtopics } = state;
+      
+      // If no subtopics selected or any are invalid, loop back
+      if (!selectedSubtopicIds || selectedSubtopicIds.length === 0) {
+        return "waiting";
+      }
+      
+      const invalidSubtopics = selectedSubtopicIds.filter(
+        id => !subtopics.find(s => s.id === id)
+      );
+      
+      if (invalidSubtopics.length > 0) {
+        return "waiting";
+      }
+      
+      return "proceed";
+    },
+    {
+      waiting: "awaitSubtopicApproval", // Loop back to wait for valid selection
+      proceed: "generateArticle",
+    }
+  );
   (workflow as any).addEdge("generateArticle", "qualityControl");
   (workflow as any).addEdge("qualityControl", "checkBrandMatch");
   (workflow as any).addEdge("checkBrandMatch", "verifyFacts");
   (workflow as any).addEdge("verifyFacts", "qualityDecision");
-  
+
   (workflow as any).addConditionalEdges(
     "qualityDecision",
     (state: ContentWriterState) => {
@@ -229,7 +285,7 @@ export async function executeContentWriterGraph(
 ): Promise<{ threadId: string; state: ContentWriterState }> {
   try {
     const threadId = config.threadId || nanoid();
-    
+
     const checkpointer = new PostgresCheckpointer({
       userId: config.userId,
       sessionId: config.sessionId,
@@ -239,7 +295,7 @@ export async function executeContentWriterGraph(
     const graph = workflow.compile({ checkpointer });
 
     const fullInitialState: ContentWriterState = {
-      topic: initialState.topic || '',
+      topic: initialState.topic || "",
       userId: config.userId,
       sessionId: config.sessionId,
       threadId,
@@ -256,7 +312,7 @@ export async function executeContentWriterGraph(
       internalLinks: initialState.internalLinks,
       useBrandGuidelines: initialState.useBrandGuidelines,
       selectedTargetAudiences: initialState.selectedTargetAudiences,
-      styleMatchingMethod: initialState.styleMatchingMethod || 'continuous',
+      styleMatchingMethod: initialState.styleMatchingMethod || "continuous",
       matchStyle: initialState.matchStyle,
       brandScore: initialState.brandScore,
       factScore: initialState.factScore,
@@ -265,7 +321,7 @@ export async function executeContentWriterGraph(
         ...initialState.metadata,
         startedAt: initialState.metadata?.startedAt || new Date().toISOString(),
       },
-      status: initialState.status || 'pending',
+      status: initialState.status || "pending",
     };
 
     const result = await graph.invoke(fullInitialState, {
@@ -311,9 +367,10 @@ export async function resumeContentWriterGraph(
       throw new Error(`No checkpoint found for thread ${threadId}`);
     }
 
-    const currentState = checkpoint.checkpoint.channel_values as unknown as ContentWriterState;
-    
-    const updatedState = updates 
+    const currentState = checkpoint.checkpoint
+      .channel_values as unknown as ContentWriterState;
+
+    const updatedState = updates
       ? { ...currentState, ...updates }
       : currentState;
 
@@ -356,7 +413,8 @@ export async function getGraphState(
       return null;
     }
 
-    return checkpoint.checkpoint.channel_values as unknown as ContentWriterState;
+    return checkpoint.checkpoint
+      .channel_values as unknown as ContentWriterState;
   } catch (error) {
     console.error("Error getting graph state:", error);
     return null;
