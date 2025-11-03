@@ -140,6 +140,7 @@ export default function ContentWriterV2() {
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
   const [showResumeBanner, setShowResumeBanner] = useState(false);
   const [incompleteThread, setIncompleteThread] = useState<LangGraphThread | null>(null);
+  const [selectingConceptId, setSelectingConceptId] = useState<string | null>(null);
   const sessionCreatedAtRef = useRef<number | null>(null);
   
   const { toast } = useToast();
@@ -253,6 +254,16 @@ export default function ContentWriterV2() {
     }
   }, [stage, sessionId, selectedConcept]);
 
+  // Sync selectedConcept from session if it exists but isn't in local state
+  useEffect(() => {
+    if (session?.selectedConceptId && !selectedConcept && concepts.length > 0) {
+      const conceptFromSession = concepts.find(c => c.id === session.selectedConceptId);
+      if (conceptFromSession) {
+        setSelectedConcept(conceptFromSession);
+      }
+    }
+  }, [session?.selectedConceptId, concepts, selectedConcept]);
+
   // Create session mutation - Using LangGraph API
   const createSessionMutation = useMutation({
     mutationFn: async () => {
@@ -334,9 +345,14 @@ export default function ContentWriterV2() {
       
       // Update stage based on what was resumed
       if (variables.selectedConceptId) {
+        // Ensure selectedConcept state is set
+        const concept = concepts.find(c => c.id === variables.selectedConceptId);
+        if (concept) {
+          setSelectedConcept(concept);
+        }
         setStage('subtopics');
         toast({
-          title: "Workflow Resumed",
+          title: "Concept Selected",
           description: "Continuing with subtopic selection",
         });
       } else if (variables.selectedSubtopicIds) {
@@ -349,6 +365,8 @@ export default function ContentWriterV2() {
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/langgraph/content-writer/status', data.threadId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      setSelectingConceptId(null);
     },
     onError: (error: any) => {
       console.error("Resume workflow error:", error);
@@ -357,6 +375,7 @@ export default function ContentWriterV2() {
         description: error?.message || "Failed to resume workflow",
         variant: "destructive",
       });
+      setSelectingConceptId(null);
     },
   });
 
@@ -414,6 +433,7 @@ export default function ContentWriterV2() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
       setStage('subtopics');
+      setSelectingConceptId(null);
     },
   });
 
@@ -595,6 +615,7 @@ export default function ContentWriterV2() {
 
   const handleChooseConcept = (concept: Concept) => {
     setSelectedConcept(concept);
+    setSelectingConceptId(concept.id);
     
     if (threadId) {
       // Use LangGraph resume with selected concept
@@ -609,13 +630,14 @@ export default function ContentWriterV2() {
   };
 
   const getDisabledReason = (): string | null => {
-    if (!sessionId && !selectedConcept) {
+    const hasSelectedConcept = selectedConcept || (session?.selectedConceptId && concepts.find(c => c.id === session.selectedConceptId));
+    if (!sessionId && !hasSelectedConcept) {
       return "Please start a session first by generating concepts and select a concept";
     }
     if (!sessionId) {
       return "Please start a session first by generating concepts";
     }
-    if (!selectedConcept) {
+    if (!hasSelectedConcept) {
       return "Please select a concept first";
     }
     return null;
@@ -631,13 +653,25 @@ export default function ContentWriterV2() {
       return;
     }
     
-    if (!selectedConcept) {
+    // Check both local state and session state for selected concept
+    const selectedConceptId = selectedConcept?.id || session?.selectedConceptId;
+    const hasSelectedConcept = selectedConcept || (session?.selectedConceptId && concepts.find(c => c.id === session.selectedConceptId));
+    
+    if (!hasSelectedConcept || !selectedConceptId) {
       toast({
         title: "Concept Required",
         description: "Please select a concept first.",
         variant: "destructive",
       });
       return;
+    }
+    
+    // Ensure selectedConcept state is set if it's in the session but not in local state
+    if (!selectedConcept && session?.selectedConceptId) {
+      const conceptFromSession = concepts.find(c => c.id === session.selectedConceptId);
+      if (conceptFromSession) {
+        setSelectedConcept(conceptFromSession);
+      }
     }
     
     generateSubtopicsMutation.mutate();
@@ -911,11 +945,20 @@ export default function ContentWriterV2() {
                 </div>
                 <Button
                   onClick={() => handleChooseConcept(concept)}
-                  disabled={chooseConceptMutation.isPending}
+                  disabled={selectingConceptId === concept.id || chooseConceptMutation.isPending || resumeWorkflowMutation.isPending}
                   data-testid={`button-choose-concept-${concept.id}`}
                 >
-                  <Check className="w-4 h-4 mr-2" />
-                  Choose This
+                  {selectingConceptId === concept.id || (chooseConceptMutation.isPending || resumeWorkflowMutation.isPending) ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Selecting...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Choose This
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -1079,11 +1122,11 @@ export default function ContentWriterV2() {
                     <div className="w-full">
                       <Button
                         onClick={handleGenerateSubtopics}
-                        disabled={generateSubtopicsMutation.isPending || !sessionId || !selectedConcept}
+                        disabled={generateSubtopicsMutation.isPending || !sessionId || (!selectedConcept && !session?.selectedConceptId)}
                         className="w-full"
                         data-testid="button-generate-subtopics"
                       >
-                        {generateSubtopicsMutation.isPending && sessionId && selectedConcept ? (
+                        {generateSubtopicsMutation.isPending && sessionId && (selectedConcept || session?.selectedConceptId) ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Generating Subtopics...
@@ -1097,7 +1140,7 @@ export default function ContentWriterV2() {
                       </Button>
                     </div>
                   </TooltipTrigger>
-                  {(!sessionId || !selectedConcept) && getDisabledReason() && (
+                  {(!sessionId || (!selectedConcept && !session?.selectedConceptId)) && getDisabledReason() && (
                     <TooltipContent side="top">
                       <p>{getDisabledReason()}</p>
                     </TooltipContent>
