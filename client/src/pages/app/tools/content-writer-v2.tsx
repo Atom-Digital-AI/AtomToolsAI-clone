@@ -233,6 +233,13 @@ export default function ContentWriterV2() {
     }
   }, [currentStep, stage]);
 
+  // Reset generateSubtopicsMutation state if stuck in pending and prerequisites are missing
+  useEffect(() => {
+    if (stage === 'subtopics' && generateSubtopicsMutation.isPending && (!sessionId || !selectedConcept)) {
+      generateSubtopicsMutation.reset();
+    }
+  }, [stage, sessionId, selectedConcept]);
+
   // Create session mutation - Using LangGraph API
   const createSessionMutation = useMutation({
     mutationFn: async () => {
@@ -426,6 +433,7 @@ export default function ContentWriterV2() {
         variant: "destructive",
       });
     },
+    retry: false,
   });
 
   // Request more subtopics mutation
@@ -922,7 +930,7 @@ export default function ContentWriterV2() {
               <CardTitle>Configure Your Article</CardTitle>
             </div>
             <CardDescription>
-              Selected Concept: {selectedConcept?.title || concepts.find(c => c.id === session?.selectedConceptId)?.title}
+              Selected Concept: {selectedConcept?.title || concepts.find(c => c.id === session?.selectedConceptId)?.title || "(required)"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1048,30 +1056,32 @@ export default function ContentWriterV2() {
 
             {!hasGeneratedSubtopics && (
               <TooltipProvider>
-                <Tooltip>
+                <Tooltip delayDuration={200}>
                   <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleGenerateSubtopics}
-                      disabled={generateSubtopicsMutation.isPending || !sessionId || !selectedConcept}
-                      className="w-full"
-                      data-testid="button-generate-subtopics"
-                    >
-                      {generateSubtopicsMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Generating Subtopics...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Generate Subtopics
-                        </>
-                      )}
-                    </Button>
+                    <div className="w-full">
+                      <Button
+                        onClick={handleGenerateSubtopics}
+                        disabled={generateSubtopicsMutation.isPending || !sessionId || !selectedConcept}
+                        className="w-full"
+                        data-testid="button-generate-subtopics"
+                      >
+                        {generateSubtopicsMutation.isPending && sessionId && selectedConcept ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating Subtopics...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Generate Subtopics
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </TooltipTrigger>
-                  {!generateSubtopicsMutation.isPending && (!sessionId || !selectedConcept) && getDisabledReason() && (
-                    <TooltipContent>
-                      {getDisabledReason()}
+                  {(!sessionId || !selectedConcept) && getDisabledReason() && (
+                    <TooltipContent side="top">
+                      <p>{getDisabledReason()}</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
