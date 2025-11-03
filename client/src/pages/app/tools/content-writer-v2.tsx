@@ -23,6 +23,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { PRODUCT_IDS } from "@shared/schema";
 
 interface Concept {
@@ -582,6 +583,19 @@ export default function ContentWriterV2() {
     }
   };
 
+  const getDisabledReason = (): string | null => {
+    if (!sessionId && !selectedConcept) {
+      return "Please start a session first by generating concepts and select a concept";
+    }
+    if (!sessionId) {
+      return "Please start a session first by generating concepts";
+    }
+    if (!selectedConcept) {
+      return "Please select a concept first";
+    }
+    return null;
+  };
+
   const handleGenerateSubtopics = () => {
     if (!sessionId) {
       toast({
@@ -1033,24 +1047,35 @@ export default function ContentWriterV2() {
             </div>
 
             {!hasGeneratedSubtopics && (
-              <Button
-                onClick={handleGenerateSubtopics}
-                disabled={generateSubtopicsMutation.isPending || !sessionId || !selectedConcept}
-                className="w-full"
-                data-testid="button-generate-subtopics"
-              >
-                {generateSubtopicsMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating Subtopics...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Subtopics
-                  </>
-                )}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleGenerateSubtopics}
+                      disabled={generateSubtopicsMutation.isPending || !sessionId || !selectedConcept}
+                      className="w-full"
+                      data-testid="button-generate-subtopics"
+                    >
+                      {generateSubtopicsMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating Subtopics...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Generate Subtopics
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  {!generateSubtopicsMutation.isPending && (!sessionId || !selectedConcept) && getDisabledReason() && (
+                    <TooltipContent>
+                      {getDisabledReason()}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             )}
           </CardContent>
         </Card>
