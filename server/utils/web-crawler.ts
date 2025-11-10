@@ -25,6 +25,9 @@ interface CategorizedPages {
   about_page: string;
   service_pages: string[];
   blog_articles: string[];
+  legals: string[];
+  company_pages: string[];
+  knowledge_base: string[];
 }
 
 interface CategorizedPagesWithCache extends CategorizedPages {
@@ -66,6 +69,36 @@ function categorizeSinglePage(
 
   // Skip if already set as about page
   if (page.url === categorized.about_page) {
+    return;
+  }
+
+  // Check if it's a legal page
+  const legalKeywords = ['privacy', 'terms', 'legal', 'policy', 'cookie', 'gdpr', 'compliance', 'disclaimer', 'terms-of-service', 'privacy-policy'];
+  if (legalKeywords.some(keyword => 
+    urlPath.includes(keyword) || title.includes(keyword)
+  )) {
+    categorized.legals.push(page.url);
+    return;
+  }
+
+  // Check if it's a company page
+  const companyKeywords = ['about', 'team', 'careers', 'contact', 'company', 'leadership', 'mission', 'values', 'history'];
+  if (companyKeywords.some(keyword => 
+    urlPath.includes(keyword) || title.includes(keyword)
+  )) {
+    // Don't categorize as company if it's already the about page
+    if (page.url !== categorized.about_page) {
+      categorized.company_pages.push(page.url);
+      return;
+    }
+  }
+
+  // Check if it's a knowledge base/help page
+  const knowledgeKeywords = ['help', 'support', 'docs', 'documentation', 'guide', 'faq', 'knowledge', 'tutorial', 'how-to'];
+  if (knowledgeKeywords.some(keyword => 
+    urlPath.includes(keyword) || title.includes(keyword)
+  )) {
+    categorized.knowledge_base.push(page.url);
     return;
   }
 
@@ -175,7 +208,10 @@ export async function crawlWebsiteWithEarlyExit(
     home_page: startUrl,
     about_page: '',
     service_pages: [],
-    blog_articles: []
+    blog_articles: [],
+    legals: [],
+    company_pages: [],
+    knowledge_base: []
   };
 
   const serviceKeywords = ['service', 'product', 'solution', 'offering', 'what-we-do', 'feature', 'plan', 'pricing'];
@@ -612,7 +648,10 @@ export async function categorizePages(pages: CrawledPage[], homepageUrl: string)
     home_page: homepageUrl,
     about_page: '',
     service_pages: [],
-    blog_articles: []
+    blog_articles: [],
+    legals: [],
+    company_pages: [],
+    knowledge_base: []
   };
 
   const domain = new URL(homepageUrl).origin;
@@ -628,6 +667,9 @@ export async function categorizePages(pages: CrawledPage[], homepageUrl: string)
   // Keywords for categorization
   const serviceKeywords = ['service', 'product', 'solution', 'offering', 'what-we-do', 'feature', 'plan', 'pricing'];
   const blogKeywords = ['blog', 'article', 'news', 'resource', 'insight', 'post', 'guide', 'learn'];
+  const legalKeywords = ['privacy', 'terms', 'legal', 'policy', 'cookie', 'gdpr', 'compliance', 'disclaimer', 'terms-of-service', 'privacy-policy'];
+  const companyKeywords = ['about', 'team', 'careers', 'contact', 'company', 'leadership', 'mission', 'values', 'history'];
+  const knowledgeKeywords = ['help', 'support', 'docs', 'documentation', 'guide', 'faq', 'knowledge', 'tutorial', 'how-to'];
 
   // Categorize other pages
   for (const page of pages) {
@@ -642,6 +684,30 @@ export async function categorizePages(pages: CrawledPage[], homepageUrl: string)
 
     // Skip if already set as about page
     if (page.url === categorized.about_page) {
+      continue;
+    }
+
+    // Check if it's a legal page
+    if (legalKeywords.some(keyword => 
+      urlPath.includes(keyword) || title.includes(keyword)
+    )) {
+      categorized.legals.push(page.url);
+      continue;
+    }
+
+    // Check if it's a company page (but not the about page)
+    if (page.url !== categorized.about_page && companyKeywords.some(keyword => 
+      urlPath.includes(keyword) || title.includes(keyword)
+    )) {
+      categorized.company_pages.push(page.url);
+      continue;
+    }
+
+    // Check if it's a knowledge base/help page
+    if (knowledgeKeywords.some(keyword => 
+      urlPath.includes(keyword) || title.includes(keyword)
+    )) {
+      categorized.knowledge_base.push(page.url);
       continue;
     }
 

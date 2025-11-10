@@ -114,29 +114,29 @@ class MockQueryTransformerService {
 }
 
 describe('QueryTransformerService', () => {
-  let transformer: MockQueryTransformerService;
-
-  beforeEach(() => {
-    transformer = new MockQueryTransformerService();
-  });
+  const createTransformer = () => new MockQueryTransformerService();
 
   describe('normalize', () => {
     test('should trim whitespace', () => {
+      const transformer = createTransformer();
       const result = transformer.normalize('  test query  ');
       assert.strictEqual(result, 'test query');
     });
 
     test('should convert to lowercase', () => {
+      const transformer = createTransformer();
       const result = transformer.normalize('TEST QUERY');
       assert.strictEqual(result, 'test query');
     });
 
     test('should handle empty string', () => {
+      const transformer = createTransformer();
       const result = transformer.normalize('');
       assert.strictEqual(result, '');
     });
 
     test('should handle string with only whitespace', () => {
+      const transformer = createTransformer();
       const result = transformer.normalize('   ');
       assert.strictEqual(result, '');
     });
@@ -144,21 +144,25 @@ describe('QueryTransformerService', () => {
 
   describe('expandAbbreviations', () => {
     test('should expand known abbreviations', () => {
+      const transformer = createTransformer();
       const result = transformer.expandAbbreviations('SEO meta content');
       assert.strictEqual(result, 'Search Engine Optimization meta content');
     });
 
     test('should expand multiple abbreviations', () => {
+      const transformer = createTransformer();
       const result = transformer.expandAbbreviations('SEO and CTA guidelines');
       assert.strictEqual(result, 'Search Engine Optimization and Call to Action guidelines');
     });
 
     test('should handle case-insensitive abbreviations', () => {
+      const transformer = createTransformer();
       const result = transformer.expandAbbreviations('seo meta content');
       assert.strictEqual(result, 'Search Engine Optimization meta content');
     });
 
     test('should not expand partial word matches', () => {
+      const transformer = createTransformer();
       const result = transformer.expandAbbreviations('seo-metadata');
       // Should not expand 'seo' as part of 'seo-metadata' (word boundary)
       // This depends on implementation - current mock will expand it
@@ -166,11 +170,13 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle unknown abbreviations', () => {
+      const transformer = createTransformer();
       const result = transformer.expandAbbreviations('XYZ content');
       assert.strictEqual(result, 'XYZ content'); // No change
     });
 
     test('should handle tax form abbreviations', () => {
+      const transformer = createTransformer();
       const result = transformer.expandAbbreviations('1099 deadline');
       assert.strictEqual(result, 'IRS Form 1099 deadline');
     });
@@ -178,6 +184,7 @@ describe('QueryTransformerService', () => {
 
   describe('addContext', () => {
     test('should add brand name context', () => {
+      const transformer = createTransformer();
       const result = transformer.addContext('content guidelines', {
         brandName: 'Acme Corp'
       });
@@ -185,6 +192,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should not duplicate existing brand name', () => {
+      const transformer = createTransformer();
       const result = transformer.addContext('Acme Corp content', {
         brandName: 'Acme Corp'
       });
@@ -194,6 +202,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should add SEO context for SEO tool', () => {
+      const transformer = createTransformer();
       const result = transformer.addContext('meta content', {
         toolType: 'seo'
       });
@@ -201,6 +210,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should add domain context', () => {
+      const transformer = createTransformer();
       const result = transformer.addContext('content', {
         domain: 'example.com'
       });
@@ -208,6 +218,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should combine multiple context elements', () => {
+      const transformer = createTransformer();
       const result = transformer.addContext('content', {
         brandName: 'Acme',
         toolType: 'seo',
@@ -219,6 +230,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should return original query if no context provided', () => {
+      const transformer = createTransformer();
       const query = 'test query';
       const result = transformer.addContext(query);
       assert.strictEqual(result, query);
@@ -227,27 +239,32 @@ describe('QueryTransformerService', () => {
 
   describe('generateVariations', () => {
     test('should generate question format variation', () => {
+      const transformer = createTransformer();
       const variations = transformer.generateVariations('content guidelines');
       assert.ok(variations.some(v => v.toLowerCase().includes('what')));
     });
 
     test('should generate statement format variation', () => {
+      const transformer = createTransformer();
       const variations = transformer.generateVariations('content guidelines');
       assert.ok(variations.some(v => v.toLowerCase().includes('information about')));
     });
 
     test('should not duplicate question words', () => {
+      const transformer = createTransformer();
       const variations = transformer.generateVariations('what is content');
       // Should not add "What is what is content?"
       assert.ok(!variations.some(v => v.toLowerCase().startsWith('what is what')));
     });
 
     test('should limit variations to max 3', () => {
+      const transformer = createTransformer();
       const variations = transformer.generateVariations('test');
       assert.ok(variations.length <= 3);
     });
 
     test('should handle short queries with keyword expansion', () => {
+      const transformer = createTransformer();
       const variations = transformer.generateVariations('SEO');
       assert.ok(variations.some(v => v.toLowerCase().includes('seo')));
       assert.ok(variations.some(v => v.toLowerCase().includes('details')));
@@ -256,6 +273,7 @@ describe('QueryTransformerService', () => {
 
   describe('transform - full pipeline', () => {
     test('should transform query with all steps', async () => {
+      const transformer = createTransformer();
       const result = await transformer.transform('seo content', {
         brandName: 'Acme',
         toolType: 'seo'
@@ -268,6 +286,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle query without context', async () => {
+      const transformer = createTransformer();
       const result = await transformer.transform('content guidelines');
 
       assert.strictEqual(typeof result.primary, 'string');
@@ -277,6 +296,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle empty query', async () => {
+      const transformer = createTransformer();
       const result = await transformer.transform('');
 
       assert.strictEqual(result.primary, '');
@@ -284,6 +304,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle query with only abbreviations', async () => {
+      const transformer = createTransformer();
       const result = await transformer.transform('1099');
 
       assert.ok(result.expanded.includes('IRS Form 1099'));
@@ -291,6 +312,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should preserve query meaning while enhancing it', async () => {
+      const transformer = createTransformer();
       const original = 'deadline';
       const result = await transformer.transform(original, {
         brandName: 'Acme'
@@ -301,6 +323,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle complex query with multiple abbreviations', async () => {
+      const transformer = createTransformer();
       const result = await transformer.transform('SEO FAQ and CTA guidelines', {
         brandName: 'Acme Corp',
         toolType: 'seo'
@@ -313,6 +336,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should generate meaningful variations', async () => {
+      const transformer = createTransformer();
       const result = await transformer.transform('content guidelines');
 
       assert.ok(result.variations.length > 0);
@@ -326,6 +350,7 @@ describe('QueryTransformerService', () => {
 
   describe('Edge Cases', () => {
     test('should handle very long queries', async () => {
+      const transformer = createTransformer();
       const longQuery = 'test '.repeat(100);
       const result = await transformer.transform(longQuery);
 
@@ -334,6 +359,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle special characters', async () => {
+      const transformer = createTransformer();
       const query = 'test !@#$%^&*() query';
       const result = await transformer.transform(query);
 
@@ -342,6 +368,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle unicode characters', async () => {
+      const transformer = createTransformer();
       const query = '?? guidelines';
       const result = await transformer.transform(query, {
         brandName: '??'
@@ -352,6 +379,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle numeric queries', async () => {
+      const transformer = createTransformer();
       const query = '123 456 789';
       const result = await transformer.transform(query);
 
@@ -359,6 +387,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle queries with URLs', async () => {
+      const transformer = createTransformer();
       const query = 'content from https://example.com';
       const result = await transformer.transform(query);
 
@@ -368,6 +397,7 @@ describe('QueryTransformerService', () => {
 
   describe('Performance', () => {
     test('should transform query quickly', async () => {
+      const transformer = createTransformer();
       const query = 'SEO content guidelines';
       const startTime = Date.now();
 
@@ -382,6 +412,7 @@ describe('QueryTransformerService', () => {
     });
 
     test('should handle multiple transformations efficiently', async () => {
+      const transformer = createTransformer();
       const queries = Array.from({ length: 100 }, (_, i) => `query ${i}`);
       const startTime = Date.now();
 

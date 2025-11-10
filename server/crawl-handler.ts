@@ -106,8 +106,26 @@ async function runCrawlJob(
 
   // Update job with final results (include all crawled URLs for manual tagging)
   // Defensive check to ensure crawledPages is a valid array
+  // Include auto-categorization data for each URL
   const crawledUrls = Array.isArray(result.crawledPages) 
-    ? result.crawledPages.map(p => ({ url: p.url, title: p.title }))
+    ? result.crawledPages.map(p => {
+        let autoCategory: string | undefined = undefined;
+        // Determine auto-category based on which array the URL belongs to
+        if (result.about_page === p.url) {
+          autoCategory = 'about';
+        } else if (result.service_pages?.includes(p.url)) {
+          autoCategory = 'product';
+        } else if (result.blog_articles?.includes(p.url)) {
+          autoCategory = 'blog';
+        } else if (result.legals?.includes(p.url)) {
+          autoCategory = 'legals';
+        } else if (result.company_pages?.includes(p.url)) {
+          autoCategory = 'company';
+        } else if (result.knowledge_base?.includes(p.url)) {
+          autoCategory = 'knowledge';
+        }
+        return { url: p.url, title: p.title, autoCategory };
+      })
     : [];
   
   await storage.updateCrawlJob(jobId, userId, {
@@ -118,6 +136,9 @@ async function runCrawlJob(
       about_page: result.about_page,
       service_pages: result.service_pages,
       blog_articles: result.blog_articles,
+      legals: result.legals,
+      company_pages: result.company_pages,
+      knowledge_base: result.knowledge_base,
       totalPagesCrawled: result.totalPagesCrawled,
       reachedLimit: result.reachedLimit,
       crawledUrls,

@@ -241,17 +241,14 @@ class MockRAGService {
 }
 
 describe('RAG Regression Tests', () => {
-  let ragService: MockRAGService;
+  const createRAGService = () => new MockRAGService();
   const TEST_USER_ID = 'test-user-123';
   const TEST_PROFILE_ID = 'test-profile-456';
-
-  beforeEach(() => {
-    ragService = new MockRAGService();
-  });
 
   describe('Golden Dataset Tests', () => {
     GOLDEN_DATASET.forEach(testCase => {
       test(`Golden Test: ${testCase.id} - ${testCase.description}`, async () => {
+        const ragService = createRAGService();
         const results = await ragService.retrieveRelevantContext(
           TEST_USER_ID,
           TEST_PROFILE_ID,
@@ -301,6 +298,7 @@ describe('RAG Regression Tests', () => {
 
   describe('Accuracy Metrics', () => {
     test('should maintain or improve average similarity scores', async () => {
+      const ragService = createRAGService();
       const allResults: RetrievalResult[] = [];
 
       for (const testCase of GOLDEN_DATASET) {
@@ -323,6 +321,7 @@ describe('RAG Regression Tests', () => {
     });
 
     test('should maintain top-1 accuracy', async () => {
+      const ragService = createRAGService();
       let top1Accurate = 0;
 
       for (const testCase of GOLDEN_DATASET) {
@@ -348,6 +347,7 @@ describe('RAG Regression Tests', () => {
     });
 
     test('should maintain top-5 recall', async () => {
+      const ragService = createRAGService();
       let relevantFound = 0;
       let totalExpected = 0;
 
@@ -384,6 +384,7 @@ describe('RAG Regression Tests', () => {
 
   describe('Regression Detection', () => {
     test('should detect significant accuracy degradation', async () => {
+      const ragService = createRAGService();
       // Compare against baseline metrics
       const baseline = {
         avgSimilarity: 0.75,
@@ -448,6 +449,7 @@ describe('RAG Regression Tests', () => {
 
   describe('Performance Regression', () => {
     test('should maintain retrieval latency', async () => {
+      const ragService = createRAGService();
       const latencies: number[] = [];
 
       for (const testCase of GOLDEN_DATASET) {

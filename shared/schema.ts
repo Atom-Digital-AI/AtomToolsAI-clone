@@ -58,6 +58,9 @@ export interface BrandContextUrls {
   about_page?: string;
   service_pages?: string[]; // Service/product pages
   blog_articles?: string[]; // Blog articles/resources
+  legals?: string[]; // Legal pages (privacy policy, terms, etc.)
+  company_pages?: string[]; // Company pages (about, team, careers, etc.)
+  knowledge_base?: string[]; // Knowledge base/help docs
 }
 
 export interface BrandGuidelineContent {
@@ -102,6 +105,9 @@ export const brandContextUrlsSchema = z.object({
   about_page: z.string().url().optional().or(z.literal('')),
   service_pages: z.array(z.string().url()).optional(),
   blog_articles: z.array(z.string().url()).optional(),
+  legals: z.array(z.string().url()).optional(),
+  company_pages: z.array(z.string().url()).optional(),
+  knowledge_base: z.array(z.string().url()).optional(),
 });
 
 export const brandGuidelineContentSchema = z.object({

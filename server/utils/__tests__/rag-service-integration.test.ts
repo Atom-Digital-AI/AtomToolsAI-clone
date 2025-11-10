@@ -134,16 +134,13 @@ class MockRAGServiceWithFeatures {
 }
 
 describe('RAG Service Integration Tests', () => {
-  let ragService: MockRAGServiceWithFeatures;
+  const createRAGService = () => new MockRAGServiceWithFeatures();
   const TEST_USER_ID = 'test-user-123';
   const TEST_PROFILE_ID = 'test-profile-456';
 
-  beforeEach(() => {
-    ragService = new MockRAGServiceWithFeatures();
-  });
-
   describe('Reranking Integration', () => {
     test('should rerank results when reranking is enabled', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -167,6 +164,7 @@ describe('RAG Service Integration Tests', () => {
     });
 
     test('should retrieve more initially when reranking is enabled', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -184,6 +182,7 @@ describe('RAG Service Integration Tests', () => {
     });
 
     test('should work without reranking when disabled', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -200,6 +199,7 @@ describe('RAG Service Integration Tests', () => {
 
   describe('Hybrid Search Integration', () => {
     test('should use hybrid search when enabled', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -218,6 +218,7 @@ describe('RAG Service Integration Tests', () => {
     });
 
     test('should combine dense and sparse results', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -238,6 +239,7 @@ describe('RAG Service Integration Tests', () => {
 
   describe('Query Transformation Integration', () => {
     test('should transform query when transformation is enabled', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -254,6 +256,7 @@ describe('RAG Service Integration Tests', () => {
     });
 
     test('should expand abbreviations in query', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -269,6 +272,7 @@ describe('RAG Service Integration Tests', () => {
     });
 
     test('should work without transformation when disabled', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -285,6 +289,7 @@ describe('RAG Service Integration Tests', () => {
 
   describe('Combined Features', () => {
     test('should work with all features enabled', async () => {
+      const ragService = createRAGService();
       const results = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
         TEST_PROFILE_ID,
@@ -305,6 +310,7 @@ describe('RAG Service Integration Tests', () => {
     });
 
     test('should improve results quality with all features', async () => {
+      const ragService = createRAGService();
       // Test with features disabled
       const withoutFeatures = await ragService.retrieveRelevantContext(
         TEST_USER_ID,
@@ -379,6 +385,7 @@ describe('RAG Service Integration Tests', () => {
 
   describe('Performance Integration', () => {
     test('should complete end-to-end retrieval within latency budget', async () => {
+      const ragService = createRAGService();
       const startTime = Date.now();
 
       await ragService.retrieveRelevantContext(
@@ -405,6 +412,7 @@ describe('RAG Service Integration Tests', () => {
     });
 
     test('should scale with larger result sets', async () => {
+      const ragService = createRAGService();
       const startTime = Date.now();
 
       await ragService.retrieveRelevantContext(

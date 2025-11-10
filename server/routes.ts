@@ -23,10 +23,15 @@ import { aiUsageLogs, langgraphThreads } from "@shared/schema";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
 import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
 import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } from "./langgraph/content-writer-graph";
+import { executeContentWriterGraph as executeContentWriterGraphNew, resumeContentWriterGraph as resumeContentWriterGraphNew, getGraphState as getGraphStateNew } from "../tools/headline-tools/content-writer-v2/server/langgraph/content-writer-graph";
 import { registerSocialContentRoutes } from "./social-content-routes";
+import { registerSocialContentRoutes as registerSocialContentRoutesNew } from "../tools/headline-tools/social-content-generator/server/social-content-routes";
 import { authLimiter, signupLimiter, aiLimiter } from "./rate-limit";
 import { validateURL } from "./utils/sanitize";
 import { openai } from "./utils/openai-client";
+import { registerSeoMetaRoutes } from "../tools/headline-tools/seo-meta-generator/server/routes";
+import { registerGoogleAdsRoutes } from "../tools/headline-tools/google-ads-copy-generator/server/routes";
+import { registerContentWriterRoutes } from "../tools/headline-tools/content-writer-v2/server/routes";
 
 // Utility functions from original Python app
 async function fetchUrlContent(url: string): Promise<string | null> {
@@ -785,7 +790,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // EXACT ORIGINAL PYTHON LOGIC - SEO Meta Generator
+  // Register tool routes
+  registerSeoMetaRoutes(app);
+  registerGoogleAdsRoutes(app);
+  registerContentWriterRoutes(app);
+
+  // EXACT ORIGINAL PYTHON LOGIC - SEO Meta Generator (DEPRECATED - moved to tools/headline-tools/seo-meta-generator/server/routes.ts)
+  // Keeping for backward compatibility during migration
   app.post("/api/tools/seo-meta/generate", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
@@ -4250,7 +4261,8 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
   // ============================================================================
   
   // Register Social Content Generator routes
-  registerSocialContentRoutes(app);
+  registerSocialContentRoutes(app); // Legacy - keeping for backward compatibility
+  registerSocialContentRoutesNew(app); // New location
 
   const httpServer = createServer(app);
   return httpServer;
