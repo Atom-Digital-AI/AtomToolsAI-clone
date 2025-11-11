@@ -3181,6 +3181,17 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
         selectedTargetAudiences
       });
 
+      // Verify session was created successfully
+      if (!session || !session.id) {
+        throw new Error("Failed to create content writer session");
+      }
+
+      // Verify session exists in database before proceeding
+      const verifiedSession = await storage.getContentWriterSession(session.id, userId);
+      if (!verifiedSession) {
+        throw new Error(`Session created but not found in database: ${session.id}`);
+      }
+
       // Create initial state for LangGraph
       const initialState = {
         topic,

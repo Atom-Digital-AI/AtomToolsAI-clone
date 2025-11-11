@@ -277,11 +277,13 @@ function setupLangChainErrorCapture() {
     
     const errorStr = String(reason);
     // Check if this is a LangChain/LangSmith tracing error
-    const isLangSmithError = (errorStr.includes('multipart request') || 
-         errorStr.includes('LangSmith') || 
-         errorStr.includes('langsmith') ||
-         (errorStr.includes('403') && errorStr.includes('Forbidden'))) &&
-        errorStr.includes('Failed to');
+    // Normalize error string to avoid duplicate "Failed to" prefixes
+    const normalizedErrorStr = errorStr.replace(/^Failed to\s+/i, '');
+    const isLangSmithError = (normalizedErrorStr.includes('multipart request') || 
+         normalizedErrorStr.includes('LangSmith') || 
+         normalizedErrorStr.includes('langsmith') ||
+         (normalizedErrorStr.includes('403') && normalizedErrorStr.includes('Forbidden'))) &&
+        (normalizedErrorStr.includes('Failed to') || normalizedErrorStr.includes('send multipart'));
     
     if (isLangSmithError) {
       // Mark as logged to prevent duplicate logging
@@ -291,7 +293,7 @@ function setupLangChainErrorCapture() {
       
       // Suppress frequent 403 errors - only log once per minute
       const now = Date.now();
-      const is403Error = errorStr.includes('403') && errorStr.includes('Forbidden');
+      const is403Error = normalizedErrorStr.includes('403') && normalizedErrorStr.includes('Forbidden');
       if (is403Error && (now - lastErrorTime) < ERROR_SUPPRESSION_WINDOW) {
         // Increment counter even when suppressing
         consecutive403Errors++;
@@ -335,7 +337,7 @@ function setupLangChainErrorCapture() {
                 },
                 level: 'warning', // Non-critical but worth tracking
                 extra: {
-                  errorString: errorStr.substring(0, 500), // Limit length
+                  errorString: normalizedErrorStr.substring(0, 500), // Limit length
                   apiKeyFormat: process.env.LANGCHAIN_API_KEY?.substring(0, 10) || 'not set',
                   projectName: process.env.LANGCHAIN_PROJECT || 'atomtools-rag',
                 },
@@ -356,10 +358,14 @@ function setupLangChainErrorCapture() {
       // Use console.warn instead of console.error for tracing errors
       // These are non-critical and don't affect application functionality
       console.warn('⚠️  LangChain Tracing Error Detected (non-critical):');
-      console.warn('Error:', reason);
+      // Use normalized error string to avoid duplicate "Failed to" prefixes
+      const displayError = reason instanceof Error ? reason.message : normalizedErrorStr;
+      console.warn('Error:', displayError);
       if (reason instanceof Error) {
         console.warn(`Error Name: ${reason.name}`);
-        console.warn(`Error Message: ${reason.message}`);
+        // Clean up duplicate "Failed to" prefixes in error message
+        const cleanMessage = reason.message.replace(/^Failed to\s+Failed to\s+/i, 'Failed to ');
+        console.warn(`Error Message: ${cleanMessage}`);
         
         // Diagnose 403 errors specifically
         if (is403Error && apiKey) {

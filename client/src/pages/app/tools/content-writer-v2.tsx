@@ -187,9 +187,18 @@ export default function ContentWriterV2() {
   }, [threadsData]);
 
   // Fetch session data (for backward compatibility)
-  const { data: sessionData, isLoading: isSessionLoading } = useQuery({
+  const { data: sessionData, isLoading: isSessionLoading, error: sessionError } = useQuery({
     queryKey: [`/api/content-writer/sessions/${sessionId}`],
     enabled: !!sessionId,
+    retry: (failureCount, error: any) => {
+      // Retry 404 errors up to 3 times with exponential backoff (for race conditions)
+      if (error?.status === 404 && failureCount < 3) {
+        return true;
+      }
+      // Don't retry other errors
+      return false;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Exponential backoff: 1s, 2s, 4s
   });
 
   // Poll thread status when thread is active
