@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
+import { expressIntegration } from "@sentry/node";
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -9,13 +10,15 @@ import { logToolError, getErrorTypeFromError } from "./errorLogger";
 import { env } from "./config";
 import { apiLimiter } from "./rate-limit";
 
+const app = express();
+
 // Initialize Sentry BEFORE creating the Express app
 if (env.SENTRY_DSN) {
   Sentry.init({
     dsn: env.SENTRY_DSN,
     environment: env.NODE_ENV,
     integrations: [
-      // Express integration is automatically included in @sentry/node
+      expressIntegration(),
       nodeProfilingIntegration(),
     ],
     // Performance Monitoring
@@ -23,13 +26,6 @@ if (env.SENTRY_DSN) {
     // Profiling
     profilesSampleRate: env.NODE_ENV === "production" ? 0.1 : 1.0,
   });
-}
-
-const app = express();
-
-// Add Sentry request handler middleware BEFORE all other middleware
-if (env.SENTRY_DSN) {
-  app.use(Sentry.expressIntegration().requestHandler());
 }
 
 // Trust proxy - REQUIRED when behind Railway/load balancers
@@ -140,11 +136,6 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
-
-  // Add Sentry tracing handler AFTER routes but BEFORE error handler
-  if (env.SENTRY_DSN) {
-    app.use(Sentry.expressIntegration().tracingHandler());
-  }
 
   app.use(
     async (err: any, req: Request, res: Response, _next: NextFunction) => {
