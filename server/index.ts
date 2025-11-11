@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/node";
+import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -7,7 +9,28 @@ import { logToolError, getErrorTypeFromError } from "./errorLogger";
 import { env } from "./config";
 import { apiLimiter } from "./rate-limit";
 
+// Initialize Sentry BEFORE creating the Express app
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+    integrations: [
+      // Express integration is automatically included in @sentry/node
+      nodeProfilingIntegration(),
+    ],
+    // Performance Monitoring
+    tracesSampleRate: env.NODE_ENV === "production" ? 0.1 : 1.0,
+    // Profiling
+    profilesSampleRate: env.NODE_ENV === "production" ? 0.1 : 1.0,
+  });
+}
+
 const app = express();
+
+// Add Sentry request handler middleware BEFORE all other middleware
+if (env.SENTRY_DSN) {
+  app.use(Sentry.expressIntegration().requestHandler());
+}
 
 // Trust proxy - REQUIRED when behind Railway/load balancers
 // Set to 1 to trust only the first proxy (Railway's load balancer)
@@ -29,6 +52,7 @@ app.use(
           "https://api.openai.com",
           "https://api.anthropic.com",
           "https://api.cohere.ai",
+          "https://*.sentry.io", // Sentry error tracking
         ],
         frameSrc: ["'none'"],
         objectSrc: ["'none'"],
@@ -117,10 +141,34 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Add Sentry tracing handler AFTER routes but BEFORE error handler
+  if (env.SENTRY_DSN) {
+    app.use(Sentry.expressIntegration().tracingHandler());
+  }
+
   app.use(
     async (err: any, req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
+
+      // Send to Sentry (if configured)
+      if (env.SENTRY_DSN) {
+        Sentry.captureException(err, {
+          tags: {
+            endpoint: `${req.method} ${req.path}`,
+            statusCode: status,
+          },
+          user: {
+            id: (req as any).user?.id,
+            email: (req as any).user?.email,
+          },
+          extra: {
+            body: req.body,
+            query: req.query,
+            params: req.params,
+          },
+        });
+      }
 
       // Log error to database
       try {

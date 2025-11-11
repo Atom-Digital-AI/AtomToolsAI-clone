@@ -1,7 +1,9 @@
+import * as Sentry from "@sentry/node";
 import { db } from './db';
 import { errorLogs, type ErrorLogStatus } from '@shared/schema';
 import type { Request } from 'express';
 import { sanitizeForLogging } from './utils/sanitize';
+import { env } from './config';
 
 interface LogErrorParams {
   userId?: string;
@@ -52,6 +54,27 @@ export async function logToolError(params: LogErrorParams) {
     });
 
     console.error(`Tool Error Logged [${status.toUpperCase()}]: ${toolName} - ${errorType} - ${errorMessage}`);
+
+    // Also send to Sentry if configured
+    if (env.SENTRY_DSN) {
+      Sentry.captureException(new Error(params.errorMessage), {
+        tags: {
+          toolName: params.toolName,
+          errorType: params.errorType,
+          status: params.status || 'to_do',
+        },
+        user: {
+          id: params.userId,
+          email: params.userEmail,
+        },
+        extra: {
+          endpoint: params.endpoint,
+          httpStatus: params.httpStatus,
+          requestData: params.requestData,
+          errorStack: params.errorStack,
+        },
+      });
+    }
   } catch (logError) {
     console.error('Failed to log tool error:', logError);
     console.error('Original error:', params.errorMessage);
