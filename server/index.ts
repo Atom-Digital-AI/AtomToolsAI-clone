@@ -1,3 +1,12 @@
+// Load environment variables from .env file (for local development)
+// In production, environment variables are set directly by the platform
+import "dotenv/config";
+
+// IMPORTANT: Initialize LangSmith BEFORE any LangChain imports
+// LangChain reads environment variables when the SDK is first imported,
+// so we must set them before any LangChain modules are loaded
+import "./utils/langsmith-config";
+
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import { expressIntegration } from "@sentry/node";
@@ -9,6 +18,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
 import { env } from "./config";
 import { apiLimiter } from "./rate-limit";
+import { validateAndInitializeLangSmith } from "./utils/langsmith-config";
 
 const app = express();
 
@@ -135,6 +145,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Validate LangSmith configuration during server startup
+  await validateAndInitializeLangSmith().catch((error) => {
+    console.error("Failed to validate LangSmith configuration:", error);
+  });
+
   const server = await registerRoutes(app);
 
   app.use(
