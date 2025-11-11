@@ -22,7 +22,7 @@ import { loggedOpenAICall, loggedAnthropicCall } from "./utils/ai-logger";
 import { aiUsageLogs, langgraphThreads } from "@shared/schema";
 import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
 import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
-import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } from "./langgraph/content-writer-graph";
+import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState, updateGraphState } from "./langgraph/content-writer-graph";
 import { executeContentWriterGraph as executeContentWriterGraphNew, resumeContentWriterGraph as resumeContentWriterGraphNew, getGraphState as getGraphStateNew } from "../tools/headline-tools/content-writer-v2/server/langgraph/content-writer-graph";
 import { registerSocialContentRoutes } from "./social-content-routes";
 import { registerSocialContentRoutesNew } from "../tools/headline-tools/social-content-generator/server/social-content-routes";
@@ -3391,7 +3391,153 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     }
   });
 
-  // 4. List user's threads
+  // 4. Regenerate concepts for a thread
+  app.post("/api/langgraph/content-writer/regenerate/:threadId", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { threadId } = req.params;
+      const { feedbackText, matchStyle = false } = req.body;
+
+      // Verify thread belongs to user (security)
+      const thread = await storage.getLanggraphThread(threadId, userId);
+      if (!thread) {
+        return res.status(404).json({ message: "Thread not found" });
+      }
+
+      // Get current graph state
+      const currentState = await getGraphState(threadId, {
+        userId,
+        sessionId: thread.sessionId || undefined
+      });
+
+      if (!currentState) {
+        return res.status(404).json({ message: "State not found for thread" });
+      }
+
+      // Save thumbs down feedback for all current concepts
+      if (currentState.concepts && currentState.concepts.length > 0) {
+        for (const concept of currentState.concepts) {
+          await db.insert(contentFeedback).values({
+            userId,
+            toolType: 'content-writer',
+            rating: 'thumbs_down',
+            feedbackText: feedbackText || 'Regenerated concepts',
+            inputData: { topic: currentState.topic },
+            outputData: { concept: concept.title },
+            guidelineProfileId: currentState.guidelineProfileId || null
+          });
+        }
+      }
+
+      // Generate new concepts with feedback
+      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', currentState.guidelineProfileId);
+      
+      // Skip brand context if using 'end-rewrite' method
+      const brandContext = (currentState.guidelineProfileId && currentState.styleMatchingMethod === 'continuous')
+        ? await ragService.getBrandContextForPrompt(userId, currentState.guidelineProfileId, `Article concepts for: ${currentState.topic}`, { matchStyle })
+        : '';
+
+      // Get target audience context
+      let targetAudienceContext = '';
+      if (currentState.selectedTargetAudiences) {
+        if (currentState.guidelineProfileId) {
+          const guidelineProfile = await storage.getGuidelineProfile(currentState.guidelineProfileId, userId);
+          if (guidelineProfile) {
+            targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, currentState.selectedTargetAudiences);
+          }
+        } else {
+          targetAudienceContext = formatSelectedTargetAudiences('', currentState.selectedTargetAudiences);
+        }
+      }
+
+      const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${currentState.topic}"
+
+${targetAudienceContext}
+${brandContext}
+${ragContext}
+${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ''}
+
+${getAntiFabricationInstructions()}
+
+For each concept, provide:
+1. A compelling title suitable for a web article
+2. A brief 2-3 sentence summary
+
+Return the response as a JSON array with this exact structure:
+[
+  {
+    "title": "Article Title Here",
+    "summary": "Brief summary here..."
+  }
+]`;
+
+      const completion = await loggedOpenAICall({
+        userId,
+        guidelineProfileId: currentState.guidelineProfileId || undefined,
+        endpoint: 'content-writer-concepts-regenerate',
+        metadata: { topic: currentState.topic, feedbackText }
+      }, async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: conceptPrompt }],
+          temperature: 0.8,
+        });
+      });
+
+      const conceptsText = completion.choices[0]?.message?.content || '[]';
+      const conceptsData = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
+
+      const newConcepts = conceptsData.map((c: any, index: number) => ({
+        id: nanoid(),
+        title: c.title,
+        summary: c.summary,
+        rankOrder: index + 1,
+      }));
+
+      // Update state with new concepts, clear selectedConceptId, and update metadata
+      // Set currentStep to 'awaitConceptApproval' to match normal flow after generating concepts
+      // Use updateGraphState() instead of resumeContentWriterGraph() to avoid triggering graph execution
+      const updatedState = await updateGraphState(
+        threadId,
+        {
+          userId,
+          sessionId: thread.sessionId || undefined
+        },
+        {
+          concepts: newConcepts,
+          selectedConceptId: undefined, // Clear any previously selected concept
+          metadata: {
+            ...currentState.metadata,
+            currentStep: 'awaitConceptApproval',
+            regenerationCount: (currentState.metadata?.regenerationCount || 0) + 1,
+          },
+          status: 'processing',
+        }
+      );
+
+      // Update thread metadata
+      const existingMetadata = (thread.metadata as Record<string, any>) || {};
+      await storage.updateLanggraphThread(threadId, userId, {
+        metadata: {
+          ...existingMetadata,
+          currentStep: 'awaitConceptApproval',
+          regenerationCount: (existingMetadata.regenerationCount || 0) + 1,
+          lastUpdatedAt: new Date().toISOString(),
+        }
+      });
+
+      res.json({
+        threadId: updatedState.threadId,
+        state: updatedState.state
+      });
+    } catch (error) {
+      console.error("Error regenerating concepts:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to regenerate concepts";
+      res.status(500).json({ message: `Failed to regenerate concepts: ${errorMessage}` });
+    }
+  });
+
+  // 5. List user's threads
   app.get("/api/langgraph/content-writer/threads", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;

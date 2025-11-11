@@ -1,4 +1,4 @@
-import { StateGraph, Annotation, END } from "@langchain/langgraph";
+import { StateGraph, Annotation, END, Checkpoint, CheckpointMetadata } from "@langchain/langgraph";
 import { PostgresCheckpointer } from "./postgres-checkpointer";
 import { ContentWriterState, contentWriterStateSchema } from "./types";
 import { generateConcepts } from "./nodes/generateConcepts";
@@ -418,5 +418,73 @@ export async function getGraphState(
   } catch (error) {
     console.error("Error getting graph state:", error);
     return null;
+  }
+}
+
+export async function updateGraphState(
+  threadId: string,
+  config: {
+    userId: string;
+    sessionId?: string;
+  },
+  updates: Partial<ContentWriterState>
+): Promise<{ threadId: string; state: ContentWriterState }> {
+  try {
+    const checkpointer = new PostgresCheckpointer({
+      userId: config.userId,
+      sessionId: config.sessionId,
+    });
+
+    // Get current checkpoint
+    const checkpointTuple = await checkpointer.getTuple({
+      configurable: {
+        thread_id: threadId,
+      },
+    });
+
+    if (!checkpointTuple) {
+      throw new Error(`No checkpoint found for thread ${threadId}`);
+    }
+
+    const currentState = checkpointTuple.checkpoint
+      .channel_values as unknown as ContentWriterState;
+
+    // Merge updates with current state
+    const updatedState = { ...currentState, ...updates };
+
+    // Create new checkpoint with updated state
+    const newCheckpoint: Checkpoint = {
+      ...checkpointTuple.checkpoint,
+      channel_values: updatedState as any,
+    };
+
+    // Create metadata for the update
+    const metadata: CheckpointMetadata = {
+      ...checkpointTuple.metadata,
+      source: "update",
+      step: -1, // Indicate this is a manual update, not a graph step
+    };
+
+    // Save the updated checkpoint
+    // Use the current checkpoint's id as the parent for the new checkpoint
+    const currentCheckpointId = checkpointTuple.config.configurable?.checkpoint_id;
+    await checkpointer.put(
+      {
+        configurable: {
+          thread_id: threadId,
+          checkpoint_id: currentCheckpointId,
+        },
+      },
+      newCheckpoint,
+      metadata
+    );
+
+    return {
+      threadId,
+      state: updatedState,
+    };
+  } catch (error) {
+    console.error("Error updating graph state:", error);
+    throw error;
   }
 }

@@ -382,14 +382,47 @@ export default function ContentWriterV2() {
   // Regenerate concepts mutation
   const regenerateConceptsMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/regenerate`, {
-        feedbackText: regenerateFeedback,
-        matchStyle,
-      });
-      return await res.json();
+      // Use LangGraph endpoint if threadId is available, otherwise use legacy endpoint
+      if (threadId) {
+        const res = await apiRequest('POST', `/api/langgraph/content-writer/regenerate/${threadId}`, {
+          feedbackText: regenerateFeedback,
+          matchStyle,
+        });
+        return await res.json();
+      } else if (sessionId) {
+        const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/regenerate`, {
+          feedbackText: regenerateFeedback,
+          matchStyle,
+        });
+        return await res.json();
+      } else {
+        throw new Error("No session or thread ID available");
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+    onSuccess: (data: any) => {
+      // Update cache immediately with response data
+      if (data?.state && threadId) {
+        queryClient.setQueryData(['/api/langgraph/content-writer/status', threadId], {
+          threadId: data.threadId || threadId,
+          state: data.state,
+          currentStep: data.state.metadata?.currentStep || 'awaitConceptApproval',
+          completed: data.state.status === 'completed',
+        });
+      }
+      
+      // Clear selected concept since we're regenerating
+      setSelectedConcept(null);
+      
+      // Invalidate and refetch to ensure consistency
+      if (threadId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+        queryClient.refetchQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+      }
+      if (sessionId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+        queryClient.refetchQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      }
+      
       setShowRegenerateDialog(false);
       setRegenerateFeedback("");
       toast({
