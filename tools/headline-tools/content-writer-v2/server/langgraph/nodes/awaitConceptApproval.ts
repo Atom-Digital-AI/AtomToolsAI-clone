@@ -37,12 +37,28 @@ export async function awaitConceptApproval(state: ContentWriterState): Promise<P
 
     return {};
   } catch (error) {
+    // GraphInterrupt is expected behavior - it pauses the workflow for user input
+    // Re-throw it so LangGraph can handle it properly
+    // Check for GraphInterrupt in multiple ways since the error type may vary
+    const errorStr = String(error);
+    const errorName = error instanceof Error ? error.name : '';
+    const errorConstructorName = error?.constructor?.name || '';
+    
+    if (errorName === 'GraphInterrupt' || 
+        errorConstructorName === 'GraphInterrupt' ||
+        errorStr.includes('GraphInterrupt') ||
+        (error instanceof Error && error.message.includes('GraphInterrupt'))) {
+      // Re-throw GraphInterrupt - this is expected behavior, not an error
+      throw error;
+    }
+    
+    // Only log actual errors, not expected interrupts
     console.error("Error in awaitConceptApproval:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     
     return {
       errors: [
-        ...state.errors,
+        ...(state.errors || []),
         {
           step: 'awaitConceptApproval',
           message: errorMessage,
