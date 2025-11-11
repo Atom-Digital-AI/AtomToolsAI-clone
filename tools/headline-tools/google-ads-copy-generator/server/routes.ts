@@ -10,6 +10,7 @@ import { getLanguageInstruction } from "../../../../server/utils/language-helper
 import { openai } from "../../../../server/utils/openai-client";
 import { loadPrompt } from "../../../shared/prompt-loader";
 import path from "path";
+import { fileURLToPath } from "url";
 
 function detectLanguage(text: string): string {
   return 'en';
@@ -27,6 +28,7 @@ function stripMarkdownCodeBlocks(text: string): string {
 }
 
 export function registerGoogleAdsRoutes(app: Express): void {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const toolPath = path.join(__dirname, '..');
 
   app.post("/api/tools/google-ads/generate", requireAuth, async (req, res) => {

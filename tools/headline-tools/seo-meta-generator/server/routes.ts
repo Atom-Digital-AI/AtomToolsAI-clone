@@ -10,6 +10,7 @@ import { getLanguageInstruction } from "../../../../../server/utils/language-hel
 import { openai } from "../../../../../server/utils/openai-client";
 import { loadPrompt } from "../../../shared/prompt-loader";
 import path from "path";
+import { fileURLToPath } from "url";
 
 function detectLanguage(text: string): string {
   // Simple language detection - could be enhanced with langdetect library
@@ -30,6 +31,7 @@ function stripMarkdownCodeBlocks(text: string): string {
 }
 
 export function registerSeoMetaRoutes(app: Express): void {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const toolPath = path.join(__dirname, '..');
 
   app.post("/api/tools/seo-meta/generate", requireAuth, async (req, res) => {
