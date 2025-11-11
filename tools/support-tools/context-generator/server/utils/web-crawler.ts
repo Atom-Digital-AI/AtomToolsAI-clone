@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { isSameSite, generateContentHash, normalizeUrlForDedup } from './url-normalizer';
+import { isSameSite, generateContentHash, normalizeUrlForDedup } from '../../../../../server/utils/url-normalizer';
 import { type DatabaseStorage as DbStorage } from '../../../../../server/storage';
 import type { InsertPage } from '@shared/schema';
 

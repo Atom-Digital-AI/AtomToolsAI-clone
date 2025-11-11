@@ -25,7 +25,7 @@ import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl
 import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState } from "./langgraph/content-writer-graph";
 import { executeContentWriterGraph as executeContentWriterGraphNew, resumeContentWriterGraph as resumeContentWriterGraphNew, getGraphState as getGraphStateNew } from "../tools/headline-tools/content-writer-v2/server/langgraph/content-writer-graph";
 import { registerSocialContentRoutes } from "./social-content-routes";
-import { registerSocialContentRoutes as registerSocialContentRoutesNew } from "../tools/headline-tools/social-content-generator/server/social-content-routes";
+import { registerSocialContentRoutesNew } from "../tools/headline-tools/social-content-generator/server/social-content-routes";
 import { authLimiter, signupLimiter, aiLimiter } from "./rate-limit";
 import { validateURL } from "./utils/sanitize";
 import { openai } from "./utils/openai-client";
