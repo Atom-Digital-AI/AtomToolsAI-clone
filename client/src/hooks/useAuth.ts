@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
+import * as Sentry from "@sentry/react";
+import { useEffect } from "react";
 
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
@@ -24,6 +26,20 @@ export function useAuth() {
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Set user context in Sentry when user data changes
+  useEffect(() => {
+    if (import.meta.env.VITE_SENTRY_DSN && user) {
+      Sentry.setUser({
+        id: user.id.toString(),
+        email: user.email,
+        username: user.email,
+      });
+    } else if (import.meta.env.VITE_SENTRY_DSN && !user && !isLoading) {
+      // Clear user context when logged out
+      Sentry.setUser(null);
+    }
+  }, [user, isLoading]);
 
   // Parse 403 errors to check for specific requirements
   let requiresVerification = false;

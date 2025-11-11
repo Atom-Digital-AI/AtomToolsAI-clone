@@ -182,6 +182,7 @@ export default function LoginPage() {
                             placeholder="Enter your password"
                             className="pl-10 pr-10 bg-background border-border text-text-primary placeholder:text-text-secondary focus:border-accent"
                             data-testid="input-password"
+                            autoComplete="current-password"
                             {...field}
                           />
                           <Button

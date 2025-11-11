@@ -160,6 +160,7 @@ export default function SignUp() {
                             {...field}
                             className="bg-surface border-border focus:ring-accent pr-12"
                             data-testid="input-password"
+                            autoComplete="new-password"
                           />
                           <Button
                             type="button"

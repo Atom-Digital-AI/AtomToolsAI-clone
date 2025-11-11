@@ -255,6 +255,7 @@ function SignUpFormCard() {
                         type={showPassword ? "text" : "password"}
                         placeholder="Minimum 8 characters"
                         data-testid="signup-password-input"
+                        autoComplete="new-password"
                         {...field}
                       />
                       <Button
