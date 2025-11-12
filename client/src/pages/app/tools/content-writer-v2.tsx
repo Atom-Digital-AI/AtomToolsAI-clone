@@ -306,6 +306,19 @@ export default function ContentWriterV2() {
       });
       return await res.json();
     },
+    onMutate: async () => {
+      // Clear all previous session/thread data from cache to ensure a clean slate
+      if (threadId) {
+        queryClient.removeQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+      }
+      if (sessionId) {
+        queryClient.removeQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      }
+
+      // Clear local state
+      setSelectedConcept(null);
+      setSelectedSubtopics(new Set());
+    },
     onSuccess: (data: any) => {
       console.log("LangGraph workflow started:", data);
       if (!data || !data.threadId || !data.sessionId) {
@@ -934,9 +947,19 @@ export default function ContentWriterV2() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
+                  // Clear cache for previous session/thread
+                  if (threadId) {
+                    queryClient.removeQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+                  }
+                  if (sessionId) {
+                    queryClient.removeQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+                  }
+
                   setStage('topic');
                   setSessionId(null);
+                  setThreadId(null);
                   sessionCreatedAtRef.current = null;
+                  setSelectedConcept(null);
                 }}
                 data-testid="button-back-to-topic"
               >
@@ -1561,6 +1584,15 @@ export default function ContentWriterV2() {
       <Button
         variant="outline"
         onClick={() => {
+          // Clear cache for previous session/thread
+          if (threadId) {
+            queryClient.removeQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+          }
+          if (sessionId) {
+            queryClient.removeQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+          }
+
+          // Reset all local state
           setSessionId(null);
           setThreadId(null);
           setStage('topic');
