@@ -69,7 +69,15 @@ const ContentWriterAnnotation = Annotation.Root({
   >(),
 });
 
+// Cache the workflow definition to avoid recreating it on every execution
+// The workflow structure is stateless and can be reused
+let cachedWorkflow: StateGraph<typeof ContentWriterAnnotation> | null = null;
+
 function createContentWriterGraph() {
+  if (cachedWorkflow) {
+    return cachedWorkflow;
+  }
+
   const workflow = new StateGraph(ContentWriterAnnotation);
 
   workflow.addNode("generateConcepts", generateConcepts as any);
@@ -281,6 +289,8 @@ function createContentWriterGraph() {
     }
   );
 
+  // Cache the workflow for reuse
+  cachedWorkflow = workflow;
   return workflow;
 }
 
@@ -300,6 +310,8 @@ export async function executeContentWriterGraph(
       sessionId: config.sessionId,
     });
 
+    // OPTIMIZATION: Workflow is cached, only compiled graph is created per-user
+    // The compiled graph instance will be garbage collected after this function completes
     const workflow = createContentWriterGraph();
     const graph = workflow.compile({ checkpointer });
 
@@ -363,6 +375,8 @@ export async function resumeContentWriterGraph(
       sessionId: config.sessionId,
     });
 
+    // OPTIMIZATION: Workflow is cached, only compiled graph is created per-user
+    // The compiled graph instance will be garbage collected after this function completes
     const workflow = createContentWriterGraph();
     const graph = workflow.compile({ checkpointer });
 
@@ -407,6 +421,8 @@ export async function getGraphState(
   }
 ): Promise<ContentWriterState | null> {
   try {
+    // OPTIMIZATION: Use checkpointer directly without creating a graph instance
+    // This function only reads state, doesn't need to invoke the graph
     const checkpointer = new PostgresCheckpointer({
       userId: config.userId,
       sessionId: config.sessionId,
@@ -439,6 +455,8 @@ export async function updateGraphState(
   updates: Partial<ContentWriterState>
 ): Promise<{ threadId: string; state: ContentWriterState }> {
   try {
+    // OPTIMIZATION: Use checkpointer directly without creating a graph instance
+    // This function only updates state, doesn't need to invoke the graph
     const checkpointer = new PostgresCheckpointer({
       userId: config.userId,
       sessionId: config.sessionId,

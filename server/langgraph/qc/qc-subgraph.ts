@@ -56,10 +56,18 @@ const QCAnnotation = Annotation.Root({
   }),
 });
 
+// Cache the QC workflow definition to avoid recreating it on every execution
+// The workflow structure is stateless and can be reused
+let cachedQCWorkflow: StateGraph<typeof QCAnnotation> | null = null;
+
 /**
  * Create the QC subgraph workflow
  */
 function createQCSubgraph() {
+  if (cachedQCWorkflow) {
+    return cachedQCWorkflow;
+  }
+
   const workflow = new StateGraph(QCAnnotation);
   
   // Add agent nodes (sequential execution)
@@ -86,7 +94,9 @@ function createQCSubgraph() {
   (workflow as any).addEdge("resolveConflicts", "applyChanges");
   (workflow as any).addEdge("applyChanges", "calculateScore");
   (workflow as any).addEdge("calculateScore", END);
-  
+
+  // Cache the workflow for reuse
+  cachedQCWorkflow = workflow;
   return workflow;
 }
 
@@ -98,6 +108,9 @@ export async function executeQCSubgraph(
   config?: QCExecutionConfig
 ): Promise<QCState> {
   try {
+    // OPTIMIZATION: Workflow is cached, only compiled graph is created per execution
+    // The compiled graph instance will be garbage collected after this function completes
+    // QC subgraph doesn't use checkpointer since it's a synchronous operation
     const workflow = createQCSubgraph();
     const graph = workflow.compile();
     

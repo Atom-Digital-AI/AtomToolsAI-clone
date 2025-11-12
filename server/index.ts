@@ -50,8 +50,8 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for Vite in dev
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         connectSrc: [
           "'self'",
@@ -229,4 +229,47 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
     }
   );
+
+  // Graceful shutdown handlers
+  // Properly close database pool and server on termination signals
+  const gracefulShutdown = async (signal: string) => {
+    log(`\n${signal} received. Starting graceful shutdown...`);
+
+    // Stop accepting new connections
+    server.close(() => {
+      log("HTTP server closed");
+    });
+
+    try {
+      // Close database pool
+      const { pool } = await import("./db");
+      await pool.end();
+      log("Database pool closed");
+    } catch (error) {
+      console.error("Error closing database pool:", error);
+    }
+
+    // Exit process
+    process.exit(0);
+  };
+
+  // Handle termination signals
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+  // Handle uncaught errors
+  process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error);
+    if (env.SENTRY_DSN) {
+      Sentry.captureException(error);
+    }
+    gracefulShutdown("uncaughtException");
+  });
+
+  process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+    if (env.SENTRY_DSN) {
+      Sentry.captureException(reason);
+    }
+  });
 })();
