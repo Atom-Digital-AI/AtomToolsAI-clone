@@ -599,12 +599,36 @@ export default function ContentWriterV2() {
         );
 
         return { previousData };
+      } else if (sessionId) {
+        // For legacy sessions, optimistically clear concepts
+        await queryClient.cancelQueries({
+          queryKey: [`/api/content-writer/sessions/${sessionId}`],
+        });
+
+        const previousData = queryClient.getQueryData([
+          `/api/content-writer/sessions/${sessionId}`,
+        ]);
+
+        // Optimistically clear concepts in session data
+        queryClient.setQueryData(
+          [`/api/content-writer/sessions/${sessionId}`],
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              concepts: [], // Clear old concepts immediately
+            };
+          }
+        );
+
+        return { previousData };
       }
       return {};
     },
     onSuccess: (data: any) => {
       // Update cache immediately with response data
       if (data?.state && threadId) {
+        // LangGraph response
         queryClient.setQueryData(
           ["/api/langgraph/content-writer/status", threadId],
           {
@@ -615,13 +639,32 @@ export default function ContentWriterV2() {
             completed: data.state.status === "completed",
           }
         );
+      } else if (data?.concepts && sessionId) {
+        // Legacy response - update session data with new concepts
+        queryClient.setQueryData(
+          [`/api/content-writer/sessions/${sessionId}`],
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              concepts: data.concepts, // Set new concepts from response
+            };
+          }
+        );
       }
 
       // Clear selected concept since we're regenerating
       setSelectedConcept(null);
 
-      // Invalidate session data for legacy support (only if response indicates it's NOT a LangGraph session)
-      if (sessionId && !data?.threadId) {
+      // Invalidate and refetch to ensure we have the latest data
+      if (threadId) {
+        queryClient.invalidateQueries({
+          queryKey: ["/api/langgraph/content-writer/status", threadId],
+        });
+        queryClient.refetchQueries({
+          queryKey: ["/api/langgraph/content-writer/status", threadId],
+        });
+      } else if (sessionId) {
         queryClient.invalidateQueries({
           queryKey: [`/api/content-writer/sessions/${sessionId}`],
         });
@@ -639,11 +682,18 @@ export default function ContentWriterV2() {
     },
     onError: (error: any, variables, context: any) => {
       // Rollback optimistic update on error
-      if (context?.previousData && threadId) {
-        queryClient.setQueryData(
-          ["/api/langgraph/content-writer/status", threadId],
-          context.previousData
-        );
+      if (context?.previousData) {
+        if (threadId) {
+          queryClient.setQueryData(
+            ["/api/langgraph/content-writer/status", threadId],
+            context.previousData
+          );
+        } else if (sessionId) {
+          queryClient.setQueryData(
+            [`/api/content-writer/sessions/${sessionId}`],
+            context.previousData
+          );
+        }
       }
 
       toast({
