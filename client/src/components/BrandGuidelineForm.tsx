@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TagInput from "@/components/TagInput";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useRegulatoryProfiles } from "@/hooks/useGuidelineProfiles";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { showAdminErrorToast } from "@/lib/admin-toast";
@@ -71,9 +72,8 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
 
-  const { data: regulatoryGuidelines = [] } = useQuery<GuidelineProfile[]>({
-    queryKey: ["/api/guideline-profiles?type=regulatory"],
-  });
+  // Fetch regulatory guidelines using centralized hook
+  const { data: regulatoryGuidelines = [] } = useRegulatoryProfiles();
 
   // Fetch existing extracted context
   interface ExtractedContext {
@@ -92,7 +92,16 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
   // Fetch the profile data to check for cached crawled URLs
   const { data: profileData } = useQuery<GuidelineProfile>({
-    queryKey: profileId ? [`/api/guideline-profiles/${profileId}`] : [],
+    queryKey: profileId ? ['guideline-profiles', profileId] : [],
+    queryFn: async () => {
+      const response = await fetch(`/api/guideline-profiles/${profileId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      return response.json();
+    },
     enabled: !!profileId,
   });
 
@@ -642,7 +651,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           { crawledUrls: results.crawledUrls }
         );
         // Invalidate profile cache to show saved results immediately
-        queryClient.invalidateQueries({ queryKey: [`/api/guideline-profiles/${profileId}`] });
+        queryClient.invalidateQueries({ queryKey: ['guideline-profiles', profileId] });
       } catch (error) {
         console.error("Failed to save crawled URLs:", error);
       }
@@ -893,7 +902,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       });
       
       // Invalidate cache to refresh the profile data
-      queryClient.invalidateQueries({ queryKey: [`/api/guideline-profiles/${profileId}`] });
+      queryClient.invalidateQueries({ queryKey: ['guideline-profiles', profileId] });
       
       // Reset pending mode after successful tagging
       setPendingDiscoverMode(null);

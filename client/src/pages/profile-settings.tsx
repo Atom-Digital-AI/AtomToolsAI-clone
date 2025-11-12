@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useGuidelineProfiles } from "@/hooks/useGuidelineProfiles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,19 +48,8 @@ export default function ProfileSettings() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch guideline profiles
-  const { data: profiles, isLoading } = useQuery<GuidelineProfile[]>({
-    queryKey: ["/api/guideline-profiles"],
-    queryFn: async () => {
-      const response = await fetch("/api/guideline-profiles", {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch profiles");
-      }
-      return response.json();
-    },
-  });
+  // Fetch guideline profiles using centralized hook
+  const { data: profiles, isLoading } = useGuidelineProfiles();
 
   // Create profile mutation
   const createProfileMutation = useMutation({
@@ -68,10 +58,27 @@ export default function ProfileSettings() {
       type: "brand" | "regulatory";
       content: GuidelineContent;
     }) => {
-      return await apiRequest("POST", "/api/guideline-profiles", profile);
+      const response = await apiRequest("POST", "/api/guideline-profiles", profile);
+      return await response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/guideline-profiles"] });
+    onSuccess: (newProfile) => {
+      // Optimistically update the cache with the new profile
+      queryClient.setQueryData(['guideline-profiles'], (old: GuidelineProfile[] | undefined) => {
+        if (!old) return [newProfile];
+        return [...old, newProfile];
+      });
+      // Also update filtered queries
+      if (newProfile.type === 'brand') {
+        queryClient.setQueryData(['guideline-profiles', { type: 'brand' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [newProfile];
+          return [...old, newProfile];
+        });
+      } else {
+        queryClient.setQueryData(['guideline-profiles', { type: 'regulatory' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [newProfile];
+          return [...old, newProfile];
+        });
+      }
       setIsCreateDialogOpen(false);
       setNewProfile({
         name: "",
@@ -99,10 +106,29 @@ export default function ProfileSettings() {
       name: string;
       content: GuidelineContent;
     }) => {
-      return await apiRequest("PUT", `/api/guideline-profiles/${id}`, profile);
+      const response = await apiRequest("PUT", `/api/guideline-profiles/${id}`, profile);
+      return { id, ...await response.json() };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/guideline-profiles"] });
+    onSuccess: (updatedProfile) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['guideline-profiles'], (old: GuidelineProfile[] | undefined) => {
+        if (!old) return [updatedProfile];
+        return old.map(p => p.id === updatedProfile.id ? updatedProfile : p);
+      });
+      // Update filtered queries
+      if (updatedProfile.type === 'brand') {
+        queryClient.setQueryData(['guideline-profiles', { type: 'brand' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [updatedProfile];
+          return old.map(p => p.id === updatedProfile.id ? updatedProfile : p);
+        });
+      } else {
+        queryClient.setQueryData(['guideline-profiles', { type: 'regulatory' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [updatedProfile];
+          return old.map(p => p.id === updatedProfile.id ? updatedProfile : p);
+        });
+      }
+      // Also update individual profile query if it exists
+      queryClient.setQueryData(['guideline-profiles', updatedProfile.id], updatedProfile);
       setEditingProfile(null);
       toast({ title: "Success", description: "Profile updated successfully" });
     },
@@ -118,10 +144,32 @@ export default function ProfileSettings() {
   // Delete profile mutation
   const deleteProfileMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/guideline-profiles/${id}`);
+      await apiRequest("DELETE", `/api/guideline-profiles/${id}`);
+      return id;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/guideline-profiles"] });
+    onSuccess: (deletedId) => {
+      // Find the profile to get its type before removing
+      const deletedProfile = profiles?.find(p => p.id === deletedId);
+      
+      // Optimistically remove from cache
+      queryClient.setQueryData(['guideline-profiles'], (old: GuidelineProfile[] | undefined) => {
+        if (!old) return [];
+        return old.filter(p => p.id !== deletedId);
+      });
+      // Update filtered queries
+      if (deletedProfile?.type === 'brand') {
+        queryClient.setQueryData(['guideline-profiles', { type: 'brand' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [];
+          return old.filter(p => p.id !== deletedId);
+        });
+      } else if (deletedProfile?.type === 'regulatory') {
+        queryClient.setQueryData(['guideline-profiles', { type: 'regulatory' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [];
+          return old.filter(p => p.id !== deletedId);
+        });
+      }
+      // Remove individual profile query
+      queryClient.removeQueries({ queryKey: ['guideline-profiles', deletedId] });
       toast({ title: "Success", description: "Profile deleted successfully" });
     },
     onError: () => {
@@ -137,14 +185,31 @@ export default function ProfileSettings() {
   const duplicateProfileMutation = useMutation({
     mutationFn: async (profile: GuidelineProfile) => {
       const duplicateName = `${profile.name} (Copy)`;
-      return await apiRequest("POST", "/api/guideline-profiles", {
+      const response = await apiRequest("POST", "/api/guideline-profiles", {
         name: duplicateName,
         type: profile.type,
         content: profile.content,
       });
+      return await response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/guideline-profiles"] });
+    onSuccess: (newProfile) => {
+      // Optimistically update the cache with the duplicated profile
+      queryClient.setQueryData(['guideline-profiles'], (old: GuidelineProfile[] | undefined) => {
+        if (!old) return [newProfile];
+        return [...old, newProfile];
+      });
+      // Update filtered query
+      if (newProfile.type === 'brand') {
+        queryClient.setQueryData(['guideline-profiles', { type: 'brand' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [newProfile];
+          return [...old, newProfile];
+        });
+      } else {
+        queryClient.setQueryData(['guideline-profiles', { type: 'regulatory' }], (old: GuidelineProfile[] | undefined) => {
+          if (!old) return [newProfile];
+          return [...old, newProfile];
+        });
+      }
       toast({
         title: "Success",
         description: "Profile duplicated successfully",

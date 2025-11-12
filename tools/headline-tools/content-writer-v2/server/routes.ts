@@ -87,17 +87,43 @@ export function registerContentWriterRoutes(app: Express): void {
       const userId = (req as any).user.id;
       const threadId = req.params.id;
 
+      // Try LangGraph state first (new system)
       const state = await getGraphState(threadId, {
         userId,
       });
       
-      if (!state) {
+      if (state) {
+        return res.json(state);
+      }
+
+      // Fallback to old database-based system for backward compatibility
+      const session = await storage.getContentWriterSession(threadId, userId);
+      if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
 
-      res.json(state);
+      const concepts = await storage.getSessionConcepts(threadId, userId);
+      const subtopics = await storage.getSessionSubtopics(threadId, userId);
+      const draft = await storage.getSessionDraft(threadId, userId);
+
+      res.json({ session, concepts, subtopics, draft });
     } catch (error) {
       console.error("Content Writer get session error:", error);
+      
+      await logToolError({
+        userId: req.user?.id,
+        userEmail: req.user?.email,
+        toolName: 'Content Writer v2',
+        errorType: getErrorTypeFromError(error),
+        errorMessage: (error as any)?.message || 'Unknown error occurred',
+        errorStack: (error as any)?.stack,
+        requestData: { sessionId: req.params.id },
+        httpStatus: (error as any)?.status || 500,
+        endpoint: '/api/content-writer/sessions/:id',
+        req,
+        responseHeaders: (error as any)?.headers ? Object.fromEntries((error as any).headers.entries()) : null
+      });
+      
       res.status(500).json({ message: "Internal server error" });
     }
   });

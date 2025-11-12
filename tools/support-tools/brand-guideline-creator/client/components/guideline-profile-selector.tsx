@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Save, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useGuidelineProfiles } from "@/hooks/useGuidelineProfiles";
 import type { GuidelineProfile, GuidelineContent, BrandGuidelineContent } from "@shared/schema";
 
 // Helper function to check if content is a string
@@ -93,31 +94,38 @@ export default function GuidelineProfileSelector({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch profiles of the specific type
-  const { data: profiles } = useQuery<GuidelineProfile[]>({
-    queryKey: ["/api/guideline-profiles", { type }],
-    queryFn: async () => {
-      const response = await fetch(`/api/guideline-profiles?type=${type}`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch profiles");
-      }
-      return response.json();
-    },
-  });
+  // Fetch profiles of the specific type using centralized hook
+  const { data: profiles } = useGuidelineProfiles(type);
 
   // Save profile mutation
   const saveProfileMutation = useMutation({
     mutationFn: async (data: { name: string; content: string }) => {
-      return apiRequest("POST", "/api/guideline-profiles", {
+      const response = await apiRequest("POST", "/api/guideline-profiles", {
         name: data.name,
         type,
         content: data.content,
       });
+      return await response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/guideline-profiles"] });
+    onSuccess: async (newProfile) => {
+      // Optimistically update the cache with the new profile
+      queryClient.setQueryData(['guideline-profiles'], (old: GuidelineProfile[] | undefined) => {
+        if (!old) return [newProfile];
+        const exists = old.some(p => p.id === newProfile.id);
+        if (exists) {
+          return old.map(p => p.id === newProfile.id ? newProfile : p);
+        }
+        return [...old, newProfile];
+      });
+      // Also update the filtered query if it exists
+      queryClient.setQueryData(['guideline-profiles', { type }], (old: GuidelineProfile[] | undefined) => {
+        if (!old) return [newProfile];
+        const exists = old.some(p => p.id === newProfile.id);
+        if (exists) {
+          return old.map(p => p.id === newProfile.id ? newProfile : p);
+        }
+        return [...old, newProfile];
+      });
       setShowSaveDialog(false);
       setProfileName("");
       toast({ title: "Success", description: "Profile saved successfully" });

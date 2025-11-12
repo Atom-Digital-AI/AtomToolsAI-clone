@@ -1,12 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-
-interface GuidelineProfile {
-  id: string;
-  name: string;
-  type: 'brand' | 'regulatory';
-  content: any;
-}
+import { useBrandProfiles } from '@/hooks/useGuidelineProfiles';
+import type { GuidelineProfile } from '@shared/schema';
 
 interface BrandContextType {
   selectedBrand: GuidelineProfile | null;
@@ -20,11 +14,8 @@ const BrandContext = createContext<BrandContextType | undefined>(undefined);
 export function BrandProvider({ children }: { children: ReactNode }) {
   const [selectedBrand, setSelectedBrandState] = useState<GuidelineProfile | null>(null);
 
-  // Fetch all brand profiles
-  const { data: brandProfiles = [], isLoading } = useQuery<GuidelineProfile[]>({
-    queryKey: ['/api/guideline-profiles'],
-    select: (profiles) => profiles.filter(p => p.type === 'brand'),
-  });
+  // Fetch all brand profiles using centralized hook
+  const { data: brandProfiles = [], isLoading } = useBrandProfiles();
 
   // Load selected brand from localStorage on mount
   useEffect(() => {
