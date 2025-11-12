@@ -295,6 +295,20 @@ export default function ContentWriterV2() {
   const subtopics = (threadState?.subtopics ||
     (sessionData as any)?.subtopics ||
     []) as Subtopic[];
+
+  // Log concepts derivation for debugging
+  useEffect(() => {
+    console.log("[Content Writer] Concepts derived:", {
+      conceptsCount: concepts.length,
+      concepts: concepts,
+      threadStateConcepts: threadState?.concepts?.length || 0,
+      sessionDataConcepts: (sessionData as any)?.concepts?.length || 0,
+      threadId,
+      sessionId,
+      hasThreadState: !!threadState,
+      hasSessionData: !!sessionData,
+    });
+  }, [concepts, threadState, sessionData, threadId, sessionId]);
   const draft = threadState?.articleDraft
     ? ({
         ...threadState.articleDraft,
@@ -544,8 +558,19 @@ export default function ContentWriterV2() {
   // Regenerate concepts mutation
   const regenerateConceptsMutation = useMutation({
     mutationFn: async () => {
+      console.log("[Regenerate Concepts] mutationFn: Starting regeneration", {
+        threadId,
+        sessionId,
+        regenerateFeedback,
+        matchStyle,
+      });
+
       // Use LangGraph endpoint if threadId is available, otherwise use legacy endpoint
       if (threadId) {
+        console.log(
+          "[Regenerate Concepts] Using LangGraph endpoint:",
+          `/api/langgraph/content-writer/regenerate/${threadId}`
+        );
         const res = await apiRequest(
           "POST",
           `/api/langgraph/content-writer/regenerate/${threadId}`,
@@ -554,8 +579,14 @@ export default function ContentWriterV2() {
             matchStyle,
           }
         );
-        return await res.json();
+        const data = await res.json();
+        console.log("[Regenerate Concepts] LangGraph response:", data);
+        return data;
       } else if (sessionId) {
+        console.log(
+          "[Regenerate Concepts] Using legacy endpoint:",
+          `/api/content-writer/sessions/${sessionId}/regenerate`
+        );
         const res = await apiRequest(
           "POST",
           `/api/content-writer/sessions/${sessionId}/regenerate`,
@@ -564,14 +595,27 @@ export default function ContentWriterV2() {
             matchStyle,
           }
         );
-        return await res.json();
+        const data = await res.json();
+        console.log("[Regenerate Concepts] Legacy response:", data);
+        return data;
       } else {
+        console.error(
+          "[Regenerate Concepts] ERROR: No session or thread ID available"
+        );
         throw new Error("No session or thread ID available");
       }
     },
     onMutate: async () => {
+      console.log("[Regenerate Concepts] onMutate: Starting optimistic update", {
+        threadId,
+        sessionId,
+      });
+
       // Optimistically clear old concepts immediately when regeneration starts
       if (threadId) {
+        console.log(
+          "[Regenerate Concepts] onMutate: LangGraph path - cancelling queries"
+        );
         // Cancel any outgoing refetches to prevent them from overwriting our optimistic update
         await queryClient.cancelQueries({
           queryKey: ["/api/langgraph/content-writer/status", threadId],
@@ -582,24 +626,59 @@ export default function ContentWriterV2() {
           "/api/langgraph/content-writer/status",
           threadId,
         ]);
+        console.log(
+          "[Regenerate Concepts] onMutate: Previous LangGraph data:",
+          previousData
+        );
+        console.log(
+          "[Regenerate Concepts] onMutate: Previous concepts count:",
+          previousData?.state?.concepts?.length || 0
+        );
 
         // Optimistically clear concepts to give instant feedback
         queryClient.setQueryData(
           ["/api/langgraph/content-writer/status", threadId],
           (old: any) => {
-            if (!old) return old;
-            return {
+            console.log(
+              "[Regenerate Concepts] onMutate: Updating LangGraph cache, old data:",
+              old
+            );
+            if (!old) {
+              console.log(
+                "[Regenerate Concepts] onMutate: No old data, returning as-is"
+              );
+              return old;
+            }
+            const updated = {
               ...old,
               state: {
                 ...old.state,
                 concepts: [], // Clear old concepts immediately
               },
             };
+            console.log(
+              "[Regenerate Concepts] onMutate: Updated LangGraph cache:",
+              updated
+            );
+            return updated;
           }
+        );
+
+        // Verify the update
+        const afterUpdate = queryClient.getQueryData([
+          "/api/langgraph/content-writer/status",
+          threadId,
+        ]);
+        console.log(
+          "[Regenerate Concepts] onMutate: After update, concepts count:",
+          afterUpdate?.state?.concepts?.length || 0
         );
 
         return { previousData };
       } else if (sessionId) {
+        console.log(
+          "[Regenerate Concepts] onMutate: Legacy path - cancelling queries"
+        );
         // For legacy sessions, optimistically clear concepts
         await queryClient.cancelQueries({
           queryKey: [`/api/content-writer/sessions/${sessionId}`],
@@ -608,56 +687,167 @@ export default function ContentWriterV2() {
         const previousData = queryClient.getQueryData([
           `/api/content-writer/sessions/${sessionId}`,
         ]);
+        console.log(
+          "[Regenerate Concepts] onMutate: Previous legacy data:",
+          previousData
+        );
+        console.log(
+          "[Regenerate Concepts] onMutate: Previous concepts count:",
+          previousData?.concepts?.length || 0
+        );
 
         // Optimistically clear concepts in session data
         queryClient.setQueryData(
           [`/api/content-writer/sessions/${sessionId}`],
           (old: any) => {
-            if (!old) return old;
-            return {
+            console.log(
+              "[Regenerate Concepts] onMutate: Updating legacy cache, old data:",
+              old
+            );
+            if (!old) {
+              console.log(
+                "[Regenerate Concepts] onMutate: No old data, returning as-is"
+              );
+              return old;
+            }
+            const updated = {
               ...old,
               concepts: [], // Clear old concepts immediately
             };
+            console.log(
+              "[Regenerate Concepts] onMutate: Updated legacy cache:",
+              updated
+            );
+            return updated;
           }
+        );
+
+        // Verify the update
+        const afterUpdate = queryClient.getQueryData([
+          `/api/content-writer/sessions/${sessionId}`,
+        ]);
+        console.log(
+          "[Regenerate Concepts] onMutate: After update, concepts count:",
+          afterUpdate?.concepts?.length || 0
         );
 
         return { previousData };
       }
+      console.warn(
+        "[Regenerate Concepts] onMutate: No threadId or sessionId, returning empty context"
+      );
       return {};
     },
     onSuccess: (data: any) => {
+      console.log("[Regenerate Concepts] onSuccess: Received response data:", data);
+      console.log("[Regenerate Concepts] onSuccess: Current state:", {
+        threadId,
+        sessionId,
+        hasState: !!data?.state,
+        hasConcepts: !!data?.concepts,
+        conceptsCount: data?.concepts?.length || data?.state?.concepts?.length || 0,
+      });
+
       // Update cache immediately with response data
       if (data?.state && threadId) {
+        console.log(
+          "[Regenerate Concepts] onSuccess: LangGraph path - updating cache"
+        );
+        console.log(
+          "[Regenerate Concepts] onSuccess: New concepts from state:",
+          data.state.concepts
+        );
         // LangGraph response
+        const newCacheData = {
+          threadId: data.threadId || threadId,
+          state: data.state,
+          currentStep:
+            data.state.metadata?.currentStep || "awaitConceptApproval",
+          completed: data.state.status === "completed",
+        };
+        console.log(
+          "[Regenerate Concepts] onSuccess: Setting LangGraph cache to:",
+          newCacheData
+        );
         queryClient.setQueryData(
           ["/api/langgraph/content-writer/status", threadId],
-          {
-            threadId: data.threadId || threadId,
-            state: data.state,
-            currentStep:
-              data.state.metadata?.currentStep || "awaitConceptApproval",
-            completed: data.state.status === "completed",
-          }
+          newCacheData
+        );
+
+        // Verify the update
+        const afterUpdate = queryClient.getQueryData([
+          "/api/langgraph/content-writer/status",
+          threadId,
+        ]);
+        console.log(
+          "[Regenerate Concepts] onSuccess: After LangGraph cache update, concepts count:",
+          afterUpdate?.state?.concepts?.length || 0
         );
       } else if (data?.concepts && sessionId) {
+        console.log(
+          "[Regenerate Concepts] onSuccess: Legacy path - updating cache"
+        );
+        console.log(
+          "[Regenerate Concepts] onSuccess: New concepts from response:",
+          data.concepts
+        );
         // Legacy response - update session data with new concepts
         queryClient.setQueryData(
           [`/api/content-writer/sessions/${sessionId}`],
           (old: any) => {
-            if (!old) return old;
-            return {
+            console.log(
+              "[Regenerate Concepts] onSuccess: Updating legacy cache, old data:",
+              old
+            );
+            if (!old) {
+              console.warn(
+                "[Regenerate Concepts] onSuccess: No old data in legacy cache!"
+              );
+              return old;
+            }
+            const updated = {
               ...old,
               concepts: data.concepts, // Set new concepts from response
             };
+            console.log(
+              "[Regenerate Concepts] onSuccess: Updated legacy cache:",
+              updated
+            );
+            return updated;
+          }
+        );
+
+        // Verify the update
+        const afterUpdate = queryClient.getQueryData([
+          `/api/content-writer/sessions/${sessionId}`,
+        ]);
+        console.log(
+          "[Regenerate Concepts] onSuccess: After legacy cache update, concepts count:",
+          afterUpdate?.concepts?.length || 0
+        );
+      } else {
+        console.warn(
+          "[Regenerate Concepts] onSuccess: No matching condition!",
+          {
+            hasState: !!data?.state,
+            hasConcepts: !!data?.concepts,
+            threadId,
+            sessionId,
           }
         );
       }
 
       // Clear selected concept since we're regenerating
+      console.log(
+        "[Regenerate Concepts] onSuccess: Clearing selected concept"
+      );
       setSelectedConcept(null);
 
       // Invalidate and refetch to ensure we have the latest data
       if (threadId) {
+        console.log(
+          "[Regenerate Concepts] onSuccess: Invalidating and refetching LangGraph queries"
+        );
         queryClient.invalidateQueries({
           queryKey: ["/api/langgraph/content-writer/status", threadId],
         });
@@ -665,6 +855,9 @@ export default function ContentWriterV2() {
           queryKey: ["/api/langgraph/content-writer/status", threadId],
         });
       } else if (sessionId) {
+        console.log(
+          "[Regenerate Concepts] onSuccess: Invalidating and refetching legacy queries"
+        );
         queryClient.invalidateQueries({
           queryKey: [`/api/content-writer/sessions/${sessionId}`],
         });
@@ -673,6 +866,9 @@ export default function ContentWriterV2() {
         });
       }
 
+      console.log(
+        "[Regenerate Concepts] onSuccess: Closing dialog and showing toast"
+      );
       setShowRegenerateDialog(false);
       setRegenerateFeedback("");
       toast({
@@ -681,21 +877,45 @@ export default function ContentWriterV2() {
       });
     },
     onError: (error: any, variables, context: any) => {
+      console.error("[Regenerate Concepts] onError: Error occurred:", error);
+      console.error("[Regenerate Concepts] onError: Error details:", {
+        message: error?.message,
+        stack: error?.stack,
+        variables,
+        context,
+        threadId,
+        sessionId,
+      });
+
       // Rollback optimistic update on error
       if (context?.previousData) {
+        console.log(
+          "[Regenerate Concepts] onError: Rolling back optimistic update"
+        );
         if (threadId) {
+          console.log(
+            "[Regenerate Concepts] onError: Rolling back LangGraph cache"
+          );
           queryClient.setQueryData(
             ["/api/langgraph/content-writer/status", threadId],
             context.previousData
           );
         } else if (sessionId) {
+          console.log(
+            "[Regenerate Concepts] onError: Rolling back legacy cache"
+          );
           queryClient.setQueryData(
             [`/api/content-writer/sessions/${sessionId}`],
             context.previousData
           );
         }
+      } else {
+        console.warn(
+          "[Regenerate Concepts] onError: No previousData in context to rollback"
+        );
       }
 
+      console.log("[Regenerate Concepts] onError: Showing error toast");
       toast({
         title: "Error",
         description: error?.message || "Failed to regenerate concepts",
@@ -1309,7 +1529,20 @@ export default function ContentWriterV2() {
               />
               <div className="flex gap-2">
                 <Button
-                  onClick={() => regenerateConceptsMutation.mutate()}
+                  onClick={() => {
+                    console.log(
+                      "[Regenerate Concepts] Button clicked - starting mutation",
+                      {
+                        threadId,
+                        sessionId,
+                        currentConceptsCount: concepts.length,
+                        currentConcepts: concepts,
+                        regenerateFeedback,
+                        matchStyle,
+                      }
+                    );
+                    regenerateConceptsMutation.mutate();
+                  }}
                   disabled={regenerateConceptsMutation.isPending}
                   data-testid="button-confirm-regenerate"
                 >
