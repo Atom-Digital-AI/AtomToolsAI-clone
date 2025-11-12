@@ -22,7 +22,7 @@ import {
 } from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, inArray } from "drizzle-orm";
 import { db } from "./db";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -3015,11 +3015,32 @@ Return the response as a JSON array with this exact structure:
         const conceptsText = completion.choices[0]?.message?.content || "[]";
         const concepts = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
 
+        // Delete old concepts before creating new ones
+        // This ensures only the new regenerated concepts are returned
+        // First delete any subtopics that reference the old concepts (to avoid FK constraint errors)
+        const oldConceptIds = currentConcepts.map((c) => c.id);
+        if (oldConceptIds.length > 0) {
+          // Delete subtopics first (if any exist - though unlikely at concept selection stage)
+          await db
+            .delete(contentWriterSubtopics)
+            .where(inArray(contentWriterSubtopics.parentConceptId, oldConceptIds));
+
+          // Then delete the old concepts
+          await db
+            .delete(contentWriterConcepts)
+            .where(
+              and(
+                eq(contentWriterConcepts.sessionId, session.id),
+                inArray(contentWriterConcepts.id, oldConceptIds)
+              )
+            );
+        }
+
         const conceptsToInsert = concepts.map((c: any, index: number) => ({
           sessionId: session.id,
           title: c.title,
           summary: c.summary,
-          rankOrder: currentConcepts.length + index + 1,
+          rankOrder: index + 1, // Start from 1, not currentConcepts.length + 1
         }));
 
         const newConcepts = await storage.createContentWriterConcepts(
