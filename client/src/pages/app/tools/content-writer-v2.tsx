@@ -164,11 +164,23 @@ interface ThreadState {
 
 type Stage = "topic" | "concepts" | "subtopics" | "article";
 
+// Debug helper that uses console.error in production (won't be stripped)
+const debugLog = (...args: any[]) => {
+  if (import.meta.env.PROD) {
+    console.error("[DEBUG]", ...args);
+  } else {
+    console.log("[DEBUG]", ...args);
+  }
+};
+
 export default function ContentWriterV2() {
-  // Debug: Log component mount
+  // Debug: Log component mount - using console.error so it won't be stripped in production
   useEffect(() => {
-    console.log("🔵 [Content Writer] Component mounted/updated - logging is active");
-    console.log("🔵 [Content Writer] Check browser console filter - make sure 'All levels' or 'Info' is selected");
+    debugLog("🔵🔵🔵 [Content Writer] Component mounted/updated - logging is active");
+    debugLog("🔵 [Content Writer] Check browser console filter - make sure 'All levels' or 'Errors' is selected");
+    // Also set a global flag for debugging
+    (window as any).__CONTENT_WRITER_DEBUG__ = true;
+    debugLog("🔵 [Content Writer] Debug flag set: __CONTENT_WRITER_DEBUG__ =", (window as any).__CONTENT_WRITER_DEBUG__);
   }, []);
 
   const [stage, setStage] = useState<Stage>("topic");
@@ -584,9 +596,9 @@ export default function ContentWriterV2() {
   // Regenerate concepts mutation
   const regenerateConceptsMutation = useMutation({
     mutationFn: async () => {
-      // Force log to ensure it's visible
-      console.log("🔴🔴🔴 [Regenerate Concepts] mutationFn: STARTING - THIS SHOULD BE VISIBLE");
-      console.log("[Regenerate Concepts] mutationFn: Starting regeneration", {
+      // Force log to ensure it's visible - using debugLog so it won't be stripped
+      debugLog("🔴🔴🔴 [Regenerate Concepts] mutationFn: STARTING - THIS SHOULD BE VISIBLE");
+      debugLog("[Regenerate Concepts] mutationFn: Starting regeneration", {
         threadId,
         sessionId,
         regenerateFeedback,
@@ -634,10 +646,10 @@ export default function ContentWriterV2() {
       }
     },
     onMutate: async () => {
-      // Force log to ensure it's visible
-      console.log("🟡🟡🟡 [Regenerate Concepts] onMutate: STARTING - THIS SHOULD BE VISIBLE");
-      console.log("=".repeat(80));
-      console.log("[STEP 1] onMutate: STARTING optimistic update");
+      // Force log to ensure it's visible - using debugLog so it won't be stripped
+      debugLog("🟡🟡🟡 [Regenerate Concepts] onMutate: STARTING - THIS SHOULD BE VISIBLE");
+      debugLog("=".repeat(80));
+      debugLog("[STEP 1] onMutate: STARTING optimistic update");
       console.log("[STEP 1.1] onMutate: Current state", {
         threadId,
         sessionId,
@@ -1623,9 +1635,9 @@ export default function ContentWriterV2() {
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    // Force log to ensure it's visible
-                    console.log("🟢🟢🟢 [Regenerate Concepts] BUTTON CLICKED - THIS SHOULD BE VISIBLE");
-                    console.log(
+                    // Force log to ensure it's visible - using debugLog so it won't be stripped
+                    debugLog("🟢🟢🟢 [Regenerate Concepts] BUTTON CLICKED - THIS SHOULD BE VISIBLE");
+                    debugLog(
                       "[Regenerate Concepts] Button clicked - starting mutation",
                       {
                         threadId,
@@ -1636,9 +1648,9 @@ export default function ContentWriterV2() {
                         matchStyle,
                       }
                     );
-                    console.log("🟢 [Regenerate Concepts] About to call mutate()");
+                    debugLog("🟢 [Regenerate Concepts] About to call mutate()");
                     regenerateConceptsMutation.mutate();
-                    console.log("🟢 [Regenerate Concepts] mutate() called");
+                    debugLog("🟢 [Regenerate Concepts] mutate() called");
                   }}
                   disabled={regenerateConceptsMutation.isPending}
                   data-testid="button-confirm-regenerate"
