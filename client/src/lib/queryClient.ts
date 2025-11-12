@@ -44,15 +44,62 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // Log all API requests for debugging
+  console.error("🌐 [API Request] Starting:", {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    url,
+    hasData: !!data,
+    dataSize: data ? JSON.stringify(data).length : 0,
+    timestamp: new Date().toISOString(),
   });
+  
+  if (data) {
+    console.error("🌐 [API Request] Request data:", data);
+  }
 
-  await throwIfResNotOk(res);
-  return res;
+  const startTime = Date.now();
+  
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+
+    const duration = Date.now() - startTime;
+    console.error("🌐 [API Request] Response received:", {
+      method,
+      url,
+      status: res.status,
+      statusText: res.statusText,
+      duration: `${duration}ms`,
+      ok: res.ok,
+    });
+
+    if (!res.ok) {
+      const text = await res.clone().text();
+      console.error("🌐 [API Request] Error response:", {
+        status: res.status,
+        statusText: res.statusText,
+        responseText: text.substring(0, 500),
+      });
+    }
+
+    await throwIfResNotOk(res);
+    
+    console.error("🌐 [API Request] Request completed successfully");
+    return res;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error("🌐 [API Request] Request failed:", {
+      method,
+      url,
+      error: error instanceof Error ? error.message : String(error),
+      duration: `${duration}ms`,
+    });
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
