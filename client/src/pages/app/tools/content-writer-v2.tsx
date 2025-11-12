@@ -1074,6 +1074,32 @@ export default function ContentWriterV2() {
           conceptsCount: data.concepts.length,
         });
 
+        // FIX: If we have a threadId but hit legacy endpoint, update BOTH caches
+        // This handles the case where threadId exists but wasn't found by mutation
+        if (threadId) {
+          console.error("[STEP 2.4.1.5] onSuccess: ThreadId exists - updating BOTH caches for consistency");
+
+          // Update LangGraph cache with legacy response
+          const legacyToLangGraphData = {
+            threadId: threadId,
+            state: {
+              concepts: data.concepts,
+              metadata: {
+                currentStep: "awaitConceptApproval"
+              },
+              status: "processing"
+            },
+            currentStep: "awaitConceptApproval",
+            completed: false,
+          };
+
+          queryClient.setQueryData(
+            ["/api/langgraph/content-writer/status", threadId],
+            legacyToLangGraphData
+          );
+          console.error("[STEP 2.4.1.6] onSuccess: LangGraph cache also updated with legacy response");
+        }
+
         // Legacy response - update session data with new concepts
         console.error(
           "[STEP 2.4.2] onSuccess: CALLING setQueryData to INSERT new concepts"
