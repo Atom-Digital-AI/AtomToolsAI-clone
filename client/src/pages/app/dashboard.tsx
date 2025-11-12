@@ -1,9 +1,23 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Bell, Package, Zap, ArrowRight, Check, Star, Settings } from "lucide-react";
+import {
+  Bell,
+  Package,
+  Zap,
+  ArrowRight,
+  Check,
+  Star,
+  Settings,
+} from "lucide-react";
 import { type User, type ProductWithSubscriptionStatus } from "@shared/schema";
 import AuthGuard from "@/components/auth-guard";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -24,7 +38,11 @@ interface Notification {
 function DashboardContent() {
   const { toast } = useToast();
 
-  const { data: user, isLoading, error } = useQuery<User>({
+  const {
+    data: user,
+    isLoading,
+    error,
+  } = useQuery<User>({
     queryKey: ["user"],
     queryFn: async () => {
       const response = await fetch("/api/auth/me", {
@@ -40,33 +58,41 @@ function DashboardContent() {
   });
 
   // Get tier subscriptions
-  const { data: tierSubscriptions, isLoading: tiersLoading } = useQuery({
+  const { data: tierSubscriptions, isLoading: tiersLoading } = useQuery<
+    Array<{ id: string; tierId: string; subscribedAt: string }>
+  >({
     queryKey: ["/api/user/tier-subscriptions"],
     retry: false,
   });
 
   // Get all products for display
-  const { data: products, isLoading: productsLoading } = useQuery<ProductWithSubscriptionStatus[]>({
+  const { data: products, isLoading: productsLoading } = useQuery<
+    ProductWithSubscriptionStatus[]
+  >({
     queryKey: ["/api/products/with-status"],
     retry: false,
   });
 
   // Get notifications
-  const { data: notificationsData } = useQuery<{ notifications: Notification[] }>({
+  const { data: notificationsData } = useQuery<{
+    notifications: Notification[];
+  }>({
     queryKey: ["/api/notifications"],
     retry: false,
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: (notificationId: string) => 
-      apiRequest('PATCH', `/api/notifications/${notificationId}/read`),
+    mutationFn: (notificationId: string) =>
+      apiRequest("PATCH", `/api/notifications/${notificationId}/read`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
     },
   });
 
-  const notifications = notificationsData?.notifications || [];
-  const unreadNotifications = notifications.filter(n => !n.isRead).slice(0, 3);
+  const notifications: Notification[] = notificationsData?.notifications || [];
+  const unreadNotifications: Notification[] = notifications
+    .filter((n) => !n.isRead)
+    .slice(0, 3);
 
   if (isLoading || tiersLoading || productsLoading) {
     return (
@@ -86,13 +112,15 @@ function DashboardContent() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-text-secondary">
-          {error ? "Authentication failed, redirecting..." : "Loading user data..."}
+          {error
+            ? "Authentication failed, redirecting..."
+            : "Loading user data..."}
         </div>
       </div>
     );
   }
 
-  const subscribedProducts = products?.filter(p => p.isSubscribed) || [];
+  const subscribedProducts = products?.filter((p) => p.isSubscribed) || [];
 
   return (
     <div className="bg-background min-h-screen w-full">
@@ -103,7 +131,8 @@ function DashboardContent() {
             Welcome back, {user.firstName}!
           </h1>
           <p className="text-text-secondary">
-            Manage your marketing automation tools and campaigns from your dashboard.
+            Manage your marketing automation tools and campaigns from your
+            dashboard.
           </p>
         </div>
 
@@ -115,7 +144,9 @@ function DashboardContent() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="w-5 h-5 text-accent" />
-                    <CardTitle className="text-text-primary">Recent Notifications</CardTitle>
+                    <CardTitle className="text-text-primary">
+                      Recent Notifications
+                    </CardTitle>
                     {unreadNotifications.length > 0 && (
                       <Badge variant="destructive" className="ml-2">
                         {unreadNotifications.length} new
@@ -123,7 +154,11 @@ function DashboardContent() {
                     )}
                   </div>
                   <Link href="/app/notifications">
-                    <Button variant="ghost" size="sm" data-testid="view-all-notifications">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      data-testid="view-all-notifications"
+                    >
                       View All
                     </Button>
                   </Link>
@@ -131,14 +166,18 @@ function DashboardContent() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {unreadNotifications.map((notification) => (
-                  <div 
-                    key={notification.id} 
+                  <div
+                    key={notification.id}
                     className="flex items-start justify-between p-3 bg-background rounded-lg border border-border hover:border-accent/50 transition-colors"
                     data-testid={`notification-${notification.id}`}
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-text-primary">{notification.title}</div>
-                      <div className="text-sm text-text-secondary mt-1">{notification.message}</div>
+                      <div className="font-medium text-text-primary">
+                        {notification.title}
+                      </div>
+                      <div className="text-sm text-text-secondary mt-1">
+                        {notification.message}
+                      </div>
                       <div className="text-xs text-text-secondary mt-2">
                         {new Date(notification.createdAt).toLocaleString()}
                       </div>
@@ -160,59 +199,81 @@ function DashboardContent() {
         )}
 
         {/* Active Packages/Tiers */}
-        {tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.length > 0 && (
-          <div className="max-w-7xl mx-auto mb-8">
-            <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center">
-              <Package className="w-5 h-5 mr-2" />
-              Your Active Packages
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {(tierSubscriptions as any[]).map((subscription: any) => (
-                <Card key={subscription.id} className="border-green-500/30 bg-green-500/5 dark:border-green-400/30 dark:bg-green-400/5">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center text-text-primary">
-                        {subscription.tier?.promotionalTag && (
-                          <Star className="w-4 h-4 mr-2 text-yellow-500" />
-                        )}
-                        {subscription.tier?.name}
-                      </CardTitle>
-                      <Badge variant="default" className="bg-green-600 text-white dark:bg-green-500 dark:text-white">
-                        Active
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-text-secondary">
-                      {subscription.tier?.package?.name} - {subscription.tier?.package?.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm text-text-secondary">
-                      Subscribed: {new Date(subscription.subscribedAt).toLocaleDateString()}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        {tierSubscriptions &&
+          Array.isArray(tierSubscriptions) &&
+          tierSubscriptions.length > 0 && (
+            <div className="max-w-7xl mx-auto mb-8">
+              <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center">
+                <Package className="w-5 h-5 mr-2" />
+                Your Active Packages
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(tierSubscriptions as any[]).map((subscription: any) => (
+                  <Card
+                    key={subscription.id}
+                    className="border-green-500/30 bg-green-500/5 dark:border-green-400/30 dark:bg-green-400/5"
+                  >
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg flex items-center text-text-primary">
+                          {subscription.tier?.promotionalTag && (
+                            <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                          )}
+                          {subscription.tier?.name}
+                        </CardTitle>
+                        <Badge
+                          variant="default"
+                          className="bg-green-600 text-white dark:bg-green-500 dark:text-white"
+                        >
+                          Active
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-text-secondary">
+                        {subscription.tier?.package?.name} -{" "}
+                        {subscription.tier?.package?.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm text-text-secondary">
+                        Subscribed:{" "}
+                        {new Date(
+                          subscription.subscribedAt
+                        ).toLocaleDateString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* My Tools Section */}
         {subscribedProducts.length > 0 && (
           <div className="max-w-7xl mx-auto mb-8">
-            <h2 className="text-xl font-semibold text-text-primary mb-4">My Tools</h2>
+            <h2 className="text-xl font-semibold text-text-primary mb-4">
+              My Tools
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {subscribedProducts.map((product) => (
-                <Card key={product.id} className="hover:shadow-md transition-shadow border-border bg-surface">
+                <Card
+                  key={product.id}
+                  className="hover:shadow-md transition-shadow border-border bg-surface"
+                >
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center text-text-primary">
                       <Zap className="w-5 h-5 mr-2 text-green-500" />
                       {product.name}
                     </CardTitle>
-                    <CardDescription className="text-text-secondary">{product.description}</CardDescription>
+                    <CardDescription className="text-text-secondary">
+                      {product.description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Link href={product.routePath}>
-                      <Button className="w-full gap-2 bg-accent hover:bg-accent-2" data-testid={`access-${product.id}`}>
+                      <Button
+                        className="w-full gap-2 bg-accent hover:bg-accent-2"
+                        data-testid={`access-${product.id}`}
+                      >
                         Access Tool
                         <ArrowRight className="w-4 h-4" />
                       </Button>
@@ -226,18 +287,26 @@ function DashboardContent() {
 
         {/* Quick Links */}
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-xl font-semibold text-text-primary mb-4">Quick Links</h2>
+          <h2 className="text-xl font-semibold text-text-primary mb-4">
+            Quick Links
+          </h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="border-border bg-surface">
               <CardHeader>
-                <CardTitle className="text-lg text-text-primary">Content Library</CardTitle>
+                <CardTitle className="text-lg text-text-primary">
+                  Content Library
+                </CardTitle>
                 <CardDescription className="text-text-secondary">
                   View all your generated content
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href="/app/content-history">
-                  <Button variant="outline" className="w-full" data-testid="content-library-link">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    data-testid="content-library-link"
+                  >
                     View Content
                   </Button>
                 </Link>
@@ -246,14 +315,20 @@ function DashboardContent() {
 
             <Card className="border-border bg-surface">
               <CardHeader>
-                <CardTitle className="text-lg text-text-primary">Brand Guidelines</CardTitle>
+                <CardTitle className="text-lg text-text-primary">
+                  Brand Guidelines
+                </CardTitle>
                 <CardDescription className="text-text-secondary">
                   Manage your brand profiles
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href="/brands">
-                  <Button variant="outline" className="w-full" data-testid="brand-guidelines-link">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    data-testid="brand-guidelines-link"
+                  >
                     Manage Brands
                   </Button>
                 </Link>
@@ -262,14 +337,20 @@ function DashboardContent() {
 
             <Card className="border-border bg-surface">
               <CardHeader>
-                <CardTitle className="text-lg text-text-primary">Account Settings</CardTitle>
+                <CardTitle className="text-lg text-text-primary">
+                  Account Settings
+                </CardTitle>
                 <CardDescription className="text-text-secondary">
                   Manage subscriptions and profile
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href="/app/account">
-                  <Button variant="outline" className="w-full" data-testid="account-settings-link">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    data-testid="account-settings-link"
+                  >
                     <Settings className="w-4 h-4 mr-2" />
                     Settings
                   </Button>

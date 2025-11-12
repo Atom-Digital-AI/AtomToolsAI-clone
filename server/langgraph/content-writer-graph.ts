@@ -1,4 +1,10 @@
-import { StateGraph, Annotation, END, Checkpoint, CheckpointMetadata } from "@langchain/langgraph";
+import {
+  StateGraph,
+  Annotation,
+  END,
+  Checkpoint,
+  CheckpointMetadata,
+} from "@langchain/langgraph";
 import { PostgresCheckpointer } from "./postgres-checkpointer";
 import { ContentWriterState, contentWriterStateSchema } from "./types";
 import { generateConcepts } from "./nodes/generateConcepts";
@@ -203,18 +209,21 @@ function createContentWriterGraph() {
 
   (workflow as any).addEdge("generateConcepts", "setAwaitConceptApproval");
   (workflow as any).addEdge("setAwaitConceptApproval", "awaitConceptApproval");
-  
+
   // Conditional edge: only proceed if valid concept is selected
   (workflow as any).addConditionalEdges(
     "awaitConceptApproval",
     (state: ContentWriterState) => {
       const { selectedConceptId, concepts } = state;
-      
+
       // If no concept selected or concept doesn't exist in current list, loop back
-      if (!selectedConceptId || !concepts.find(c => c.id === selectedConceptId)) {
+      if (
+        !selectedConceptId ||
+        !concepts.find((c) => c.id === selectedConceptId)
+      ) {
         return "waiting";
       }
-      
+
       return "proceed";
     },
     {
@@ -222,32 +231,32 @@ function createContentWriterGraph() {
       proceed: "generateSubtopics",
     }
   );
-  
+
   (workflow as any).addEdge("generateSubtopics", "setAwaitSubtopicApproval");
   (workflow as any).addEdge(
     "setAwaitSubtopicApproval",
     "awaitSubtopicApproval"
   );
-  
+
   // Conditional edge: only proceed if valid subtopics are selected
   (workflow as any).addConditionalEdges(
     "awaitSubtopicApproval",
     (state: ContentWriterState) => {
       const { selectedSubtopicIds, subtopics } = state;
-      
+
       // If no subtopics selected or any are invalid, loop back
       if (!selectedSubtopicIds || selectedSubtopicIds.length === 0) {
         return "waiting";
       }
-      
+
       const invalidSubtopics = selectedSubtopicIds.filter(
-        id => !subtopics.find(s => s.id === id)
+        (id) => !subtopics.find((s) => s.id === id)
       );
-      
+
       if (invalidSubtopics.length > 0) {
         return "waiting";
       }
-      
+
       return "proceed";
     },
     {
@@ -463,11 +472,13 @@ export async function updateGraphState(
       ...checkpointTuple.metadata,
       source: "update",
       step: -1, // Indicate this is a manual update, not a graph step
+      parents: checkpointTuple.metadata?.parents || {},
     };
 
     // Save the updated checkpoint
     // Use the current checkpoint's id as the parent for the new checkpoint
-    const currentCheckpointId = checkpointTuple.config.configurable?.checkpoint_id;
+    const currentCheckpointId =
+      checkpointTuple.config.configurable?.checkpoint_id;
     await checkpointer.put(
       {
         configurable: {

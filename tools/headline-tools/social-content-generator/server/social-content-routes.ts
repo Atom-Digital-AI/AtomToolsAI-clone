@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { requireAuth } from "../../../../../server/auth";
-import { db } from "../../../../../server/db";
+import { requireAuth } from "../../../../server/auth";
+import { db } from "../../../../server/db";
 import {
   socialContentSessions,
   socialContentWireframes,
@@ -14,7 +14,7 @@ import { socialContentGraph } from "./langgraph/social-content-graph";
 import type { SocialContentState, Platform } from "./langgraph/social-content-types";
 import { calculateTotalFormats } from "./langgraph/social-content-types";
 import { nanoid } from "nanoid";
-import { logToolError } from "../../../../../server/errorLogger";
+import { logToolError } from "../../../../server/errorLogger";
 import { checkSocialContentAccess, validatePlatformAccess } from "./utils/social-content-access";
 
 // Validation schemas

@@ -1,6 +1,6 @@
-import { openai } from "../../../../../../server/utils/openai-client";
+import { openai } from "../../../../../server/utils/openai-client";
 import { ContentWriterState } from "../types";
-import { loggedOpenAICall } from "../../../../../../server/utils/ai-logger";
+import { loggedOpenAICall } from "../../../../../server/utils/ai-logger";
 
 export async function verifyFacts(state: ContentWriterState): Promise<Partial<ContentWriterState>> {
   try {

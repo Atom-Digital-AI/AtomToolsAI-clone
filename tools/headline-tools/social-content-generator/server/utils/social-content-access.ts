@@ -1,4 +1,4 @@
-import { storage } from "../../../../../../server/storage";
+import { storage } from "../../../../../server/storage";
 import { PRODUCT_IDS } from "@shared/schema";
 
 /**

@@ -1,48 +1,72 @@
-import { openai } from "../../../../../server/utils/openai-client";
+import { openai } from "../../../../server/utils/openai-client";
 import { nanoid } from "nanoid";
-import type { ContentWriterState } from "../../../../headline-tools/content-writer-v2/server/langgraph/types";
-import { loggedOpenAICall } from "../../../../../server/utils/ai-logger";
-import { ragService } from "../../../../../server/utils/rag-service";
-import { getAntiFabricationInstructions } from "../../../../../server/utils/language-helpers";
+import type { ContentWriterState } from "../../../../tools/headline-tools/content-writer-v2/server/langgraph/types";
+import { loggedOpenAICall } from "../../../../server/utils/ai-logger";
+import { ragService } from "../../../../server/utils/rag-service";
+import { getAntiFabricationInstructions } from "../../../../server/utils/language-helpers";
 import { loadPrompt } from "../../../shared/prompt-loader";
 import path from "path";
 
 function stripMarkdownCodeBlocks(text: string): string {
-  return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();
+  return text
+    .replace(/^```(?:json)?\s*\n?/gm, "")
+    .replace(/\n?```\s*$/gm, "")
+    .trim();
 }
 
-export async function generateConcepts(state: ContentWriterState): Promise<Partial<ContentWriterState>> {
+export async function generateConcepts(
+  state: ContentWriterState
+): Promise<Partial<ContentWriterState>> {
   try {
-    const { topic, guidelineProfileId, userId, styleMatchingMethod = 'continuous', matchStyle = false } = state;
-
-    const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', guidelineProfileId);
-    
-    const brandContext = (guidelineProfileId && styleMatchingMethod === 'continuous')
-      ? await ragService.getBrandContextForPrompt(userId, guidelineProfileId, `Article concepts for: ${topic}`, { matchStyle })
-      : '';
-
-    const toolPath = path.join(__dirname, '..');
-    const conceptPrompt = await loadPrompt(toolPath, 'concept-generation', {
+    const {
       topic,
-      brandContext: brandContext || '',
-      ragContext: ragContext || '',
-      antiFabricationInstructions: getAntiFabricationInstructions()
-    });
-
-    const completion = await loggedOpenAICall({
+      guidelineProfileId,
       userId,
-      guidelineProfileId: guidelineProfileId || undefined,
-      endpoint: 'content-writer-concepts',
-      metadata: { topic }
-    }, async () => {
-      return await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: conceptPrompt }],
-        temperature: 0.8,
-      });
+      styleMatchingMethod = "continuous",
+      matchStyle = false,
+    } = state;
+
+    const ragContext = await ragService.retrieveUserFeedback(
+      userId,
+      "content-writer",
+      guidelineProfileId
+    );
+
+    const brandContext =
+      guidelineProfileId && styleMatchingMethod === "continuous"
+        ? await ragService.getBrandContextForPrompt(
+            userId,
+            guidelineProfileId,
+            `Article concepts for: ${topic}`,
+            { matchStyle }
+          )
+        : "";
+
+    const toolPath = path.join(__dirname, "..");
+    const conceptPrompt = await loadPrompt(toolPath, "concept-generation", {
+      topic,
+      brandContext: brandContext || "",
+      ragContext: ragContext || "",
+      antiFabricationInstructions: getAntiFabricationInstructions(),
     });
 
-    const conceptsText = completion.choices[0]?.message?.content || '[]';
+    const completion = await loggedOpenAICall(
+      {
+        userId,
+        guidelineProfileId: guidelineProfileId || undefined,
+        endpoint: "content-writer-concepts",
+        metadata: { topic },
+      },
+      async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: conceptPrompt }],
+          temperature: 0.8,
+        });
+      }
+    );
+
+    const conceptsText = completion.choices[0]?.message?.content || "[]";
     const conceptsData = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
 
     const concepts = conceptsData.map((c: any, index: number) => ({
@@ -56,24 +80,24 @@ export async function generateConcepts(state: ContentWriterState): Promise<Parti
       concepts,
       metadata: {
         ...state.metadata,
-        currentStep: 'concepts',
+        currentStep: "concepts",
       },
-      status: 'processing',
+      status: "processing",
     };
   } catch (error) {
     console.error("Error in generateConcepts:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     return {
       errors: [
         ...state.errors,
         {
-          step: 'generateConcepts',
+          step: "generateConcepts",
           message: errorMessage,
           timestamp: new Date().toISOString(),
         },
       ],
-      status: 'failed',
+      status: "failed",
     };
   }
 }

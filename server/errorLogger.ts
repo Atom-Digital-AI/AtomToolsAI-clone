@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/node";
-import { db } from './db';
-import { errorLogs, type ErrorLogStatus } from '@shared/schema';
-import type { Request } from 'express';
-import { sanitizeForLogging } from './utils/sanitize';
-import { env } from './config';
+import { db } from "./db";
+import { errorLogs, type ErrorLogStatus } from "@shared/schema";
+import type { Request } from "express";
+import { sanitizeForLogging } from "./utils/sanitize";
+import { env } from "./config";
 
 interface LogErrorParams {
   userId?: string;
@@ -18,6 +18,8 @@ interface LogErrorParams {
   req?: Request;
   responseHeaders?: any; // HTTP response headers from external API calls
   status?: ErrorLogStatus; // Error resolution status: 'to_do', 'investigated', 'fixed'
+  userAgent?: string; // User agent string
+  ipAddress?: string; // IP address
 }
 
 export async function logToolError(params: LogErrorParams) {
@@ -34,7 +36,7 @@ export async function logToolError(params: LogErrorParams) {
       endpoint,
       req,
       responseHeaders,
-      status = 'to_do' // Default status for new errors
+      status = "to_do", // Default status for new errors
     } = params;
 
     await db.insert(errorLogs).values({
@@ -47,13 +49,15 @@ export async function logToolError(params: LogErrorParams) {
       requestData: sanitizeForLogging(requestData) || null, // SECURITY: Sanitize before logging
       httpStatus: httpStatus || null,
       endpoint,
-      userAgent: req?.get('User-Agent') || null,
+      userAgent: req?.get("User-Agent") || null,
       ipAddress: req?.ip || req?.connection?.remoteAddress || null,
       responseHeaders: responseHeaders || null,
       status, // Include status in error log
     });
 
-    console.error(`Tool Error Logged [${status.toUpperCase()}]: ${toolName} - ${errorType} - ${errorMessage}`);
+    console.error(
+      `Tool Error Logged [${status.toUpperCase()}]: ${toolName} - ${errorType} - ${errorMessage}`
+    );
 
     // Also send to Sentry if configured
     if (env.SENTRY_DSN) {
@@ -61,7 +65,7 @@ export async function logToolError(params: LogErrorParams) {
         tags: {
           toolName: params.toolName,
           errorType: params.errorType,
-          status: params.status || 'to_do',
+          status: params.status || "to_do",
         },
         user: {
           id: params.userId,
@@ -76,26 +80,26 @@ export async function logToolError(params: LogErrorParams) {
       });
     }
   } catch (logError) {
-    console.error('Failed to log tool error:', logError);
-    console.error('Original error:', params.errorMessage);
+    console.error("Failed to log tool error:", logError);
+    console.error("Original error:", params.errorMessage);
   }
 }
 
 export function getErrorTypeFromError(error: any): string {
-  if (error?.code === 'insufficient_quota' || error?.status === 429) {
-    return 'rate_limit';
+  if (error?.code === "insufficient_quota" || error?.status === 429) {
+    return "rate_limit";
   }
-  if (error?.name === 'ValidationError' || error?.name === 'ZodError') {
-    return 'validation_error';
+  if (error?.name === "ValidationError" || error?.name === "ZodError") {
+    return "validation_error";
   }
-  if (error?.name === 'TypeError' || error?.name === 'ReferenceError') {
-    return 'application_error';
+  if (error?.name === "TypeError" || error?.name === "ReferenceError") {
+    return "application_error";
   }
   if (error?.response?.status >= 400 && error?.response?.status < 500) {
-    return 'client_error';
+    return "client_error";
   }
   if (error?.response?.status >= 500) {
-    return 'external_api_error';
+    return "external_api_error";
   }
-  return 'unknown_error';
+  return "unknown_error";
 }

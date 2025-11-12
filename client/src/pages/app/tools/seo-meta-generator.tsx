@@ -4,13 +4,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Search, Copy, Download, Upload, RefreshCw, AlertCircle, CheckCircle2, Globe, ChevronUp, ChevronDown, Lock, Save } from "lucide-react";
+import {
+  Search,
+  Copy,
+  Download,
+  Upload,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  Globe,
+  ChevronUp,
+  ChevronDown,
+  Lock,
+  Save,
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
@@ -36,7 +62,7 @@ interface BulkResult {
   url: string;
   title: string;
   description: string;
-  status: 'success' | 'error';
+  status: "success" | "error";
   error?: string;
 }
 
@@ -45,17 +71,23 @@ export default function SEOMetaGenerator() {
   const [keywords, setKeywords] = useState("");
   const [brandName, setBrandName] = useState("");
   const [sellingPoints, setSellingPoints] = useState("");
-  const [caseType, setCaseType] = useState<'sentence' | 'title'>('sentence');
-  const [contentType, setContentType] = useState<'both' | 'titles' | 'descriptions'>('both');
+  const [caseType, setCaseType] = useState<"sentence" | "title">("sentence");
+  const [contentType, setContentType] = useState<
+    "both" | "titles" | "descriptions"
+  >("both");
   const [numVariations, setNumVariations] = useState(1);
-  const [brandGuidelines, setBrandGuidelines] = useState<GuidelineContent | string>('');
-  const [regulatoryGuidelines, setRegulatoryGuidelines] = useState<GuidelineContent | string>('');
+  const [brandGuidelines, setBrandGuidelines] = useState<
+    GuidelineContent | string
+  >("");
+  const [regulatoryGuidelines, setRegulatoryGuidelines] = useState<
+    GuidelineContent | string
+  >("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [metaData, setMetaData] = useState<MetaData | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [mode, setMode] = useState<'single' | 'bulk'>('single');
+  const [mode, setMode] = useState<"single" | "bulk">("single");
   const [bulkResults, setBulkResults] = useState<BulkResult[]>([]);
   const [progress, setProgress] = useState(0);
   const [urlContent, setUrlContent] = useState("");
@@ -65,7 +97,7 @@ export default function SEOMetaGenerator() {
   const [saveOutputData, setSaveOutputData] = useState<any>(null);
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
-  
+
   // Refs for auto-scroll to error fields
   const keywordsRef = useRef<HTMLTextAreaElement>(null);
   const brandNameRef = useRef<HTMLInputElement>(null);
@@ -73,14 +105,17 @@ export default function SEOMetaGenerator() {
   const productId = PRODUCT_IDS.SEO_META_GENERATOR;
 
   // Get user's tier permissions for this product
-  const { data: accessInfo } = useQuery({
+  const { data: accessInfo } = useQuery<{
+    subfeatures?: Record<string, boolean>;
+  }>({
     queryKey: [`/api/products/${productId}/access`],
     retry: false,
   });
 
-  const subfeatures = (accessInfo?.subfeatures as any) || {};
+  const subfeatures =
+    (accessInfo?.subfeatures as Record<string, boolean>) || {};
   const canUseBulk = subfeatures.bulk === true;
-  const canUseVariations = subfeatures.variations === true;  
+  const canUseVariations = subfeatures.variations === true;
   const canUseBrandGuidelines = subfeatures.brand_guidelines === true;
 
   // Reset features to allowed values when tier permissions change
@@ -92,13 +127,13 @@ export default function SEOMetaGenerator() {
 
   useEffect(() => {
     if (!canUseBrandGuidelines && brandGuidelines) {
-      setBrandGuidelines('');
+      setBrandGuidelines("");
     }
   }, [canUseBrandGuidelines, brandGuidelines]);
 
   useEffect(() => {
-    if (!canUseBulk && mode === 'bulk') {
-      setMode('single');
+    if (!canUseBulk && mode === "bulk") {
+      setMode("single");
     }
   }, [canUseBulk, mode]);
 
@@ -107,37 +142,40 @@ export default function SEOMetaGenerator() {
     if (selectedBrand) {
       // Auto-select the brand profile
       setBrandGuidelines(selectedBrand.id);
-      
+
       // Auto-populate brand name if available in content, otherwise clear it
       const content = selectedBrand.content as any;
-      if (content && typeof content === 'object' && content.brandName) {
+      if (content && typeof content === "object" && content.brandName) {
         setBrandName(content.brandName);
       } else {
         // Clear brand name if not available in selected brand
-        setBrandName('');
+        setBrandName("");
       }
     } else {
       // Clear brand fields when brand is deselected
-      setBrandGuidelines('');
-      setBrandName('');
+      setBrandGuidelines("");
+      setBrandName("");
     }
   }, [selectedBrand]);
 
   const analyzeUrl = async () => {
     if (!url) return;
-    
+
     setIsAnalyzing(true);
     try {
       // Simulate URL content analysis
       setTimeout(() => {
-        const mockContent = "This is a premium digital marketing agency specializing in SEO, PPC, and content marketing services for businesses of all sizes.";
+        const mockContent =
+          "This is a premium digital marketing agency specializing in SEO, PPC, and content marketing services for businesses of all sizes.";
         setUrlContent(mockContent);
-        
+
         // Auto-detect keywords if not provided
         if (!keywords) {
-          setKeywords("digital marketing, SEO services, PPC management, content marketing");
+          setKeywords(
+            "digital marketing, SEO services, PPC management, content marketing"
+          );
         }
-        
+
         toast({
           title: "URL Analyzed",
           description: "Content extracted and keywords detected",
@@ -147,7 +185,8 @@ export default function SEOMetaGenerator() {
     } catch (error) {
       toast({
         title: "Analysis Failed",
-        description: "Could not analyze the URL. Please check if it's accessible.",
+        description:
+          "Could not analyze the URL. Please check if it's accessible.",
         variant: "destructive",
       });
       setIsAnalyzing(false);
@@ -162,18 +201,24 @@ export default function SEOMetaGenerator() {
         description: "Please provide Target Keywords (required)",
         variant: "destructive",
       });
-      keywordsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      keywordsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
       keywordsRef.current?.focus();
       return;
     }
 
     if (!brandName) {
       toast({
-        title: "Missing Required Field", 
+        title: "Missing Required Field",
         description: "Please provide Brand Name (required)",
         variant: "destructive",
       });
-      brandNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      brandNameRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
       brandNameRef.current?.focus();
       return;
     }
@@ -183,18 +228,22 @@ export default function SEOMetaGenerator() {
 
     try {
       // Call the authentic API endpoint with exact original Python logic
-      const responseObj = await apiRequest("POST", "/api/tools/seo-meta/generate", {
-        url: url || undefined,
-        targetKeywords: keywords,
-        brandName: brandName,
-        sellingPoints: sellingPoints,
-        numVariations: numVariations,
-        contentType: contentType,
-        caseType: caseType,
-        brandGuidelines: brandGuidelines,
-        regulatoryGuidelines: regulatoryGuidelines
-      });
-      
+      const responseObj = await apiRequest(
+        "POST",
+        "/api/tools/seo-meta/generate",
+        {
+          url: url || undefined,
+          targetKeywords: keywords,
+          brandName: brandName,
+          sellingPoints: sellingPoints,
+          numVariations: numVariations,
+          contentType: contentType,
+          caseType: caseType,
+          brandGuidelines: brandGuidelines,
+          regulatoryGuidelines: regulatoryGuidelines,
+        }
+      );
+
       const response = await responseObj.json();
 
       setProgress(75);
@@ -210,26 +259,28 @@ export default function SEOMetaGenerator() {
       setMetaData({
         title: primaryTitle,
         description: primaryDescription,
-        keywords: keywords.split(',').map(k => k.trim()),
-        language: 'en',
+        keywords: keywords.split(",").map((k) => k.trim()),
+        language: "en",
         variations: {
           titles: response.titles || [],
-          descriptions: response.descriptions || []
-        }
+          descriptions: response.descriptions || [],
+        },
       });
 
       setProgress(100);
 
       toast({
         title: "Generation Complete",
-        description: `Generated ${response.titles?.length || 0} titles and ${response.descriptions?.length || 0} descriptions`,
+        description: `Generated ${response.titles?.length || 0} titles and ${
+          response.descriptions?.length || 0
+        } descriptions`,
       });
-
     } catch (error: any) {
       console.error("Generation error:", error);
       toast({
         title: "Generation Failed",
-        description: error.message || "An error occurred while generating meta tags",
+        description:
+          error.message || "An error occurred while generating meta tags",
         variant: "destructive",
       });
     } finally {
@@ -248,7 +299,7 @@ export default function SEOMetaGenerator() {
     try {
       // Parse CSV file
       const text = await csvFile.text();
-      const rows = text.split('\n').filter(row => row.trim());
+      const rows = text.split("\n").filter((row) => row.trim());
       const header = rows[0];
       const dataRows = rows.slice(1);
 
@@ -257,7 +308,9 @@ export default function SEOMetaGenerator() {
       // Process each row with real API calls
       for (let i = 0; i < dataRows.length; i++) {
         const row = dataRows[i];
-        const columns = row.split(',').map(col => col.replace(/"/g, '').trim());
+        const columns = row
+          .split(",")
+          .map((col) => col.replace(/"/g, "").trim());
 
         if (columns.length < 4) continue; // Skip invalid rows
 
@@ -268,47 +321,50 @@ export default function SEOMetaGenerator() {
 
         try {
           // Call actual OpenAI API for each row
-          const response = await apiRequest("POST", "/api/tools/seo-meta/generate", {
-            url,
-            targetKeywords: keywords,
-            brandName: brandNameFromRow,
-            sellingPoints: sellingPointsFromRow,
-            caseType,
-            contentType: 'both',
-            numVariations: 1,
-            brandGuidelines,
-            regulatoryGuidelines
-          });
+          const response = await apiRequest(
+            "POST",
+            "/api/tools/seo-meta/generate",
+            {
+              url,
+              targetKeywords: keywords,
+              brandName: brandNameFromRow,
+              sellingPoints: sellingPointsFromRow,
+              caseType,
+              contentType: "both",
+              numVariations: 1,
+              brandGuidelines,
+              regulatoryGuidelines,
+            }
+          );
 
           const seoData = await response.json();
-          
+
           if (seoData.titles && seoData.descriptions) {
             results.push({
               url,
-              title: seoData.titles[0] || '',
-              description: seoData.descriptions[0] || '',
-              status: 'success'
+              title: seoData.titles[0] || "",
+              description: seoData.descriptions[0] || "",
+              status: "success",
             });
           } else {
             results.push({
               url,
-              title: '',
-              description: '',
-              status: 'error',
-              error: 'Failed to generate SEO content'
+              title: "",
+              description: "",
+              status: "error",
+              error: "Failed to generate SEO content",
             });
           }
 
           // Add small delay between requests to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (error) {
           results.push({
             url,
-            title: '',
-            description: '',
-            status: 'error',
-            error: 'API call failed'
+            title: "",
+            description: "",
+            status: "error",
+            error: "API call failed",
           });
         }
 
@@ -319,9 +375,10 @@ export default function SEOMetaGenerator() {
 
       toast({
         title: "Bulk Processing Complete",
-        description: `Processed ${dataRows.length} URLs with ${results.filter(r => r.status === 'success').length} successful generations`,
+        description: `Processed ${dataRows.length} URLs with ${
+          results.filter((r) => r.status === "success").length
+        } successful generations`,
       });
-
     } catch (error) {
       toast({
         title: "Bulk Processing Failed",
@@ -337,7 +394,7 @@ export default function SEOMetaGenerator() {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.type !== 'text/csv') {
+      if (file.type !== "text/csv") {
         toast({
           title: "Invalid File Type",
           description: "Please upload a CSV file",
@@ -345,7 +402,8 @@ export default function SEOMetaGenerator() {
         });
         return;
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
         toast({
           title: "File Too Large",
           description: "File size must be less than 10MB",
@@ -373,20 +431,22 @@ export default function SEOMetaGenerator() {
     if (!metaData && bulkResults.length === 0) return;
 
     let csvContent = "URL,Title,Description,Status\n";
-    
-    if (mode === 'single' && metaData) {
+
+    if (mode === "single" && metaData) {
       csvContent += `"${url}","${metaData.title}","${metaData.description}",success\n`;
     } else {
-      bulkResults.forEach(result => {
+      bulkResults.forEach((result) => {
         csvContent += `"${result.url}","${result.title}","${result.description}",${result.status}\n`;
       });
     }
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url_export = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url_export;
-    a.download = `seo-meta-results-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `seo-meta-results-${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     a.click();
     window.URL.revokeObjectURL(url_export);
 
@@ -397,7 +457,10 @@ export default function SEOMetaGenerator() {
   };
 
   return (
-    <AccessGuard productId={PRODUCT_IDS.SEO_META_GENERATOR} productName="SEO Meta Generator">
+    <AccessGuard
+      productId={PRODUCT_IDS.SEO_META_GENERATOR}
+      productName="SEO Meta Generator"
+    >
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -406,7 +469,10 @@ export default function SEOMetaGenerator() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">SEO Meta Generator</h1>
-              <p className="text-text-secondary">Generate optimized title tags and meta descriptions with AI-powered insights</p>
+              <p className="text-text-secondary">
+                Generate optimized title tags and meta descriptions with
+                AI-powered insights
+              </p>
             </div>
           </div>
         </div>
@@ -420,16 +486,16 @@ export default function SEOMetaGenerator() {
             <CardContent>
               <div className="flex gap-4">
                 <Button
-                  variant={mode === 'single' ? 'default' : 'outline'}
-                  onClick={() => setMode('single')}
+                  variant={mode === "single" ? "default" : "outline"}
+                  onClick={() => setMode("single")}
                   data-testid="button-single-mode"
                 >
                   <Globe className="w-4 h-4 mr-2" />
                   Single URL
                 </Button>
                 <Button
-                  variant={mode === 'bulk' ? 'default' : 'outline'}
-                  onClick={() => setMode('bulk')}
+                  variant={mode === "bulk" ? "default" : "outline"}
+                  onClick={() => setMode("bulk")}
                   data-testid="button-bulk-mode"
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -439,7 +505,7 @@ export default function SEOMetaGenerator() {
             </CardContent>
           </Card>
 
-          {mode === 'single' ? (
+          {mode === "single" ? (
             <div className="space-y-6">
               {/* URL Analysis */}
               <Card>
@@ -463,16 +529,21 @@ export default function SEOMetaGenerator() {
                         disabled={!url || isAnalyzing}
                         data-testid="button-analyze"
                       >
-                        {isAnalyzing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                        {isAnalyzing ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Search className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
-                  
+
                   {urlContent && (
                     <Alert>
                       <CheckCircle2 className="h-4 w-4" />
                       <AlertDescription>
-                        URL content analyzed. Keywords auto-detected and ready for generation.
+                        URL content analyzed. Keywords auto-detected and ready
+                        for generation.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -502,7 +573,7 @@ export default function SEOMetaGenerator() {
                       Separate multiple keywords with commas
                     </p>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="brand">
                       Brand Name <span className="text-red-500">*</span>
@@ -516,9 +587,11 @@ export default function SEOMetaGenerator() {
                       data-testid="input-brand"
                     />
                   </div>
-                  
+
                   <div>
-                    <Label htmlFor="selling-points">Selling Points (Optional)</Label>
+                    <Label htmlFor="selling-points">
+                      Selling Points (Optional)
+                    </Label>
                     <Textarea
                       id="selling-points"
                       placeholder="Free shipping, 24/7 support, money-back guarantee..."
@@ -527,8 +600,7 @@ export default function SEOMetaGenerator() {
                       data-testid="input-selling-points"
                     />
                   </div>
-                  
-                  
+
                   {/* Advanced Options */}
                   <div className="border-t pt-4">
                     <Button
@@ -538,9 +610,9 @@ export default function SEOMetaGenerator() {
                       className="mb-4 p-0 h-auto font-medium text-primary hover:text-primary/80"
                       data-testid="toggle-advanced-options"
                     >
-                      {showAdvanced ? '▼' : '▶'} Advanced Options
+                      {showAdvanced ? "▼" : "▶"} Advanced Options
                     </Button>
-                    
+
                     {showAdvanced && (
                       <div className="space-y-4">
                         <GuidelineProfileSelector
@@ -550,7 +622,7 @@ export default function SEOMetaGenerator() {
                           placeholder="e.g., Always use formal tone, avoid superlatives, include sustainability messaging, use inclusive language..."
                           label="Brand Guidelines (Optional)"
                         />
-                        
+
                         <GuidelineProfileSelector
                           type="regulatory"
                           value={regulatoryGuidelines}
@@ -558,24 +630,38 @@ export default function SEOMetaGenerator() {
                           placeholder="e.g., FDA compliance required, no health claims, include disclaimers, follow FTC advertising guidelines, GDPR compliant language..."
                           label="Regulatory Guidelines (Optional)"
                         />
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
                             <Label htmlFor="case-type">Text Case</Label>
-                            <Select value={caseType} onValueChange={(value: 'sentence' | 'title') => setCaseType(value)}>
+                            <Select
+                              value={caseType}
+                              onValueChange={(value: "sentence" | "title") =>
+                                setCaseType(value)
+                              }
+                            >
                               <SelectTrigger data-testid="select-case-type">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="sentence">Sentence Case</SelectItem>
-                                <SelectItem value="title">Title Case</SelectItem>
+                                <SelectItem value="sentence">
+                                  Sentence Case
+                                </SelectItem>
+                                <SelectItem value="title">
+                                  Title Case
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           <div>
                             <Label htmlFor="variations">Variations</Label>
-                            <Select value={numVariations.toString()} onValueChange={(value) => setNumVariations(parseInt(value))}>
+                            <Select
+                              value={numVariations.toString()}
+                              onValueChange={(value) =>
+                                setNumVariations(parseInt(value))
+                              }
+                            >
                               <SelectTrigger data-testid="select-variations">
                                 <SelectValue />
                               </SelectTrigger>
@@ -588,17 +674,28 @@ export default function SEOMetaGenerator() {
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           <div>
                             <Label htmlFor="content-type">Content Type</Label>
-                            <Select value={contentType} onValueChange={(value: 'both' | 'titles' | 'descriptions') => setContentType(value)}>
+                            <Select
+                              value={contentType}
+                              onValueChange={(
+                                value: "both" | "titles" | "descriptions"
+                              ) => setContentType(value)}
+                            >
                               <SelectTrigger data-testid="select-content-type">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="both">Titles & Descriptions</SelectItem>
-                                <SelectItem value="titles">Titles Only</SelectItem>
-                                <SelectItem value="descriptions">Descriptions Only</SelectItem>
+                                <SelectItem value="both">
+                                  Titles & Descriptions
+                                </SelectItem>
+                                <SelectItem value="titles">
+                                  Titles Only
+                                </SelectItem>
+                                <SelectItem value="descriptions">
+                                  Descriptions Only
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -615,13 +712,15 @@ export default function SEOMetaGenerator() {
                   {isGenerating && (
                     <div className="mb-4">
                       <Progress value={progress} className="mb-2" />
-                      <p className="text-sm text-text-secondary">Processing... {progress}%</p>
+                      <p className="text-sm text-text-secondary">
+                        Processing... {progress}%
+                      </p>
                     </div>
                   )}
-                  
-                  <Button 
-                    onClick={handleGenerate} 
-                    className="w-full" 
+
+                  <Button
+                    onClick={handleGenerate}
+                    className="w-full"
                     disabled={!url || !keywords || !brandName || isGenerating}
                     data-testid="button-generate"
                   >
@@ -655,15 +754,17 @@ export default function SEOMetaGenerator() {
                       data-testid="input-csv"
                     />
                     <p className="text-sm text-text-secondary mt-1">
-                      CSV should contain columns: URL, Keywords, Brand Name, Selling Points (optional)
+                      CSV should contain columns: URL, Keywords, Brand Name,
+                      Selling Points (optional)
                     </p>
                   </div>
-                  
+
                   {csvFile && (
                     <Alert>
                       <CheckCircle2 className="h-4 w-4" />
                       <AlertDescription>
-                        File ready: {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
+                        File ready: {csvFile.name} (
+                        {(csvFile.size / 1024).toFixed(1)} KB)
                       </AlertDescription>
                     </Alert>
                   )}
@@ -678,7 +779,9 @@ export default function SEOMetaGenerator() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                      onClick={() =>
+                        setShowAdvancedOptions(!showAdvancedOptions)
+                      }
                       data-testid="button-toggle-advanced-bulk"
                     >
                       {showAdvancedOptions ? (
@@ -705,7 +808,7 @@ export default function SEOMetaGenerator() {
                         placeholder="Enter specific brand voice, messaging guidelines, or compliance requirements that must be followed..."
                         label="Brand Guidelines (Optional)"
                       />
-                      
+
                       <GuidelineProfileSelector
                         type="regulatory"
                         value={regulatoryGuidelines}
@@ -713,31 +816,51 @@ export default function SEOMetaGenerator() {
                         placeholder="Enter industry-specific regulations, legal requirements, or compliance standards..."
                         label="Regulatory Guidelines (Optional)"
                       />
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="bulk-case-type">Text Case</Label>
-                          <Select value={caseType} onValueChange={(value: 'sentence' | 'title') => setCaseType(value)}>
+                          <Select
+                            value={caseType}
+                            onValueChange={(value: "sentence" | "title") =>
+                              setCaseType(value)
+                            }
+                          >
                             <SelectTrigger data-testid="select-bulk-case-type">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="sentence">Sentence Case</SelectItem>
+                              <SelectItem value="sentence">
+                                Sentence Case
+                              </SelectItem>
                               <SelectItem value="title">Title Case</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         <div>
-                          <Label htmlFor="bulk-content-type">Content Type</Label>
-                          <Select value={contentType} onValueChange={(value: 'both' | 'titles' | 'descriptions') => setContentType(value)}>
+                          <Label htmlFor="bulk-content-type">
+                            Content Type
+                          </Label>
+                          <Select
+                            value={contentType}
+                            onValueChange={(
+                              value: "both" | "titles" | "descriptions"
+                            ) => setContentType(value)}
+                          >
                             <SelectTrigger data-testid="select-bulk-content-type">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="both">Titles & Descriptions</SelectItem>
-                              <SelectItem value="titles">Titles Only</SelectItem>
-                              <SelectItem value="descriptions">Descriptions Only</SelectItem>
+                              <SelectItem value="both">
+                                Titles & Descriptions
+                              </SelectItem>
+                              <SelectItem value="titles">
+                                Titles Only
+                              </SelectItem>
+                              <SelectItem value="descriptions">
+                                Descriptions Only
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -753,13 +876,15 @@ export default function SEOMetaGenerator() {
                   {isGenerating && (
                     <div className="mb-4">
                       <Progress value={progress} className="mb-2" />
-                      <p className="text-sm text-text-secondary">Processing bulk upload... {progress}%</p>
+                      <p className="text-sm text-text-secondary">
+                        Processing bulk upload... {progress}%
+                      </p>
                     </div>
                   )}
-                  
-                  <Button 
+
+                  <Button
                     onClick={handleBulkProcess}
-                    className="w-full" 
+                    className="w-full"
                     disabled={!csvFile || isGenerating}
                     data-testid="button-process-bulk"
                   >
@@ -781,7 +906,7 @@ export default function SEOMetaGenerator() {
           )}
 
           {/* Single URL Results */}
-          {metaData && mode === 'single' && (
+          {metaData && mode === "single" && (
             <Card>
               <CardHeader>
                 <CardTitle>Generated Meta Tags</CardTitle>
@@ -807,9 +932,8 @@ export default function SEOMetaGenerator() {
                       className="min-h-[60px]"
                       data-testid="output-title"
                     />
-
                   </div>
-                  
+
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <Label>Meta Description</Label>
@@ -828,7 +952,6 @@ export default function SEOMetaGenerator() {
                       className="min-h-[80px]"
                       data-testid="output-description"
                     />
-
                   </div>
                 </div>
 
@@ -836,13 +959,18 @@ export default function SEOMetaGenerator() {
                 {metaData.variations && (
                   <div className="space-y-4">
                     <h4 className="font-medium">Alternative Variations</h4>
-                    
-                    {(contentType === 'both' || contentType === 'titles') && (
+
+                    {(contentType === "both" || contentType === "titles") && (
                       <div>
-                        <Label className="text-sm font-medium">Title Variations</Label>
+                        <Label className="text-sm font-medium">
+                          Title Variations
+                        </Label>
                         <div className="space-y-2 mt-2">
                           {metaData.variations.titles.map((title, index) => (
-                            <div key={index} className="flex items-center gap-2">
+                            <div
+                              key={index}
+                              className="flex items-center gap-2"
+                            >
                               <Textarea
                                 value={title}
                                 readOnly
@@ -860,35 +988,43 @@ export default function SEOMetaGenerator() {
                         </div>
                       </div>
                     )}
-                    
-                    {(contentType === 'both' || contentType === 'descriptions') && (
+
+                    {(contentType === "both" ||
+                      contentType === "descriptions") && (
                       <div>
-                        <Label className="text-sm font-medium">Description Variations</Label>
+                        <Label className="text-sm font-medium">
+                          Description Variations
+                        </Label>
                         <div className="space-y-2 mt-2">
-                          {metaData.variations.descriptions.map((description, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <Textarea
-                                value={description}
-                                readOnly
-                                className="min-h-[60px] text-sm"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => copyToClipboard(description)}
+                          {metaData.variations.descriptions.map(
+                            (description, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-2"
                               >
-                                <Copy className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ))}
+                                <Textarea
+                                  value={description}
+                                  readOnly
+                                  className="min-h-[60px] text-sm"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(description)}
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )
+                          )}
                         </div>
                       </div>
                     )}
                   </div>
                 )}
-                
+
                 <div className="flex gap-2">
-                  <Button 
+                  <Button
                     onClick={() => {
                       setSaveInputData({
                         url,
@@ -898,22 +1034,29 @@ export default function SEOMetaGenerator() {
                         additionalContext: urlContent,
                         contentType,
                         brandGuidelines,
-                        regulatoryGuidelines
+                        regulatoryGuidelines,
                       });
                       setSaveOutputData({
                         titles: metaData.variations?.titles || [metaData.title],
-                        descriptions: metaData.variations?.descriptions || [metaData.description]
+                        descriptions: metaData.variations?.descriptions || [
+                          metaData.description,
+                        ],
                       });
                       setIsSaveDialogOpen(true);
-                    }} 
-                    variant="outline" 
-                    className="flex-1" 
+                    }}
+                    variant="outline"
+                    className="flex-1"
                     data-testid="button-save-library"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Save to Library
                   </Button>
-                  <Button onClick={exportResults} variant="outline" className="flex-1" data-testid="button-export">
+                  <Button
+                    onClick={exportResults}
+                    variant="outline"
+                    className="flex-1"
+                    data-testid="button-export"
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export Results
                   </Button>
@@ -930,14 +1073,18 @@ export default function SEOMetaGenerator() {
                       additionalContext: urlContent,
                       contentType,
                       brandGuidelines,
-                      regulatoryGuidelines
+                      regulatoryGuidelines,
                     }}
                     outputData={{
                       title: metaData.title,
                       description: metaData.description,
-                      variations: metaData.variations
+                      variations: metaData.variations,
                     }}
-                    guidelineProfileId={typeof brandGuidelines === 'string' ? brandGuidelines : undefined}
+                    guidelineProfileId={
+                      typeof brandGuidelines === "string"
+                        ? brandGuidelines
+                        : undefined
+                    }
                   />
                 </div>
               </CardContent>
@@ -945,7 +1092,7 @@ export default function SEOMetaGenerator() {
           )}
 
           {/* Bulk Results */}
-          {bulkResults.length > 0 && mode === 'bulk' && (
+          {bulkResults.length > 0 && mode === "bulk" && (
             <Card>
               <CardHeader>
                 <CardTitle>Bulk Processing Results</CardTitle>
@@ -962,10 +1109,17 @@ export default function SEOMetaGenerator() {
                     </TableHeader>
                     <TableBody>
                       {bulkResults.map((result, index) => (
-                        <TableRow key={index} className={result.status === 'error' ? 'bg-red-50 dark:bg-red-950/20' : ''}>
+                        <TableRow
+                          key={index}
+                          className={
+                            result.status === "error"
+                              ? "bg-red-50 dark:bg-red-950/20"
+                              : ""
+                          }
+                        >
                           <TableCell className="max-w-[200px] truncate text-text-secondary text-sm">
                             <div className="flex items-center gap-2">
-                              {result.status === 'success' ? (
+                              {result.status === "success" ? (
                                 <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
                               ) : (
                                 <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
@@ -974,19 +1128,29 @@ export default function SEOMetaGenerator() {
                             </div>
                           </TableCell>
                           <TableCell className="text-sm font-medium max-w-[300px]">
-                            {result.status === 'success' ? result.title : (
-                              <span className="text-red-600 text-xs">{result.error}</span>
+                            {result.status === "success" ? (
+                              result.title
+                            ) : (
+                              <span className="text-red-600 text-xs">
+                                {result.error}
+                              </span>
                             )}
                           </TableCell>
                           <TableCell className="text-sm text-text-secondary max-w-[400px]">
-                            {result.status === 'success' ? result.description : '-'}
+                            {result.status === "success"
+                              ? result.description
+                              : "-"}
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                  
-                  <Button onClick={exportResults} className="w-full" data-testid="button-export-bulk">
+
+                  <Button
+                    onClick={exportResults}
+                    className="w-full"
+                    data-testid="button-export-bulk"
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export All Results
                   </Button>

@@ -1,11 +1,11 @@
-import { openai } from "../../../../../../server/utils/openai-client";
+import { openai } from "../../../../../server/utils/openai-client";
 import { nanoid } from "nanoid";
 import { ContentWriterState } from "../types";
-import { loggedOpenAICall } from "../../../../../../server/utils/ai-logger";
-import { ragService } from "../../../../../../server/utils/rag-service";
-import { storage } from "../../../../../../server/storage";
-import { formatSelectedTargetAudiences } from "../../../../../../server/utils/format-guidelines";
-import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "../../../../../../server/utils/language-helpers";
+import { loggedOpenAICall } from "../../../../../server/utils/ai-logger";
+import { ragService } from "../../../../../server/utils/rag-service";
+import { storage } from "../../../../../server/storage";
+import { formatSelectedTargetAudiences } from "../../../../../server/utils/format-guidelines";
+import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "../../../../../server/utils/language-helpers";
 
 function stripMarkdownCodeBlocks(text: string): string {
   return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();

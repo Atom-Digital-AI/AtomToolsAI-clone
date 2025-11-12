@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Section from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Loader2 } from "lucide-react";
 import type { PackageWithTiers } from "@shared/schema";
@@ -11,10 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
 // Helper function to format pricing
-const formatPrice = (amountMinor: number, currency: string = 'GBP') => {
+const formatPrice = (amountMinor: number, currency: string = "GBP") => {
   const amount = amountMinor / 100;
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
     currency: currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
@@ -24,65 +29,86 @@ const formatPrice = (amountMinor: number, currency: string = 'GBP') => {
 // Helper to get tier features based on limits and subfeatures
 const getTierFeatures = (tier: any, products: any[]) => {
   const features: string[] = [];
-  
+
   tier.limits.forEach((limit: any) => {
-    const product = products.find(p => p.id === limit.productId);
+    const product = products.find((p) => p.id === limit.productId);
     if (product && limit.includedInTier) {
-      const quantity = limit.quantity ? `${limit.quantity} ${product.name} uses` : `Unlimited ${product.name}`;
+      const quantity = limit.quantity
+        ? `${limit.quantity} ${product.name} uses`
+        : `Unlimited ${product.name}`;
       features.push(`${quantity}/${limit.periodicity}`);
-      
+
       // Add subfeature details
       if (limit.subfeatures) {
-        Object.entries(limit.subfeatures as Record<string, boolean>).forEach(([feature, enabled]) => {
-          if (enabled) {
-            features.push(`${feature.replace('_', ' ')} enabled`);
+        Object.entries(limit.subfeatures as Record<string, boolean>).forEach(
+          ([feature, enabled]) => {
+            if (enabled) {
+              features.push(`${feature.replace("_", " ")} enabled`);
+            }
           }
-        });
+        );
       }
     }
   });
-  
+
   return features;
 };
 
 const faqs = [
   {
     question: "Can I change plans anytime?",
-    answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.",
+    answer:
+      "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.",
   },
   {
     question: "What happens to my data if I cancel?",
-    answer: "Your data remains accessible for 30 days after cancellation. You can export everything at any time.",
+    answer:
+      "Your data remains accessible for 30 days after cancellation. You can export everything at any time.",
   },
   {
     question: "Do you offer refunds?",
-    answer: "We offer a 14-day money-back guarantee on all paid plans, no questions asked.",
+    answer:
+      "We offer a 14-day money-back guarantee on all paid plans, no questions asked.",
   },
   {
     question: "How does billing work?",
-    answer: "You're billed monthly or annually depending on your chosen plan. All prices are in GBP and exclude VAT where applicable.",
+    answer:
+      "You're billed monthly or annually depending on your chosen plan. All prices are in GBP and exclude VAT where applicable.",
   },
   {
     question: "Can I use multiple tools on one plan?",
-    answer: "Yes! Your plan covers access to all available tools within your usage limits.",
+    answer:
+      "Yes! Your plan covers access to all available tools within your usage limits.",
   },
 ];
 
 export default function Pricing() {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">(
+    "monthly"
+  );
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  
-  const { data: packages, isLoading, error } = useQuery<PackageWithTiers[]>({
+
+  const {
+    data: packages,
+    isLoading,
+    error,
+  } = useQuery<PackageWithTiers[]>({
     queryKey: ["/api/packages"],
     staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (err) => {
-      console.error("Error fetching packages:", err);
-    },
-    onSuccess: (data) => {
-      console.log("Packages loaded:", data?.length || 0);
-    },
+    // Note: onError and onSuccess removed in React Query v5
+    // Use useEffect to handle side effects or handle in component
   });
+
+  // Handle query side effects
+  useEffect(() => {
+    if (error) {
+      console.error("Error fetching packages:", error);
+    }
+    if (packages) {
+      console.log("Packages loaded:", packages.length || 0);
+    }
+  }, [error, packages]);
 
   // Get user's current tier subscriptions
   const { data: tierSubscriptions } = useQuery({
@@ -97,8 +123,12 @@ export default function Pricing() {
       return apiRequest("POST", "/api/tier-subscriptions", { tierId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/tier-subscriptions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products/with-status"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/user/tier-subscriptions"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/products/with-status"],
+      });
       toast({
         title: "Success",
         description: "Successfully subscribed to package tier!",
@@ -110,7 +140,7 @@ export default function Pricing() {
         description: error.message || "Failed to subscribe to package",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleGetStarted = (tier: any, relevantPrice: any) => {
@@ -121,7 +151,10 @@ export default function Pricing() {
     }
 
     // Check if user is already subscribed to this tier
-    const isSubscribed = tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.some((sub: any) => sub.tierId === tier.id);
+    const isSubscribed =
+      tierSubscriptions &&
+      Array.isArray(tierSubscriptions) &&
+      tierSubscriptions.some((sub: any) => sub.tierId === tier.id);
     if (isSubscribed) {
       toast({
         title: "Already Subscribed",
@@ -137,12 +170,11 @@ export default function Pricing() {
       // For paid tiers, show a confirmation or redirect to payment
       toast({
         title: "Coming Soon",
-        description: "Payment integration is being finalized. Please contact support for now.",
+        description:
+          "Payment integration is being finalized. Please contact support for now.",
       });
     }
   };
-
-
 
   if (isLoading) {
     return (
@@ -172,7 +204,8 @@ export default function Pricing() {
               Simple, transparent pricing
             </h1>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Choose the plan that works best for you. All plans include our core features with different usage limits.
+              Choose the plan that works best for you. All plans include our
+              core features with different usage limits.
             </p>
           </div>
 
@@ -224,20 +257,30 @@ export default function Pricing() {
 
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {packageData.tiers
-                      .filter(tier => tier.isActive)
+                      .filter((tier) => tier.isActive)
                       .map((tier) => {
-                        const relevantPrice = tier.prices.find(price => 
-                          price.interval === (billingPeriod === "monthly" ? "month" : "year")
-                        ) || tier.prices[0];
-                        
-                        const features = getTierFeatures(tier, packageData.products);
-                        const isPopular = tier.promotionalTag?.toLowerCase().includes('popular');
-                        
+                        const relevantPrice =
+                          tier.prices.find(
+                            (price) =>
+                              price.interval ===
+                              (billingPeriod === "monthly" ? "month" : "year")
+                          ) || tier.prices[0];
+
+                        const features = getTierFeatures(
+                          tier,
+                          packageData.products
+                        );
+                        const isPopular = tier.promotionalTag
+                          ?.toLowerCase()
+                          .includes("popular");
+
                         return (
                           <div
                             key={tier.id}
                             className={`relative bg-gray-900 rounded-2xl p-8 ${
-                              isPopular ? 'ring-2 ring-indigo-600 scale-105' : ''
+                              isPopular
+                                ? "ring-2 ring-indigo-600 scale-105"
+                                : ""
                             }`}
                           >
                             {tier.promotionalTag && (
@@ -247,50 +290,78 @@ export default function Pricing() {
                                 </Badge>
                               </div>
                             )}
-                            
+
                             <div className="text-center mb-8">
                               <h3 className="text-2xl font-bold text-white mb-2">
                                 {tier.name}
                               </h3>
                               <div className="text-4xl font-bold text-white mb-2">
-                                {relevantPrice ? formatPrice(relevantPrice.amountMinor, relevantPrice.currency) : 'Free'}
-                                {relevantPrice && relevantPrice.interval !== 'lifetime' && (
-                                  <span className="text-lg text-gray-400">
-                                    /{relevantPrice.interval}
-                                  </span>
-                                )}
+                                {relevantPrice
+                                  ? formatPrice(
+                                      relevantPrice.amountMinor,
+                                      relevantPrice.currency || undefined
+                                    )
+                                  : "Free"}
+                                {relevantPrice &&
+                                  relevantPrice.interval !== "lifetime" && (
+                                    <span className="text-lg text-gray-400">
+                                      /{relevantPrice.interval}
+                                    </span>
+                                  )}
                               </div>
-                              {relevantPrice?.interval === 'lifetime' && (
-                                <p className="text-sm text-gray-400">One-time payment</p>
+                              {relevantPrice?.interval === "lifetime" && (
+                                <p className="text-sm text-gray-400">
+                                  One-time payment
+                                </p>
                               )}
                             </div>
 
                             <div className="space-y-4 mb-8">
                               {features.map((feature, index) => (
-                                <div key={index} className="flex items-start gap-3">
+                                <div
+                                  key={index}
+                                  className="flex items-start gap-3"
+                                >
                                   <CheckCircle className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                                  <span className="text-gray-300 capitalize">{feature}</span>
+                                  <span className="text-gray-300 capitalize">
+                                    {feature}
+                                  </span>
                                 </div>
                               ))}
                             </div>
 
-                            <Button 
+                            <Button
                               className="w-full bg-indigo-600 hover:bg-indigo-700"
                               data-testid={`button-select-${tier.name.toLowerCase()}`}
-                              onClick={() => handleGetStarted(tier, relevantPrice)}
-                              disabled={subscribeMutation.isPending || (isAuthenticated && tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.some((sub: any) => sub.tierId === tier.id))}
+                              onClick={() =>
+                                handleGetStarted(tier, relevantPrice)
+                              }
+                              disabled={
+                                subscribeMutation.isPending ||
+                                ((isAuthenticated &&
+                                  tierSubscriptions &&
+                                  Array.isArray(tierSubscriptions) &&
+                                  tierSubscriptions.some(
+                                    (sub: any) => sub.tierId === tier.id
+                                  )) as boolean)
+                              }
                             >
                               {subscribeMutation.isPending ? (
                                 <>
                                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                   Processing...
                                 </>
-                              ) : isAuthenticated && tierSubscriptions && Array.isArray(tierSubscriptions) && tierSubscriptions.some((sub: any) => sub.tierId === tier.id) ? (
-                                'Subscribed ✓'
+                              ) : isAuthenticated &&
+                                tierSubscriptions &&
+                                Array.isArray(tierSubscriptions) &&
+                                tierSubscriptions.some(
+                                  (sub: any) => sub.tierId === tier.id
+                                ) ? (
+                                "Subscribed ✓"
                               ) : relevantPrice?.amountMinor === 0 ? (
-                                'Start Free'
+                                "Start Free"
                               ) : (
-                                'Get Started'
+                                "Get Started"
                               )}
                             </Button>
                           </div>
@@ -302,13 +373,18 @@ export default function Pricing() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <p className="text-gray-400 mb-4">No pricing packages available at the moment.</p>
+              <p className="text-gray-400 mb-4">
+                No pricing packages available at the moment.
+              </p>
               {error && (
-                <p className="text-red-400 text-sm mt-2">Error: {error instanceof Error ? error.message : String(error)}</p>
+                <p className="text-red-400 text-sm mt-2">
+                  Error: {(error as Error)?.message || String(error)}
+                </p>
               )}
               {!isLoading && !error && (!packages || packages.length === 0) && (
                 <p className="text-gray-500 text-sm mt-2">
-                  Packages need to be created by an administrator. Please contact support if you need access.
+                  Packages need to be created by an administrator. Please
+                  contact support if you need access.
                 </p>
               )}
             </div>
@@ -321,8 +397,8 @@ export default function Pricing() {
             </h2>
             <Accordion type="single" collapsible className="space-y-4">
               {faqs.map((faq, index) => (
-                <AccordionItem 
-                  key={index} 
+                <AccordionItem
+                  key={index}
                   value={`item-${index}`}
                   className="bg-gray-900 rounded-lg border-gray-800"
                 >

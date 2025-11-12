@@ -1,5 +1,5 @@
 // Load environment variables first
-import 'dotenv/config';
+import "dotenv/config";
 
 import { storage } from "./storage";
 import { db } from "./db";
@@ -20,7 +20,9 @@ async function createSuperAdminPackage() {
     const user = await storage.getUserByEmail(userEmail);
 
     if (!user) {
-      throw new Error(`User with email ${userEmail} not found. Please ensure the user exists first.`);
+      throw new Error(
+        `User with email ${userEmail} not found. Please ensure the user exists first.`
+      );
     }
 
     console.log(`✅ Found user: ${user.email} (ID: ${user.id})\n`);
@@ -44,7 +46,9 @@ async function createSuperAdminPackage() {
     let packageId: string;
 
     if (existingSuperAdminPackage) {
-      console.log(`⚠️  Super Admin package already exists (ID: ${existingSuperAdminPackage.id})`);
+      console.log(
+        `⚠️  Super Admin package already exists (ID: ${existingSuperAdminPackage.id})`
+      );
       console.log("   Updating existing package...\n");
       packageId = existingSuperAdminPackage.id;
     } else {
@@ -52,18 +56,23 @@ async function createSuperAdminPackage() {
       console.log("📦 Creating Super Admin package...");
       const newPackage = await storage.createPackage({
         name: "Super Admin",
-        description: "Complete access to all tools and features. Exclusive package for super admin.",
+        description:
+          "Complete access to all tools and features. Exclusive package for super admin.",
         category: "Administration",
         isActive: true,
       });
       packageId = newPackage.id;
-      console.log(`✅ Created package: ${newPackage.name} (ID: ${packageId})\n`);
+      console.log(
+        `✅ Created package: ${newPackage.name} (ID: ${packageId})\n`
+      );
     }
 
     // Step 5: Add all products to the package
     console.log("🔗 Adding all products to Super Admin package...");
     const existingPackageProducts = await storage.getPackageProducts(packageId);
-    const existingProductIds = new Set(existingPackageProducts.map((p) => p.id));
+    const existingProductIds = new Set(
+      existingPackageProducts.map((p) => p.id)
+    );
 
     let addedCount = 0;
     for (const product of allProducts) {
@@ -82,10 +91,14 @@ async function createSuperAdminPackage() {
     const packageTiers = await storage.getTiersByPackage(packageId);
     let tierId: string;
 
-    const existingTier = packageTiers.find((t) => t.name.toLowerCase() === "super admin access");
+    const existingTier = packageTiers.find(
+      (t) => t.name.toLowerCase() === "super admin access"
+    );
 
     if (existingTier) {
-      console.log(`⚠️  Super Admin tier already exists (ID: ${existingTier.id})`);
+      console.log(
+        `⚠️  Super Admin tier already exists (ID: ${existingTier.id})`
+      );
       console.log("   Using existing tier...\n");
       tierId = existingTier.id;
     } else {
@@ -121,8 +134,9 @@ async function createSuperAdminPackage() {
         // periodicity: 'lifetime' means no time-based restrictions
         // includedInTier: true
         // subfeatures: Enable all available subfeatures for each product
-        const productSubfeatures = product.availableSubfeatures || {};
-        const subfeatures: Record<string, any> = {};
+        const productSubfeatures =
+          (product.availableSubfeatures as Record<string, boolean>) || {};
+        const subfeatures: Record<string, boolean> = {};
 
         // Enable all available subfeatures
         if (productSubfeatures.bulk === true) {
@@ -166,7 +180,9 @@ async function createSuperAdminPackage() {
       isActive: true,
       expiresAt: null, // null = lifetime subscription
     });
-    console.log(`✅ User subscribed successfully (Subscription ID: ${subscription.id})\n`);
+    console.log(
+      `✅ User subscribed successfully (Subscription ID: ${subscription.id})\n`
+    );
 
     // Step 10: Summary
     console.log("=".repeat(60));
@@ -175,12 +191,17 @@ async function createSuperAdminPackage() {
     console.log(`📦 Package: Super Admin (ID: ${packageId})`);
     console.log(`🎚️  Tier: Super Admin Access (ID: ${tierId})`);
     console.log(`👤 User: ${user.email} (ID: ${user.id})`);
-    console.log(`🔧 Products: ${allProducts.length} products with unlimited access`);
+    console.log(
+      `🔧 Products: ${allProducts.length} products with unlimited access`
+    );
     console.log("=".repeat(60));
 
     // Verify access
     console.log("\n🔍 Verifying access to a few products...");
-    const sampleProducts = allProducts.slice(0, Math.min(3, allProducts.length));
+    const sampleProducts = allProducts.slice(
+      0,
+      Math.min(3, allProducts.length)
+    );
     for (const product of sampleProducts) {
       const access = await storage.getUserProductAccess(user.id, product.id);
       if (access.hasAccess) {
@@ -202,9 +223,11 @@ export { createSuperAdminPackage };
 
 // Run the script if this file is executed directly
 // Check if we're running as a script (not imported as a module)
-const isMainModule = import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('create-super-admin-package.ts');
+const isMainModule =
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1]?.endsWith("create-super-admin-package.ts");
 
-if (isMainModule || process.argv[1]?.includes('create-super-admin-package')) {
+if (isMainModule || process.argv[1]?.includes("create-super-admin-package")) {
   createSuperAdminPackage()
     .then(() => {
       console.log("\n✅ Script completed successfully");
@@ -215,4 +238,3 @@ if (isMainModule || process.argv[1]?.includes('create-super-admin-package')) {
       process.exit(1);
     });
 }
-

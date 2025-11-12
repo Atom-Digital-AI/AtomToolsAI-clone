@@ -1,6 +1,6 @@
 import type { AdSpec } from "@shared/schema";
 import type { WireframeOption } from "../langgraph/social-content-types";
-import { db } from "../../../../../../server/db";
+import { db } from "../../../../../server/db";
 
 /**
  * Ad Spec Validation Utility

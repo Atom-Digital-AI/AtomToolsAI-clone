@@ -1,0 +1,3069 @@
+{
+  "nodes": [
+    {
+      "id": "Ad Copy Generator App_ad_copy_generator_py",
+      "label": "ad_copy_generator.py",
+      "path": "Ad Copy Generator App/ad_copy_generator.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_api___init___py",
+      "label": "__init__.py",
+      "path": "Ad Copy Generator App/api/__init__.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_api_routes_py",
+      "label": "routes.py",
+      "path": "Ad Copy Generator App/api/routes.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_app_py",
+      "label": "app.py",
+      "path": "Ad Copy Generator App/app.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_build_exe_py",
+      "label": "build_exe.py",
+      "path": "Ad Copy Generator App/build_exe.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_config_py",
+      "label": "config.py",
+      "path": "Ad Copy Generator App/config.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_copy_env_to_dist_py",
+      "label": "copy_env_to_dist.py",
+      "path": "Ad Copy Generator App/copy_env_to_dist.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_create_app_bundle_py",
+      "label": "create_app_bundle.py",
+      "path": "Ad Copy Generator App/create_app_bundle.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_debug_env_py",
+      "label": "debug_env.py",
+      "path": "Ad Copy Generator App/debug_env.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_demo_language_detection_py",
+      "label": "demo_language_detection.py",
+      "path": "Ad Copy Generator App/demo_language_detection.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_generate_refresh_token_py",
+      "label": "generate_refresh_token.py",
+      "path": "Ad Copy Generator App/generate_refresh_token.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_keyword_research_py",
+      "label": "keyword_research.py",
+      "path": "Ad Copy Generator App/keyword_research.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_launcher_py",
+      "label": "launcher.py",
+      "path": "Ad Copy Generator App/launcher.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_main_py",
+      "label": "main.py",
+      "path": "Ad Copy Generator App/main.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_run_app_py",
+      "label": "run_app.py",
+      "path": "Ad Copy Generator App/run_app.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_services___init___py",
+      "label": "__init__.py",
+      "path": "Ad Copy Generator App/services/__init__.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_services_cache_service_py",
+      "label": "cache_service.py",
+      "path": "Ad Copy Generator App/services/cache_service.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_services_celery_app_py",
+      "label": "celery_app.py",
+      "path": "Ad Copy Generator App/services/celery_app.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_services_monitoring_py",
+      "label": "monitoring.py",
+      "path": "Ad Copy Generator App/services/monitoring.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_services_openai_service_py",
+      "label": "openai_service.py",
+      "path": "Ad Copy Generator App/services/openai_service.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_services_tasks_py",
+      "label": "tasks.py",
+      "path": "Ad Copy Generator App/services/tasks.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_setup_api_key_py",
+      "label": "setup_api_key.py",
+      "path": "Ad Copy Generator App/setup_api_key.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_api_functionality_py",
+      "label": "test_api_functionality.py",
+      "path": "Ad Copy Generator App/test_api_functionality.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_app_with_api_py",
+      "label": "test_app_with_api.py",
+      "path": "Ad Copy Generator App/test_app_with_api.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_bulk_seo_fix_py",
+      "label": "test_bulk_seo_fix.py",
+      "path": "Ad Copy Generator App/test_bulk_seo_fix.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_executable_py",
+      "label": "test_executable.py",
+      "path": "Ad Copy Generator App/test_executable.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_executable_api_py",
+      "label": "test_executable_api.py",
+      "path": "Ad Copy Generator App/test_executable_api.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_improvements_py",
+      "label": "test_improvements.py",
+      "path": "Ad Copy Generator App/test_improvements.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_language_detection_py",
+      "label": "test_language_detection.py",
+      "path": "Ad Copy Generator App/test_language_detection.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_test_phase2_3_py",
+      "label": "test_phase2_3.py",
+      "path": "Ad Copy Generator App/test_phase2_3.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_tests___init___py",
+      "label": "__init__.py",
+      "path": "Ad Copy Generator App/tests/__init__.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_tests_test_services_py",
+      "label": "test_services.py",
+      "path": "Ad Copy Generator App/tests/test_services.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_tests_test_validators_py",
+      "label": "test_validators.py",
+      "path": "Ad Copy Generator App/tests/test_validators.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_utils___init___py",
+      "label": "__init__.py",
+      "path": "Ad Copy Generator App/utils/__init__.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_utils_logger_py",
+      "label": "logger.py",
+      "path": "Ad Copy Generator App/utils/logger.py",
+      "category": "python"
+    },
+    {
+      "id": "Ad Copy Generator App_utils_validators_py",
+      "label": "validators.py",
+      "path": "Ad Copy Generator App/utils/validators.py",
+      "category": "python"
+    },
+    {
+      "id": "client_src_App_tsx",
+      "label": "App.tsx",
+      "path": "client/src/App.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_BrandGuidelineForm_example_tsx",
+      "label": "BrandGuidelineForm.example.tsx",
+      "path": "client/src/components/BrandGuidelineForm.example.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_BrandGuidelineForm_tsx",
+      "label": "BrandGuidelineForm.tsx",
+      "path": "client/src/components/BrandGuidelineForm.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ContextPageFallbackDialogs_tsx",
+      "label": "ContextPageFallbackDialogs.tsx",
+      "path": "client/src/components/ContextPageFallbackDialogs.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ErrorBoundary_tsx",
+      "label": "ErrorBoundary.tsx",
+      "path": "client/src/components/ErrorBoundary.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_FeedbackButtons_tsx",
+      "label": "FeedbackButtons.tsx",
+      "path": "client/src/components/FeedbackButtons.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ProgressModal_tsx",
+      "label": "ProgressModal.tsx",
+      "path": "client/src/components/ProgressModal.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_SaveContentDialog_tsx",
+      "label": "SaveContentDialog.tsx",
+      "path": "client/src/components/SaveContentDialog.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_SocialContentExport_tsx",
+      "label": "SocialContentExport.tsx",
+      "path": "client/src/components/SocialContentExport.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_TagInput_tsx",
+      "label": "TagInput.tsx",
+      "path": "client/src/components/TagInput.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_UnifiedFallbackModal_tsx",
+      "label": "UnifiedFallbackModal.tsx",
+      "path": "client/src/components/UnifiedFallbackModal.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_UsageStatsDisplay_tsx",
+      "label": "UsageStatsDisplay.tsx",
+      "path": "client/src/components/UsageStatsDisplay.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_access-guard_tsx",
+      "label": "access-guard.tsx",
+      "path": "client/src/components/access-guard.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_BlockEditor_tsx",
+      "label": "BlockEditor.tsx",
+      "path": "client/src/components/admin/BlockEditor.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_BlockRenderer_tsx",
+      "label": "BlockRenderer.tsx",
+      "path": "client/src/components/admin/BlockRenderer.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_CmsPageEditor_tsx",
+      "label": "CmsPageEditor.tsx",
+      "path": "client/src/components/admin/CmsPageEditor.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_ObjectUploader_tsx",
+      "label": "ObjectUploader.tsx",
+      "path": "client/src/components/admin/ObjectUploader.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_PackageCard_tsx",
+      "label": "PackageCard.tsx",
+      "path": "client/src/components/admin/PackageCard.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_PackageForm_tsx",
+      "label": "PackageForm.tsx",
+      "path": "client/src/components/admin/PackageForm.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_PackageManager_tsx",
+      "label": "PackageManager.tsx",
+      "path": "client/src/components/admin/PackageManager.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_ProductForm_tsx",
+      "label": "ProductForm.tsx",
+      "path": "client/src/components/admin/ProductForm.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_ProductManager_tsx",
+      "label": "ProductManager.tsx",
+      "path": "client/src/components/admin/ProductManager.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_RichTextEditor_tsx",
+      "label": "RichTextEditor.tsx",
+      "path": "client/src/components/admin/RichTextEditor.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_admin_UserManager_tsx",
+      "label": "UserManager.tsx",
+      "path": "client/src/components/admin/UserManager.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_auth-guard_tsx",
+      "label": "auth-guard.tsx",
+      "path": "client/src/components/auth-guard.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_guideline-profile-selector_tsx",
+      "label": "guideline-profile-selector.tsx",
+      "path": "client/src/components/guideline-profile-selector.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_BrandSelector_tsx",
+      "label": "BrandSelector.tsx",
+      "path": "client/src/components/layout/BrandSelector.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_BrandSubNav_tsx",
+      "label": "BrandSubNav.tsx",
+      "path": "client/src/components/layout/BrandSubNav.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_NotificationBell_tsx",
+      "label": "NotificationBell.tsx",
+      "path": "client/src/components/layout/NotificationBell.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_cookie-banner_tsx",
+      "label": "cookie-banner.tsx",
+      "path": "client/src/components/layout/cookie-banner.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_footer_tsx",
+      "label": "footer.tsx",
+      "path": "client/src/components/layout/footer.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_header_tsx",
+      "label": "header.tsx",
+      "path": "client/src/components/layout/header.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_layout_tsx",
+      "label": "layout.tsx",
+      "path": "client/src/components/layout/layout.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_layout_mobile-menu_tsx",
+      "label": "mobile-menu.tsx",
+      "path": "client/src/components/layout/mobile-menu.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_qc_QCDashboard_tsx",
+      "label": "QCDashboard.tsx",
+      "path": "client/src/components/qc/QCDashboard.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_qc_QCSettings_tsx",
+      "label": "QCSettings.tsx",
+      "path": "client/src/components/qc/QCSettings.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_accordion_tsx",
+      "label": "accordion.tsx",
+      "path": "client/src/components/ui/accordion.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_alert-dialog_tsx",
+      "label": "alert-dialog.tsx",
+      "path": "client/src/components/ui/alert-dialog.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_alert_tsx",
+      "label": "alert.tsx",
+      "path": "client/src/components/ui/alert.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_aspect-ratio_tsx",
+      "label": "aspect-ratio.tsx",
+      "path": "client/src/components/ui/aspect-ratio.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_avatar_tsx",
+      "label": "avatar.tsx",
+      "path": "client/src/components/ui/avatar.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_badge_tsx",
+      "label": "badge.tsx",
+      "path": "client/src/components/ui/badge.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_breadcrumb_tsx",
+      "label": "breadcrumb.tsx",
+      "path": "client/src/components/ui/breadcrumb.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_button_tsx",
+      "label": "button.tsx",
+      "path": "client/src/components/ui/button.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_calendar_tsx",
+      "label": "calendar.tsx",
+      "path": "client/src/components/ui/calendar.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_card_tsx",
+      "label": "card.tsx",
+      "path": "client/src/components/ui/card.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_carousel_tsx",
+      "label": "carousel.tsx",
+      "path": "client/src/components/ui/carousel.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_chart_tsx",
+      "label": "chart.tsx",
+      "path": "client/src/components/ui/chart.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_checkbox_tsx",
+      "label": "checkbox.tsx",
+      "path": "client/src/components/ui/checkbox.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_collapsible_tsx",
+      "label": "collapsible.tsx",
+      "path": "client/src/components/ui/collapsible.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_command_tsx",
+      "label": "command.tsx",
+      "path": "client/src/components/ui/command.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_container_tsx",
+      "label": "container.tsx",
+      "path": "client/src/components/ui/container.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_context-menu_tsx",
+      "label": "context-menu.tsx",
+      "path": "client/src/components/ui/context-menu.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_cookie-banner_tsx",
+      "label": "cookie-banner.tsx",
+      "path": "client/src/components/ui/cookie-banner.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_dialog_tsx",
+      "label": "dialog.tsx",
+      "path": "client/src/components/ui/dialog.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_drawer_tsx",
+      "label": "drawer.tsx",
+      "path": "client/src/components/ui/drawer.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_dropdown-menu_tsx",
+      "label": "dropdown-menu.tsx",
+      "path": "client/src/components/ui/dropdown-menu.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_form_tsx",
+      "label": "form.tsx",
+      "path": "client/src/components/ui/form.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_hover-card_tsx",
+      "label": "hover-card.tsx",
+      "path": "client/src/components/ui/hover-card.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_input-otp_tsx",
+      "label": "input-otp.tsx",
+      "path": "client/src/components/ui/input-otp.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_input_tsx",
+      "label": "input.tsx",
+      "path": "client/src/components/ui/input.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_label_tsx",
+      "label": "label.tsx",
+      "path": "client/src/components/ui/label.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_logo_tsx",
+      "label": "logo.tsx",
+      "path": "client/src/components/ui/logo.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_menubar_tsx",
+      "label": "menubar.tsx",
+      "path": "client/src/components/ui/menubar.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_navigation-menu_tsx",
+      "label": "navigation-menu.tsx",
+      "path": "client/src/components/ui/navigation-menu.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_pagination_tsx",
+      "label": "pagination.tsx",
+      "path": "client/src/components/ui/pagination.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_popover_tsx",
+      "label": "popover.tsx",
+      "path": "client/src/components/ui/popover.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_pricing-card_tsx",
+      "label": "pricing-card.tsx",
+      "path": "client/src/components/ui/pricing-card.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_progress_tsx",
+      "label": "progress.tsx",
+      "path": "client/src/components/ui/progress.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_radio-group_tsx",
+      "label": "radio-group.tsx",
+      "path": "client/src/components/ui/radio-group.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_resizable_tsx",
+      "label": "resizable.tsx",
+      "path": "client/src/components/ui/resizable.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_scroll-area_tsx",
+      "label": "scroll-area.tsx",
+      "path": "client/src/components/ui/scroll-area.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_section_tsx",
+      "label": "section.tsx",
+      "path": "client/src/components/ui/section.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_select_tsx",
+      "label": "select.tsx",
+      "path": "client/src/components/ui/select.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_separator_tsx",
+      "label": "separator.tsx",
+      "path": "client/src/components/ui/separator.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_sheet_tsx",
+      "label": "sheet.tsx",
+      "path": "client/src/components/ui/sheet.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_sidebar_tsx",
+      "label": "sidebar.tsx",
+      "path": "client/src/components/ui/sidebar.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_skeleton_tsx",
+      "label": "skeleton.tsx",
+      "path": "client/src/components/ui/skeleton.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_slider_tsx",
+      "label": "slider.tsx",
+      "path": "client/src/components/ui/slider.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_switch_tsx",
+      "label": "switch.tsx",
+      "path": "client/src/components/ui/switch.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_table_tsx",
+      "label": "table.tsx",
+      "path": "client/src/components/ui/table.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_tabs_tsx",
+      "label": "tabs.tsx",
+      "path": "client/src/components/ui/tabs.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_textarea_tsx",
+      "label": "textarea.tsx",
+      "path": "client/src/components/ui/textarea.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_toast_tsx",
+      "label": "toast.tsx",
+      "path": "client/src/components/ui/toast.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_toaster_tsx",
+      "label": "toaster.tsx",
+      "path": "client/src/components/ui/toaster.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_toggle-group_tsx",
+      "label": "toggle-group.tsx",
+      "path": "client/src/components/ui/toggle-group.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_toggle_tsx",
+      "label": "toggle.tsx",
+      "path": "client/src/components/ui/toggle.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_tool-card_tsx",
+      "label": "tool-card.tsx",
+      "path": "client/src/components/ui/tool-card.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_components_ui_tooltip_tsx",
+      "label": "tooltip.tsx",
+      "path": "client/src/components/ui/tooltip.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_contexts_BrandContext_tsx",
+      "label": "BrandContext.tsx",
+      "path": "client/src/contexts/BrandContext.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_hooks_use-admin-toast_ts",
+      "label": "use-admin-toast.ts",
+      "path": "client/src/hooks/use-admin-toast.ts",
+      "category": "client"
+    },
+    {
+      "id": "client_src_hooks_use-mobile_tsx",
+      "label": "use-mobile.tsx",
+      "path": "client/src/hooks/use-mobile.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_hooks_use-toast_ts",
+      "label": "use-toast.ts",
+      "path": "client/src/hooks/use-toast.ts",
+      "category": "client"
+    },
+    {
+      "id": "client_src_hooks_useAuth_ts",
+      "label": "useAuth.ts",
+      "path": "client/src/hooks/useAuth.ts",
+      "category": "client"
+    },
+    {
+      "id": "client_src_hooks_useGuidelineProfiles_ts",
+      "label": "useGuidelineProfiles.ts",
+      "path": "client/src/hooks/useGuidelineProfiles.ts",
+      "category": "client"
+    },
+    {
+      "id": "client_src_hooks_useProductAccess_ts",
+      "label": "useProductAccess.ts",
+      "path": "client/src/hooks/useProductAccess.ts",
+      "category": "client"
+    },
+    {
+      "id": "client_src_lib_admin-toast_tsx",
+      "label": "admin-toast.tsx",
+      "path": "client/src/lib/admin-toast.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_lib_queryClient_ts",
+      "label": "queryClient.ts",
+      "path": "client/src/lib/queryClient.ts",
+      "category": "client"
+    },
+    {
+      "id": "client_src_lib_utils_ts",
+      "label": "utils.ts",
+      "path": "client/src/lib/utils.ts",
+      "category": "client"
+    },
+    {
+      "id": "client_src_main_tsx",
+      "label": "main.tsx",
+      "path": "client/src/main.tsx",
+      "category": "entry"
+    },
+    {
+      "id": "client_src_pages_UrlTaggingPage_tsx",
+      "label": "UrlTaggingPage.tsx",
+      "path": "client/src/pages/UrlTaggingPage.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_admin_ai-analytics_tsx",
+      "label": "ai-analytics.tsx",
+      "path": "client/src/pages/admin/ai-analytics.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_admin_cms_tsx",
+      "label": "cms.tsx",
+      "path": "client/src/pages/admin/cms.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_admin_dashboard_tsx",
+      "label": "dashboard.tsx",
+      "path": "client/src/pages/admin/dashboard.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_admin_error-logs_tsx",
+      "label": "error-logs.tsx",
+      "path": "client/src/pages/admin/error-logs.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_admin_langgraph-threads_tsx",
+      "label": "langgraph-threads.tsx",
+      "path": "client/src/pages/admin/langgraph-threads.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_account_tsx",
+      "label": "account.tsx",
+      "path": "client/src/pages/app/account.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_dashboard_tsx",
+      "label": "dashboard.tsx",
+      "path": "client/src/pages/app/dashboard.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_my-tools_tsx",
+      "label": "my-tools.tsx",
+      "path": "client/src/pages/app/my-tools.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_subscriptions_tsx",
+      "label": "subscriptions.tsx",
+      "path": "client/src/pages/app/subscriptions.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_tools_content-writer-v2_tsx",
+      "label": "content-writer-v2.tsx",
+      "path": "client/src/pages/app/tools/content-writer-v2.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_tools_facebook-ads-connector_tsx",
+      "label": "facebook-ads-connector.tsx",
+      "path": "client/src/pages/app/tools/facebook-ads-connector.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_tools_google-ads-copy-generator_tsx",
+      "label": "google-ads-copy-generator.tsx",
+      "path": "client/src/pages/app/tools/google-ads-copy-generator.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_tools_seo-meta-generator_tsx",
+      "label": "seo-meta-generator.tsx",
+      "path": "client/src/pages/app/tools/seo-meta-generator.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_app_tools_social-content-generator_tsx",
+      "label": "social-content-generator.tsx",
+      "path": "client/src/pages/app/tools/social-content-generator.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_cms-page_tsx",
+      "label": "cms-page.tsx",
+      "path": "client/src/pages/cms-page.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_complete-profile_tsx",
+      "label": "complete-profile.tsx",
+      "path": "client/src/pages/complete-profile.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_contact_tsx",
+      "label": "contact.tsx",
+      "path": "client/src/pages/contact.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_content-display_tsx",
+      "label": "content-display.tsx",
+      "path": "client/src/pages/content-display.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_content-history_tsx",
+      "label": "content-history.tsx",
+      "path": "client/src/pages/content-history.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_cookies_tsx",
+      "label": "cookies.tsx",
+      "path": "client/src/pages/cookies.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_email-verification-sent_tsx",
+      "label": "email-verification-sent.tsx",
+      "path": "client/src/pages/email-verification-sent.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_home_tsx",
+      "label": "home.tsx",
+      "path": "client/src/pages/home.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_login_tsx",
+      "label": "login.tsx",
+      "path": "client/src/pages/login.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_not-found_tsx",
+      "label": "not-found.tsx",
+      "path": "client/src/pages/not-found.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_pricing_tsx",
+      "label": "pricing.tsx",
+      "path": "client/src/pages/pricing.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_privacy_tsx",
+      "label": "privacy.tsx",
+      "path": "client/src/pages/privacy.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_profile-settings_tsx",
+      "label": "profile-settings.tsx",
+      "path": "client/src/pages/profile-settings.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_resources_tsx",
+      "label": "resources.tsx",
+      "path": "client/src/pages/resources.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_sign-up_tsx",
+      "label": "sign-up.tsx",
+      "path": "client/src/pages/sign-up.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_terms_tsx",
+      "label": "terms.tsx",
+      "path": "client/src/pages/terms.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_tools_facebook-ads-looker-studio-connector_tsx",
+      "label": "facebook-ads-looker-studio-connector.tsx",
+      "path": "client/src/pages/tools/facebook-ads-looker-studio-connector.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_tools_google-ads-copy-generator_tsx",
+      "label": "google-ads-copy-generator.tsx",
+      "path": "client/src/pages/tools/google-ads-copy-generator.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_tools_index_tsx",
+      "label": "index.tsx",
+      "path": "client/src/pages/tools/index.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_tools_seo-meta-generator_tsx",
+      "label": "seo-meta-generator.tsx",
+      "path": "client/src/pages/tools/seo-meta-generator.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_pages_verify-email_tsx",
+      "label": "verify-email.tsx",
+      "path": "client/src/pages/verify-email.tsx",
+      "category": "client"
+    },
+    {
+      "id": "client_src_utils_sentry_ts",
+      "label": "sentry.ts",
+      "path": "client/src/utils/sentry.ts",
+      "category": "client"
+    },
+    {
+      "id": "drizzle_config_ts",
+      "label": "drizzle.config.ts",
+      "path": "drizzle.config.ts",
+      "category": "other"
+    },
+    {
+      "id": "postcss_config_js",
+      "label": "postcss.config.js",
+      "path": "postcss.config.js",
+      "category": "other"
+    },
+    {
+      "id": "scripts_analyze-codebase_js",
+      "label": "analyze-codebase.js",
+      "path": "scripts/analyze-codebase.js",
+      "category": "other"
+    },
+    {
+      "id": "scripts_fix-imports-better_js",
+      "label": "fix-imports-better.js",
+      "path": "scripts/fix-imports-better.js",
+      "category": "other"
+    },
+    {
+      "id": "scripts_fix-imports_js",
+      "label": "fix-imports.js",
+      "path": "scripts/fix-imports.js",
+      "category": "other"
+    },
+    {
+      "id": "scripts_replace-shared-imports-fixed_js",
+      "label": "replace-shared-imports-fixed.js",
+      "path": "scripts/replace-shared-imports-fixed.js",
+      "category": "other"
+    },
+    {
+      "id": "scripts_replace-shared-imports_js",
+      "label": "replace-shared-imports.js",
+      "path": "scripts/replace-shared-imports.js",
+      "category": "other"
+    },
+    {
+      "id": "scripts_transpile-schema_js",
+      "label": "transpile-schema.js",
+      "path": "scripts/transpile-schema.js",
+      "category": "other"
+    },
+    {
+      "id": "server___tests___ad-spec-validator_test_ts",
+      "label": "ad-spec-validator.test.ts",
+      "path": "server/__tests__/ad-spec-validator.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___api_auth_test_ts",
+      "label": "auth.test.ts",
+      "path": "server/__tests__/api/auth.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___api_cms_test_ts",
+      "label": "cms.test.ts",
+      "path": "server/__tests__/api/cms.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___api_content-generation_test_ts",
+      "label": "content-generation.test.ts",
+      "path": "server/__tests__/api/content-generation.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___api_crawl_test_ts",
+      "label": "crawl.test.ts",
+      "path": "server/__tests__/api/crawl.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___api_guideline-profiles_test_ts",
+      "label": "guideline-profiles.test.ts",
+      "path": "server/__tests__/api/guideline-profiles.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___api_object-storage_test_ts",
+      "label": "object-storage.test.ts",
+      "path": "server/__tests__/api/object-storage.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___api_social-content_test_ts",
+      "label": "social-content.test.ts",
+      "path": "server/__tests__/api/social-content.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___helpers_test-setup_ts",
+      "label": "test-setup.ts",
+      "path": "server/__tests__/helpers/test-setup.ts",
+      "category": "server"
+    },
+    {
+      "id": "server___tests___social-content-types_test_ts",
+      "label": "social-content-types.test.ts",
+      "path": "server/__tests__/social-content-types.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_auth_ts",
+      "label": "auth.ts",
+      "path": "server/auth.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_cms-routes_ts",
+      "label": "cms-routes.ts",
+      "path": "server/cms-routes.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_config_ts",
+      "label": "config.ts",
+      "path": "server/config.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_crawl-handler_ts",
+      "label": "crawl-handler.ts",
+      "path": "server/crawl-handler.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_create-super-admin-package_ts",
+      "label": "create-super-admin-package.ts",
+      "path": "server/create-super-admin-package.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_db_ts",
+      "label": "db.ts",
+      "path": "server/db.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_email_ts",
+      "label": "email.ts",
+      "path": "server/email.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_errorLogger_ts",
+      "label": "errorLogger.ts",
+      "path": "server/errorLogger.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_index_ts",
+      "label": "index.ts",
+      "path": "server/index.ts",
+      "category": "entry"
+    },
+    {
+      "id": "server_jobs_data-retention_ts",
+      "label": "data-retention.ts",
+      "path": "server/jobs/data-retention.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_content-writer-graph_ts",
+      "label": "content-writer-graph.ts",
+      "path": "server/langgraph/content-writer-graph.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_awaitConceptApproval_ts",
+      "label": "awaitConceptApproval.ts",
+      "path": "server/langgraph/nodes/awaitConceptApproval.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_awaitSubtopicApproval_ts",
+      "label": "awaitSubtopicApproval.ts",
+      "path": "server/langgraph/nodes/awaitSubtopicApproval.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_checkBrandMatch_ts",
+      "label": "checkBrandMatch.ts",
+      "path": "server/langgraph/nodes/checkBrandMatch.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_generateArticle_ts",
+      "label": "generateArticle.ts",
+      "path": "server/langgraph/nodes/generateArticle.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_generateConcepts_ts",
+      "label": "generateConcepts.ts",
+      "path": "server/langgraph/nodes/generateConcepts.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_generateSubtopics_ts",
+      "label": "generateSubtopics.ts",
+      "path": "server/langgraph/nodes/generateSubtopics.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_setAwaitConceptApproval_ts",
+      "label": "setAwaitConceptApproval.ts",
+      "path": "server/langgraph/nodes/setAwaitConceptApproval.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_setAwaitSubtopicApproval_ts",
+      "label": "setAwaitSubtopicApproval.ts",
+      "path": "server/langgraph/nodes/setAwaitSubtopicApproval.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_shouldRegenerate_ts",
+      "label": "shouldRegenerate.ts",
+      "path": "server/langgraph/nodes/shouldRegenerate.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_nodes_verifyFacts_ts",
+      "label": "verifyFacts.ts",
+      "path": "server/langgraph/nodes/verifyFacts.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_postgres-checkpointer_ts",
+      "label": "postgres-checkpointer.ts",
+      "path": "server/langgraph/postgres-checkpointer.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_agents_brand-guardian_ts",
+      "label": "brand-guardian.ts",
+      "path": "server/langgraph/qc/agents/brand-guardian.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_agents_fact-checker_ts",
+      "label": "fact-checker.ts",
+      "path": "server/langgraph/qc/agents/fact-checker.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_agents_proofreader_ts",
+      "label": "proofreader.ts",
+      "path": "server/langgraph/qc/agents/proofreader.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_agents_regulatory_ts",
+      "label": "regulatory.ts",
+      "path": "server/langgraph/qc/agents/regulatory.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_nodes_apply-changes_ts",
+      "label": "apply-changes.ts",
+      "path": "server/langgraph/qc/nodes/apply-changes.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_nodes_calculate-score_ts",
+      "label": "calculate-score.ts",
+      "path": "server/langgraph/qc/nodes/calculate-score.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_nodes_detect-conflicts_ts",
+      "label": "detect-conflicts.ts",
+      "path": "server/langgraph/qc/nodes/detect-conflicts.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_nodes_resolve-conflicts_ts",
+      "label": "resolve-conflicts.ts",
+      "path": "server/langgraph/qc/nodes/resolve-conflicts.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_qc-subgraph_ts",
+      "label": "qc-subgraph.ts",
+      "path": "server/langgraph/qc/qc-subgraph.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_qc_types_ts",
+      "label": "types.ts",
+      "path": "server/langgraph/qc/types.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_social-content-graph_ts",
+      "label": "social-content-graph.ts",
+      "path": "server/langgraph/social-content-graph.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_social-content-nodes_awaitApproval_ts",
+      "label": "awaitApproval.ts",
+      "path": "server/langgraph/social-content-nodes/awaitApproval.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_social-content-nodes_generateWireframes_ts",
+      "label": "generateWireframes.ts",
+      "path": "server/langgraph/social-content-nodes/generateWireframes.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_social-content-nodes_handleApproval_ts",
+      "label": "handleApproval.ts",
+      "path": "server/langgraph/social-content-nodes/handleApproval.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_social-content-nodes_scrapeUrls_ts",
+      "label": "scrapeUrls.ts",
+      "path": "server/langgraph/social-content-nodes/scrapeUrls.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_social-content-types_ts",
+      "label": "social-content-types.ts",
+      "path": "server/langgraph/social-content-types.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_langgraph_types_ts",
+      "label": "types.ts",
+      "path": "server/langgraph/types.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_migrate-existing-pages_ts",
+      "label": "migrate-existing-pages.ts",
+      "path": "server/migrate-existing-pages.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_object-storage-routes_ts",
+      "label": "object-storage-routes.ts",
+      "path": "server/object-storage-routes.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_objectStorage_ts",
+      "label": "objectStorage.ts",
+      "path": "server/objectStorage.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_rate-limit_ts",
+      "label": "rate-limit.ts",
+      "path": "server/rate-limit.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_routes_ts",
+      "label": "routes.ts",
+      "path": "server/routes.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_seed-ad-specs_ts",
+      "label": "seed-ad-specs.ts",
+      "path": "server/seed-ad-specs.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_seed-products_ts",
+      "label": "seed-products.ts",
+      "path": "server/seed-products.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_social-content-routes_ts",
+      "label": "social-content-routes.ts",
+      "path": "server/social-content-routes.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_storage-rag-extensions_ts",
+      "label": "storage-rag-extensions.ts",
+      "path": "server/storage-rag-extensions.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_storage_ts",
+      "label": "storage.ts",
+      "path": "server/storage.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_types_express_d_ts",
+      "label": "express.d.ts",
+      "path": "server/types/express.d.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___api-retry_test_ts",
+      "label": "api-retry.test.ts",
+      "path": "server/utils/__tests__/api-retry.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___cache_test_ts",
+      "label": "cache.test.ts",
+      "path": "server/utils/__tests__/cache.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___chunking_test_ts",
+      "label": "chunking.test.ts",
+      "path": "server/utils/__tests__/chunking.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___embeddings_test_ts",
+      "label": "embeddings.test.ts",
+      "path": "server/utils/__tests__/embeddings.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___format-guidelines_test_ts",
+      "label": "format-guidelines.test.ts",
+      "path": "server/utils/__tests__/format-guidelines.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___html-to-markdown_test_ts",
+      "label": "html-to-markdown.test.ts",
+      "path": "server/utils/__tests__/html-to-markdown.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___hybrid-search-service_test_ts",
+      "label": "hybrid-search-service.test.ts",
+      "path": "server/utils/__tests__/hybrid-search-service.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___language-helpers_test_ts",
+      "label": "language-helpers.test.ts",
+      "path": "server/utils/__tests__/language-helpers.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___logger_test_ts",
+      "label": "logger.test.ts",
+      "path": "server/utils/__tests__/logger.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___openai-client_test_ts",
+      "label": "openai-client.test.ts",
+      "path": "server/utils/__tests__/openai-client.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___query-transformer_test_ts",
+      "label": "query-transformer.test.ts",
+      "path": "server/utils/__tests__/query-transformer.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___rag-regression_test_ts",
+      "label": "rag-regression.test.ts",
+      "path": "server/utils/__tests__/rag-regression.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___rag-service-integration_test_ts",
+      "label": "rag-service-integration.test.ts",
+      "path": "server/utils/__tests__/rag-service-integration.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___reranking-service_test_ts",
+      "label": "reranking-service.test.ts",
+      "path": "server/utils/__tests__/reranking-service.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___sanitize_test_ts",
+      "label": "sanitize.test.ts",
+      "path": "server/utils/__tests__/sanitize.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___social-content-access_test_ts",
+      "label": "social-content-access.test.ts",
+      "path": "server/utils/__tests__/social-content-access.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___url-normalizer_test_ts",
+      "label": "url-normalizer.test.ts",
+      "path": "server/utils/__tests__/url-normalizer.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___url-validator_test_ts",
+      "label": "url-validator.test.ts",
+      "path": "server/utils/__tests__/url-validator.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils___tests___web-crawler_test_ts",
+      "label": "web-crawler.test.ts",
+      "path": "server/utils/__tests__/web-crawler.test.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_ad-spec-validator_ts",
+      "label": "ad-spec-validator.ts",
+      "path": "server/utils/ad-spec-validator.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_ai-logger_ts",
+      "label": "ai-logger.ts",
+      "path": "server/utils/ai-logger.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_api-retry_ts",
+      "label": "api-retry.ts",
+      "path": "server/utils/api-retry.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_brand-analyzer_ts",
+      "label": "brand-analyzer.ts",
+      "path": "server/utils/brand-analyzer.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_cache_ts",
+      "label": "cache.ts",
+      "path": "server/utils/cache.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_chunking_ts",
+      "label": "chunking.ts",
+      "path": "server/utils/chunking.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_embeddings_ts",
+      "label": "embeddings.ts",
+      "path": "server/utils/embeddings.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_format-guidelines_ts",
+      "label": "format-guidelines.ts",
+      "path": "server/utils/format-guidelines.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_html-to-markdown_ts",
+      "label": "html-to-markdown.ts",
+      "path": "server/utils/html-to-markdown.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_hybrid-search-service_ts",
+      "label": "hybrid-search-service.ts",
+      "path": "server/utils/hybrid-search-service.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_langsmith-config_ts",
+      "label": "langsmith-config.ts",
+      "path": "server/utils/langsmith-config.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_language-helpers_ts",
+      "label": "language-helpers.ts",
+      "path": "server/utils/language-helpers.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_logger_ts",
+      "label": "logger.ts",
+      "path": "server/utils/logger.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_openai-client_ts",
+      "label": "openai-client.ts",
+      "path": "server/utils/openai-client.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_pdf-brand-analyzer_ts",
+      "label": "pdf-brand-analyzer.ts",
+      "path": "server/utils/pdf-brand-analyzer.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_rag-service_ts",
+      "label": "rag-service.ts",
+      "path": "server/utils/rag-service.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_reranking-service_ts",
+      "label": "reranking-service.ts",
+      "path": "server/utils/reranking-service.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_sanitize_ts",
+      "label": "sanitize.ts",
+      "path": "server/utils/sanitize.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_social-content-access_ts",
+      "label": "social-content-access.ts",
+      "path": "server/utils/social-content-access.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_url-normalizer_ts",
+      "label": "url-normalizer.ts",
+      "path": "server/utils/url-normalizer.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_url-validator_ts",
+      "label": "url-validator.ts",
+      "path": "server/utils/url-validator.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_utils_web-crawler_ts",
+      "label": "web-crawler.ts",
+      "path": "server/utils/web-crawler.ts",
+      "category": "server"
+    },
+    {
+      "id": "server_vite_ts",
+      "label": "vite.ts",
+      "path": "server/vite.ts",
+      "category": "server"
+    },
+    {
+      "id": "shared_schema_ts",
+      "label": "schema.ts",
+      "path": "shared/schema.ts",
+      "category": "shared"
+    },
+    {
+      "id": "tailwind_config_ts",
+      "label": "tailwind.config.ts",
+      "path": "tailwind.config.ts",
+      "category": "other"
+    },
+    {
+      "id": "tools_component-tools_article-generator_server_generateArticle_ts",
+      "label": "generateArticle.ts",
+      "path": "tools/component-tools/article-generator/server/generateArticle.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_brand-guardian_server_brand-guardian_ts",
+      "label": "brand-guardian.ts",
+      "path": "tools/component-tools/brand-guardian/server/brand-guardian.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_brand-guardian_server_checkBrandMatch_ts",
+      "label": "checkBrandMatch.ts",
+      "path": "tools/component-tools/brand-guardian/server/checkBrandMatch.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_concept-generator_server_generateConcepts_ts",
+      "label": "generateConcepts.ts",
+      "path": "tools/component-tools/concept-generator/server/generateConcepts.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_concept-generator_tests_integration_concept-generator-integration_test_ts",
+      "label": "concept-generator-integration.test.ts",
+      "path": "tools/component-tools/concept-generator/tests/integration/concept-generator-integration.test.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_concept-generator_tests_regression_concept-generator-regression_test_ts",
+      "label": "concept-generator-regression.test.ts",
+      "path": "tools/component-tools/concept-generator/tests/regression/concept-generator-regression.test.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_concept-generator_tests_unit_concept-generator_test_ts",
+      "label": "concept-generator.test.ts",
+      "path": "tools/component-tools/concept-generator/tests/unit/concept-generator.test.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_fact-checker_server_fact-checker_ts",
+      "label": "fact-checker.ts",
+      "path": "tools/component-tools/fact-checker/server/fact-checker.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_fact-checker_server_verifyFacts_ts",
+      "label": "verifyFacts.ts",
+      "path": "tools/component-tools/fact-checker/server/verifyFacts.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_proofreader_server_proofreader_ts",
+      "label": "proofreader.ts",
+      "path": "tools/component-tools/proofreader/server/proofreader.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_regulatory-guardian_server_regulatory_ts",
+      "label": "regulatory.ts",
+      "path": "tools/component-tools/regulatory-guardian/server/regulatory.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_subtopic-generator_server_generateSubtopics_ts",
+      "label": "generateSubtopics.ts",
+      "path": "tools/component-tools/subtopic-generator/server/generateSubtopics.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_url-scraper_server_scrapeUrls_ts",
+      "label": "scrapeUrls.ts",
+      "path": "tools/component-tools/url-scraper/server/scrapeUrls.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_component-tools_wireframe-generator_server_generateWireframes_ts",
+      "label": "generateWireframes.ts",
+      "path": "tools/component-tools/wireframe-generator/server/generateWireframes.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_client_pages_app_content-writer-v2_tsx",
+      "label": "content-writer-v2.tsx",
+      "path": "tools/headline-tools/content-writer-v2/client/pages/app/content-writer-v2.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_content-writer-graph_ts",
+      "label": "content-writer-graph.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/content-writer-graph.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_awaitConceptApproval_ts",
+      "label": "awaitConceptApproval.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/awaitConceptApproval.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_awaitSubtopicApproval_ts",
+      "label": "awaitSubtopicApproval.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/awaitSubtopicApproval.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_checkBrandMatch_ts",
+      "label": "checkBrandMatch.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/checkBrandMatch.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_generateArticle_ts",
+      "label": "generateArticle.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/generateArticle.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_generateConcepts_ts",
+      "label": "generateConcepts.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/generateConcepts.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_generateSubtopics_ts",
+      "label": "generateSubtopics.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/generateSubtopics.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_setAwaitConceptApproval_ts",
+      "label": "setAwaitConceptApproval.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/setAwaitConceptApproval.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_setAwaitSubtopicApproval_ts",
+      "label": "setAwaitSubtopicApproval.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/setAwaitSubtopicApproval.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_shouldRegenerate_ts",
+      "label": "shouldRegenerate.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/shouldRegenerate.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_nodes_verifyFacts_ts",
+      "label": "verifyFacts.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/nodes/verifyFacts.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_langgraph_types_ts",
+      "label": "types.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/langgraph/types.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_content-writer-v2_server_routes_ts",
+      "label": "routes.ts",
+      "path": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_facebook-ads-connector_client_pages_app_facebook-ads-connector_tsx",
+      "label": "facebook-ads-connector.tsx",
+      "path": "tools/headline-tools/facebook-ads-connector/client/pages/app/facebook-ads-connector.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_facebook-ads-connector_client_pages_tools_facebook-ads-looker-studio-connector_tsx",
+      "label": "facebook-ads-looker-studio-connector.tsx",
+      "path": "tools/headline-tools/facebook-ads-connector/client/pages/tools/facebook-ads-looker-studio-connector.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_google-ads-copy-generator_client_pages_app_google-ads-copy-generator_tsx",
+      "label": "google-ads-copy-generator.tsx",
+      "path": "tools/headline-tools/google-ads-copy-generator/client/pages/app/google-ads-copy-generator.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_google-ads-copy-generator_client_pages_tools_google-ads-copy-generator_tsx",
+      "label": "google-ads-copy-generator.tsx",
+      "path": "tools/headline-tools/google-ads-copy-generator/client/pages/tools/google-ads-copy-generator.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_google-ads-copy-generator_server_routes_ts",
+      "label": "routes.ts",
+      "path": "tools/headline-tools/google-ads-copy-generator/server/routes.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_seo-meta-generator_client_pages_app_seo-meta-generator_tsx",
+      "label": "seo-meta-generator.tsx",
+      "path": "tools/headline-tools/seo-meta-generator/client/pages/app/seo-meta-generator.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_seo-meta-generator_client_pages_tools_seo-meta-generator_tsx",
+      "label": "seo-meta-generator.tsx",
+      "path": "tools/headline-tools/seo-meta-generator/client/pages/tools/seo-meta-generator.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_seo-meta-generator_server_routes_ts",
+      "label": "routes.ts",
+      "path": "tools/headline-tools/seo-meta-generator/server/routes.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_seo-meta-generator_tests_integration_seo-meta-api_test_ts",
+      "label": "seo-meta-api.test.ts",
+      "path": "tools/headline-tools/seo-meta-generator/tests/integration/seo-meta-api.test.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_seo-meta-generator_tests_regression_seo-meta-regression_test_ts",
+      "label": "seo-meta-regression.test.ts",
+      "path": "tools/headline-tools/seo-meta-generator/tests/regression/seo-meta-regression.test.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_seo-meta-generator_tests_unit_seo-meta-generator_test_ts",
+      "label": "seo-meta-generator.test.ts",
+      "path": "tools/headline-tools/seo-meta-generator/tests/unit/seo-meta-generator.test.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_client_pages_app_social-content-generator_tsx",
+      "label": "social-content-generator.tsx",
+      "path": "tools/headline-tools/social-content-generator/client/pages/app/social-content-generator.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_langgraph_social-content-graph_ts",
+      "label": "social-content-graph.ts",
+      "path": "tools/headline-tools/social-content-generator/server/langgraph/social-content-graph.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_langgraph_social-content-nodes_awaitApproval_ts",
+      "label": "awaitApproval.ts",
+      "path": "tools/headline-tools/social-content-generator/server/langgraph/social-content-nodes/awaitApproval.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_langgraph_social-content-nodes_generateWireframes_ts",
+      "label": "generateWireframes.ts",
+      "path": "tools/headline-tools/social-content-generator/server/langgraph/social-content-nodes/generateWireframes.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_langgraph_social-content-nodes_handleApproval_ts",
+      "label": "handleApproval.ts",
+      "path": "tools/headline-tools/social-content-generator/server/langgraph/social-content-nodes/handleApproval.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_langgraph_social-content-nodes_scrapeUrls_ts",
+      "label": "scrapeUrls.ts",
+      "path": "tools/headline-tools/social-content-generator/server/langgraph/social-content-nodes/scrapeUrls.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_langgraph_social-content-types_ts",
+      "label": "social-content-types.ts",
+      "path": "tools/headline-tools/social-content-generator/server/langgraph/social-content-types.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_seed-ad-specs_ts",
+      "label": "seed-ad-specs.ts",
+      "path": "tools/headline-tools/social-content-generator/server/seed-ad-specs.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_social-content-routes_ts",
+      "label": "social-content-routes.ts",
+      "path": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_utils_ad-spec-validator_ts",
+      "label": "ad-spec-validator.ts",
+      "path": "tools/headline-tools/social-content-generator/server/utils/ad-spec-validator.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_headline-tools_social-content-generator_server_utils_social-content-access_ts",
+      "label": "social-content-access.ts",
+      "path": "tools/headline-tools/social-content-generator/server/utils/social-content-access.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_shared_prompt-loader_ts",
+      "label": "prompt-loader.ts",
+      "path": "tools/shared/prompt-loader.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_brand-guideline-creator_client_components_BrandGuidelineForm_example_tsx",
+      "label": "BrandGuidelineForm.example.tsx",
+      "path": "tools/support-tools/brand-guideline-creator/client/components/BrandGuidelineForm.example.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_brand-guideline-creator_client_components_BrandGuidelineForm_tsx",
+      "label": "BrandGuidelineForm.tsx",
+      "path": "tools/support-tools/brand-guideline-creator/client/components/BrandGuidelineForm.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_brand-guideline-creator_client_components_guideline-profile-selector_tsx",
+      "label": "guideline-profile-selector.tsx",
+      "path": "tools/support-tools/brand-guideline-creator/client/components/guideline-profile-selector.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_brand-guideline-creator_client_contexts_BrandContext_tsx",
+      "label": "BrandContext.tsx",
+      "path": "tools/support-tools/brand-guideline-creator/client/contexts/BrandContext.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_brand-guideline-creator_server_utils_brand-analyzer_ts",
+      "label": "brand-analyzer.ts",
+      "path": "tools/support-tools/brand-guideline-creator/server/utils/brand-analyzer.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_brand-guideline-creator_server_utils_format-guidelines_ts",
+      "label": "format-guidelines.ts",
+      "path": "tools/support-tools/brand-guideline-creator/server/utils/format-guidelines.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_brand-guideline-creator_server_utils_pdf-brand-analyzer_ts",
+      "label": "pdf-brand-analyzer.ts",
+      "path": "tools/support-tools/brand-guideline-creator/server/utils/pdf-brand-analyzer.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_context-generator_client_components_ContextPageFallbackDialogs_tsx",
+      "label": "ContextPageFallbackDialogs.tsx",
+      "path": "tools/support-tools/context-generator/client/components/ContextPageFallbackDialogs.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_context-generator_client_pages_UrlTaggingPage_tsx",
+      "label": "UrlTaggingPage.tsx",
+      "path": "tools/support-tools/context-generator/client/pages/UrlTaggingPage.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_context-generator_server_crawl-handler_ts",
+      "label": "crawl-handler.ts",
+      "path": "tools/support-tools/context-generator/server/crawl-handler.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_context-generator_server_utils_web-crawler_ts",
+      "label": "web-crawler.ts",
+      "path": "tools/support-tools/context-generator/server/utils/web-crawler.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_client_components_QCDashboard_tsx",
+      "label": "QCDashboard.tsx",
+      "path": "tools/support-tools/quality-control/client/components/QCDashboard.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_client_components_QCSettings_tsx",
+      "label": "QCSettings.tsx",
+      "path": "tools/support-tools/quality-control/client/components/QCSettings.tsx",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_agents_brand-guardian_ts",
+      "label": "brand-guardian.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/agents/brand-guardian.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_agents_fact-checker_ts",
+      "label": "fact-checker.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/agents/fact-checker.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_agents_proofreader_ts",
+      "label": "proofreader.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/agents/proofreader.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_agents_regulatory_ts",
+      "label": "regulatory.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/agents/regulatory.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_nodes_apply-changes_ts",
+      "label": "apply-changes.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/nodes/apply-changes.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_nodes_calculate-score_ts",
+      "label": "calculate-score.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/nodes/calculate-score.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_nodes_detect-conflicts_ts",
+      "label": "detect-conflicts.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/nodes/detect-conflicts.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_nodes_resolve-conflicts_ts",
+      "label": "resolve-conflicts.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/nodes/resolve-conflicts.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_qc-subgraph_ts",
+      "label": "qc-subgraph.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/qc-subgraph.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_support-tools_quality-control_server_langgraph_qc_types_ts",
+      "label": "types.ts",
+      "path": "tools/support-tools/quality-control/server/langgraph/qc/types.ts",
+      "category": "tools"
+    },
+    {
+      "id": "tools_vitest_config_ts",
+      "label": "vitest.config.ts",
+      "path": "tools/vitest.config.ts",
+      "category": "tools"
+    },
+    {
+      "id": "verify-social-content-setup_ts",
+      "label": "verify-social-content-setup.ts",
+      "path": "verify-social-content-setup.ts",
+      "category": "other"
+    },
+    {
+      "id": "vite_config_ts",
+      "label": "vite.config.ts",
+      "path": "vite.config.ts",
+      "category": "other"
+    }
+  ],
+  "edges": [],
+  "routes": [
+    {
+      "method": "post",
+      "path": "/api/cms/migrate-pages",
+      "file": "server/cms-routes.ts",
+      "line": 25
+    },
+    {
+      "method": "get",
+      "path": "/api/public/pages/:slug*",
+      "file": "server/cms-routes.ts",
+      "line": 38
+    },
+    {
+      "method": "get",
+      "path": "/api/cms/pages",
+      "file": "server/cms-routes.ts",
+      "line": 57
+    },
+    {
+      "method": "get",
+      "path": "/api/cms/pages/:id",
+      "file": "server/cms-routes.ts",
+      "line": 69
+    },
+    {
+      "method": "post",
+      "path": "/api/cms/pages",
+      "file": "server/cms-routes.ts",
+      "line": 83
+    },
+    {
+      "method": "put",
+      "path": "/api/cms/pages/:id",
+      "file": "server/cms-routes.ts",
+      "line": 97
+    },
+    {
+      "method": "post",
+      "path": "/api/cms/pages/:id/publish",
+      "file": "server/cms-routes.ts",
+      "line": 109
+    },
+    {
+      "method": "delete",
+      "path": "/api/cms/pages/:id",
+      "file": "server/cms-routes.ts",
+      "line": 120
+    },
+    {
+      "method": "get",
+      "path": "/api/public/pages",
+      "file": "server/cms-routes.ts",
+      "line": 136
+    },
+    {
+      "method": "use",
+      "path": "/api",
+      "file": "server/index.ts",
+      "line": 105
+    },
+    {
+      "method": "use",
+      "path": "/api/guideline-profiles/auto-populate-pdf",
+      "file": "server/index.ts",
+      "line": 109
+    },
+    {
+      "method": "use",
+      "path": "/api/tools",
+      "file": "server/index.ts",
+      "line": 110
+    },
+    {
+      "method": "use",
+      "path": "/api/admin",
+      "file": "server/index.ts",
+      "line": 111
+    },
+    {
+      "method": "use",
+      "path": "/api",
+      "file": "server/index.ts",
+      "line": 112
+    },
+    {
+      "method": "get",
+      "path": "env",
+      "file": "server/index.ts",
+      "line": 211
+    },
+    {
+      "method": "get",
+      "path": "/images/:imagePath(*)",
+      "file": "server/object-storage-routes.ts",
+      "line": 9
+    },
+    {
+      "method": "post",
+      "path": "/api/images/upload",
+      "file": "server/object-storage-routes.ts",
+      "line": 23
+    },
+    {
+      "method": "put",
+      "path": "/api/images/confirm",
+      "file": "server/object-storage-routes.ts",
+      "line": 34
+    },
+    {
+      "method": "get",
+      "path": "/health",
+      "file": "server/routes.ts",
+      "line": 129
+    },
+    {
+      "method": "get",
+      "path": "/health/live",
+      "file": "server/routes.ts",
+      "line": 162
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/login",
+      "file": "server/routes.ts",
+      "line": 167
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/logout",
+      "file": "server/routes.ts",
+      "line": 212
+    },
+    {
+      "method": "delete",
+      "path": "/api/auth/account",
+      "file": "server/routes.ts",
+      "line": 230
+    },
+    {
+      "method": "get",
+      "path": "/api/auth/logout",
+      "file": "server/routes.ts",
+      "line": 255
+    },
+    {
+      "method": "get",
+      "path": "/api/auth/me",
+      "file": "server/routes.ts",
+      "line": 272
+    },
+    {
+      "method": "put",
+      "path": "/api/auth/profile",
+      "file": "server/routes.ts",
+      "line": 291
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/change-password",
+      "file": "server/routes.ts",
+      "line": 314
+    },
+    {
+      "method": "get",
+      "path": "/api/auth/account-data",
+      "file": "server/routes.ts",
+      "line": 356
+    },
+    {
+      "method": "delete",
+      "path": "/api/auth/account",
+      "file": "server/routes.ts",
+      "line": 391
+    },
+    {
+      "method": "get",
+      "path": "/api/debug/session",
+      "file": "server/routes.ts",
+      "line": 426
+    },
+    {
+      "method": "get",
+      "path": "/api/products",
+      "file": "server/routes.ts",
+      "line": 436
+    },
+    {
+      "method": "get",
+      "path": "/api/products/with-status",
+      "file": "server/routes.ts",
+      "line": 447
+    },
+    {
+      "method": "get",
+      "path": "/api/tier-subscriptions",
+      "file": "server/routes.ts",
+      "line": 460
+    },
+    {
+      "method": "get",
+      "path": "/api/user/tier-subscriptions",
+      "file": "server/routes.ts",
+      "line": 472
+    },
+    {
+      "method": "post",
+      "path": "/api/tier-subscriptions",
+      "file": "server/routes.ts",
+      "line": 484
+    },
+    {
+      "method": "delete",
+      "path": "/api/tier-subscriptions/:tierId",
+      "file": "server/routes.ts",
+      "line": 513
+    },
+    {
+      "method": "get",
+      "path": "/api/subscriptions",
+      "file": "server/routes.ts",
+      "line": 531
+    },
+    {
+      "method": "post",
+      "path": "/api/subscriptions",
+      "file": "server/routes.ts",
+      "line": 542
+    },
+    {
+      "method": "delete",
+      "path": "/api/subscriptions/:productId",
+      "file": "server/routes.ts",
+      "line": 566
+    },
+    {
+      "method": "get",
+      "path": "/api/products/:productId/access",
+      "file": "server/routes.ts",
+      "line": 584
+    },
+    {
+      "method": "post",
+      "path": "/api/contact",
+      "file": "server/routes.ts",
+      "line": 608
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/signup",
+      "file": "server/routes.ts",
+      "line": 627
+    },
+    {
+      "method": "get",
+      "path": "/api/auth/verify-email",
+      "file": "server/routes.ts",
+      "line": 691
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/resend-verification",
+      "file": "server/routes.ts",
+      "line": 739
+    },
+    {
+      "method": "post",
+      "path": "/api/tools/seo-meta/generate",
+      "file": "server/routes.ts",
+      "line": 800
+    },
+    {
+      "method": "post",
+      "path": "/api/tools/google-ads/generate",
+      "file": "server/routes.ts",
+      "line": 1016
+    },
+    {
+      "method": "get",
+      "path": "/api/guideline-profiles",
+      "file": "server/routes.ts",
+      "line": 1243
+    },
+    {
+      "method": "get",
+      "path": "/api/guideline-profiles/:id",
+      "file": "server/routes.ts",
+      "line": 1255
+    },
+    {
+      "method": "post",
+      "path": "/api/guideline-profiles",
+      "file": "server/routes.ts",
+      "line": 1272
+    },
+    {
+      "method": "put",
+      "path": "/api/guideline-profiles/:id",
+      "file": "server/routes.ts",
+      "line": 1287
+    },
+    {
+      "method": "delete",
+      "path": "/api/guideline-profiles/:id",
+      "file": "server/routes.ts",
+      "line": 1305
+    },
+    {
+      "method": "post",
+      "path": "/api/guideline-profiles/auto-populate",
+      "file": "server/routes.ts",
+      "line": 1322
+    },
+    {
+      "method": "post",
+      "path": "/api/guideline-profiles/auto-populate-pdf",
+      "file": "server/routes.ts",
+      "line": 1361
+    },
+    {
+      "method": "post",
+      "path": "/api/guideline-profiles/discover-context-pages",
+      "file": "server/routes.ts",
+      "line": 1427
+    },
+    {
+      "method": "post",
+      "path": "/api/guideline-profiles/find-services-by-pattern",
+      "file": "server/routes.ts",
+      "line": 1474
+    },
+    {
+      "method": "post",
+      "path": "/api/guideline-profiles/extract-blog-posts",
+      "file": "server/routes.ts",
+      "line": 1515
+    },
+    {
+      "method": "get",
+      "path": "/api/guideline-profiles/:id/extracted-context",
+      "file": "server/routes.ts",
+      "line": 1545
+    },
+    {
+      "method": "post",
+      "path": "/api/guideline-profiles/:id/extract-context",
+      "file": "server/routes.ts",
+      "line": 1576
+    },
+    {
+      "method": "get",
+      "path": "/api/packages",
+      "file": "server/routes.ts",
+      "line": 1684
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/complete-profile",
+      "file": "server/routes.ts",
+      "line": 1699
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/stats",
+      "file": "server/routes.ts",
+      "line": 1746
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/packages",
+      "file": "server/routes.ts",
+      "line": 1757
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/packages/:id",
+      "file": "server/routes.ts",
+      "line": 1767
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/packages",
+      "file": "server/routes.ts",
+      "line": 1780
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/packages/with-tiers",
+      "file": "server/routes.ts",
+      "line": 1791
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/packages/:id",
+      "file": "server/routes.ts",
+      "line": 1846
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/packages/with-tiers/:id",
+      "file": "server/routes.ts",
+      "line": 1866
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/packages/:id",
+      "file": "server/routes.ts",
+      "line": 1934
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/products",
+      "file": "server/routes.ts",
+      "line": 1947
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/products",
+      "file": "server/routes.ts",
+      "line": 1957
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/products/:id",
+      "file": "server/routes.ts",
+      "line": 1967
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/products/:id",
+      "file": "server/routes.ts",
+      "line": 1980
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/products/:id",
+      "file": "server/routes.ts",
+      "line": 1993
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/users",
+      "file": "server/routes.ts",
+      "line": 2006
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/users/:id",
+      "file": "server/routes.ts",
+      "line": 2016
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/users/:id/admin",
+      "file": "server/routes.ts",
+      "line": 2029
+    },
+    {
+      "method": "post",
+      "path": "/api/error-reports",
+      "file": "server/routes.ts",
+      "line": 2041
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/error-reports",
+      "file": "server/routes.ts",
+      "line": 2066
+    },
+    {
+      "method": "put",
+      "path": "/api/admin/error-reports/:id/status",
+      "file": "server/routes.ts",
+      "line": 2077
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/error-logs",
+      "file": "server/routes.ts",
+      "line": 2089
+    },
+    {
+      "method": "patch",
+      "path": "/api/admin/error-logs/:id/status",
+      "file": "server/routes.ts",
+      "line": 2118
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/error-logs/:id",
+      "file": "server/routes.ts",
+      "line": 2138
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/error-logs",
+      "file": "server/routes.ts",
+      "line": 2148
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/users/:id",
+      "file": "server/routes.ts",
+      "line": 2158
+    },
+    {
+      "method": "use",
+      "path": "/attached_assets",
+      "file": "server/routes.ts",
+      "line": 2172
+    },
+    {
+      "method": "get",
+      "path": "/api/generated-content",
+      "file": "server/routes.ts",
+      "line": 2181
+    },
+    {
+      "method": "get",
+      "path": "/api/generated-content/:id",
+      "file": "server/routes.ts",
+      "line": 2203
+    },
+    {
+      "method": "post",
+      "path": "/api/generated-content",
+      "file": "server/routes.ts",
+      "line": 2224
+    },
+    {
+      "method": "post",
+      "path": "/api/content-feedback",
+      "file": "server/routes.ts",
+      "line": 2249
+    },
+    {
+      "method": "delete",
+      "path": "/api/generated-content/:id",
+      "file": "server/routes.ts",
+      "line": 2275
+    },
+    {
+      "method": "post",
+      "path": "/api/content-writer/sessions",
+      "file": "server/routes.ts",
+      "line": 2301
+    },
+    {
+      "method": "get",
+      "path": "/api/content-writer/sessions/:id",
+      "file": "server/routes.ts",
+      "line": 2379
+    },
+    {
+      "method": "post",
+      "path": "/api/content-writer/sessions/:id/regenerate",
+      "file": "server/routes.ts",
+      "line": 2401
+    },
+    {
+      "method": "patch",
+      "path": "/api/content-writer/sessions/:sessionId/concepts/:conceptId",
+      "file": "server/routes.ts",
+      "line": 2503
+    },
+    {
+      "method": "post",
+      "path": "/api/content-writer/sessions/:id/subtopics",
+      "file": "server/routes.ts",
+      "line": 2546
+    },
+    {
+      "method": "post",
+      "path": "/api/content-writer/sessions/:id/subtopics/more",
+      "file": "server/routes.ts",
+      "line": 2665
+    },
+    {
+      "method": "patch",
+      "path": "/api/content-writer/sessions/:sessionId/subtopics/:subtopicId",
+      "file": "server/routes.ts",
+      "line": 2759
+    },
+    {
+      "method": "post",
+      "path": "/api/content-writer/sessions/:id/generate",
+      "file": "server/routes.ts",
+      "line": 2793
+    },
+    {
+      "method": "get",
+      "path": "/api/content-writer/drafts",
+      "file": "server/routes.ts",
+      "line": 3110
+    },
+    {
+      "method": "delete",
+      "path": "/api/content-writer/drafts/:id",
+      "file": "server/routes.ts",
+      "line": 3122
+    },
+    {
+      "method": "post",
+      "path": "/api/langgraph/content-writer/start",
+      "file": "server/routes.ts",
+      "line": 3142
+    },
+    {
+      "method": "post",
+      "path": "/api/langgraph/content-writer/resume/:threadId",
+      "file": "server/routes.ts",
+      "line": 3282
+    },
+    {
+      "method": "get",
+      "path": "/api/langgraph/content-writer/status/:threadId",
+      "file": "server/routes.ts",
+      "line": 3367
+    },
+    {
+      "method": "post",
+      "path": "/api/langgraph/content-writer/regenerate/:threadId",
+      "file": "server/routes.ts",
+      "line": 3406
+    },
+    {
+      "method": "get",
+      "path": "/api/langgraph/content-writer/threads",
+      "file": "server/routes.ts",
+      "line": 3552
+    },
+    {
+      "method": "get",
+      "path": "/api/user/usage-stats",
+      "file": "server/routes.ts",
+      "line": 3590
+    },
+    {
+      "method": "get",
+      "path": "/api/notifications",
+      "file": "server/routes.ts",
+      "line": 3635
+    },
+    {
+      "method": "patch",
+      "path": "/api/notifications/:id/read",
+      "file": "server/routes.ts",
+      "line": 3650
+    },
+    {
+      "method": "patch",
+      "path": "/api/notifications/read-all",
+      "file": "server/routes.ts",
+      "line": 3667
+    },
+    {
+      "method": "delete",
+      "path": "/api/notifications/:id",
+      "file": "server/routes.ts",
+      "line": 3679
+    },
+    {
+      "method": "get",
+      "path": "/api/user/notification-preferences",
+      "file": "server/routes.ts",
+      "line": 3697
+    },
+    {
+      "method": "patch",
+      "path": "/api/user/notification-preferences",
+      "file": "server/routes.ts",
+      "line": 3712
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/ai-usage-logs",
+      "file": "server/routes.ts",
+      "line": 3730
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/ai-usage-summary",
+      "file": "server/routes.ts",
+      "line": 3782
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/langgraph-metrics",
+      "file": "server/routes.ts",
+      "line": 3861
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/langgraph-threads",
+      "file": "server/routes.ts",
+      "line": 4009
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/langgraph-threads/:threadId",
+      "file": "server/routes.ts",
+      "line": 4028
+    },
+    {
+      "method": "patch",
+      "path": "/api/admin/langgraph-threads/:threadId/cancel",
+      "file": "server/routes.ts",
+      "line": 4045
+    },
+    {
+      "method": "delete",
+      "path": "/api/admin/langgraph-threads/:threadId",
+      "file": "server/routes.ts",
+      "line": 4063
+    },
+    {
+      "method": "post",
+      "path": "/api/crawl/start",
+      "file": "server/routes.ts",
+      "line": 4081
+    },
+    {
+      "method": "get",
+      "path": "/api/crawl/:jobId/status",
+      "file": "server/routes.ts",
+      "line": 4115
+    },
+    {
+      "method": "post",
+      "path": "/api/crawl/:jobId/cancel",
+      "file": "server/routes.ts",
+      "line": 4132
+    },
+    {
+      "method": "get",
+      "path": "/api/qc/config",
+      "file": "server/routes.ts",
+      "line": 4154
+    },
+    {
+      "method": "post",
+      "path": "/api/qc/config",
+      "file": "server/routes.ts",
+      "line": 4183
+    },
+    {
+      "method": "get",
+      "path": "/api/qc/reports/:threadId",
+      "file": "server/routes.ts",
+      "line": 4223
+    },
+    {
+      "method": "post",
+      "path": "/api/qc/decisions",
+      "file": "server/routes.ts",
+      "line": 4237
+    },
+    {
+      "method": "get",
+      "path": "/api/qc/decisions",
+      "file": "server/routes.ts",
+      "line": 4271
+    },
+    {
+      "method": "get",
+      "path": "/api/crawls/:id/pages",
+      "file": "server/routes.ts",
+      "line": 4298
+    },
+    {
+      "method": "patch",
+      "path": "/api/pages/:id/review",
+      "file": "server/routes.ts",
+      "line": 4363
+    },
+    {
+      "method": "get",
+      "path": "/api/social-content/ad-specs",
+      "file": "server/social-content-routes.ts",
+      "line": 44
+    },
+    {
+      "method": "post",
+      "path": "/api/social-content/start",
+      "file": "server/social-content-routes.ts",
+      "line": 83
+    },
+    {
+      "method": "get",
+      "path": "/api/social-content/sessions/:sessionId",
+      "file": "server/social-content-routes.ts",
+      "line": 189
+    },
+    {
+      "method": "post",
+      "path": "/api/social-content/sessions/:sessionId/approve",
+      "file": "server/social-content-routes.ts",
+      "line": 249
+    },
+    {
+      "method": "get",
+      "path": "/api/social-content/sessions",
+      "file": "server/social-content-routes.ts",
+      "line": 373
+    },
+    {
+      "method": "use",
+      "path": "*",
+      "file": "server/vite.ts",
+      "line": 47
+    },
+    {
+      "method": "use",
+      "path": "*",
+      "file": "server/vite.ts",
+      "line": 85
+    },
+    {
+      "method": "post",
+      "path": "/api/content-writer/sessions",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 38
+    },
+    {
+      "method": "get",
+      "path": "/api/content-writer/sessions/:id",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 85
+    },
+    {
+      "method": "post",
+      "path": "/api/content-writer/sessions/:id/resume",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 132
+    },
+    {
+      "method": "post",
+      "path": "/api/tools/google-ads/generate",
+      "file": "tools/headline-tools/google-ads-copy-generator/server/routes.ts",
+      "line": 34
+    },
+    {
+      "method": "post",
+      "path": "/api/tools/seo-meta/generate",
+      "file": "tools/headline-tools/seo-meta-generator/server/routes.ts",
+      "line": 37
+    },
+    {
+      "method": "get",
+      "path": "/api/social-content/ad-specs",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 44
+    },
+    {
+      "method": "post",
+      "path": "/api/social-content/start",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 83
+    },
+    {
+      "method": "get",
+      "path": "/api/social-content/sessions/:sessionId",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 189
+    },
+    {
+      "method": "post",
+      "path": "/api/social-content/sessions/:sessionId/approve",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 249
+    },
+    {
+      "method": "get",
+      "path": "/api/social-content/sessions",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 373
+    }
+  ],
+  "metadata": {
+    "totalNodes": 362,
+    "totalEdges": 0,
+    "totalRoutes": 146,
+    "categories": {
+      "entry": 3,
+      "server": 101,
+      "client": 135,
+      "tools": 75,
+      "shared": 1,
+      "python": 36,
+      "config": 4
+    }
+  }
+}

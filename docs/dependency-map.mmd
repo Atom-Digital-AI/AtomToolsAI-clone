@@ -1,0 +1,81 @@
+graph TB
+    subgraph Entry["Entry Points"]
+        client_src_App_tsx["App.tsx"]
+        client_src_main_tsx["main.tsx"]
+        server_index_ts["index.ts"]
+    end
+    
+    subgraph Server["Server"]
+        server___tests___ad-spec-validator_test_ts["ad-spec-validator.test.ts"]
+        server___tests___api_auth_test_ts["auth.test.ts"]
+        server___tests___api_cms_test_ts["cms.test.ts"]
+        server___tests___api_content-generation_test_ts["content-generation.test.ts"]
+        server___tests___api_crawl_test_ts["crawl.test.ts"]
+        server___tests___api_guideline-profiles_test_ts["guideline-profiles.test.ts"]
+        server___tests___api_object-storage_test_ts["object-storage.test.ts"]
+        server___tests___api_social-content_test_ts["social-content.test.ts"]
+        server___tests___helpers_test-setup_ts["test-setup.ts"]
+        server___tests___social-content-types_test_ts["social-content-types.test.ts"]
+        server["server (19 files)"]
+        server_jobs_data-retention_ts["data-retention.ts"]
+        server_langgraph["server/langgraph (29 files)"]
+        server_types_express_d_ts["express.d.ts"]
+        server_utils["server/utils (41 files)"]
+    end
+    
+    subgraph Client["Client"]
+        client_src_components_BrandGuidelineForm_example_tsx["BrandGuidelineForm.example.tsx"]
+        client_src_components_BrandGuidelineForm_tsx["BrandGuidelineForm.tsx"]
+        client_src_components_ContextPageFallbackDialogs_tsx["ContextPageFallbackDialogs.tsx"]
+        client_src_components_ErrorBoundary_tsx["ErrorBoundary.tsx"]
+        client_src_components_FeedbackButtons_tsx["FeedbackButtons.tsx"]
+        client_src_components_ProgressModal_tsx["ProgressModal.tsx"]
+        client_src_components_SaveContentDialog_tsx["SaveContentDialog.tsx"]
+        client_src_components_SocialContentExport_tsx["SocialContentExport.tsx"]
+        client_src_components_TagInput_tsx["TagInput.tsx"]
+        client_src_components_UnifiedFallbackModal_tsx["UnifiedFallbackModal.tsx"]
+        client_src_components_UsageStatsDisplay_tsx["UsageStatsDisplay.tsx"]
+        client_src_components_access-guard_tsx["access-guard.tsx"]
+        client_src_components_admin_BlockEditor_tsx["BlockEditor.tsx"]
+        client_src_components_admin_BlockRenderer_tsx["BlockRenderer.tsx"]
+        client_src_components_admin_CmsPageEditor_tsx["CmsPageEditor.tsx"]
+        client_src_components_admin_ObjectUploader_tsx["ObjectUploader.tsx"]
+        client_src_components_admin_PackageCard_tsx["PackageCard.tsx"]
+        client_src_components_admin_PackageForm_tsx["PackageForm.tsx"]
+        client_src_components_admin_PackageManager_tsx["PackageManager.tsx"]
+        client_src_components_admin_ProductForm_tsx["ProductForm.tsx"]
+    end
+    
+    subgraph Tools["Tools"]
+        tools_component-tools["tools/component-tools"]
+        tools_headline-tools["tools/headline-tools"]
+        tools_shared["tools/shared"]
+        tools_support-tools["tools/support-tools"]
+        tools_vitest.config.ts["tools/vitest.config.ts"]
+    end
+    
+    subgraph Shared["Shared"]
+        shared_schema_ts["schema.ts"]
+    end
+    
+    subgraph Python["Python App"]
+        Ad Copy Generator App_ad_copy_generator_py["ad_copy_generator.py"]
+        Ad Copy Generator App_api___init___py["__init__.py"]
+        Ad Copy Generator App_api_routes_py["routes.py"]
+        Ad Copy Generator App_app_py["app.py"]
+        Ad Copy Generator App_build_exe_py["build_exe.py"]
+        Ad Copy Generator App_config_py["config.py"]
+        Ad Copy Generator App_copy_env_to_dist_py["copy_env_to_dist.py"]
+        Ad Copy Generator App_create_app_bundle_py["create_app_bundle.py"]
+        Ad Copy Generator App_debug_env_py["debug_env.py"]
+        Ad Copy Generator App_demo_language_detection_py["demo_language_detection.py"]
+    end
+    
+    %% Key Dependencies
+
+    style Entry fill:#e1f5ff
+    style Server fill:#fff4e1
+    style Client fill:#e8f5e9
+    style Tools fill:#f3e5f5
+    style Shared fill:#fff9c4
+    style Python fill:#ffebee

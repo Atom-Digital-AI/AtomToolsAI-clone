@@ -10,7 +10,8 @@ const existingPages = [
     type: "static" as const,
     status: "published" as const,
     metaTitle: "atomtools.ai - AI Marketing Tools & Automation Platform",
-    metaDescription: "Build and launch campaigns faster with AI-powered marketing tools. Facebook Ads connectors, SEO generators, and automation tools for agencies and small businesses.",
+    metaDescription:
+      "Build and launch campaigns faster with AI-powered marketing tools. Facebook Ads connectors, SEO generators, and automation tools for agencies and small businesses.",
     content: `# Welcome to atomtools.ai
 
 Transform your marketing workflows with AI-powered tools designed for speed, accuracy, and scale.
@@ -41,7 +42,8 @@ Clear privacy, export controls. Your data stays yours, always.
 
 Ready to supercharge your marketing? [Get started today](/sign-up).`,
     ogTitle: "atomtools.ai - AI Marketing Tools & Automation Platform",
-    ogDescription: "Build and launch campaigns faster with AI-powered marketing tools. Facebook Ads connectors, SEO generators, and automation tools for agencies and small businesses.",
+    ogDescription:
+      "Build and launch campaigns faster with AI-powered marketing tools. Facebook Ads connectors, SEO generators, and automation tools for agencies and small businesses.",
     ogType: "website",
   },
   {
@@ -49,8 +51,10 @@ Ready to supercharge your marketing? [Get started today](/sign-up).`,
     slug: "/tools",
     type: "static" as const,
     status: "published" as const,
-    metaTitle: "AI Marketing Tools - Facebook Ads, SEO, Google Ads | atomtools.ai",
-    metaDescription: "Explore our collection of AI-powered marketing tools including Facebook Ads connectors, SEO meta generators, and Google Ads copy creation tools.",
+    metaTitle:
+      "AI Marketing Tools - Facebook Ads, SEO, Google Ads | atomtools.ai",
+    metaDescription:
+      "Explore our collection of AI-powered marketing tools including Facebook Ads connectors, SEO meta generators, and Google Ads copy creation tools.",
     content: `# AI Marketing Tools
 
 Discover our comprehensive suite of AI-powered marketing tools designed to streamline your campaigns and boost performance.
@@ -89,15 +93,17 @@ Create high-converting Google Ads copy with AI assistance and best practice temp
 
 Ready to get started? [Sign up for free](/sign-up) and try any tool today.`,
     ogTitle: "AI Marketing Tools - Facebook Ads, SEO, Google Ads",
-    ogDescription: "Explore our collection of AI-powered marketing tools including Facebook Ads connectors, SEO meta generators, and Google Ads copy creation tools.",
+    ogDescription:
+      "Explore our collection of AI-powered marketing tools including Facebook Ads connectors, SEO meta generators, and Google Ads copy creation tools.",
   },
   {
-    title: "Pricing - Flexible Plans for Every Business", 
+    title: "Pricing - Flexible Plans for Every Business",
     slug: "/pricing",
     type: "static" as const,
     status: "published" as const,
     metaTitle: "Pricing - Flexible AI Marketing Tool Plans | atomtools.ai",
-    metaDescription: "Choose the perfect plan for your business. Free to start, scale as you grow. Transparent pricing for Facebook Ads tools, SEO generators, and more.",
+    metaDescription:
+      "Choose the perfect plan for your business. Free to start, scale as you grow. Transparent pricing for Facebook Ads tools, SEO generators, and more.",
     content: `# Simple, Transparent Pricing
 
 Choose the plan that fits your business needs. Start free and scale as you grow.
@@ -134,15 +140,18 @@ Yes! Your plan covers access to all available tools within your usage limits.
 
 Ready to get started? [View detailed pricing](/pricing#plans)`,
     ogTitle: "Pricing - Flexible AI Marketing Tool Plans",
-    ogDescription: "Choose the perfect plan for your business. Free to start, scale as you grow. Transparent pricing for Facebook Ads tools, SEO generators, and more.",
+    ogDescription:
+      "Choose the perfect plan for your business. Free to start, scale as you grow. Transparent pricing for Facebook Ads tools, SEO generators, and more.",
   },
   {
     title: "Resources - Marketing Guides & Templates",
-    slug: "/resources", 
+    slug: "/resources",
     type: "static" as const,
     status: "published" as const,
-    metaTitle: "Marketing Resources - Guides, Templates & Tutorials | atomtools.ai",
-    metaDescription: "Free marketing resources including Facebook Ads guides, SEO tutorials, templates, and best practices for digital marketing automation.",
+    metaTitle:
+      "Marketing Resources - Guides, Templates & Tutorials | atomtools.ai",
+    metaDescription:
+      "Free marketing resources including Facebook Ads guides, SEO tutorials, templates, and best practices for digital marketing automation.",
     content: `# Marketing Resources
 
 Explore our collection of guides, tutorials, and templates to help you get the most out of your marketing efforts.
@@ -191,19 +200,22 @@ Structured approach to testing and optimizing your advertising copy across platf
 
 Looking for something specific? [Contact our team](/contact) for personalized guidance.`,
     ogTitle: "Marketing Resources - Guides, Templates & Tutorials",
-    ogDescription: "Free marketing resources including Facebook Ads guides, SEO tutorials, templates, and best practices for digital marketing automation.",
-  }
+    ogDescription:
+      "Free marketing resources including Facebook Ads guides, SEO tutorials, templates, and best practices for digital marketing automation.",
+  },
 ];
 
 export async function migrateExistingPages() {
   console.log("Starting migration of existing pages to CMS...");
-  
+
   // Get admin user to set as author
   const adminUsers = await storage.getAllUsers();
-  const adminUser = adminUsers.find(user => user.isAdmin);
-  
+  const adminUser = adminUsers.find((user) => user.isAdmin);
+
   if (!adminUser) {
-    console.error("No admin user found. Please ensure at least one admin user exists.");
+    console.error(
+      "No admin user found. Please ensure at least one admin user exists."
+    );
     return;
   }
 
@@ -229,7 +241,7 @@ export async function migrateExistingPages() {
         ogTitle: pageData.ogTitle,
         ogDescription: pageData.ogDescription,
         ogType: pageData.ogType || "website",
-        publishedAt: new Date(),
+        // Note: publishedAt is set automatically when status is 'published'
       });
 
       console.log(`Successfully created CMS page: ${pageData.title}`);
@@ -237,7 +249,7 @@ export async function migrateExistingPages() {
       console.error(`Error creating page ${pageData.slug}:`, error);
     }
   }
-  
+
   console.log("Migration completed!");
 }
 

@@ -1,12 +1,42 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AccessGuard } from "@/components/access-guard";
-import { Sparkles, RefreshCw, ChevronRight, ChevronLeft, Save, ThumbsUp, ThumbsDown, Check, X, Download, Copy, Plus, Loader2, CheckCircle, AlertTriangle, XCircle, ChevronDown } from "lucide-react";
+import {
+  Sparkles,
+  RefreshCw,
+  ChevronRight,
+  ChevronLeft,
+  Save,
+  ThumbsUp,
+  ThumbsDown,
+  Check,
+  X,
+  Download,
+  Copy,
+  Plus,
+  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  ChevronDown,
+} from "lucide-react";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -19,11 +49,27 @@ import { useBrand } from "@/contexts/BrandContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLocation } from "wouter";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { PRODUCT_IDS } from "@shared/schema";
 
 interface Concept {
@@ -66,7 +112,7 @@ interface Session {
   topic: string;
   guidelineProfileId?: string;
   selectedConceptId?: string;
-  status: 'concepts' | 'subtopics' | 'generating' | 'completed';
+  status: "concepts" | "subtopics" | "generating" | "completed";
   objective?: string;
   targetLength?: number;
   toneOfVoice?: string;
@@ -78,7 +124,7 @@ interface Session {
 interface LangGraphThread {
   threadId: string;
   sessionId: string;
-  status: 'active' | 'paused' | 'completed' | 'error';
+  status: "active" | "paused" | "completed" | "error";
   createdAt: string;
   updatedAt: string;
   metadata?: {
@@ -111,38 +157,49 @@ interface ThreadState {
     factIssues?: string[];
     regenerationCount?: number;
   };
-  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  status?: "pending" | "processing" | "completed" | "failed";
   brandScore?: number;
   factScore?: number;
 }
 
-type Stage = 'topic' | 'concepts' | 'subtopics' | 'article';
+type Stage = "topic" | "concepts" | "subtopics" | "article";
 
 export default function ContentWriterV2() {
-  const [stage, setStage] = useState<Stage>('topic');
+  const [stage, setStage] = useState<Stage>("topic");
   const [topic, setTopic] = useState("");
-  const [brandGuidelines, setBrandGuidelines] = useState<GuidelineContent | string>('');
+  const [brandGuidelines, setBrandGuidelines] = useState<
+    GuidelineContent | string
+  >("");
   const [objective, setObjective] = useState("");
   const [targetLength, setTargetLength] = useState("1000");
   const [toneOfVoice, setToneOfVoice] = useState("");
   const [language, setLanguage] = useState("en-US");
   const [internalLinks, setInternalLinks] = useState("");
   const [useBrandGuidelines, setUseBrandGuidelines] = useState(true);
-  const [selectedTargetAudiences, setSelectedTargetAudiences] = useState<"all" | "none" | number[]>("none");
+  const [selectedTargetAudiences, setSelectedTargetAudiences] = useState<
+    "all" | "none" | number[]
+  >("none");
   const [matchStyle, setMatchStyle] = useState(false);
-  const [styleMatchingMethod, setStyleMatchingMethod] = useState<'continuous' | 'end-rewrite'>('continuous');
+  const [styleMatchingMethod, setStyleMatchingMethod] = useState<
+    "continuous" | "end-rewrite"
+  >("continuous");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [regenerateFeedback, setRegenerateFeedback] = useState("");
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
-  const [selectedSubtopics, setSelectedSubtopics] = useState<Set<string>>(new Set());
+  const [selectedSubtopics, setSelectedSubtopics] = useState<Set<string>>(
+    new Set()
+  );
   const [showGenerationDialog, setShowGenerationDialog] = useState(false);
   const [showResumeBanner, setShowResumeBanner] = useState(false);
-  const [incompleteThread, setIncompleteThread] = useState<LangGraphThread | null>(null);
-  const [selectingConceptId, setSelectingConceptId] = useState<string | null>(null);
+  const [incompleteThread, setIncompleteThread] =
+    useState<LangGraphThread | null>(null);
+  const [selectingConceptId, setSelectingConceptId] = useState<string | null>(
+    null
+  );
   const sessionCreatedAtRef = useRef<number | null>(null);
-  
+
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
   const [, setLocation] = useLocation();
@@ -163,21 +220,21 @@ export default function ContentWriterV2() {
     if (selectedBrand) {
       setBrandGuidelines(selectedBrand.id);
     } else {
-      setBrandGuidelines('');
+      setBrandGuidelines("");
     }
   }, [selectedBrand]);
 
   // Check for incomplete threads on mount
   const { data: threadsData } = useQuery<{ threads: LangGraphThread[] }>({
-    queryKey: ['/api/langgraph/content-writer/threads'],
+    queryKey: ["/api/langgraph/content-writer/threads"],
     enabled: !threadId && !sessionId,
   });
 
   // Show resume banner if there are incomplete threads
   useEffect(() => {
     if (threadsData?.threads && threadsData.threads.length > 0) {
-      const incomplete = threadsData.threads.find((t: LangGraphThread) => 
-        t.status !== 'completed' && t.status !== 'error'
+      const incomplete = threadsData.threads.find(
+        (t: LangGraphThread) => t.status !== "completed" && t.status !== "error"
       );
       if (incomplete) {
         setIncompleteThread(incomplete);
@@ -187,7 +244,11 @@ export default function ContentWriterV2() {
   }, [threadsData]);
 
   // Fetch session data (for backward compatibility - only when NOT using LangGraph)
-  const { data: sessionData, isLoading: isSessionLoading, error: sessionError } = useQuery({
+  const {
+    data: sessionData,
+    isLoading: isSessionLoading,
+    error: sessionError,
+  } = useQuery({
     queryKey: [`/api/content-writer/sessions/${sessionId}`],
     enabled: !!sessionId && !threadId, // Only query legacy sessions when not using LangGraph
     retry: false, // Don't retry - if it fails, it's likely a LangGraph session
@@ -200,17 +261,18 @@ export default function ContentWriterV2() {
     currentStep: string;
     completed: boolean;
   }>({
-    queryKey: ['/api/langgraph/content-writer/status', threadId],
+    queryKey: ["/api/langgraph/content-writer/status", threadId],
     enabled: !!threadId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
+      const data = query.state.data;
       // Stop polling if thread is completed
-      if (data?.completed || data?.state?.status === 'completed') {
+      if (data?.completed || data?.state?.status === "completed") {
         return false;
       }
 
       // Stop polling if waiting for user approval
       const step = data?.currentStep || data?.state?.metadata?.currentStep;
-      if (step === 'awaitConceptApproval' || step === 'awaitSubtopicApproval') {
+      if (step === "awaitConceptApproval" || step === "awaitSubtopicApproval") {
         return false;
       }
 
@@ -220,44 +282,60 @@ export default function ContentWriterV2() {
   });
 
   const threadState = statusData?.state;
-  const currentStep = statusData?.currentStep || threadState?.metadata?.currentStep;
-  const isThreadCompleted = statusData?.completed || threadState?.status === 'completed';
+  const currentStep =
+    statusData?.currentStep || threadState?.metadata?.currentStep;
+  const isThreadCompleted =
+    statusData?.completed || threadState?.status === "completed";
 
   // Extract data from either thread state (LangGraph) or session (legacy)
   const session = (sessionData as any)?.session as Session | undefined;
-  const concepts = (threadState?.concepts || (sessionData as any)?.concepts || []) as Concept[];
-  const subtopics = (threadState?.subtopics || (sessionData as any)?.subtopics || []) as Subtopic[];
-  const draft = threadState?.articleDraft 
-    ? { ...threadState.articleDraft, id: sessionId || '', sessionId: sessionId || '' } as Draft
-    : (sessionData as any)?.draft as Draft | undefined;
+  const concepts = (threadState?.concepts ||
+    (sessionData as any)?.concepts ||
+    []) as Concept[];
+  const subtopics = (threadState?.subtopics ||
+    (sessionData as any)?.subtopics ||
+    []) as Subtopic[];
+  const draft = threadState?.articleDraft
+    ? ({
+        ...threadState.articleDraft,
+        id: sessionId || "",
+        sessionId: sessionId || "",
+      } as Draft)
+    : ((sessionData as any)?.draft as Draft | undefined);
 
   // Handle approval states - automatically update stage when workflow pauses for approval
   // Only auto-update if concepts exist (not for brand new sessions)
   useEffect(() => {
     if (!currentStep || !threadId) return;
-    
+
     // Don't auto-update stage immediately after session creation (within 3 seconds)
     // This prevents skipping the concepts stage if workflow moves quickly
-    const isNewSession = sessionCreatedAtRef.current && Date.now() - sessionCreatedAtRef.current < 3000;
-    if (isNewSession && stage === 'concepts') {
+    const isNewSession =
+      sessionCreatedAtRef.current &&
+      Date.now() - sessionCreatedAtRef.current < 3000;
+    if (isNewSession && stage === "concepts") {
       return; // Don't auto-advance during initial concepts stage
     }
-    
+
     // Only auto-advance if we already have concepts generated
     const hasConcepts = concepts.length > 0;
-    
-    if (currentStep === 'awaitConceptApproval' || currentStep === 'concepts') {
-      if (stage !== 'concepts') {
-        setStage('concepts');
+
+    if (currentStep === "awaitConceptApproval" || currentStep === "concepts") {
+      if (stage !== "concepts") {
+        setStage("concepts");
       }
-    } else if ((currentStep === 'awaitSubtopicApproval' || currentStep === 'subtopics') && hasConcepts) {
+    } else if (
+      (currentStep === "awaitSubtopicApproval" ||
+        currentStep === "subtopics") &&
+      hasConcepts
+    ) {
       // Only advance to subtopics if concepts are already generated and we're not in a new session
-      if (stage !== 'subtopics') {
-        setStage('subtopics');
+      if (stage !== "subtopics") {
+        setStage("subtopics");
       }
-    } else if (currentStep === 'article' || currentStep === 'generateArticle') {
-      if (stage !== 'article') {
-        setStage('article');
+    } else if (currentStep === "article" || currentStep === "generateArticle") {
+      if (stage !== "article") {
+        setStage("article");
       }
     }
   }, [currentStep, stage, threadId, concepts.length]);
@@ -266,20 +344,29 @@ export default function ContentWriterV2() {
   // This handles the case where currentStep might not be updated yet but subtopics exist
   useEffect(() => {
     if (!threadId) return;
-    
+
     const hasConcepts = concepts.length > 0;
     const hasSubtopics = subtopics.length > 0;
-    
+
     // If we have concepts and subtopics, but are still on concepts stage, move to subtopics
     // This handles the case where currentStep might not be updated yet but subtopics exist
-    if (hasConcepts && hasSubtopics && stage === 'concepts' && selectedConcept) {
-      setStage('subtopics');
+    if (
+      hasConcepts &&
+      hasSubtopics &&
+      stage === "concepts" &&
+      selectedConcept
+    ) {
+      setStage("subtopics");
     }
   }, [subtopics.length, concepts.length, stage, threadId, selectedConcept]);
 
   // Reset generateSubtopicsMutation state if stuck in pending and prerequisites are missing
   useEffect(() => {
-    if (stage === 'subtopics' && generateSubtopicsMutation.isPending && (!sessionId || !selectedConcept)) {
+    if (
+      stage === "subtopics" &&
+      generateSubtopicsMutation.isPending &&
+      (!sessionId || !selectedConcept)
+    ) {
       generateSubtopicsMutation.reset();
     }
   }, [stage, sessionId, selectedConcept]);
@@ -287,7 +374,9 @@ export default function ContentWriterV2() {
   // Sync selectedConcept from session if it exists but isn't in local state
   useEffect(() => {
     if (session?.selectedConceptId && !selectedConcept && concepts.length > 0) {
-      const conceptFromSession = concepts.find(c => c.id === session.selectedConceptId);
+      const conceptFromSession = concepts.find(
+        (c) => c.id === session.selectedConceptId
+      );
       if (conceptFromSession) {
         setSelectedConcept(conceptFromSession);
       }
@@ -297,28 +386,42 @@ export default function ContentWriterV2() {
   // Create session mutation - Using LangGraph API
   const createSessionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/langgraph/content-writer/start', {
-        topic,
-        guidelineProfileId: (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : undefined,
-        objective,
-        targetLength: parseInt(targetLength),
-        toneOfVoice,
-        language,
-        internalLinks: internalLinks.split(',').map(l => l.trim()).filter(Boolean),
-        useBrandGuidelines,
-        selectedTargetAudiences,
-        styleMatchingMethod,
-        matchStyle,
-      });
+      const res = await apiRequest(
+        "POST",
+        "/api/langgraph/content-writer/start",
+        {
+          topic,
+          guidelineProfileId:
+            typeof brandGuidelines === "string" && brandGuidelines
+              ? brandGuidelines
+              : undefined,
+          objective,
+          targetLength: parseInt(targetLength),
+          toneOfVoice,
+          language,
+          internalLinks: internalLinks
+            .split(",")
+            .map((l) => l.trim())
+            .filter(Boolean),
+          useBrandGuidelines,
+          selectedTargetAudiences,
+          styleMatchingMethod,
+          matchStyle,
+        }
+      );
       return await res.json();
     },
     onMutate: async () => {
       // Clear all previous session/thread data from cache to ensure a clean slate
       if (threadId) {
-        queryClient.removeQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+        queryClient.removeQueries({
+          queryKey: ["/api/langgraph/content-writer/status", threadId],
+        });
       }
       if (sessionId) {
-        queryClient.removeQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+        queryClient.removeQueries({
+          queryKey: [`/api/content-writer/sessions/${sessionId}`],
+        });
       }
 
       // Clear local state
@@ -343,7 +446,7 @@ export default function ContentWriterV2() {
       sessionCreatedAtRef.current = Date.now();
       // Always start at concepts stage for new sessions
       // The useEffect will handle advancing once concepts are loaded and workflow progresses
-      setStage('concepts');
+      setStage("concepts");
       toast({
         title: "Concepts Generated",
         description: "Review the article concepts below",
@@ -362,16 +465,25 @@ export default function ContentWriterV2() {
 
   // Resume workflow mutation - Using LangGraph API
   const resumeWorkflowMutation = useMutation({
-    mutationFn: async ({ threadId: tid, selectedConceptId, selectedSubtopicIds }: { 
-      threadId: string, 
-      selectedConceptId?: string, 
-      selectedSubtopicIds?: string[] 
+    mutationFn: async ({
+      threadId: tid,
+      selectedConceptId,
+      selectedSubtopicIds,
+    }: {
+      threadId: string;
+      selectedConceptId?: string;
+      selectedSubtopicIds?: string[];
     }) => {
       const payload: any = {};
       if (selectedConceptId) payload.selectedConceptId = selectedConceptId;
-      if (selectedSubtopicIds) payload.selectedSubtopicIds = selectedSubtopicIds;
-      
-      const res = await apiRequest('POST', `/api/langgraph/content-writer/resume/${tid}`, payload);
+      if (selectedSubtopicIds)
+        payload.selectedSubtopicIds = selectedSubtopicIds;
+
+      const res = await apiRequest(
+        "POST",
+        `/api/langgraph/content-writer/resume/${tid}`,
+        payload
+      );
       return await res.json();
     },
     onSuccess: (data: any, variables) => {
@@ -384,32 +496,38 @@ export default function ContentWriterV2() {
         });
         return;
       }
-      
+
       setThreadId(data.threadId);
-      
+
       // Update stage based on what was resumed
       if (variables.selectedConceptId) {
         // Ensure selectedConcept state is set
-        const concept = concepts.find(c => c.id === variables.selectedConceptId);
+        const concept = concepts.find(
+          (c) => c.id === variables.selectedConceptId
+        );
         if (concept) {
           setSelectedConcept(concept);
         }
-        setStage('subtopics');
+        setStage("subtopics");
         toast({
           title: "Concept Selected",
           description: "Continuing with subtopic selection",
         });
       } else if (variables.selectedSubtopicIds) {
-        setStage('article');
+        setStage("article");
         toast({
           title: "Workflow Resumed",
           description: "Generating article...",
         });
       }
-      
+
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/langgraph/content-writer/status', data.threadId] });
-      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/langgraph/content-writer/status", data.threadId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/content-writer/sessions/${sessionId}`],
+      });
       setSelectingConceptId(null);
     },
     onError: (error: any) => {
@@ -428,16 +546,24 @@ export default function ContentWriterV2() {
     mutationFn: async () => {
       // Use LangGraph endpoint if threadId is available, otherwise use legacy endpoint
       if (threadId) {
-        const res = await apiRequest('POST', `/api/langgraph/content-writer/regenerate/${threadId}`, {
-          feedbackText: regenerateFeedback,
-          matchStyle,
-        });
+        const res = await apiRequest(
+          "POST",
+          `/api/langgraph/content-writer/regenerate/${threadId}`,
+          {
+            feedbackText: regenerateFeedback,
+            matchStyle,
+          }
+        );
         return await res.json();
       } else if (sessionId) {
-        const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/regenerate`, {
-          feedbackText: regenerateFeedback,
-          matchStyle,
-        });
+        const res = await apiRequest(
+          "POST",
+          `/api/content-writer/sessions/${sessionId}/regenerate`,
+          {
+            feedbackText: regenerateFeedback,
+            matchStyle,
+          }
+        );
         return await res.json();
       } else {
         throw new Error("No session or thread ID available");
@@ -447,22 +573,30 @@ export default function ContentWriterV2() {
       // Optimistically clear old concepts immediately when regeneration starts
       if (threadId) {
         // Cancel any outgoing refetches to prevent them from overwriting our optimistic update
-        await queryClient.cancelQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+        await queryClient.cancelQueries({
+          queryKey: ["/api/langgraph/content-writer/status", threadId],
+        });
 
         // Snapshot the previous value for potential rollback
-        const previousData = queryClient.getQueryData(['/api/langgraph/content-writer/status', threadId]);
+        const previousData = queryClient.getQueryData([
+          "/api/langgraph/content-writer/status",
+          threadId,
+        ]);
 
         // Optimistically clear concepts to give instant feedback
-        queryClient.setQueryData(['/api/langgraph/content-writer/status', threadId], (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            state: {
-              ...old.state,
-              concepts: [], // Clear old concepts immediately
-            }
-          };
-        });
+        queryClient.setQueryData(
+          ["/api/langgraph/content-writer/status", threadId],
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              state: {
+                ...old.state,
+                concepts: [], // Clear old concepts immediately
+              },
+            };
+          }
+        );
 
         return { previousData };
       }
@@ -471,12 +605,16 @@ export default function ContentWriterV2() {
     onSuccess: (data: any) => {
       // Update cache immediately with response data
       if (data?.state && threadId) {
-        queryClient.setQueryData(['/api/langgraph/content-writer/status', threadId], {
-          threadId: data.threadId || threadId,
-          state: data.state,
-          currentStep: data.state.metadata?.currentStep || 'awaitConceptApproval',
-          completed: data.state.status === 'completed',
-        });
+        queryClient.setQueryData(
+          ["/api/langgraph/content-writer/status", threadId],
+          {
+            threadId: data.threadId || threadId,
+            state: data.state,
+            currentStep:
+              data.state.metadata?.currentStep || "awaitConceptApproval",
+            completed: data.state.status === "completed",
+          }
+        );
       }
 
       // Clear selected concept since we're regenerating
@@ -484,8 +622,12 @@ export default function ContentWriterV2() {
 
       // Invalidate session data for legacy support (only if response indicates it's NOT a LangGraph session)
       if (sessionId && !data?.threadId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
-        queryClient.refetchQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+        queryClient.invalidateQueries({
+          queryKey: [`/api/content-writer/sessions/${sessionId}`],
+        });
+        queryClient.refetchQueries({
+          queryKey: [`/api/content-writer/sessions/${sessionId}`],
+        });
       }
 
       setShowRegenerateDialog(false);
@@ -498,7 +640,10 @@ export default function ContentWriterV2() {
     onError: (error: any, variables, context: any) => {
       // Rollback optimistic update on error
       if (context?.previousData && threadId) {
-        queryClient.setQueryData(['/api/langgraph/content-writer/status', threadId], context.previousData);
+        queryClient.setQueryData(
+          ["/api/langgraph/content-writer/status", threadId],
+          context.previousData
+        );
       }
 
       toast({
@@ -511,11 +656,20 @@ export default function ContentWriterV2() {
 
   // Concept feedback mutation
   const conceptFeedbackMutation = useMutation({
-    mutationFn: async ({ conceptId, rating }: { conceptId: string, rating: 'thumbs_up' | 'thumbs_down' }) => {
-      const concept = concepts.find(c => c.id === conceptId);
-      const guidelineId = (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : session?.guidelineProfileId;
-      return apiRequest('POST', '/api/content-feedback', {
-        toolType: 'content-writer',
+    mutationFn: async ({
+      conceptId,
+      rating,
+    }: {
+      conceptId: string;
+      rating: "thumbs_up" | "thumbs_down";
+    }) => {
+      const concept = concepts.find((c) => c.id === conceptId);
+      const guidelineId =
+        typeof brandGuidelines === "string" && brandGuidelines
+          ? brandGuidelines
+          : session?.guidelineProfileId;
+      return apiRequest("POST", "/api/content-feedback", {
+        toolType: "content-writer",
         rating,
         feedbackText: null,
         inputData: { topic, brandGuidelineId: guidelineId },
@@ -525,24 +679,38 @@ export default function ContentWriterV2() {
     },
     onSuccess: () => {
       toast({
-        title: 'Feedback Submitted',
-        description: 'Thank you! Your feedback helps improve future concepts.',
+        title: "Feedback Submitted",
+        description: "Thank you! Your feedback helps improve future concepts.",
       });
     },
   });
 
   // Choose concept mutation
   const chooseConceptMutation = useMutation({
-    mutationFn: async ({ conceptId, rating, feedbackText }: { conceptId: string, rating?: string, feedbackText?: string }) => {
-      await apiRequest('PATCH', `/api/content-writer/sessions/${sessionId}/concepts/${conceptId}`, {
-        userAction: 'chosen',
-        rating,
-        feedbackText,
-      });
+    mutationFn: async ({
+      conceptId,
+      rating,
+      feedbackText,
+    }: {
+      conceptId: string;
+      rating?: string;
+      feedbackText?: string;
+    }) => {
+      await apiRequest(
+        "PATCH",
+        `/api/content-writer/sessions/${sessionId}/concepts/${conceptId}`,
+        {
+          userAction: "chosen",
+          rating,
+          feedbackText,
+        }
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
-      setStage('subtopics');
+      queryClient.invalidateQueries({
+        queryKey: [`/api/content-writer/sessions/${sessionId}`],
+      });
+      setStage("subtopics");
       setSelectingConceptId(null);
     },
   });
@@ -551,24 +719,35 @@ export default function ContentWriterV2() {
   const generateSubtopicsMutation = useMutation({
     mutationFn: async () => {
       if (!sessionId) {
-        throw new Error("Session ID is required. Please start a session first.");
+        throw new Error(
+          "Session ID is required. Please start a session first."
+        );
       }
-      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics`, {
-        objective,
-        internalLinks: internalLinks.split(',').map(l => l.trim()).filter(Boolean),
-        targetLength: parseInt(targetLength),
-        toneOfVoice,
-        language,
-        useBrandGuidelines,
-        selectedTargetAudiences,
-        matchStyle,
-      });
+      const res = await apiRequest(
+        "POST",
+        `/api/content-writer/sessions/${sessionId}/subtopics`,
+        {
+          objective,
+          internalLinks: internalLinks
+            .split(",")
+            .map((l) => l.trim())
+            .filter(Boolean),
+          targetLength: parseInt(targetLength),
+          toneOfVoice,
+          language,
+          useBrandGuidelines,
+          selectedTargetAudiences,
+          matchStyle,
+        }
+      );
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/content-writer/sessions/${sessionId}`],
+      });
       // Ensure we're on the subtopics stage after generating subtopics
-      setStage('subtopics');
+      setStage("subtopics");
       toast({
         title: "Subtopics Generated",
         description: "Select the subtopics to include in your article",
@@ -578,7 +757,8 @@ export default function ContentWriterV2() {
       console.error("Error generating subtopics:", error);
       toast({
         title: "Error Generating Subtopics",
-        description: error?.message || "Failed to generate subtopics. Please try again.",
+        description:
+          error?.message || "Failed to generate subtopics. Please try again.",
         variant: "destructive",
       });
     },
@@ -588,13 +768,19 @@ export default function ContentWriterV2() {
   // Request more subtopics mutation
   const moreSubtopicsMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/subtopics/more`, {
-        matchStyle,
-      });
+      const res = await apiRequest(
+        "POST",
+        `/api/content-writer/sessions/${sessionId}/subtopics/more`,
+        {
+          matchStyle,
+        }
+      );
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/content-writer/sessions/${sessionId}`],
+      });
       toast({
         title: "More Subtopics Added",
         description: "5 additional subtopics generated",
@@ -604,44 +790,69 @@ export default function ContentWriterV2() {
 
   // Subtopic feedback mutation
   const subtopicFeedbackMutation = useMutation({
-    mutationFn: async ({ subtopicId, rating }: { subtopicId: string, rating: 'thumbs_up' | 'thumbs_down' }) => {
-      const subtopic = subtopics.find(s => s.id === subtopicId);
-      const guidelineId = (typeof brandGuidelines === 'string' && brandGuidelines) ? brandGuidelines : session?.guidelineProfileId;
-      return apiRequest('POST', '/api/content-feedback', {
-        toolType: 'content-writer',
+    mutationFn: async ({
+      subtopicId,
+      rating,
+    }: {
+      subtopicId: string;
+      rating: "thumbs_up" | "thumbs_down";
+    }) => {
+      const subtopic = subtopics.find((s) => s.id === subtopicId);
+      const guidelineId =
+        typeof brandGuidelines === "string" && brandGuidelines
+          ? brandGuidelines
+          : session?.guidelineProfileId;
+      return apiRequest("POST", "/api/content-feedback", {
+        toolType: "content-writer",
         rating,
         feedbackText: null,
-        inputData: { topic, conceptId: selectedConcept?.id, brandGuidelineId: guidelineId },
+        inputData: {
+          topic,
+          conceptId: selectedConcept?.id,
+          brandGuidelineId: guidelineId,
+        },
         outputData: { subtopic },
         guidelineProfileId: guidelineId || null,
       });
     },
     onSuccess: () => {
       toast({
-        title: 'Feedback Submitted',
-        description: 'Thank you! Your feedback helps improve future subtopics.',
+        title: "Feedback Submitted",
+        description: "Thank you! Your feedback helps improve future subtopics.",
       });
     },
   });
 
   // Toggle subtopic selection
   const toggleSubtopicMutation = useMutation({
-    mutationFn: async ({ subtopicId, isSelected }: { subtopicId: string, isSelected: boolean }) => {
-      await apiRequest('PATCH', `/api/content-writer/sessions/${sessionId}/subtopics/${subtopicId}`, {
-        isSelected,
-      });
+    mutationFn: async ({
+      subtopicId,
+      isSelected,
+    }: {
+      subtopicId: string;
+      isSelected: boolean;
+    }) => {
+      await apiRequest(
+        "PATCH",
+        `/api/content-writer/sessions/${sessionId}/subtopics/${subtopicId}`,
+        {
+          isSelected,
+        }
+      );
     },
     onSuccess: (_, variables) => {
       if (variables.isSelected) {
-        setSelectedSubtopics(prev => new Set(prev).add(variables.subtopicId));
+        setSelectedSubtopics((prev) => new Set(prev).add(variables.subtopicId));
       } else {
-        setSelectedSubtopics(prev => {
+        setSelectedSubtopics((prev) => {
           const next = new Set(prev);
           next.delete(variables.subtopicId);
           return next;
         });
       }
-      queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/content-writer/sessions/${sessionId}`],
+      });
     },
   });
 
@@ -649,17 +860,23 @@ export default function ContentWriterV2() {
   const generateArticleMutation = useMutation({
     mutationFn: async () => {
       setShowGenerationDialog(true);
-      const res = await apiRequest('POST', `/api/content-writer/sessions/${sessionId}/generate`, {
-        matchStyle,
-      });
+      const res = await apiRequest(
+        "POST",
+        `/api/content-writer/sessions/${sessionId}/generate`,
+        {
+          matchStyle,
+        }
+      );
       return await res.json();
     },
     onSuccess: () => {
       // Only update state if component is still mounted
       if (isMountedRef.current) {
         setShowGenerationDialog(false);
-        queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
-        setStage('article');
+        queryClient.invalidateQueries({
+          queryKey: [`/api/content-writer/sessions/${sessionId}`],
+        });
+        setStage("article");
         toast({
           title: "Article Generated",
           description: "Your article is ready!",
@@ -694,26 +911,26 @@ export default function ContentWriterV2() {
 
   const handleResumeThread = () => {
     if (!incompleteThread) return;
-    
+
     setShowResumeBanner(false);
     setThreadId(incompleteThread.threadId);
     setSessionId(incompleteThread.sessionId);
-    
+
     // Set topic from thread metadata if available
     if (incompleteThread.metadata?.topic) {
       setTopic(incompleteThread.metadata.topic);
     }
-    
+
     // Determine stage based on current step
     const step = incompleteThread.metadata?.currentStep;
-    if (step === 'generateConcepts' || step === 'concepts') {
-      setStage('concepts');
-    } else if (step === 'generateSubtopics' || step === 'subtopics') {
-      setStage('subtopics');
-    } else if (step === 'generateArticle' || step === 'article') {
-      setStage('article');
+    if (step === "generateConcepts" || step === "concepts") {
+      setStage("concepts");
+    } else if (step === "generateSubtopics" || step === "subtopics") {
+      setStage("subtopics");
+    } else if (step === "generateArticle" || step === "article") {
+      setStage("article");
     }
-    
+
     toast({
       title: "Workflow Resumed",
       description: "Continuing where you left off",
@@ -728,21 +945,27 @@ export default function ContentWriterV2() {
   const handleChooseConcept = (concept: Concept) => {
     setSelectedConcept(concept);
     setSelectingConceptId(concept.id);
-    
+
     if (threadId) {
       // Use LangGraph resume with selected concept
-      resumeWorkflowMutation.mutate({ 
-        threadId, 
-        selectedConceptId: concept.id 
+      resumeWorkflowMutation.mutate({
+        threadId,
+        selectedConceptId: concept.id,
       });
     } else {
       // Fallback to legacy method
-      chooseConceptMutation.mutate({ conceptId: concept.id, rating: 'thumbs_up' });
+      chooseConceptMutation.mutate({
+        conceptId: concept.id,
+        rating: "thumbs_up",
+      });
     }
   };
 
   const getDisabledReason = (): string | null => {
-    const hasSelectedConcept = selectedConcept || (session?.selectedConceptId && concepts.find(c => c.id === session.selectedConceptId));
+    const hasSelectedConcept =
+      selectedConcept ||
+      (session?.selectedConceptId &&
+        concepts.find((c) => c.id === session.selectedConceptId));
     if (!sessionId && !hasSelectedConcept) {
       return "Please start a session first by generating concepts and select a concept";
     }
@@ -764,11 +987,14 @@ export default function ContentWriterV2() {
       });
       return;
     }
-    
+
     // Check both local state and session state for selected concept
     const selectedConceptId = selectedConcept?.id || session?.selectedConceptId;
-    const hasSelectedConcept = selectedConcept || (session?.selectedConceptId && concepts.find(c => c.id === session.selectedConceptId));
-    
+    const hasSelectedConcept =
+      selectedConcept ||
+      (session?.selectedConceptId &&
+        concepts.find((c) => c.id === session.selectedConceptId));
+
     if (!hasSelectedConcept || !selectedConceptId) {
       toast({
         title: "Concept Required",
@@ -777,15 +1003,17 @@ export default function ContentWriterV2() {
       });
       return;
     }
-    
+
     // Ensure selectedConcept state is set if it's in the session but not in local state
     if (!selectedConcept && session?.selectedConceptId) {
-      const conceptFromSession = concepts.find(c => c.id === session.selectedConceptId);
+      const conceptFromSession = concepts.find(
+        (c) => c.id === session.selectedConceptId
+      );
       if (conceptFromSession) {
         setSelectedConcept(conceptFromSession);
       }
     }
-    
+
     generateSubtopicsMutation.mutate();
   };
 
@@ -803,12 +1031,12 @@ export default function ContentWriterV2() {
       });
       return;
     }
-    
+
     if (threadId) {
       // Use LangGraph resume with selected subtopics
-      resumeWorkflowMutation.mutate({ 
-        threadId, 
-        selectedSubtopicIds: selectedIds 
+      resumeWorkflowMutation.mutate({
+        threadId,
+        selectedSubtopicIds: selectedIds,
       });
     } else {
       // Fallback to legacy method
@@ -828,11 +1056,11 @@ export default function ContentWriterV2() {
 
   const handleDownloadArticle = () => {
     if (draft?.finalArticle) {
-      const blob = new Blob([draft.finalArticle], { type: 'text/markdown' });
+      const blob = new Blob([draft.finalArticle], { type: "text/markdown" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `${topic.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.md`;
+      a.download = `${topic.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.md`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -851,7 +1079,9 @@ export default function ContentWriterV2() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label htmlFor="topic">Article Topic <span className="text-red-500">*</span></Label>
+          <Label htmlFor="topic">
+            Article Topic <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="topic"
             data-testid="input-topic"
@@ -889,21 +1119,39 @@ export default function ContentWriterV2() {
 
             {matchStyle && (
               <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                <Label className="text-sm font-medium">Style Matching Method</Label>
+                <Label className="text-sm font-medium">
+                  Style Matching Method
+                </Label>
                 <RadioGroup
                   value={styleMatchingMethod}
-                  onValueChange={(value: 'continuous' | 'end-rewrite') => setStyleMatchingMethod(value)}
+                  onValueChange={(value: "continuous" | "end-rewrite") =>
+                    setStyleMatchingMethod(value)
+                  }
                   data-testid="radio-style-method"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="continuous" id="continuous" data-testid="radio-continuous" />
-                    <Label htmlFor="continuous" className="text-sm font-normal cursor-pointer">
+                    <RadioGroupItem
+                      value="continuous"
+                      id="continuous"
+                      data-testid="radio-continuous"
+                    />
+                    <Label
+                      htmlFor="continuous"
+                      className="text-sm font-normal cursor-pointer"
+                    >
                       Continuous (apply style throughout generation)
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="end-rewrite" id="end-rewrite" data-testid="radio-end-rewrite" />
-                    <Label htmlFor="end-rewrite" className="text-sm font-normal cursor-pointer">
+                    <RadioGroupItem
+                      value="end-rewrite"
+                      id="end-rewrite"
+                      data-testid="radio-end-rewrite"
+                    />
+                    <Label
+                      htmlFor="end-rewrite"
+                      className="text-sm font-normal cursor-pointer"
+                    >
                       End Rewrite (analyze brand style, then rewrite at end)
                     </Label>
                   </div>
@@ -913,8 +1161,8 @@ export default function ContentWriterV2() {
           </div>
         )}
 
-        <Button 
-          onClick={handleStartSession} 
+        <Button
+          onClick={handleStartSession}
           disabled={createSessionMutation.isPending}
           className="w-full"
           data-testid="button-start"
@@ -937,15 +1185,18 @@ export default function ContentWriterV2() {
 
   const renderConceptsStage = () => (
     <div className="space-y-4">
-      {currentStep === 'awaitConceptApproval' && (
+      {currentStep === "awaitConceptApproval" && (
         <Alert data-testid="alert-approval-required">
           <AlertDescription className="flex items-center gap-2">
-            <Badge variant="default" className="mr-2">Approval Required</Badge>
-            Workflow paused. Please select a concept to continue with article generation.
+            <Badge variant="default" className="mr-2">
+              Approval Required
+            </Badge>
+            Workflow paused. Please select a concept to continue with article
+            generation.
           </AlertDescription>
         </Alert>
       )}
-      
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -956,13 +1207,20 @@ export default function ContentWriterV2() {
                 onClick={() => {
                   // Clear cache for previous session/thread
                   if (threadId) {
-                    queryClient.removeQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+                    queryClient.removeQueries({
+                      queryKey: [
+                        "/api/langgraph/content-writer/status",
+                        threadId,
+                      ],
+                    });
                   }
                   if (sessionId) {
-                    queryClient.removeQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+                    queryClient.removeQueries({
+                      queryKey: [`/api/content-writer/sessions/${sessionId}`],
+                    });
                   }
 
-                  setStage('topic');
+                  setStage("topic");
                   setSessionId(null);
                   setThreadId(null);
                   sessionCreatedAtRef.current = null;
@@ -1011,7 +1269,7 @@ export default function ContentWriterV2() {
                       Regenerating...
                     </>
                   ) : (
-                    'Regenerate'
+                    "Regenerate"
                   )}
                 </Button>
                 <Button
@@ -1039,14 +1297,25 @@ export default function ContentWriterV2() {
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-2">{concept.title}</h3>
-                  <p className="text-sm text-muted-foreground">{concept.summary}</p>
+                  <h3 className="font-semibold text-lg mb-2">
+                    {concept.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {concept.summary}
+                  </p>
                   <div className="flex items-center gap-2 mt-3">
-                    <span className="text-xs text-gray-400">Was this helpful?</span>
+                    <span className="text-xs text-gray-400">
+                      Was this helpful?
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => conceptFeedbackMutation.mutate({ conceptId: concept.id, rating: 'thumbs_up' })}
+                      onClick={() =>
+                        conceptFeedbackMutation.mutate({
+                          conceptId: concept.id,
+                          rating: "thumbs_up",
+                        })
+                      }
                       disabled={conceptFeedbackMutation.isPending}
                       className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-gray-800"
                       data-testid={`button-concept-thumbs-up-${concept.id}`}
@@ -1056,7 +1325,12 @@ export default function ContentWriterV2() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => conceptFeedbackMutation.mutate({ conceptId: concept.id, rating: 'thumbs_down' })}
+                      onClick={() =>
+                        conceptFeedbackMutation.mutate({
+                          conceptId: concept.id,
+                          rating: "thumbs_down",
+                        })
+                      }
                       disabled={conceptFeedbackMutation.isPending}
                       className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-gray-800"
                       data-testid={`button-concept-thumbs-down-${concept.id}`}
@@ -1067,10 +1341,16 @@ export default function ContentWriterV2() {
                 </div>
                 <Button
                   onClick={() => handleChooseConcept(concept)}
-                  disabled={selectingConceptId === concept.id || chooseConceptMutation.isPending || resumeWorkflowMutation.isPending}
+                  disabled={
+                    selectingConceptId === concept.id ||
+                    chooseConceptMutation.isPending ||
+                    resumeWorkflowMutation.isPending
+                  }
                   data-testid={`button-choose-concept-${concept.id}`}
                 >
-                  {selectingConceptId === concept.id || (chooseConceptMutation.isPending || resumeWorkflowMutation.isPending) ? (
+                  {selectingConceptId === concept.id ||
+                  chooseConceptMutation.isPending ||
+                  resumeWorkflowMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Selecting...
@@ -1102,7 +1382,7 @@ export default function ContentWriterV2() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setStage('concepts');
+                  setStage("concepts");
                   setSelectedConcept(null);
                 }}
                 data-testid="button-back-to-concepts"
@@ -1113,7 +1393,11 @@ export default function ContentWriterV2() {
               <CardTitle>Configure Your Article</CardTitle>
             </div>
             <CardDescription>
-              Selected Concept: {selectedConcept?.title || concepts.find(c => c.id === session?.selectedConceptId)?.title || "(required)"}
+              Selected Concept:{" "}
+              {selectedConcept?.title ||
+                concepts.find((c) => c.id === session?.selectedConceptId)
+                  ?.title ||
+                "(required)"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1143,7 +1427,11 @@ export default function ContentWriterV2() {
               </div>
               <div>
                 <Label htmlFor="language">Language & Variant</Label>
-                <Select value={language} onValueChange={setLanguage} disabled={hasGeneratedSubtopics}>
+                <Select
+                  value={language}
+                  onValueChange={setLanguage}
+                  disabled={hasGeneratedSubtopics}
+                >
                   <SelectTrigger data-testid="select-language">
                     <SelectValue />
                   </SelectTrigger>
@@ -1190,7 +1478,9 @@ export default function ContentWriterV2() {
             </div>
 
             <div>
-              <Label htmlFor="internalLinks">Internal Links (comma-separated URLs)</Label>
+              <Label htmlFor="internalLinks">
+                Internal Links (comma-separated URLs)
+              </Label>
               <Input
                 id="internalLinks"
                 data-testid="input-internal-links"
@@ -1206,7 +1496,9 @@ export default function ContentWriterV2() {
                 id="useBrandGuidelines"
                 data-testid="checkbox-brand-guidelines"
                 checked={useBrandGuidelines}
-                onCheckedChange={(checked) => setUseBrandGuidelines(checked === true)}
+                onCheckedChange={(checked) =>
+                  setUseBrandGuidelines(checked === true)
+                }
                 disabled={hasGeneratedSubtopics || !brandGuidelines}
               />
               <Label htmlFor="useBrandGuidelines">Apply Brand Guidelines</Label>
@@ -1214,8 +1506,12 @@ export default function ContentWriterV2() {
 
             <div>
               <Label htmlFor="targetAudience">Target Audience</Label>
-              <Select 
-                value={Array.isArray(selectedTargetAudiences) ? "custom" : selectedTargetAudiences}
+              <Select
+                value={
+                  Array.isArray(selectedTargetAudiences)
+                    ? "custom"
+                    : selectedTargetAudiences
+                }
                 onValueChange={(value) => {
                   if (value === "all" || value === "none") {
                     setSelectedTargetAudiences(value);
@@ -1227,13 +1523,17 @@ export default function ContentWriterV2() {
                   <SelectValue placeholder="Select target audience" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Generic (No specific audience)</SelectItem>
+                  <SelectItem value="none">
+                    Generic (No specific audience)
+                  </SelectItem>
                   <SelectItem value="all">All Brand Audiences</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground mt-1">
-                {selectedTargetAudiences === "none" && "Article will be written for a general audience"}
-                {selectedTargetAudiences === "all" && "Article will target all audiences from brand guidelines"}
+                {selectedTargetAudiences === "none" &&
+                  "Article will be written for a general audience"}
+                {selectedTargetAudiences === "all" &&
+                  "Article will target all audiences from brand guidelines"}
               </p>
             </div>
 
@@ -1244,11 +1544,17 @@ export default function ContentWriterV2() {
                     <div className="w-full">
                       <Button
                         onClick={handleGenerateSubtopics}
-                        disabled={generateSubtopicsMutation.isPending || !sessionId || (!selectedConcept && !session?.selectedConceptId)}
+                        disabled={
+                          generateSubtopicsMutation.isPending ||
+                          !sessionId ||
+                          (!selectedConcept && !session?.selectedConceptId)
+                        }
                         className="w-full"
                         data-testid="button-generate-subtopics"
                       >
-                        {generateSubtopicsMutation.isPending && sessionId && (selectedConcept || session?.selectedConceptId) ? (
+                        {generateSubtopicsMutation.isPending &&
+                        sessionId &&
+                        (selectedConcept || session?.selectedConceptId) ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Generating Subtopics...
@@ -1262,11 +1568,13 @@ export default function ContentWriterV2() {
                       </Button>
                     </div>
                   </TooltipTrigger>
-                  {(!sessionId || (!selectedConcept && !session?.selectedConceptId)) && getDisabledReason() && (
-                    <TooltipContent side="top">
-                      <p>{getDisabledReason()}</p>
-                    </TooltipContent>
-                  )}
+                  {(!sessionId ||
+                    (!selectedConcept && !session?.selectedConceptId)) &&
+                    getDisabledReason() && (
+                      <TooltipContent side="top">
+                        <p>{getDisabledReason()}</p>
+                      </TooltipContent>
+                    )}
                 </Tooltip>
               </TooltipProvider>
             )}
@@ -1275,21 +1583,26 @@ export default function ContentWriterV2() {
 
         {hasGeneratedSubtopics && (
           <>
-            {currentStep === 'awaitSubtopicApproval' && (
+            {currentStep === "awaitSubtopicApproval" && (
               <Alert data-testid="alert-subtopic-approval-required">
                 <AlertDescription className="flex items-center gap-2">
-                  <Badge variant="default" className="mr-2">Approval Required</Badge>
-                  Workflow paused. Please select at least one subtopic and click "Generate Complete Article" to continue.
+                  <Badge variant="default" className="mr-2">
+                    Approval Required
+                  </Badge>
+                  Workflow paused. Please select at least one subtopic and click
+                  "Generate Complete Article" to continue.
                 </AlertDescription>
               </Alert>
             )}
-            
+
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Select Subtopics</CardTitle>
-                    <CardDescription>{selectedSubtopics.size} selected</CardDescription>
+                    <CardDescription>
+                      {selectedSubtopics.size} selected
+                    </CardDescription>
                   </div>
                   <Button
                     variant="outline"
@@ -1312,19 +1625,33 @@ export default function ContentWriterV2() {
                       data-testid={`subtopic-${subtopic.id}`}
                     >
                       <Checkbox
-                        checked={selectedSubtopics.has(subtopic.id) || subtopic.isSelected}
-                        onCheckedChange={(checked) => handleToggleSubtopic(subtopic.id, checked === true)}
+                        checked={
+                          selectedSubtopics.has(subtopic.id) ||
+                          subtopic.isSelected
+                        }
+                        onCheckedChange={(checked) =>
+                          handleToggleSubtopic(subtopic.id, checked === true)
+                        }
                         data-testid={`checkbox-subtopic-${subtopic.id}`}
                       />
                       <div className="flex-1">
                         <h4 className="font-medium">{subtopic.title}</h4>
-                        <p className="text-sm text-muted-foreground mt-1">{subtopic.summary}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {subtopic.summary}
+                        </p>
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs text-gray-400">Was this helpful?</span>
+                          <span className="text-xs text-gray-400">
+                            Was this helpful?
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => subtopicFeedbackMutation.mutate({ subtopicId: subtopic.id, rating: 'thumbs_up' })}
+                            onClick={() =>
+                              subtopicFeedbackMutation.mutate({
+                                subtopicId: subtopic.id,
+                                rating: "thumbs_up",
+                              })
+                            }
                             disabled={subtopicFeedbackMutation.isPending}
                             className="h-6 px-2 text-green-400 hover:text-green-300 hover:bg-gray-800"
                             data-testid={`button-subtopic-thumbs-up-${subtopic.id}`}
@@ -1334,7 +1661,12 @@ export default function ContentWriterV2() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => subtopicFeedbackMutation.mutate({ subtopicId: subtopic.id, rating: 'thumbs_down' })}
+                            onClick={() =>
+                              subtopicFeedbackMutation.mutate({
+                                subtopicId: subtopic.id,
+                                rating: "thumbs_down",
+                              })
+                            }
                             disabled={subtopicFeedbackMutation.isPending}
                             className="h-6 px-2 text-red-400 hover:text-red-300 hover:bg-gray-800"
                             data-testid={`button-subtopic-thumbs-down-${subtopic.id}`}
@@ -1351,7 +1683,10 @@ export default function ContentWriterV2() {
 
             <Button
               onClick={handleGenerateArticle}
-              disabled={generateArticleMutation.isPending || selectedSubtopics.size === 0}
+              disabled={
+                generateArticleMutation.isPending ||
+                selectedSubtopics.size === 0
+              }
               className="w-full"
               size="lg"
               data-testid="button-generate-article"
@@ -1378,24 +1713,24 @@ export default function ContentWriterV2() {
   const getScoreStyle = (score: number) => {
     if (score >= 80) {
       return {
-        color: 'bg-green-500',
+        color: "bg-green-500",
         icon: CheckCircle,
-        variant: 'default' as const,
-        textColor: 'text-green-500'
+        variant: "default" as const,
+        textColor: "text-green-500",
       };
     } else if (score >= 70) {
       return {
-        color: 'bg-yellow-500',
+        color: "bg-yellow-500",
         icon: AlertTriangle,
-        variant: 'default' as const,
-        textColor: 'text-yellow-500'
+        variant: "default" as const,
+        textColor: "text-yellow-500",
       };
     } else {
       return {
-        color: 'bg-red-500',
+        color: "bg-red-500",
         icon: XCircle,
-        variant: 'destructive' as const,
-        textColor: 'text-red-500'
+        variant: "destructive" as const,
+        textColor: "text-red-500",
       };
     }
   };
@@ -1409,7 +1744,7 @@ export default function ContentWriterV2() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStage('subtopics')}
+                onClick={() => setStage("subtopics")}
                 data-testid="button-back-to-subtopics"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
@@ -1446,15 +1781,22 @@ export default function ContentWriterV2() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="prose dark:prose-invert max-w-none">
-            <pre className="whitespace-pre-wrap font-sans text-sm">{draft?.finalArticle}</pre>
+            <pre className="whitespace-pre-wrap font-sans text-sm">
+              {draft?.finalArticle}
+            </pre>
           </div>
-          
+
           <Separator />
-          
+
           {/* Quality Analysis Section */}
-          {(threadState?.brandScore !== undefined || threadState?.factScore !== undefined || draft?.brandScore !== undefined || draft?.factScore !== undefined || 
-            threadState?.metadata?.brandIssues?.length || threadState?.metadata?.factIssues?.length ||
-            (threadState?.metadata?.regenerationCount && threadState.metadata.regenerationCount > 0)) && (
+          {(threadState?.brandScore !== undefined ||
+            threadState?.factScore !== undefined ||
+            draft?.brandScore !== undefined ||
+            draft?.factScore !== undefined ||
+            threadState?.metadata?.brandIssues?.length ||
+            threadState?.metadata?.factIssues?.length ||
+            (threadState?.metadata?.regenerationCount &&
+              threadState.metadata.regenerationCount > 0)) && (
             <Card data-testid="card-quality-analysis">
               <CardHeader>
                 <CardTitle>Quality Analysis</CardTitle>
@@ -1463,108 +1805,155 @@ export default function ContentWriterV2() {
                 {/* Score Badges */}
                 <div className="flex flex-wrap gap-3">
                   {/* Brand Consistency Score */}
-                  {(threadState?.brandScore !== undefined || draft?.brandScore !== undefined) && (() => {
-                    const score = threadState?.brandScore ?? draft?.brandScore ?? 0;
-                    const style = getScoreStyle(score);
-                    const Icon = style.icon;
-                    return (
-                      <div className="flex items-center gap-2" data-testid="score-brand-consistency">
-                        <span className="text-sm font-medium">Brand Consistency:</span>
-                        <Badge 
-                          className={`${style.color} text-white flex items-center gap-1`}
-                          data-testid="badge-brand-score"
+                  {(threadState?.brandScore !== undefined ||
+                    draft?.brandScore !== undefined) &&
+                    (() => {
+                      const score =
+                        threadState?.brandScore ?? draft?.brandScore ?? 0;
+                      const style = getScoreStyle(score);
+                      const Icon = style.icon;
+                      return (
+                        <div
+                          className="flex items-center gap-2"
+                          data-testid="score-brand-consistency"
                         >
-                          <Icon className="w-3 h-3" />
-                          {score}
-                        </Badge>
-                      </div>
-                    );
-                  })()}
-                  
+                          <span className="text-sm font-medium">
+                            Brand Consistency:
+                          </span>
+                          <Badge
+                            className={`${style.color} text-white flex items-center gap-1`}
+                            data-testid="badge-brand-score"
+                          >
+                            <Icon className="w-3 h-3" />
+                            {score}
+                          </Badge>
+                        </div>
+                      );
+                    })()}
+
                   {/* Fact Verification Score */}
-                  {(threadState?.factScore !== undefined || draft?.factScore !== undefined) && (() => {
-                    const score = threadState?.factScore ?? draft?.factScore ?? 0;
-                    const style = getScoreStyle(score);
-                    const Icon = style.icon;
-                    return (
-                      <div className="flex items-center gap-2" data-testid="score-fact-verification">
-                        <span className="text-sm font-medium">Fact Verification:</span>
-                        <Badge 
-                          className={`${style.color} text-white flex items-center gap-1`}
-                          data-testid="badge-fact-score"
+                  {(threadState?.factScore !== undefined ||
+                    draft?.factScore !== undefined) &&
+                    (() => {
+                      const score =
+                        threadState?.factScore ?? draft?.factScore ?? 0;
+                      const style = getScoreStyle(score);
+                      const Icon = style.icon;
+                      return (
+                        <div
+                          className="flex items-center gap-2"
+                          data-testid="score-fact-verification"
                         >
-                          <Icon className="w-3 h-3" />
-                          {score}
+                          <span className="text-sm font-medium">
+                            Fact Verification:
+                          </span>
+                          <Badge
+                            className={`${style.color} text-white flex items-center gap-1`}
+                            data-testid="badge-fact-score"
+                          >
+                            <Icon className="w-3 h-3" />
+                            {score}
+                          </Badge>
+                        </div>
+                      );
+                    })()}
+
+                  {/* Regeneration Count */}
+                  {threadState?.metadata?.regenerationCount !== undefined &&
+                    threadState.metadata.regenerationCount > 0 && (
+                      <div
+                        className="flex items-center gap-2"
+                        data-testid="regeneration-count"
+                      >
+                        <Badge
+                          variant="secondary"
+                          data-testid="badge-regeneration-count"
+                        >
+                          Regenerated {threadState.metadata.regenerationCount}{" "}
+                          {threadState.metadata.regenerationCount === 1
+                            ? "time"
+                            : "times"}
                         </Badge>
                       </div>
-                    );
-                  })()}
-                  
-                  {/* Regeneration Count */}
-                  {threadState?.metadata?.regenerationCount !== undefined && 
-                   threadState.metadata.regenerationCount > 0 && (
-                    <div className="flex items-center gap-2" data-testid="regeneration-count">
-                      <Badge variant="secondary" data-testid="badge-regeneration-count">
-                        Regenerated {threadState.metadata.regenerationCount} {threadState.metadata.regenerationCount === 1 ? 'time' : 'times'}
-                      </Badge>
-                    </div>
-                  )}
+                    )}
                 </div>
-                
+
                 {/* Issues Lists */}
                 <div className="space-y-3">
                   {/* Brand Issues */}
-                  {threadState?.metadata?.brandIssues && threadState.metadata.brandIssues.length > 0 && (
-                    <Collapsible data-testid="collapsible-brand-issues">
-                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-md transition-colors">
-                        <ChevronDown className="w-4 h-4" />
-                        <span className="font-medium text-sm">
-                          Brand Issues ({threadState.metadata.brandIssues.length} {threadState.metadata.brandIssues.length === 1 ? 'issue' : 'issues'})
-                        </span>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2 ml-6 space-y-1" data-testid="content-brand-issues">
-                        {threadState.metadata.brandIssues.map((issue, index) => (
-                          <div 
-                            key={index} 
-                            className="text-sm text-muted-foreground flex items-start gap-2"
-                            data-testid={`brand-issue-${index}`}
-                          >
-                            <span className="mt-1">•</span>
-                            <span>{issue}</span>
-                          </div>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                  
+                  {threadState?.metadata?.brandIssues &&
+                    threadState.metadata.brandIssues.length > 0 && (
+                      <Collapsible data-testid="collapsible-brand-issues">
+                        <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-md transition-colors">
+                          <ChevronDown className="w-4 h-4" />
+                          <span className="font-medium text-sm">
+                            Brand Issues (
+                            {threadState.metadata.brandIssues.length}{" "}
+                            {threadState.metadata.brandIssues.length === 1
+                              ? "issue"
+                              : "issues"}
+                            )
+                          </span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent
+                          className="mt-2 ml-6 space-y-1"
+                          data-testid="content-brand-issues"
+                        >
+                          {threadState.metadata.brandIssues.map(
+                            (issue, index) => (
+                              <div
+                                key={index}
+                                className="text-sm text-muted-foreground flex items-start gap-2"
+                                data-testid={`brand-issue-${index}`}
+                              >
+                                <span className="mt-1">•</span>
+                                <span>{issue}</span>
+                              </div>
+                            )
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+
                   {/* Fact Issues */}
-                  {threadState?.metadata?.factIssues && threadState.metadata.factIssues.length > 0 && (
-                    <Collapsible data-testid="collapsible-fact-issues">
-                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-md transition-colors">
-                        <ChevronDown className="w-4 h-4" />
-                        <span className="font-medium text-sm">
-                          Fact Issues ({threadState.metadata.factIssues.length} {threadState.metadata.factIssues.length === 1 ? 'issue' : 'issues'})
-                        </span>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2 ml-6 space-y-1" data-testid="content-fact-issues">
-                        {threadState.metadata.factIssues.map((issue, index) => (
-                          <div 
-                            key={index} 
-                            className="text-sm text-muted-foreground flex items-start gap-2"
-                            data-testid={`fact-issue-${index}`}
-                          >
-                            <span className="mt-1">•</span>
-                            <span>{issue}</span>
-                          </div>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
+                  {threadState?.metadata?.factIssues &&
+                    threadState.metadata.factIssues.length > 0 && (
+                      <Collapsible data-testid="collapsible-fact-issues">
+                        <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-md transition-colors">
+                          <ChevronDown className="w-4 h-4" />
+                          <span className="font-medium text-sm">
+                            Fact Issues (
+                            {threadState.metadata.factIssues.length}{" "}
+                            {threadState.metadata.factIssues.length === 1
+                              ? "issue"
+                              : "issues"}
+                            )
+                          </span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent
+                          className="mt-2 ml-6 space-y-1"
+                          data-testid="content-fact-issues"
+                        >
+                          {threadState.metadata.factIssues.map(
+                            (issue, index) => (
+                              <div
+                                key={index}
+                                className="text-sm text-muted-foreground flex items-start gap-2"
+                                data-testid={`fact-issue-${index}`}
+                              >
+                                <span className="mt-1">•</span>
+                                <span>{issue}</span>
+                              </div>
+                            )
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
                 </div>
               </CardContent>
             </Card>
           )}
-          
+
           {draft && (
             <FeedbackButtons
               toolType="content-writer"
@@ -1574,15 +1963,21 @@ export default function ContentWriterV2() {
                 targetLength,
                 toneOfVoice,
                 language,
-                internalLinks: internalLinks ? internalLinks.split(',').map(l => l.trim()) : [],
+                internalLinks: internalLinks
+                  ? internalLinks.split(",").map((l) => l.trim())
+                  : [],
                 useBrandGuidelines,
-                selectedTargetAudiences
+                selectedTargetAudiences,
               }}
               outputData={{
                 finalArticle: draft.finalArticle,
-                metadata: draft.metadata
+                metadata: draft.metadata,
               }}
-              guidelineProfileId={typeof brandGuidelines === 'string' && brandGuidelines ? brandGuidelines : undefined}
+              guidelineProfileId={
+                typeof brandGuidelines === "string" && brandGuidelines
+                  ? brandGuidelines
+                  : undefined
+              }
             />
           )}
         </CardContent>
@@ -1593,18 +1988,22 @@ export default function ContentWriterV2() {
         onClick={() => {
           // Clear cache for previous session/thread
           if (threadId) {
-            queryClient.removeQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+            queryClient.removeQueries({
+              queryKey: ["/api/langgraph/content-writer/status", threadId],
+            });
           }
           if (sessionId) {
-            queryClient.removeQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+            queryClient.removeQueries({
+              queryKey: [`/api/content-writer/sessions/${sessionId}`],
+            });
           }
 
           // Reset all local state
           setSessionId(null);
           setThreadId(null);
-          setStage('topic');
+          setStage("topic");
           setTopic("");
-          setBrandGuidelines('');
+          setBrandGuidelines("");
           setSelectedConcept(null);
           sessionCreatedAtRef.current = null;
           setSelectedSubtopics(new Set());
@@ -1633,19 +2032,22 @@ export default function ContentWriterV2() {
               <div>
                 <p className="font-medium">Resume where you left off?</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  You have an incomplete article: "{incompleteThread.metadata?.topic || incompleteThread.session?.topic}"
+                  You have an incomplete article: "
+                  {incompleteThread.metadata?.topic ||
+                    incompleteThread.session?.topic}
+                  "
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button 
+                <Button
                   onClick={handleResumeThread}
                   size="sm"
                   data-testid="button-resume-workflow"
                 >
                   Resume
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleStartNewThread}
                   size="sm"
                   data-testid="button-start-new"
@@ -1663,29 +2065,42 @@ export default function ContentWriterV2() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex gap-2">
-                  {(['concepts', 'subtopics', 'article'] as const).map((s, i) => {
-                    const stepMap: Record<string, string> = {
-                      'generateConcepts': 'concepts',
-                      'generateSubtopics': 'subtopics',
-                      'generateArticle': 'article'
-                    };
-                    const currentStepMapped = currentStep ? stepMap[currentStep] || currentStep : undefined;
-                    const isActive = stage === s || currentStepMapped === s;
-                    const isPast = ['concepts', 'subtopics', 'article'].indexOf(stage) > i;
-                    
-                    return (
-                      <Badge
-                        key={s}
-                        variant={isActive ? 'default' : isPast ? 'secondary' : 'outline'}
-                        className="capitalize"
-                        data-testid={`badge-step-${s}`}
-                      >
-                        {isActive && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                        {isPast && <Check className="w-3 h-3 mr-1" />}
-                        {i + 1}. {s}
-                      </Badge>
-                    );
-                  })}
+                  {(["concepts", "subtopics", "article"] as const).map(
+                    (s, i) => {
+                      const stepMap: Record<string, string> = {
+                        generateConcepts: "concepts",
+                        generateSubtopics: "subtopics",
+                        generateArticle: "article",
+                      };
+                      const currentStepMapped = currentStep
+                        ? stepMap[currentStep] || currentStep
+                        : undefined;
+                      const isActive = stage === s || currentStepMapped === s;
+                      const isPast =
+                        ["concepts", "subtopics", "article"].indexOf(stage) > i;
+
+                      return (
+                        <Badge
+                          key={s}
+                          variant={
+                            isActive
+                              ? "default"
+                              : isPast
+                              ? "secondary"
+                              : "outline"
+                          }
+                          className="capitalize"
+                          data-testid={`badge-step-${s}`}
+                        >
+                          {isActive && (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          )}
+                          {isPast && <Check className="w-3 h-3 mr-1" />}
+                          {i + 1}. {s}
+                        </Badge>
+                      );
+                    }
+                  )}
                 </div>
                 {threadId && (
                   <Badge variant="outline" className="text-xs">
@@ -1694,36 +2109,49 @@ export default function ContentWriterV2() {
                 )}
               </div>
               {threadId && !isThreadCompleted && (
-                <Progress value={
-                  currentStep === 'generateConcepts' || stage === 'concepts' ? 33 :
-                  currentStep === 'generateSubtopics' || stage === 'subtopics' ? 66 :
-                  currentStep === 'generateArticle' || stage === 'article' ? 100 : 0
-                } className="h-2" />
+                <Progress
+                  value={
+                    currentStep === "generateConcepts" || stage === "concepts"
+                      ? 33
+                      : currentStep === "generateSubtopics" ||
+                        stage === "subtopics"
+                      ? 66
+                      : currentStep === "generateArticle" || stage === "article"
+                      ? 100
+                      : 0
+                  }
+                  className="h-2"
+                />
               )}
             </div>
           </div>
         )}
 
         {/* Content */}
-        {stage === 'topic' && renderTopicStage()}
-        {stage === 'concepts' && renderConceptsStage()}
-        {stage === 'subtopics' && renderSubtopicsStage()}
-        {stage === 'article' && renderArticleStage()}
+        {stage === "topic" && renderTopicStage()}
+        {stage === "concepts" && renderConceptsStage()}
+        {stage === "subtopics" && renderSubtopicsStage()}
+        {stage === "article" && renderArticleStage()}
 
         {/* Article Generation Dialog */}
-        <AlertDialog open={showGenerationDialog} onOpenChange={setShowGenerationDialog}>
+        <AlertDialog
+          open={showGenerationDialog}
+          onOpenChange={setShowGenerationDialog}
+        >
           <AlertDialogContent data-testid="dialog-article-generating">
             <AlertDialogHeader>
               <AlertDialogTitle>Article Being Generated</AlertDialogTitle>
               <AlertDialogDescription>
-                Your article is being generated. We'll notify you when it's ready. You can navigate away from this page and check your notifications.
+                Your article is being generated. We'll notify you when it's
+                ready. You can navigate away from this page and check your
+                notifications.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <Button
                 onClick={() => {
                   setShowGenerationDialog(false);
-                  setLocation('/app');
+                  setLocation("/app");
                 }}
                 data-testid="button-go-to-dashboard"
               >

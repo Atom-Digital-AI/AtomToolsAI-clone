@@ -1,5 +1,5 @@
 import { StateGraph, Annotation, END } from "@langchain/langgraph";
-import { PostgresCheckpointer } from "../../../../../../server/langgraph/postgres-checkpointer";
+import { PostgresCheckpointer } from "../../../../../server/langgraph/postgres-checkpointer";
 import { ContentWriterState, contentWriterStateSchema } from "./types";
 import { generateConcepts } from "../../../../component-tools/concept-generator/server/generateConcepts";
 import { setAwaitConceptApproval } from "./nodes/setAwaitConceptApproval";

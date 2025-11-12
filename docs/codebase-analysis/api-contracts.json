@@ -1,0 +1,4287 @@
+{
+  "summary": {
+    "totalEndpoints": 138,
+    "totalClientCalls": 16,
+    "matchedContracts": 8,
+    "orphanedEndpoints": 130,
+    "orphanedClientCalls": 4
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/cms/migrate-pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 25,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/pages/:slug*",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 38,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cms/pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 57,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cms/pages/:id",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 69,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cms/pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 83,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cms/pages/:id",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 97,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cms/pages/:id/publish",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 109,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/cms/pages/:id",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 120,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 136,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "env",
+      "handler": "handler",
+      "file": "server/index.ts",
+      "line": 211,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/images/:imagePath(*)",
+      "handler": "handler",
+      "file": "server/object-storage-routes.ts",
+      "line": 9,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/upload",
+      "handler": "handler",
+      "file": "server/object-storage-routes.ts",
+      "line": 23,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/images/confirm",
+      "handler": "handler",
+      "file": "server/object-storage-routes.ts",
+      "line": 34,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 129,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/health/live",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 162,
+      "authRequired": true,
+      "rateLimited": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 167,
+      "authRequired": true,
+      "rateLimited": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 212,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/auth/account",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 230,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/logout",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 255,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 272,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/auth/profile",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 291,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/change-password",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 314,
+      "authRequired": true,
+      "rateLimited": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/account-data",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 356,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/auth/account",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 391,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 426,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/products",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 436,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/with-status",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 447,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/tier-subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 460,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/tier-subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 472,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tier-subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 484,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tier-subscriptions/:tierId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 513,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 531,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 542,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/subscriptions/:productId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 566,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/:productId/access",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 584,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/contact",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 608,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 627,
+      "authRequired": false,
+      "rateLimited": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/verify-email",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 691,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/resend-verification",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 739,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/seo-meta/generate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 800,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/google-ads/generate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1016,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/guideline-profiles",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1243,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/guideline-profiles/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1255,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1272,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/guideline-profiles/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1287,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/guideline-profiles/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1305,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/auto-populate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1322,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/auto-populate-pdf",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1361,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/discover-context-pages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1427,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/find-services-by-pattern",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1474,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/extract-blog-posts",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1515,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/guideline-profiles/:id/extracted-context",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1545,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/:id/extract-context",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1576,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/packages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1684,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/complete-profile",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1699,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1746,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/packages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1757,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/packages/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1767,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/packages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1780,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/packages/with-tiers",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1791,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/packages/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1846,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/packages/with-tiers/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1866,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/packages/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1934,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/products",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1947,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/products",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1957,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/products/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1967,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/products/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1980,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/products/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1993,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2006,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2016,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id/admin",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2029,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/error-reports",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2041,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/error-reports",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2066,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/error-reports/:id/status",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2077,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/error-logs",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2089,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/error-logs/:id/status",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2118,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/error-logs/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2138,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/error-logs",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2148,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/users/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2158,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/generated-content",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2181,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/generated-content/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2203,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/generated-content",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2224,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-feedback",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2249,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/generated-content/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2275,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2301,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/content-writer/sessions/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2379,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/regenerate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2401,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/content-writer/sessions/:sessionId/concepts/:conceptId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2503,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/subtopics",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2546,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/subtopics/more",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2665,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/content-writer/sessions/:sessionId/subtopics/:subtopicId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2759,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/generate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2793,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/content-writer/drafts",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3110,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/content-writer/drafts/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3122,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/langgraph/content-writer/start",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3142,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/langgraph/content-writer/resume/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3282,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/langgraph/content-writer/status/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3367,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/langgraph/content-writer/regenerate/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3406,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/langgraph/content-writer/threads",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3552,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/usage-stats",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3590,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3635,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/notifications/:id/read",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3650,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/notifications/read-all",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3667,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/notifications/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3679,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/notification-preferences",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3697,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/user/notification-preferences",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3712,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/ai-usage-logs",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3730,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/ai-usage-summary",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3782,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/langgraph-metrics",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3861,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/langgraph-threads",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4009,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/langgraph-threads/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4028,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/langgraph-threads/:threadId/cancel",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4045,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/langgraph-threads/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4063,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/crawl/start",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4081,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/crawl/:jobId/status",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4115,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/crawl/:jobId/cancel",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4132,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/qc/config",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4154,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/qc/config",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4183,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/qc/reports/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4223,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/qc/decisions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4237,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/qc/decisions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4271,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/crawls/:id/pages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4298,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/pages/:id/review",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4363,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/ad-specs",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 44,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/start",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 83,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions/:sessionId",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 189,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/sessions/:sessionId/approve",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 249,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 373,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions",
+      "handler": "handler",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 38,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/content-writer/sessions/:id",
+      "handler": "handler",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 85,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/resume",
+      "handler": "handler",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 132,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/google-ads/generate",
+      "handler": "handler",
+      "file": "tools/headline-tools/google-ads-copy-generator/server/routes.ts",
+      "line": 34,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/seo-meta/generate",
+      "handler": "handler",
+      "file": "tools/headline-tools/seo-meta-generator/server/routes.ts",
+      "line": 37,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/ad-specs",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 44,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/start",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 83,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions/:sessionId",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 189,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/sessions/:sessionId/approve",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 249,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 373,
+      "authRequired": true,
+      "rateLimited": false
+    }
+  ],
+  "clientCalls": [
+    {
+      "method": "GET",
+      "url": "/api/auth/logout",
+      "file": "client/src/components/layout/header.tsx",
+      "line": 40
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/logout",
+      "file": "client/src/components/layout/mobile-menu.tsx",
+      "line": 36
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/me",
+      "file": "client/src/hooks/useAuth.ts",
+      "line": 10
+    },
+    {
+      "method": "GET",
+      "url": "/api/guideline-profiles",
+      "file": "client/src/hooks/useGuidelineProfiles.ts",
+      "line": 16
+    },
+    {
+      "method": "GET",
+      "url": "/api/admin/stats",
+      "file": "client/src/pages/admin/dashboard.tsx",
+      "line": 68
+    },
+    {
+      "method": "GET",
+      "url": "/api/admin/packages",
+      "file": "client/src/pages/admin/dashboard.tsx",
+      "line": 86
+    },
+    {
+      "method": "GET",
+      "url": "/api/admin/products",
+      "file": "client/src/pages/admin/dashboard.tsx",
+      "line": 99
+    },
+    {
+      "method": "GET",
+      "url": "/api/admin/users",
+      "file": "client/src/pages/admin/dashboard.tsx",
+      "line": 112
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/me",
+      "file": "client/src/pages/app/dashboard.tsx",
+      "line": 30
+    },
+    {
+      "method": "GET",
+      "url": "/api/products/with-status",
+      "file": "client/src/pages/app/my-tools.tsx",
+      "line": 20
+    },
+    {
+      "method": "GET",
+      "url": "/api/products/with-status",
+      "file": "client/src/pages/app/subscriptions.tsx",
+      "line": 17
+    },
+    {
+      "method": "GET",
+      "url": "/api/contact",
+      "file": "client/src/pages/contact.tsx",
+      "line": 36
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/resend-verification",
+      "file": "client/src/pages/email-verification-sent.tsx",
+      "line": 39
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/login",
+      "file": "client/src/pages/login.tsx",
+      "line": 35
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/me",
+      "file": "client/src/pages/login.tsx",
+      "line": 56
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/signup",
+      "file": "client/src/pages/sign-up.tsx",
+      "line": 43
+    }
+  ],
+  "contracts": [
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/cms/migrate-pages",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 25,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/public/pages/:slug*",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 38,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/cms/pages",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 57,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/cms/pages/:id",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 69,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/cms/pages",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 83,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/cms/pages/:id",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 97,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/cms/pages/:id/publish",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 109,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/cms/pages/:id",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 120,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/public/pages",
+        "handler": "handler",
+        "file": "server/cms-routes.ts",
+        "line": 136,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "env",
+        "handler": "handler",
+        "file": "server/index.ts",
+        "line": 211,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/images/:imagePath(*)",
+        "handler": "handler",
+        "file": "server/object-storage-routes.ts",
+        "line": 9,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/images/upload",
+        "handler": "handler",
+        "file": "server/object-storage-routes.ts",
+        "line": 23,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/images/confirm",
+        "handler": "handler",
+        "file": "server/object-storage-routes.ts",
+        "line": 34,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/health",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 129,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/health/live",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 162,
+        "authRequired": true,
+        "rateLimited": true
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 167,
+        "authRequired": true,
+        "rateLimited": true
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/auth/logout",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 212,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/auth/account",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 230,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/auth/logout",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 255,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/auth/logout",
+          "file": "client/src/components/layout/header.tsx",
+          "line": 40
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/logout",
+          "file": "client/src/components/layout/mobile-menu.tsx",
+          "line": 36
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/auth/me",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 272,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/auth/me",
+          "file": "client/src/hooks/useAuth.ts",
+          "line": 10
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me",
+          "file": "client/src/pages/app/dashboard.tsx",
+          "line": 30
+        },
+        {
+          "method": "GET",
+          "url": "/api/auth/me",
+          "file": "client/src/pages/login.tsx",
+          "line": 56
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/auth/profile",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 291,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/auth/change-password",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 314,
+        "authRequired": true,
+        "rateLimited": true
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/auth/account-data",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 356,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/auth/account",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 391,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/debug/session",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 426,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/products",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 436,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/products/with-status",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 447,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/products/with-status",
+          "file": "client/src/pages/app/my-tools.tsx",
+          "line": 20
+        },
+        {
+          "method": "GET",
+          "url": "/api/products/with-status",
+          "file": "client/src/pages/app/subscriptions.tsx",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/tier-subscriptions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 460,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/user/tier-subscriptions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 472,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tier-subscriptions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 484,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/tier-subscriptions/:tierId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 513,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/subscriptions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 531,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/subscriptions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 542,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/subscriptions/:productId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 566,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/products/:productId/access",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 584,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/contact",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 608,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/auth/signup",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 627,
+        "authRequired": false,
+        "rateLimited": true
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/auth/verify-email",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 691,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/auth/resend-verification",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 739,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/seo-meta/generate",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 800,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/google-ads/generate",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1016,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/guideline-profiles",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1243,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/guideline-profiles",
+          "file": "client/src/hooks/useGuidelineProfiles.ts",
+          "line": 16
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/guideline-profiles/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1255,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/guideline-profiles",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1272,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/guideline-profiles/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1287,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/guideline-profiles/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1305,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/guideline-profiles/auto-populate",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1322,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/guideline-profiles/auto-populate-pdf",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1361,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/guideline-profiles/discover-context-pages",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1427,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/guideline-profiles/find-services-by-pattern",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1474,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/guideline-profiles/extract-blog-posts",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1515,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/guideline-profiles/:id/extracted-context",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1545,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/guideline-profiles/:id/extract-context",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1576,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/packages",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1684,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/auth/complete-profile",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1699,
+        "authRequired": false,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/stats",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1746,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/admin/stats",
+          "file": "client/src/pages/admin/dashboard.tsx",
+          "line": 68
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/packages",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1757,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/admin/packages",
+          "file": "client/src/pages/admin/dashboard.tsx",
+          "line": 86
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/packages/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1767,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/admin/packages",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1780,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/admin/packages/with-tiers",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1791,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/admin/packages/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1846,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/admin/packages/with-tiers/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1866,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/admin/packages/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1934,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/products",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1947,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/admin/products",
+          "file": "client/src/pages/admin/dashboard.tsx",
+          "line": 99
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/admin/products",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1957,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/products/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1967,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/admin/products/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1980,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/admin/products/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 1993,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/users",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2006,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": [
+        {
+          "method": "GET",
+          "url": "/api/admin/users",
+          "file": "client/src/pages/admin/dashboard.tsx",
+          "line": 112
+        }
+      ]
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/admin/users/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2016,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/admin/users/:id/admin",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2029,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/error-reports",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2041,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/error-reports",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2066,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PUT",
+        "path": "/api/admin/error-reports/:id/status",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2077,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/error-logs",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2089,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/admin/error-logs/:id/status",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2118,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/admin/error-logs/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2138,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/admin/error-logs",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2148,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/admin/users/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2158,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/generated-content",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2181,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/generated-content/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2203,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/generated-content",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2224,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-feedback",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2249,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/generated-content/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2275,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-writer/sessions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2301,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/content-writer/sessions/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2379,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-writer/sessions/:id/regenerate",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2401,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/content-writer/sessions/:sessionId/concepts/:conceptId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2503,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-writer/sessions/:id/subtopics",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2546,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-writer/sessions/:id/subtopics/more",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2665,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/content-writer/sessions/:sessionId/subtopics/:subtopicId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2759,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-writer/sessions/:id/generate",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 2793,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/content-writer/drafts",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3110,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/content-writer/drafts/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3122,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/langgraph/content-writer/start",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3142,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/langgraph/content-writer/resume/:threadId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3282,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/langgraph/content-writer/status/:threadId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3367,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/langgraph/content-writer/regenerate/:threadId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3406,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/langgraph/content-writer/threads",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3552,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/user/usage-stats",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3590,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/notifications",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3635,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/notifications/:id/read",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3650,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/notifications/read-all",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3667,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/notifications/:id",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3679,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/user/notification-preferences",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3697,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/user/notification-preferences",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3712,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/ai-usage-logs",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3730,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/ai-usage-summary",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3782,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/langgraph-metrics",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 3861,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/langgraph-threads",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4009,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/admin/langgraph-threads/:threadId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4028,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/admin/langgraph-threads/:threadId/cancel",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4045,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "DELETE",
+        "path": "/api/admin/langgraph-threads/:threadId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4063,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/crawl/start",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4081,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/crawl/:jobId/status",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4115,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/crawl/:jobId/cancel",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4132,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/qc/config",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4154,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/qc/config",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4183,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/qc/reports/:threadId",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4223,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/qc/decisions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4237,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/qc/decisions",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4271,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/crawls/:id/pages",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4298,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "PATCH",
+        "path": "/api/pages/:id/review",
+        "handler": "handler",
+        "file": "server/routes.ts",
+        "line": 4363,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/social-content/ad-specs",
+        "handler": "handler",
+        "file": "server/social-content-routes.ts",
+        "line": 44,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/social-content/start",
+        "handler": "handler",
+        "file": "server/social-content-routes.ts",
+        "line": 83,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/social-content/sessions/:sessionId",
+        "handler": "handler",
+        "file": "server/social-content-routes.ts",
+        "line": 189,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/social-content/sessions/:sessionId/approve",
+        "handler": "handler",
+        "file": "server/social-content-routes.ts",
+        "line": 249,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/social-content/sessions",
+        "handler": "handler",
+        "file": "server/social-content-routes.ts",
+        "line": 373,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-writer/sessions",
+        "handler": "handler",
+        "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+        "line": 38,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/content-writer/sessions/:id",
+        "handler": "handler",
+        "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+        "line": 85,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/content-writer/sessions/:id/resume",
+        "handler": "handler",
+        "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+        "line": 132,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/google-ads/generate",
+        "handler": "handler",
+        "file": "tools/headline-tools/google-ads-copy-generator/server/routes.ts",
+        "line": 34,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/seo-meta/generate",
+        "handler": "handler",
+        "file": "tools/headline-tools/seo-meta-generator/server/routes.ts",
+        "line": 37,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/social-content/ad-specs",
+        "handler": "handler",
+        "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+        "line": 44,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/social-content/start",
+        "handler": "handler",
+        "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+        "line": 83,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/social-content/sessions/:sessionId",
+        "handler": "handler",
+        "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+        "line": 189,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/social-content/sessions/:sessionId/approve",
+        "handler": "handler",
+        "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+        "line": 249,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    },
+    {
+      "endpoint": {
+        "method": "GET",
+        "path": "/api/social-content/sessions",
+        "handler": "handler",
+        "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+        "line": 373,
+        "authRequired": true,
+        "rateLimited": false
+      },
+      "clientCalls": []
+    }
+  ],
+  "orphanedEndpoints": [
+    {
+      "method": "POST",
+      "path": "/api/cms/migrate-pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 25,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/pages/:slug*",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 38,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cms/pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 57,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cms/pages/:id",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 69,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cms/pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 83,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cms/pages/:id",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 97,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cms/pages/:id/publish",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 109,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/cms/pages/:id",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 120,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/pages",
+      "handler": "handler",
+      "file": "server/cms-routes.ts",
+      "line": 136,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "env",
+      "handler": "handler",
+      "file": "server/index.ts",
+      "line": 211,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/images/:imagePath(*)",
+      "handler": "handler",
+      "file": "server/object-storage-routes.ts",
+      "line": 9,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/upload",
+      "handler": "handler",
+      "file": "server/object-storage-routes.ts",
+      "line": 23,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/images/confirm",
+      "handler": "handler",
+      "file": "server/object-storage-routes.ts",
+      "line": 34,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 129,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/health/live",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 162,
+      "authRequired": true,
+      "rateLimited": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 167,
+      "authRequired": true,
+      "rateLimited": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 212,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/auth/account",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 230,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/auth/profile",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 291,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/change-password",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 314,
+      "authRequired": true,
+      "rateLimited": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/account-data",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 356,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/auth/account",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 391,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/session",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 426,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/products",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 436,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/tier-subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 460,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/tier-subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 472,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tier-subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 484,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tier-subscriptions/:tierId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 513,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 531,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/subscriptions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 542,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/subscriptions/:productId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 566,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/:productId/access",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 584,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/contact",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 608,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 627,
+      "authRequired": false,
+      "rateLimited": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/verify-email",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 691,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/resend-verification",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 739,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/seo-meta/generate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 800,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/google-ads/generate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1016,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/guideline-profiles/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1255,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1272,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/guideline-profiles/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1287,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/guideline-profiles/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1305,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/auto-populate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1322,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/auto-populate-pdf",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1361,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/discover-context-pages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1427,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/find-services-by-pattern",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1474,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/extract-blog-posts",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1515,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/guideline-profiles/:id/extracted-context",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1545,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/guideline-profiles/:id/extract-context",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1576,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/packages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1684,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/complete-profile",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1699,
+      "authRequired": false,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/packages/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1767,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/packages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1780,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/packages/with-tiers",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1791,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/packages/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1846,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/packages/with-tiers/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1866,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/packages/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1934,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/products",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1957,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/products/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1967,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/products/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1980,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/products/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 1993,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2016,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id/admin",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2029,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/error-reports",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2041,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/error-reports",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2066,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/error-reports/:id/status",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2077,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/error-logs",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2089,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/error-logs/:id/status",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2118,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/error-logs/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2138,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/error-logs",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2148,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/users/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2158,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/generated-content",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2181,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/generated-content/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2203,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/generated-content",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2224,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-feedback",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2249,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/generated-content/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2275,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2301,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/content-writer/sessions/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2379,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/regenerate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2401,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/content-writer/sessions/:sessionId/concepts/:conceptId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2503,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/subtopics",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2546,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/subtopics/more",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2665,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/content-writer/sessions/:sessionId/subtopics/:subtopicId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2759,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/generate",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 2793,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/content-writer/drafts",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3110,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/content-writer/drafts/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3122,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/langgraph/content-writer/start",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3142,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/langgraph/content-writer/resume/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3282,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/langgraph/content-writer/status/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3367,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/langgraph/content-writer/regenerate/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3406,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/langgraph/content-writer/threads",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3552,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/usage-stats",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3590,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3635,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/notifications/:id/read",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3650,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/notifications/read-all",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3667,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/notifications/:id",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3679,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/notification-preferences",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3697,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/user/notification-preferences",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3712,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/ai-usage-logs",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3730,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/ai-usage-summary",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3782,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/langgraph-metrics",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 3861,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/langgraph-threads",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4009,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/langgraph-threads/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4028,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/langgraph-threads/:threadId/cancel",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4045,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/langgraph-threads/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4063,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/crawl/start",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4081,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/crawl/:jobId/status",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4115,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/crawl/:jobId/cancel",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4132,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/qc/config",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4154,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/qc/config",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4183,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/qc/reports/:threadId",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4223,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/qc/decisions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4237,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/qc/decisions",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4271,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/crawls/:id/pages",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4298,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/pages/:id/review",
+      "handler": "handler",
+      "file": "server/routes.ts",
+      "line": 4363,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/ad-specs",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 44,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/start",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 83,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions/:sessionId",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 189,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/sessions/:sessionId/approve",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 249,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions",
+      "handler": "handler",
+      "file": "server/social-content-routes.ts",
+      "line": 373,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions",
+      "handler": "handler",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 38,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/content-writer/sessions/:id",
+      "handler": "handler",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 85,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/content-writer/sessions/:id/resume",
+      "handler": "handler",
+      "file": "tools/headline-tools/content-writer-v2/server/routes.ts",
+      "line": 132,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/google-ads/generate",
+      "handler": "handler",
+      "file": "tools/headline-tools/google-ads-copy-generator/server/routes.ts",
+      "line": 34,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/seo-meta/generate",
+      "handler": "handler",
+      "file": "tools/headline-tools/seo-meta-generator/server/routes.ts",
+      "line": 37,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/ad-specs",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 44,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/start",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 83,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions/:sessionId",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 189,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/social-content/sessions/:sessionId/approve",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 249,
+      "authRequired": true,
+      "rateLimited": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/social-content/sessions",
+      "handler": "handler",
+      "file": "tools/headline-tools/social-content-generator/server/social-content-routes.ts",
+      "line": 373,
+      "authRequired": true,
+      "rateLimited": false
+    }
+  ],
+  "orphanedClientCalls": [
+    {
+      "method": "GET",
+      "url": "/api/contact",
+      "file": "client/src/pages/contact.tsx",
+      "line": 36
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/resend-verification",
+      "file": "client/src/pages/email-verification-sent.tsx",
+      "line": 39
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/login",
+      "file": "client/src/pages/login.tsx",
+      "line": 35
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/signup",
+      "file": "client/src/pages/sign-up.tsx",
+      "line": 43
+    }
+  ]
+}

@@ -1,8 +1,8 @@
-import { openai } from "../../../../../../server/utils/openai-client";
+import { openai } from "../../../../../server/utils/openai-client";
 import { ContentWriterState } from "../types";
-import { loggedOpenAICall } from "../../../../../../server/utils/ai-logger";
-import { storage } from "../../../../../../server/storage";
-import { formatBrandGuidelines } from "../../../../../../server/utils/format-guidelines";
+import { loggedOpenAICall } from "../../../../../server/utils/ai-logger";
+import { storage } from "../../../../../server/storage";
+import { formatBrandGuidelines } from "../../../../../server/utils/format-guidelines";
 
 export async function checkBrandMatch(state: ContentWriterState): Promise<Partial<ContentWriterState>> {
   try {

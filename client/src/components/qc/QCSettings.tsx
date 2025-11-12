@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,34 +29,44 @@ interface QCConfig {
   conflictResolutionStrategy: string;
 }
 
-const agentLabels: Record<QCAgentType, { name: string; description: string }> = {
-  proofreader: {
-    name: "Proofreader",
-    description: "Checks grammar, spelling, and punctuation",
-  },
-  brand_guardian: {
-    name: "Brand Guardian",
-    description: "Ensures content matches brand guidelines",
-  },
-  fact_checker: {
-    name: "Fact Checker",
-    description: "Verifies factual accuracy and citations",
-  },
-  regulatory: {
-    name: "Regulatory Compliance",
-    description: "Checks regulatory requirements",
-  },
-};
+const agentLabels: Record<QCAgentType, { name: string; description: string }> =
+  {
+    proofreader: {
+      name: "Proofreader",
+      description: "Checks grammar, spelling, and punctuation",
+    },
+    brand_guardian: {
+      name: "Brand Guardian",
+      description: "Ensures content matches brand guidelines",
+    },
+    fact_checker: {
+      name: "Fact Checker",
+      description: "Verifies factual accuracy and citations",
+    },
+    regulatory: {
+      name: "Regulatory Compliance",
+      description: "Checks regulatory requirements",
+    },
+  };
 
-export function QCSettings({ guidelineProfileId, toolType, onSave }: QCSettingsProps) {
+export function QCSettings({
+  guidelineProfileId,
+  toolType,
+  onSave,
+}: QCSettingsProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<QCConfig>({
     enabled: false,
-    enabledAgents: ['proofreader', 'brand_guardian', 'fact_checker', 'regulatory'],
+    enabledAgents: [
+      "proofreader",
+      "brand_guardian",
+      "fact_checker",
+      "regulatory",
+    ],
     autoApplyThreshold: 90,
-    conflictResolutionStrategy: 'human_review',
+    conflictResolutionStrategy: "human_review",
   });
 
   useEffect(() => {
@@ -61,11 +77,16 @@ export function QCSettings({ guidelineProfileId, toolType, onSave }: QCSettingsP
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (guidelineProfileId) params.append('guidelineProfileId', guidelineProfileId);
-      if (toolType) params.append('toolType', toolType);
+      if (guidelineProfileId)
+        params.append("guidelineProfileId", guidelineProfileId);
+      if (toolType) params.append("toolType", toolType);
 
-      const response = await apiRequest(`/api/qc/config?${params.toString()}`);
-      setConfig(response);
+      const response = await apiRequest(
+        "GET",
+        `/api/qc/config?${params.toString()}`
+      );
+      const data = await response.json();
+      setConfig(data);
     } catch (error) {
       console.error("Error loading QC config:", error);
       toast({
@@ -81,14 +102,10 @@ export function QCSettings({ guidelineProfileId, toolType, onSave }: QCSettingsP
   const handleSave = async () => {
     try {
       setSaving(true);
-      await apiRequest('/api/qc/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guidelineProfileId,
-          toolType,
-          ...config,
-        }),
+      await apiRequest("POST", "/api/qc/config", {
+        guidelineProfileId,
+        toolType,
+        ...config,
       });
 
       toast({
@@ -110,10 +127,10 @@ export function QCSettings({ guidelineProfileId, toolType, onSave }: QCSettingsP
   };
 
   const toggleAgent = (agent: QCAgentType) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       enabledAgents: prev.enabledAgents.includes(agent)
-        ? prev.enabledAgents.filter(a => a !== agent)
+        ? prev.enabledAgents.filter((a) => a !== agent)
         : [...prev.enabledAgents, agent],
     }));
   };
@@ -170,7 +187,10 @@ export function QCSettings({ guidelineProfileId, toolType, onSave }: QCSettingsP
                       onCheckedChange={() => toggleAgent(agent)}
                     />
                     <div className="space-y-1 leading-none">
-                      <Label htmlFor={agent} className="font-medium cursor-pointer">
+                      <Label
+                        htmlFor={agent}
+                        className="font-medium cursor-pointer"
+                      >
                         {agentLabels[agent].name}
                       </Label>
                       <p className="text-sm text-muted-foreground">
@@ -186,14 +206,18 @@ export function QCSettings({ guidelineProfileId, toolType, onSave }: QCSettingsP
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Auto-Apply Threshold</Label>
-                <span className="text-sm font-medium">{config.autoApplyThreshold}%</span>
+                <span className="text-sm font-medium">
+                  {config.autoApplyThreshold}%
+                </span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Automatically apply changes with confidence ? this threshold
               </p>
               <Slider
                 value={[config.autoApplyThreshold]}
-                onValueChange={([value]) => setConfig({ ...config, autoApplyThreshold: value })}
+                onValueChange={([value]) =>
+                  setConfig({ ...config, autoApplyThreshold: value })
+                }
                 min={0}
                 max={100}
                 step={5}

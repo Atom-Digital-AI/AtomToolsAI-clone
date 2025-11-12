@@ -5,19 +5,19 @@ import { aiUsageLogs, type InsertAiUsageLog, AI_MODELS } from "@shared/schema";
 // Model names reference: AI_MODELS constant in @shared/schema
 const PRICING = {
   openai: {
-    "gpt-4o": { input: 2.50, output: 10.00 },
-    "gpt-4o-mini": { input: 0.150, output: 0.600 },
-    "gpt-4-turbo": { input: 10.00, output: 30.00 },
-    "gpt-4": { input: 30.00, output: 60.00 },
-    "gpt-3.5-turbo": { input: 0.50, output: 1.50 },
+    "gpt-4o": { input: 2.5, output: 10.0 },
+    "gpt-4o-mini": { input: 0.15, output: 0.6 },
+    "gpt-4-turbo": { input: 10.0, output: 30.0 },
+    "gpt-4": { input: 30.0, output: 60.0 },
+    "gpt-3.5-turbo": { input: 0.5, output: 1.5 },
   },
   anthropic: {
-    "claude-opus-4-20250514": { input: 15.00, output: 75.00 },
-    "claude-sonnet-4-20250514": { input: 3.00, output: 15.00 },
-    "claude-3-5-sonnet-20241022": { input: 3.00, output: 15.00 },
-    "claude-3-5-sonnet-20240620": { input: 3.00, output: 15.00 },
-    "claude-3-opus-20240229": { input: 15.00, output: 75.00 },
-    "claude-3-sonnet-20240229": { input: 3.00, output: 15.00 },
+    "claude-opus-4-20250514": { input: 15.0, output: 75.0 },
+    "claude-sonnet-4-20250514": { input: 3.0, output: 15.0 },
+    "claude-3-5-sonnet-20241022": { input: 3.0, output: 15.0 },
+    "claude-3-5-sonnet-20240620": { input: 3.0, output: 15.0 },
+    "claude-3-opus-20240229": { input: 15.0, output: 75.0 },
+    "claude-3-sonnet-20240229": { input: 3.0, output: 15.0 },
     "claude-3-haiku-20240307": { input: 0.25, output: 1.25 },
   },
 };
@@ -33,21 +33,28 @@ function calculateCost(
 ): number {
   // Normalize model name - OpenAI often returns versioned names like "gpt-4o-mini-2024-07-18"
   let normalizedModel = model;
-  if (provider === "openai" && !PRICING[provider][model as keyof typeof PRICING.openai]) {
+  if (
+    provider === "openai" &&
+    !PRICING[provider][model as keyof typeof PRICING.openai]
+  ) {
     // Try removing date suffix (e.g., -2024-07-18)
     normalizedModel = model.replace(/-\d{4}-\d{2}-\d{2}$/, "");
   }
-  
-  const pricing = PRICING[provider]?.[normalizedModel as keyof typeof PRICING[typeof provider]];
-  
+
+  const pricing = PRICING[provider]?.[
+    normalizedModel as keyof (typeof PRICING)[typeof provider]
+  ] as { input: number; output: number } | undefined;
+
   if (!pricing) {
-    console.warn(`No pricing data for ${provider} model: ${model} (normalized: ${normalizedModel})`);
+    console.warn(
+      `No pricing data for ${provider} model: ${model} (normalized: ${normalizedModel})`
+    );
     return 0;
   }
 
   const inputCost = (promptTokens / 1_000_000) * pricing.input;
   const outputCost = (completionTokens / 1_000_000) * pricing.output;
-  
+
   return inputCost + outputCost;
 }
 
@@ -97,9 +104,9 @@ export async function logAiUsage(params: {
     // Log to console for immediate visibility
     console.log(
       `[AI Usage] ${params.provider}/${params.model} | ${params.endpoint} | ` +
-      `${totalTokens} tokens (${params.promptTokens} in / ${params.completionTokens} out) | ` +
-      `$${estimatedCost.toFixed(6)} | ${params.durationMs}ms | ` +
-      `${params.success ? 'SUCCESS' : 'FAILED'}`
+        `${totalTokens} tokens (${params.promptTokens} in / ${params.completionTokens} out) | ` +
+        `$${estimatedCost.toFixed(6)} | ${params.durationMs}ms | ` +
+        `${params.success ? "SUCCESS" : "FAILED"}`
     );
   } catch (error) {
     console.error("Failed to log AI usage:", error);
@@ -150,7 +157,9 @@ export async function loggedOpenAICall<T>(
 /**
  * Wrapper for Anthropic API calls with automatic logging
  */
-export async function loggedAnthropicCall<T extends { usage?: any; model?: string }>(
+export async function loggedAnthropicCall<
+  T extends { usage?: any; model?: string }
+>(
   params: {
     userId?: string;
     guidelineProfileId?: string;

@@ -1,6 +1,12 @@
 import * as Sentry from "@sentry/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Link } from "wouter";
 
@@ -9,7 +15,10 @@ interface ErrorBoundaryFallbackProps {
   resetError: () => void;
 }
 
-function ErrorBoundaryFallback({ error, resetError }: ErrorBoundaryFallbackProps) {
+function ErrorBoundaryFallback({
+  error,
+  resetError,
+}: ErrorBoundaryFallbackProps) {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-md w-full border-border">
@@ -17,9 +26,12 @@ function ErrorBoundaryFallback({ error, resetError }: ErrorBoundaryFallbackProps
           <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
-          <CardTitle className="text-2xl text-text-primary">Something went wrong</CardTitle>
+          <CardTitle className="text-2xl text-text-primary">
+            Something went wrong
+          </CardTitle>
           <CardDescription className="text-text-secondary">
-            We're sorry, but something unexpected happened. Our team has been notified.
+            We're sorry, but something unexpected happened. Our team has been
+            notified.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -40,7 +52,7 @@ function ErrorBoundaryFallback({ error, resetError }: ErrorBoundaryFallbackProps
               )}
             </div>
           )}
-          
+
           <div className="flex flex-col sm:flex-row gap-2">
             <Button
               onClick={resetError}
@@ -63,7 +75,7 @@ function ErrorBoundaryFallback({ error, resetError }: ErrorBoundaryFallbackProps
               </Button>
             </Link>
           </div>
-          
+
           <p className="text-xs text-center text-text-secondary">
             If this problem persists, please{" "}
             <Link href="/contact" className="text-accent hover:underline">
@@ -76,14 +88,21 @@ function ErrorBoundaryFallback({ error, resetError }: ErrorBoundaryFallbackProps
   );
 }
 
-export default function ErrorBoundary({ children }: { children: React.ReactNode }) {
+export default function ErrorBoundary({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
-  
+
   if (SENTRY_DSN) {
     return (
       <Sentry.ErrorBoundary
         fallback={({ error, resetError }) => (
-          <ErrorBoundaryFallback error={error} resetError={resetError} />
+          <ErrorBoundaryFallback
+            error={error instanceof Error ? error : new Error(String(error))}
+            resetError={resetError}
+          />
         )}
         showDialog={false}
       >
@@ -91,7 +110,6 @@ export default function ErrorBoundary({ children }: { children: React.ReactNode 
       </Sentry.ErrorBoundary>
     );
   }
-  
+
   return <>{children}</>;
 }
-

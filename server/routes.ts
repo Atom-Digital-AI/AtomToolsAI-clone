@@ -4,7 +4,22 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertGuidelineProfileSchema, updateGuidelineProfileSchema, completeProfileSchema, generatedContent, contentFeedback, contentWriterConcepts, contentWriterSubtopics, errorLogs, type InsertGeneratedContent, PRODUCT_IDS, insertPageReviewSchema, updatePageReviewSchema, pageClassificationEnum } from "@shared/schema";
+import {
+  insertUserSchema,
+  insertGuidelineProfileSchema,
+  updateGuidelineProfileSchema,
+  completeProfileSchema,
+  generatedContent,
+  contentFeedback,
+  contentWriterConcepts,
+  contentWriterSubtopics,
+  errorLogs,
+  type InsertGeneratedContent,
+  PRODUCT_IDS,
+  insertPageReviewSchema,
+  updatePageReviewSchema,
+  pageClassificationEnum,
+} from "@shared/schema";
 import { sessionMiddleware, requireAuth, authenticateUser } from "./auth";
 import { users } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
@@ -15,15 +30,37 @@ import { sendVerificationEmail } from "./email";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 import { logToolError, getErrorTypeFromError } from "./errorLogger";
-import { formatBrandGuidelines, formatRegulatoryGuidelines, getRegulatoryGuidelineFromBrand, formatSelectedTargetAudiences } from "./utils/format-guidelines";
+import {
+  formatBrandGuidelines,
+  formatRegulatoryGuidelines,
+  getRegulatoryGuidelineFromBrand,
+  formatSelectedTargetAudiences,
+} from "./utils/format-guidelines";
 import { analyzeBrandGuidelines } from "./utils/brand-analyzer";
 import { ragService } from "./utils/rag-service";
 import { loggedOpenAICall, loggedAnthropicCall } from "./utils/ai-logger";
 import { aiUsageLogs, langgraphThreads } from "@shared/schema";
-import { getLanguageInstruction, getWebArticleStyleInstructions, getAntiFabricationInstructions } from "./utils/language-helpers";
-import { startBackgroundCrawl, getCrawlJobStatus, cancelCrawlJob } from "./crawl-handler";
-import { executeContentWriterGraph, resumeContentWriterGraph, getGraphState, updateGraphState } from "./langgraph/content-writer-graph";
-import { executeContentWriterGraph as executeContentWriterGraphNew, resumeContentWriterGraph as resumeContentWriterGraphNew, getGraphState as getGraphStateNew } from "../tools/headline-tools/content-writer-v2/server/langgraph/content-writer-graph";
+import {
+  getLanguageInstruction,
+  getWebArticleStyleInstructions,
+  getAntiFabricationInstructions,
+} from "./utils/language-helpers";
+import {
+  startBackgroundCrawl,
+  getCrawlJobStatus,
+  cancelCrawlJob,
+} from "./crawl-handler";
+import {
+  executeContentWriterGraph,
+  resumeContentWriterGraph,
+  getGraphState,
+  updateGraphState,
+} from "./langgraph/content-writer-graph";
+import {
+  executeContentWriterGraph as executeContentWriterGraphNew,
+  resumeContentWriterGraph as resumeContentWriterGraphNew,
+  getGraphState as getGraphStateNew,
+} from "../tools/headline-tools/content-writer-v2/server/langgraph/content-writer-graph";
 import { registerSocialContentRoutes } from "./social-content-routes";
 import { registerSocialContentRoutesNew } from "../tools/headline-tools/social-content-generator/server/social-content-routes";
 import { authLimiter, signupLimiter, aiLimiter } from "./rate-limit";
@@ -38,26 +75,27 @@ async function fetchUrlContent(url: string): Promise<string | null> {
   try {
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-      timeout: 30000
+      timeout: 30000,
     });
-    
+
     const $ = cheerio.load(response.data);
-    
+
     // Remove script and style elements
-    $('script, style').remove();
-    
+    $("script, style").remove();
+
     // Extract text from various content elements
     const texts: string[] = [];
-    $('p, h1, h2, h3, h4, h5, h6, div, span').each((i: number, elem: any) => {
+    $("p, h1, h2, h3, h4, h5, h6, div, span").each((i: number, elem: any) => {
       const text = $(elem).text().trim();
       if (text && text.length > 10) {
         texts.push(text);
       }
     });
-    
-    return texts.join(' ').trim();
+
+    return texts.join(" ").trim();
   } catch (error) {
     console.error(`Error fetching URL ${url}:`, error);
     return null;
@@ -67,7 +105,7 @@ async function fetchUrlContent(url: string): Promise<string | null> {
 function detectLanguage(text: string): string {
   // Simple language detection - could be enhanced with langdetect library
   // For now, default to English
-  return 'en';
+  return "en";
 }
 
 // Removed - now using getLanguageInstruction from language-helpers.ts
@@ -80,11 +118,14 @@ function getToneInstruction(tone: string): string {
 // Helper function to strip markdown code blocks from AI responses
 function stripMarkdownCodeBlocks(text: string): string {
   // Remove ```json and ``` wrappers if present
-  return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();
+  return text
+    .replace(/^```(?:json)?\s*\n?/gm, "")
+    .replace(/\n?```\s*$/gm, "")
+    .trim();
 }
 
 function getCaseInstruction(caseType: string): string {
-  if (caseType === 'title') {
+  if (caseType === "title") {
     return "Use Title Case formatting (capitalize the first letter of each major word)";
   }
   return "Use sentence case formatting (capitalize only the first letter and proper nouns)";
@@ -106,13 +147,10 @@ const langgraphStartSchema = z.object({
   language: z.string().optional(),
   internalLinks: z.array(z.string()).optional(),
   useBrandGuidelines: z.boolean().optional(),
-  selectedTargetAudiences: z.union([
-    z.literal("all"),
-    z.literal("none"),
-    z.array(z.number()),
-    z.null(),
-  ]).optional(),
-  styleMatchingMethod: z.enum(['continuous', 'end-rewrite']).optional(),
+  selectedTargetAudiences: z
+    .union([z.literal("all"), z.literal("none"), z.array(z.number()), z.null()])
+    .optional(),
+  styleMatchingMethod: z.enum(["continuous", "end-rewrite"]).optional(),
   matchStyle: z.boolean().optional(),
 });
 
@@ -133,34 +171,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const start = Date.now();
       await db.execute(sql`SELECT 1`);
-      checks.database = { status: 'ok', latency: Date.now() - start };
+      checks.database = { status: "ok", latency: Date.now() - start };
     } catch (error) {
-      checks.database = { status: 'error' };
-      return res.status(503).json({ status: 'unhealthy', checks, timestamp: new Date().toISOString() });
+      checks.database = { status: "error" };
+      return res.status(503).json({
+        status: "unhealthy",
+        checks,
+        timestamp: new Date().toISOString(),
+      });
     }
 
     // Check session store
     try {
       const start = Date.now();
       await db.execute(sql`SELECT COUNT(*) FROM sessions LIMIT 1`);
-      checks.sessionStore = { status: 'ok', latency: Date.now() - start };
+      checks.sessionStore = { status: "ok", latency: Date.now() - start };
     } catch (error) {
-      checks.sessionStore = { status: 'error' };
+      checks.sessionStore = { status: "error" };
     }
 
-    const allHealthy = Object.values(checks).every(c => c.status === 'ok');
+    const allHealthy = Object.values(checks).every((c) => c.status === "ok");
 
     res.status(allHealthy ? 200 : 503).json({
-      status: allHealthy ? 'healthy' : 'degraded',
+      status: allHealthy ? "healthy" : "degraded",
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
+      environment: process.env.NODE_ENV || "development",
       checks,
     });
   });
 
   // Lightweight liveness check (doesn't test dependencies)
   app.get("/health/live", (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
   // Login endpoint
@@ -230,10 +272,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/auth/account", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
-      
+
       // Delete user account and all associated data
       const success = await storage.deleteUser(userId);
-      
+
       if (success) {
         // Clear the session after successful deletion
         req.session.destroy((err) => {
@@ -283,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       isProfileComplete: user.isProfileComplete,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
     });
   });
 
@@ -311,46 +353,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Change password endpoint
-  app.post("/api/auth/change-password", authLimiter, requireAuth, async (req, res) => {
-    try {
-      const userId = (req as any).user.id;
-      const { currentPassword, newPassword } = req.body;
+  app.post(
+    "/api/auth/change-password",
+    authLimiter,
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = (req as any).user.id;
+        const { currentPassword, newPassword } = req.body;
 
-      if (!currentPassword || !newPassword) {
-        return res
-          .status(400)
-          .json({ message: "Current password and new password are required" });
+        if (!currentPassword || !newPassword) {
+          return res.status(400).json({
+            message: "Current password and new password are required",
+          });
+        }
+
+        if (newPassword.length < 8) {
+          return res.status(400).json({
+            message: "New password must be at least 8 characters long",
+          });
+        }
+
+        // Get current user to verify password
+        const user = await storage.getUser(userId);
+        if (!user || !user.password) {
+          return res.status(401).json({ message: "Invalid user" });
+        }
+
+        // SECURITY FIX: Use bcrypt.compare instead of direct comparison
+        const isPasswordValid = await bcrypt.compare(
+          currentPassword,
+          user.password
+        );
+        if (!isPasswordValid) {
+          return res
+            .status(401)
+            .json({ message: "Current password is incorrect" });
+        }
+
+        // Hash new password
+        const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+        // Update password
+        await storage.updateUserPassword(userId, hashedNewPassword);
+        res.json({ message: "Password changed successfully" });
+      } catch (error) {
+        console.error("Change password error:", error);
+        res.status(500).json({ message: "Failed to change password" });
       }
-
-      if (newPassword.length < 8) {
-        return res
-          .status(400)
-          .json({ message: "New password must be at least 8 characters long" });
-      }
-
-      // Get current user to verify password
-      const user = await storage.getUser(userId);
-      if (!user || !user.password) {
-        return res.status(401).json({ message: "Invalid user" });
-      }
-
-      // SECURITY FIX: Use bcrypt.compare instead of direct comparison
-      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: "Current password is incorrect" });
-      }
-
-      // Hash new password
-      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
-
-      // Update password
-      await storage.updateUserPassword(userId, hashedNewPassword);
-      res.json({ message: "Password changed successfully" });
-    } catch (error) {
-      console.error("Change password error:", error);
-      res.status(500).json({ message: "Failed to change password" });
     }
-  });
+  );
 
   // Download account data endpoint
   app.get("/api/auth/account-data", requireAuth, async (req, res) => {
@@ -472,7 +524,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/tier-subscriptions", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user.id;
-      const subscriptions = await storage.getUserTierSubscriptionsWithDetails(userId);
+      const subscriptions = await storage.getUserTierSubscriptionsWithDetails(
+        userId
+      );
       res.json(subscriptions);
     } catch (error) {
       console.error("Error fetching tier subscriptions:", error);
@@ -497,10 +551,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Subscribe user
-      const subscription = await storage.subscribeTierUser({ 
-        userId, 
-        tierId, 
-        paymentReference 
+      const subscription = await storage.subscribeTierUser({
+        userId,
+        tierId,
+        paymentReference,
       });
       res.json(subscription);
     } catch (error) {
@@ -510,22 +564,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Unsubscribe from tier
-  app.delete("/api/tier-subscriptions/:tierId", requireAuth, async (req, res) => {
-    try {
-      const userId = (req as any).user.id;
-      const { tierId } = req.params;
+  app.delete(
+    "/api/tier-subscriptions/:tierId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = (req as any).user.id;
+        const { tierId } = req.params;
 
-      const success = await storage.unsubscribeTierUser(userId, tierId);
-      if (success) {
-        res.json({ message: "Unsubscribed successfully" });
-      } else {
-        res.status(404).json({ message: "Tier subscription not found" });
+        const success = await storage.unsubscribeTierUser(userId, tierId);
+        if (success) {
+          res.json({ message: "Unsubscribed successfully" });
+        } else {
+          res.status(404).json({ message: "Tier subscription not found" });
+        }
+      } catch (error) {
+        console.error("Error removing tier subscription:", error);
+        res.status(500).json({ message: "Failed to remove tier subscription" });
       }
-    } catch (error) {
-      console.error("Error removing tier subscription:", error);
-      res.status(500).json({ message: "Failed to remove tier subscription" });
     }
-  });
+  );
 
   // Legacy subscription endpoint (backward compatibility)
   app.get("/api/subscriptions", requireAuth, async (req, res) => {
@@ -588,15 +646,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const accessInfo = await storage.getUserProductAccess(userId, productId);
       const usageInfo = await storage.checkTierUsage(userId, productId);
-      
-      res.json({ 
+
+      res.json({
         hasAccess: accessInfo.hasAccess,
         canUse: usageInfo.canUse,
         currentUsage: usageInfo.currentUsage,
         limit: usageInfo.limit,
         tierSubscription: accessInfo.tierSubscription,
         tierLimit: accessInfo.tierLimit,
-        subfeatures: accessInfo.tierLimit?.subfeatures || {}
+        subfeatures: accessInfo.tierLimit?.subfeatures || {},
       });
     } catch (error) {
       console.error("Error checking product access:", error);
@@ -639,10 +697,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash the password before storing
       const hashedPassword = await bcrypt.hash(userData.password!, 12);
-      
+
       // Generate verification token
       const verificationToken = nanoid(32);
-      
+
       // Create new user with hashed password and verification token
       const user = await storage.createUser({
         ...userData,
@@ -655,26 +713,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const freeTier = await storage.getFreeTier();
         if (freeTier) {
-          await storage.subscribeTierUser({ userId: user.id, tierId: freeTier.id, isActive: true });
+          await storage.subscribeTierUser({
+            userId: user.id,
+            tierId: freeTier.id,
+            isActive: true,
+          });
           console.log(`Assigned Free tier to new user ${user.id}`);
         } else {
-          console.warn('Free tier not found - new user will have no tier subscription');
+          console.warn(
+            "Free tier not found - new user will have no tier subscription"
+          );
         }
       } catch (tierError) {
-        console.error('Failed to assign Free tier to new user:', tierError);
+        console.error("Failed to assign Free tier to new user:", tierError);
         // Continue anyway - user is created, they just won't have a tier subscription yet
       }
 
       // Send verification email
-      const emailResult = await sendVerificationEmail(user.email, verificationToken);
-      
+      const emailResult = await sendVerificationEmail(
+        user.email,
+        verificationToken
+      );
+
       if (!emailResult.success) {
         console.error("Failed to send verification email:", emailResult.error);
       }
 
       res.json({
         success: true,
-        message: "Account created successfully. Please check your email to verify your account.",
+        message:
+          "Account created successfully. Please check your email to verify your account.",
         requiresVerification: true,
         user: { id: user.id, email: user.email },
       });
@@ -692,7 +760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.query;
 
-      if (!token || typeof token !== 'string') {
+      if (!token || typeof token !== "string") {
         return res.status(400).json({
           success: false,
           message: "Invalid verification token",
@@ -764,11 +832,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate new verification token
       const verificationToken = nanoid(32);
-      await db.update(users).set({ emailVerificationToken: verificationToken }).where(eq(users.id, user.id));
+      await db
+        .update(users)
+        .set({ emailVerificationToken: verificationToken })
+        .where(eq(users.id, user.id));
 
       // Send verification email
-      const emailResult = await sendVerificationEmail(user.email, verificationToken);
-      
+      const emailResult = await sendVerificationEmail(
+        user.email,
+        verificationToken
+      );
+
       if (!emailResult.success) {
         console.error("Failed to send verification email:", emailResult.error);
         return res.status(500).json({
@@ -801,76 +875,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req as any).user.id;
       const productId = PRODUCT_IDS.SEO_META_GENERATOR;
-      
+
       const {
         url,
         targetKeywords,
         brandName,
         sellingPoints = "",
         numVariations = 3,
-        contentType = 'both',
+        contentType = "both",
         caseType = "sentence",
         brandGuidelines = "",
         regulatoryGuidelines = "",
-        matchStyle = false
+        matchStyle = false,
       } = req.body;
 
       // Check user's product access and tier limits
       const accessInfo = await storage.getUserProductAccess(userId, productId);
       if (!accessInfo.hasAccess) {
         return res.status(403).json({
-          message: "Access denied. This feature requires an active subscription."
+          message:
+            "Access denied. This feature requires an active subscription.",
         });
       }
 
       // Check subfeature permissions
-      const subfeatures = accessInfo.tierLimit?.subfeatures as any || {};
-      
+      const subfeatures = (accessInfo.tierLimit?.subfeatures as any) || {};
+
       // Validate brand guidelines usage
       if (brandGuidelines && !subfeatures.brand_guidelines) {
         return res.status(403).json({
-          message: "Brand guidelines feature is not available in your current plan."
+          message:
+            "Brand guidelines feature is not available in your current plan.",
         });
       }
-      
-      // Validate variations usage  
+
+      // Validate variations usage
       if (numVariations > 1 && !subfeatures.variations) {
         return res.status(403).json({
-          message: "Multiple variations feature is not available in your current plan."
+          message:
+            "Multiple variations feature is not available in your current plan.",
         });
       }
 
       if (!url && !targetKeywords) {
         return res.status(400).json({
-          message: "Either URL or target keywords are required"
+          message: "Either URL or target keywords are required",
         });
       }
 
       // Detect language from available text
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
-      const languageInstruction = getLanguageInstruction(detectedLang === 'en' ? 'en-US' : `${detectedLang}-${detectedLang.toUpperCase()}`);
+      const languageInstruction = getLanguageInstruction(
+        detectedLang === "en"
+          ? "en-US"
+          : `${detectedLang}-${detectedLang.toUpperCase()}`
+      );
       const caseInstruction = getCaseInstruction(caseType);
 
       // Fetch attached regulatory guideline if brand guideline has one
-      const attachedRegulatory = await getRegulatoryGuidelineFromBrand(brandGuidelines, userId, storage);
-      const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
+      const attachedRegulatory = await getRegulatoryGuidelineFromBrand(
+        brandGuidelines,
+        userId,
+        storage
+      );
+      const finalRegulatoryGuidelines =
+        attachedRegulatory || regulatoryGuidelines;
 
       // RAG: Retrieve relevant brand context if using a profile
       // SECURITY: Verify profile ownership before RAG retrieval
-      let ragContext = '';
+      let ragContext = "";
       try {
         // Check if brandGuidelines is a profile ID (UUID format)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (brandGuidelines && uuidRegex.test(brandGuidelines.trim())) {
           // SECURITY: Verify the profile belongs to the user
-          const profile = await storage.getGuidelineProfile(brandGuidelines.trim(), userId);
+          const profile = await storage.getGuidelineProfile(
+            brandGuidelines.trim(),
+            userId
+          );
           if (!profile) {
             return res.status(403).json({
-              message: "Access denied. This brand guideline profile does not belong to you."
+              message:
+                "Access denied. This brand guideline profile does not belong to you.",
             });
           }
-          
+
           const { ragService } = await import("./utils/rag-service");
           const query = `SEO meta content for: ${targetKeywords} ${brandName} ${sellingPoints}`;
           ragContext = await ragService.getBrandContextForPrompt(
@@ -880,7 +971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {
               limit: 5,
               minSimilarity: 0.7,
-              matchStyle
+              matchStyle,
             }
           );
         }
@@ -891,18 +982,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Build prompt that instructs OpenAI to visit the URL directly
       const prompt = `
-        Generate ${contentType === 'titles' ? 'only SEO-optimized page titles' : contentType === 'descriptions' ? 'only meta descriptions' : 'both SEO-optimized page titles and meta descriptions'} based on the following:
+        Generate ${
+          contentType === "titles"
+            ? "only SEO-optimized page titles"
+            : contentType === "descriptions"
+            ? "only meta descriptions"
+            : "both SEO-optimized page titles and meta descriptions"
+        } based on the following:
 
-        ${url ? `WEBSITE URL: ${url}
-        Please visit this URL, analyze the website content, and use that context to inform your SEO content creation.` : ''}
+        ${
+          url
+            ? `WEBSITE URL: ${url}
+        Please visit this URL, analyze the website content, and use that context to inform your SEO content creation.`
+            : ""
+        }
 
         TARGET KEYWORDS: ${targetKeywords}
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints}
         LANGUAGE: ${languageInstruction}
         ${ragContext}
-        ${brandGuidelines ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${finalRegulatoryGuidelines ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
+        ${
+          brandGuidelines
+            ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(
+                brandGuidelines
+              )}`
+            : ""
+        }
+        ${
+          finalRegulatoryGuidelines
+            ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(
+                finalRegulatoryGuidelines
+              )}`
+            : ""
+        }
 
         Generate ${numVariations} variations.
 
@@ -935,42 +1048,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `.trim();
 
       // Using gpt-4o-mini as requested by the user
-      const response = await loggedOpenAICall({
-        userId: (req as any).user.id,
-        guidelineProfileId: brandGuidelines && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(brandGuidelines.trim()) ? brandGuidelines.trim() : undefined,
-        endpoint: 'seo-meta-generate',
-        metadata: { contentType, numVariations }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {"role": "system", "content": "You are an expert SEO copywriter."},
-            {"role": "user", "content": prompt}
-          ],
-          max_tokens: 1000,
-          temperature: 0.8
-        });
-      });
+      const response = await loggedOpenAICall(
+        {
+          userId: (req as any).user.id,
+          guidelineProfileId:
+            brandGuidelines &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              brandGuidelines.trim()
+            )
+              ? brandGuidelines.trim()
+              : undefined,
+          endpoint: "seo-meta-generate",
+          metadata: { contentType, numVariations },
+        },
+        async () => {
+          return await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: "You are an expert SEO copywriter." },
+              { role: "user", content: prompt },
+            ],
+            max_tokens: 1000,
+            temperature: 0.8,
+          });
+        }
+      );
 
       const content = response.choices[0].message.content?.trim() || "";
-      
+
       // Parse JSON response (exact Python logic)
       let result = null;
-      if (content.includes('{') && content.includes('}')) {
-        const start = content.indexOf('{');
-        const end = content.lastIndexOf('}') + 1;
+      if (content.includes("{") && content.includes("}")) {
+        const start = content.indexOf("{");
+        const end = content.lastIndexOf("}") + 1;
         const jsonStr = content.substring(start, end);
         try {
           const parsed = JSON.parse(jsonStr);
-          
-          if (contentType === 'titles' && parsed.titles) {
+
+          if (contentType === "titles" && parsed.titles) {
             result = { titles: parsed.titles, descriptions: [] };
-          } else if (contentType === 'descriptions' && parsed.descriptions) {
+          } else if (contentType === "descriptions" && parsed.descriptions) {
             result = { titles: [], descriptions: parsed.descriptions };
-          } else if (contentType === 'both') {
+          } else if (contentType === "both") {
             result = {
               titles: parsed.titles || [],
-              descriptions: parsed.descriptions || []
+              descriptions: parsed.descriptions || [],
             };
           }
         } catch (e) {
@@ -979,35 +1101,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!result) {
-        return res.status(500).json({ message: "Failed to generate SEO content" });
+        return res
+          .status(500)
+          .json({ message: "Failed to generate SEO content" });
       }
 
       // Increment usage for SEO Meta tool
       const seoMetaProductId = PRODUCT_IDS.SEO_META_GENERATOR;
-      const usageAccessInfo = await storage.getUserProductAccess((req as any).user.id, seoMetaProductId);
+      const usageAccessInfo = await storage.getUserProductAccess(
+        (req as any).user.id,
+        seoMetaProductId
+      );
       if (usageAccessInfo.tierLimit) {
-        await storage.incrementUsage((req as any).user.id, seoMetaProductId, usageAccessInfo.tierLimit.periodicity);
+        await storage.incrementUsage(
+          (req as any).user.id,
+          seoMetaProductId,
+          usageAccessInfo.tierLimit.periodicity
+        );
       }
 
       res.json(result);
     } catch (error) {
       console.error("SEO generation error:", error);
-      
+
       // Log error for admin portal
       await logToolError({
         userId: req.user?.id,
         userEmail: req.user?.email,
-        toolName: 'SEO Meta Generator',
+        toolName: "SEO Meta Generator",
         errorType: getErrorTypeFromError(error),
-        errorMessage: (error as any)?.message || 'Unknown error occurred',
+        errorMessage: (error as any)?.message || "Unknown error occurred",
         errorStack: (error as any)?.stack,
         requestData: req.body,
         httpStatus: (error as any)?.status || 500,
-        endpoint: '/api/tools/seo-meta/generate',
+        endpoint: "/api/tools/seo-meta/generate",
         req,
-        responseHeaders: (error as any)?.headers ? Object.fromEntries((error as any).headers.entries()) : null
+        responseHeaders: (error as any)?.headers
+          ? Object.fromEntries((error as any).headers.entries())
+          : null,
       });
-      
+
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1017,7 +1150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req as any).user.id;
       const productId = PRODUCT_IDS.GOOGLE_ADS_GENERATOR;
-      
+
       const {
         url,
         targetKeywords,
@@ -1027,65 +1160,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brandGuidelines = "",
         regulatoryGuidelines = "",
         numVariations = 1,
-        matchStyle = false
+        matchStyle = false,
       } = req.body;
 
       // Check user's product access and tier limits
       const accessInfo = await storage.getUserProductAccess(userId, productId);
       if (!accessInfo.hasAccess) {
         return res.status(403).json({
-          message: "Access denied. This feature requires an active subscription."
+          message:
+            "Access denied. This feature requires an active subscription.",
         });
       }
 
       // Check subfeature permissions
-      const subfeatures = accessInfo.tierLimit?.subfeatures as any || {};
-      
+      const subfeatures = (accessInfo.tierLimit?.subfeatures as any) || {};
+
       // Validate brand guidelines usage
       if (brandGuidelines && !subfeatures.brand_guidelines) {
         return res.status(403).json({
-          message: "Brand guidelines feature is not available in your current plan."
+          message:
+            "Brand guidelines feature is not available in your current plan.",
         });
       }
-      
+
       // Validate variations usage
       if (numVariations > 1 && !subfeatures.variations) {
         return res.status(403).json({
-          message: "Multiple variations feature is not available in your current plan."
+          message:
+            "Multiple variations feature is not available in your current plan.",
         });
       }
 
       if (!url && !targetKeywords) {
         return res.status(400).json({
-          message: "Either URL or target keywords are required"
+          message: "Either URL or target keywords are required",
         });
       }
 
       // Detect language from available text
       const contentForDetection = `${targetKeywords} ${brandName} ${sellingPoints}`;
       const detectedLang = detectLanguage(contentForDetection);
-      const languageInstruction = getLanguageInstruction(detectedLang === 'en' ? 'en-US' : `${detectedLang}-${detectedLang.toUpperCase()}`);
+      const languageInstruction = getLanguageInstruction(
+        detectedLang === "en"
+          ? "en-US"
+          : `${detectedLang}-${detectedLang.toUpperCase()}`
+      );
       const caseInstruction = getCaseInstruction(caseType);
 
       // Fetch attached regulatory guideline if brand guideline has one
-      const attachedRegulatory = await getRegulatoryGuidelineFromBrand(brandGuidelines, userId, storage);
-      const finalRegulatoryGuidelines = attachedRegulatory || regulatoryGuidelines;
+      const attachedRegulatory = await getRegulatoryGuidelineFromBrand(
+        brandGuidelines,
+        userId,
+        storage
+      );
+      const finalRegulatoryGuidelines =
+        attachedRegulatory || regulatoryGuidelines;
 
       // RAG: Retrieve relevant brand context if using a profile
       // SECURITY: Verify profile ownership before RAG retrieval
-      let ragContext = '';
+      let ragContext = "";
       try {
         // Check if brandGuidelines is a profile ID (UUID format)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (brandGuidelines && uuidRegex.test(brandGuidelines.trim())) {
           // SECURITY: Verify the profile belongs to the user
-          const profile = await storage.getGuidelineProfile(brandGuidelines.trim(), userId);
+          const profile = await storage.getGuidelineProfile(
+            brandGuidelines.trim(),
+            userId
+          );
           if (!profile) {
             return res.status(403).json({
-              message: "Access denied. This brand guideline profile does not belong to you."
+              message:
+                "Access denied. This brand guideline profile does not belong to you.",
             });
           }
-          
+
           const { ragService } = await import("./utils/rag-service");
           const query = `Google Ads copy for: ${targetKeywords} ${brandName} ${sellingPoints}`;
           ragContext = await ragService.getBrandContextForPrompt(
@@ -1095,7 +1245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {
               limit: 5,
               minSimilarity: 0.7,
-              matchStyle
+              matchStyle,
             }
           );
         }
@@ -1108,16 +1258,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prompt = `
         Based on the following requirements, generate compelling Google Ads copy:
 
-        ${url ? `WEBSITE URL: ${url}
-        Please visit this URL, analyze the website content, and use that context to inform your ad creation.` : ''}
+        ${
+          url
+            ? `WEBSITE URL: ${url}
+        Please visit this URL, analyze the website content, and use that context to inform your ad creation.`
+            : ""
+        }
 
         TARGET KEYWORDS: ${targetKeywords}
         BRAND NAME: ${brandName}
         SELLING POINTS: ${sellingPoints || "None"}
         ${languageInstruction}
         ${ragContext}
-        ${brandGuidelines ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(brandGuidelines)}` : ''}
-        ${finalRegulatoryGuidelines ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(finalRegulatoryGuidelines)}` : ''}
+        ${
+          brandGuidelines
+            ? `?? CRITICAL BRAND GUIDELINES - MUST BE FOLLOWED:\n${formatBrandGuidelines(
+                brandGuidelines
+              )}`
+            : ""
+        }
+        ${
+          finalRegulatoryGuidelines
+            ? `?? CRITICAL REGULATORY COMPLIANCE - MUST BE FOLLOWED:\n${formatRegulatoryGuidelines(
+                finalRegulatoryGuidelines
+              )}`
+            : ""
+        }
 
         Generate Google Ads copy with EXACTLY this format:
         - 3 headlines, each maximum 30 characters (aim for at least 21 characters - 70% of limit)
@@ -1159,48 +1325,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `.trim();
 
       // Using gpt-4o-mini as requested by the user
-      const response = await loggedOpenAICall({
-        userId: (req as any).user.id,
-        guidelineProfileId: brandGuidelines && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(brandGuidelines.trim()) ? brandGuidelines.trim() : undefined,
-        endpoint: 'google-ads-generate',
-        metadata: { numVariations }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {"role": "system", "content": "You are an expert copywriter specializing in Google Ads."},
-            {"role": "user", "content": prompt}
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
-        });
-      });
+      const response = await loggedOpenAICall(
+        {
+          userId: (req as any).user.id,
+          guidelineProfileId:
+            brandGuidelines &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              brandGuidelines.trim()
+            )
+              ? brandGuidelines.trim()
+              : undefined,
+          endpoint: "google-ads-generate",
+          metadata: { numVariations },
+        },
+        async () => {
+          return await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are an expert copywriter specializing in Google Ads.",
+              },
+              { role: "user", content: prompt },
+            ],
+            max_tokens: 1000,
+            temperature: 0.7,
+          });
+        }
+      );
 
       const content = response.choices[0].message.content?.trim() || "";
-      
+
       // Parse JSON response to extract headlines and descriptions arrays
       let result = null;
-      if (content.includes('{') && content.includes('}')) {
-        const start = content.indexOf('{');
-        const end = content.lastIndexOf('}') + 1;
+      if (content.includes("{") && content.includes("}")) {
+        const start = content.indexOf("{");
+        const end = content.lastIndexOf("}") + 1;
         const jsonStr = content.substring(start, end);
         try {
           const parsed = JSON.parse(jsonStr);
-          
+
           // Ensure we have headlines and descriptions arrays
-          if (parsed.headlines && Array.isArray(parsed.headlines) && 
-              parsed.descriptions && Array.isArray(parsed.descriptions)) {
+          if (
+            parsed.headlines &&
+            Array.isArray(parsed.headlines) &&
+            parsed.descriptions &&
+            Array.isArray(parsed.descriptions)
+          ) {
             result = {
               headlines: parsed.headlines.slice(0, 3), // Ensure max 3 headlines
               descriptions: parsed.descriptions.slice(0, 2), // Ensure max 2 descriptions
             };
           } else {
-            console.error("Invalid response format - missing headlines or descriptions arrays");
-            return res.status(500).json({ message: "Invalid response format from AI" });
+            console.error(
+              "Invalid response format - missing headlines or descriptions arrays"
+            );
+            return res
+              .status(500)
+              .json({ message: "Invalid response format from AI" });
           }
         } catch (e) {
           console.error("Failed to parse ad copy response:", e);
-          return res.status(500).json({ message: "Failed to parse AI response" });
+          return res
+            .status(500)
+            .json({ message: "Failed to parse AI response" });
         }
       } else {
         console.error("No valid JSON found in response");
@@ -1209,41 +1398,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Increment usage for Google Ads tool
       const googleAdsProductId = PRODUCT_IDS.GOOGLE_ADS_GENERATOR;
-      const usageAccessInfo = await storage.getUserProductAccess((req as any).user.id, googleAdsProductId);
+      const usageAccessInfo = await storage.getUserProductAccess(
+        (req as any).user.id,
+        googleAdsProductId
+      );
       if (usageAccessInfo.tierLimit) {
-        await storage.incrementUsage((req as any).user.id, googleAdsProductId, usageAccessInfo.tierLimit.periodicity);
+        await storage.incrementUsage(
+          (req as any).user.id,
+          googleAdsProductId,
+          usageAccessInfo.tierLimit.periodicity
+        );
       }
 
       res.json(result);
     } catch (error) {
       console.error("Ad copy generation error:", error);
-      
+
       // Log error for admin portal
       await logToolError({
         userId: req.user?.id,
         userEmail: req.user?.email,
-        toolName: 'Google Ads Copy Generator',
+        toolName: "Google Ads Copy Generator",
         errorType: getErrorTypeFromError(error),
-        errorMessage: (error as any)?.message || 'Unknown error occurred',
+        errorMessage: (error as any)?.message || "Unknown error occurred",
         errorStack: (error as any)?.stack,
         requestData: req.body,
         httpStatus: (error as any)?.status || 500,
-        endpoint: '/api/tools/google-ads/generate',
+        endpoint: "/api/tools/google-ads/generate",
         req,
-        responseHeaders: (error as any)?.headers ? Object.fromEntries((error as any).headers.entries()) : null
+        responseHeaders: (error as any)?.headers
+          ? Object.fromEntries((error as any).headers.entries())
+          : null,
       });
-      
+
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
   // Guideline Profile Management Endpoints
-  
+
   // Get user's guideline profiles
   app.get("/api/guideline-profiles", requireAuth, async (req: any, res) => {
     try {
-      const type = req.query.type as 'brand' | 'regulatory' | undefined;
-      const profiles = await storage.getUserGuidelineProfiles(req.user.id, type);
+      const type = req.query.type as "brand" | "regulatory" | undefined;
+      const profiles = await storage.getUserGuidelineProfiles(
+        req.user.id,
+        type
+      );
       res.json(profiles);
     } catch (error) {
       console.error("Error fetching guideline profiles:", error);
@@ -1256,11 +1457,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const profile = await storage.getGuidelineProfile(id, req.user.id);
-      
+
       if (!profile) {
         return res.status(404).json({ message: "Guideline profile not found" });
       }
-      
+
       res.json(profile);
     } catch (error) {
       console.error("Error fetching guideline profile:", error);
@@ -1288,12 +1489,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const profileData = updateGuidelineProfileSchema.parse(req.body);
-      const profile = await storage.updateGuidelineProfile(id, req.user.id, profileData);
-      
+      const profile = await storage.updateGuidelineProfile(
+        id,
+        req.user.id,
+        profileData
+      );
+
       if (!profile) {
         return res.status(404).json({ message: "Guideline profile not found" });
       }
-      
+
       res.json(profile);
     } catch (error) {
       console.error("Error updating guideline profile:", error);
@@ -1302,392 +1507,480 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete guideline profile
-  app.delete("/api/guideline-profiles/:id", requireAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const deleted = await storage.deleteGuidelineProfile(id, req.user.id);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "Guideline profile not found" });
+  app.delete(
+    "/api/guideline-profiles/:id",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const { id } = req.params;
+        const deleted = await storage.deleteGuidelineProfile(id, req.user.id);
+
+        if (!deleted) {
+          return res
+            .status(404)
+            .json({ message: "Guideline profile not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting guideline profile:", error);
+        res.status(500).json({ message: "Failed to delete guideline profile" });
       }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting guideline profile:", error);
-      res.status(500).json({ message: "Failed to delete guideline profile" });
     }
-  });
+  );
 
   // Auto-populate brand guidelines from website
-  app.post("/api/guideline-profiles/auto-populate", requireAuth, async (req: any, res) => {
-    try {
-      const { domainUrl } = req.body;
-      const userId = req.user.id;
-      
-      if (!domainUrl || typeof domainUrl !== 'string') {
-        return res.status(400).json({ 
-          message: "Domain URL is required. Please provide a valid website URL (e.g., https://example.com)" 
-        });
-      }
+  app.post(
+    "/api/guideline-profiles/auto-populate",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const { domainUrl } = req.body;
+        const userId = req.user.id;
 
-      // Check if API key is configured
-      if (!process.env.ANTHROPIC_API_KEY) {
-        return res.status(503).json({ 
-          message: "Auto-populate feature is not configured. Please add ANTHROPIC_API_KEY to enable this feature." 
-        });
-      }
+        if (!domainUrl || typeof domainUrl !== "string") {
+          return res.status(400).json({
+            message:
+              "Domain URL is required. Please provide a valid website URL (e.g., https://example.com)",
+          });
+        }
 
-      // analyzeBrandGuidelines will validate and normalize the URL internally
-      const guidelines = await analyzeBrandGuidelines(domainUrl, userId);
-      console.log("Auto-populate guidelines result:", JSON.stringify(guidelines, null, 2));
-      res.json(guidelines);
-    } catch (error) {
-      console.error("Error auto-populating brand guidelines:", error);
-      const errorMessage = (error as any)?.message || "Failed to analyze website";
-      
-      // Return appropriate status code based on error type
-      const statusCode = errorMessage.includes('Invalid URL') || 
-                        errorMessage.includes('Cannot crawl') ||
-                        errorMessage.includes('Domain not found') ||
-                        errorMessage.includes('Only HTTPS')
-                        ? 400 : 500;
-      
-      res.status(statusCode).json({ message: errorMessage });
+        // Check if API key is configured
+        if (!process.env.ANTHROPIC_API_KEY) {
+          return res.status(503).json({
+            message:
+              "Auto-populate feature is not configured. Please add ANTHROPIC_API_KEY to enable this feature.",
+          });
+        }
+
+        // analyzeBrandGuidelines will validate and normalize the URL internally
+        const guidelines = await analyzeBrandGuidelines(domainUrl, userId);
+        console.log(
+          "Auto-populate guidelines result:",
+          JSON.stringify(guidelines, null, 2)
+        );
+        res.json(guidelines);
+      } catch (error) {
+        console.error("Error auto-populating brand guidelines:", error);
+        const errorMessage =
+          (error as any)?.message || "Failed to analyze website";
+
+        // Return appropriate status code based on error type
+        const statusCode =
+          errorMessage.includes("Invalid URL") ||
+          errorMessage.includes("Cannot crawl") ||
+          errorMessage.includes("Domain not found") ||
+          errorMessage.includes("Only HTTPS")
+            ? 400
+            : 500;
+
+        res.status(statusCode).json({ message: errorMessage });
+      }
     }
-  });
+  );
 
   // Auto-populate brand guidelines from PDF upload
   // Note: Body parser limit (15mb) is set in server/index.ts to handle base64-encoded PDFs
-  app.post("/api/guideline-profiles/auto-populate-pdf", 
-    requireAuth, 
+  app.post(
+    "/api/guideline-profiles/auto-populate-pdf",
+    requireAuth,
     async (req: any, res) => {
-    try {
-      const { pdfBase64 } = req.body;
-      const userId = req.user.id;
-      
-      if (!pdfBase64 || typeof pdfBase64 !== 'string') {
-        return res.status(400).json({ 
-          message: "PDF data is required. Please upload a valid PDF file." 
-        });
-      }
-
-      // Check if API key is configured
-      if (!process.env.ANTHROPIC_API_KEY) {
-        return res.status(503).json({ 
-          message: "PDF upload feature is not configured. Please add ANTHROPIC_API_KEY to enable this feature." 
-        });
-      }
-
-      // Server-side validation: Decode base64 and verify PDF signature
-      let pdfBuffer: Buffer;
       try {
-        pdfBuffer = Buffer.from(pdfBase64, 'base64');
+        const { pdfBase64 } = req.body;
+        const userId = req.user.id;
+
+        if (!pdfBase64 || typeof pdfBase64 !== "string") {
+          return res.status(400).json({
+            message: "PDF data is required. Please upload a valid PDF file.",
+          });
+        }
+
+        // Check if API key is configured
+        if (!process.env.ANTHROPIC_API_KEY) {
+          return res.status(503).json({
+            message:
+              "PDF upload feature is not configured. Please add ANTHROPIC_API_KEY to enable this feature.",
+          });
+        }
+
+        // Server-side validation: Decode base64 and verify PDF signature
+        let pdfBuffer: Buffer;
+        try {
+          pdfBuffer = Buffer.from(pdfBase64, "base64");
+        } catch (error) {
+          return res.status(400).json({
+            message: "Invalid PDF data. The file appears to be corrupted.",
+          });
+        }
+
+        // Validate file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (pdfBuffer.length > maxSize) {
+          return res.status(413).json({
+            message: `PDF file is too large (${(
+              pdfBuffer.length /
+              1024 /
+              1024
+            ).toFixed(1)}MB). Maximum size is 10MB.`,
+          });
+        }
+
+        // Validate PDF signature (PDFs start with "%PDF-")
+        const pdfSignature = pdfBuffer.slice(0, 5).toString("ascii");
+        if (pdfSignature !== "%PDF-") {
+          return res.status(400).json({
+            message: "Invalid file type. Only PDF files are accepted.",
+          });
+        }
+
+        // Import the PDF analyzer
+        const { analyzePdfForBrandGuidelines } = await import(
+          "./utils/pdf-brand-analyzer"
+        );
+
+        const guidelines = await analyzePdfForBrandGuidelines(
+          pdfBase64,
+          userId
+        );
+        res.json(guidelines);
       } catch (error) {
-        return res.status(400).json({ 
-          message: "Invalid PDF data. The file appears to be corrupted." 
-        });
-      }
+        console.error("Error analyzing PDF brand guidelines:", error);
+        const errorMessage = (error as any)?.message || "Failed to analyze PDF";
 
-      // Validate file size (10MB limit)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (pdfBuffer.length > maxSize) {
-        return res.status(413).json({ 
-          message: `PDF file is too large (${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB). Maximum size is 10MB.` 
-        });
-      }
+        // Return appropriate status code based on error type
+        const statusCode =
+          errorMessage.includes("Invalid") ||
+          errorMessage.includes("corrupted") ||
+          errorMessage.includes("too large")
+            ? 400
+            : 500;
 
-      // Validate PDF signature (PDFs start with "%PDF-")
-      const pdfSignature = pdfBuffer.slice(0, 5).toString('ascii');
-      if (pdfSignature !== '%PDF-') {
-        return res.status(400).json({ 
-          message: "Invalid file type. Only PDF files are accepted." 
-        });
+        res.status(statusCode).json({ message: errorMessage });
       }
-
-      // Import the PDF analyzer
-      const { analyzePdfForBrandGuidelines } = await import("./utils/pdf-brand-analyzer");
-      
-      const guidelines = await analyzePdfForBrandGuidelines(pdfBase64, userId);
-      res.json(guidelines);
-    } catch (error) {
-      console.error("Error analyzing PDF brand guidelines:", error);
-      const errorMessage = (error as any)?.message || "Failed to analyze PDF";
-      
-      // Return appropriate status code based on error type
-      const statusCode = errorMessage.includes('Invalid') || 
-                        errorMessage.includes('corrupted') ||
-                        errorMessage.includes('too large')
-                        ? 400 : 500;
-      
-      res.status(statusCode).json({ message: errorMessage });
     }
-  });
+  );
 
   // Discover context pages from homepage URL with intelligent crawling
-  app.post("/api/guideline-profiles/discover-context-pages", requireAuth, async (req: any, res) => {
-    try {
-      const { homepageUrl } = req.body;
-      const userId = req.user.id;
-      
-      if (!homepageUrl || typeof homepageUrl !== 'string') {
-        return res.status(400).json({ 
-          message: "Homepage URL is required" 
+  app.post(
+    "/api/guideline-profiles/discover-context-pages",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const { homepageUrl } = req.body;
+        const userId = req.user.id;
+
+        if (!homepageUrl || typeof homepageUrl !== "string") {
+          return res.status(400).json({
+            message: "Homepage URL is required",
+          });
+        }
+
+        // Import the web crawler utility
+        const { discoverContextPages } = await import("./utils/web-crawler");
+        const { validateAndNormalizeUrl } = await import(
+          "./utils/url-validator"
+        );
+
+        // Validate and normalize the URL
+        const validatedUrl = await validateAndNormalizeUrl(homepageUrl);
+
+        // Discover and categorize pages with intelligent crawling (up to 250 pages, early exit)
+        const result = await discoverContextPages(validatedUrl);
+
+        // Return result without crawledPages in response (keep it server-side if needed)
+        // Frontend will cache the result for fallback scenarios
+        res.json({
+          home_page: result.home_page,
+          about_page: result.about_page,
+          service_pages: result.service_pages,
+          blog_articles: result.blog_articles,
+          totalPagesCrawled: result.totalPagesCrawled,
+          reachedLimit: result.reachedLimit,
         });
+      } catch (error) {
+        console.error("Error discovering context pages:", error);
+        const errorMessage =
+          (error as any)?.message || "Failed to discover context pages";
+
+        // Return appropriate status code based on error type
+        const statusCode =
+          errorMessage.includes("Invalid URL") ||
+          errorMessage.includes("Cannot crawl") ||
+          errorMessage.includes("Domain not found") ||
+          errorMessage.includes("Only HTTPS")
+            ? 400
+            : 500;
+
+        res.status(statusCode).json({ message: errorMessage });
       }
-
-      // Import the web crawler utility
-      const { discoverContextPages } = await import("./utils/web-crawler");
-      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
-
-      // Validate and normalize the URL
-      const validatedUrl = await validateAndNormalizeUrl(homepageUrl);
-      
-      // Discover and categorize pages with intelligent crawling (up to 250 pages, early exit)
-      const result = await discoverContextPages(validatedUrl);
-      
-      // Return result without crawledPages in response (keep it server-side if needed)
-      // Frontend will cache the result for fallback scenarios
-      res.json({
-        home_page: result.home_page,
-        about_page: result.about_page,
-        service_pages: result.service_pages,
-        blog_articles: result.blog_articles,
-        totalPagesCrawled: result.totalPagesCrawled,
-        reachedLimit: result.reachedLimit
-      });
-    } catch (error) {
-      console.error("Error discovering context pages:", error);
-      const errorMessage = (error as any)?.message || "Failed to discover context pages";
-      
-      // Return appropriate status code based on error type
-      const statusCode = errorMessage.includes('Invalid URL') || 
-                        errorMessage.includes('Cannot crawl') ||
-                        errorMessage.includes('Domain not found') ||
-                        errorMessage.includes('Only HTTPS')
-                        ? 400 : 500;
-      
-      res.status(statusCode).json({ message: errorMessage });
     }
-  });
+  );
 
   // Fallback: Find service pages by URL pattern from initial crawl
-  app.post("/api/guideline-profiles/find-services-by-pattern", requireAuth, async (req: any, res) => {
-    try {
-      const { exampleServiceUrl, homepageUrl } = req.body;
-      const userId = req.user.id;
-      
-      if (!exampleServiceUrl || typeof exampleServiceUrl !== 'string') {
-        return res.status(400).json({ 
-          message: "Example service page URL is required" 
-        });
+  app.post(
+    "/api/guideline-profiles/find-services-by-pattern",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const { exampleServiceUrl, homepageUrl } = req.body;
+        const userId = req.user.id;
+
+        if (!exampleServiceUrl || typeof exampleServiceUrl !== "string") {
+          return res.status(400).json({
+            message: "Example service page URL is required",
+          });
+        }
+
+        if (!homepageUrl || typeof homepageUrl !== "string") {
+          return res.status(400).json({
+            message: "Homepage URL is required",
+          });
+        }
+
+        // Import the web crawler utility
+        const { findServicePagesByPattern, crawlWebsiteWithEarlyExit } =
+          await import("./utils/web-crawler");
+        const { validateAndNormalizeUrl } = await import(
+          "./utils/url-validator"
+        );
+
+        // Validate URLs
+        const validatedHomepage = await validateAndNormalizeUrl(homepageUrl);
+        const validatedExample = await validateAndNormalizeUrl(
+          exampleServiceUrl
+        );
+
+        // Re-crawl the site (this should be fast if called immediately after initial crawl due to caching)
+        // In a production scenario, you'd cache this on the server or in a database
+        const result = await crawlWebsiteWithEarlyExit(validatedHomepage, 250);
+
+        // Find service pages matching the pattern
+        const servicePages = findServicePagesByPattern(
+          validatedExample,
+          result.crawledPages,
+          10
+        );
+
+        res.json({ service_pages: servicePages });
+      } catch (error) {
+        console.error("Error finding service pages by pattern:", error);
+        const errorMessage =
+          (error as any)?.message || "Failed to find service pages";
+        res.status(500).json({ message: errorMessage });
       }
-
-      if (!homepageUrl || typeof homepageUrl !== 'string') {
-        return res.status(400).json({ 
-          message: "Homepage URL is required" 
-        });
-      }
-
-      // Import the web crawler utility
-      const { findServicePagesByPattern, crawlWebsiteWithEarlyExit } = await import("./utils/web-crawler");
-      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
-
-      // Validate URLs
-      const validatedHomepage = await validateAndNormalizeUrl(homepageUrl);
-      const validatedExample = await validateAndNormalizeUrl(exampleServiceUrl);
-      
-      // Re-crawl the site (this should be fast if called immediately after initial crawl due to caching)
-      // In a production scenario, you'd cache this on the server or in a database
-      const result = await crawlWebsiteWithEarlyExit(validatedHomepage, 250);
-      
-      // Find service pages matching the pattern
-      const servicePages = findServicePagesByPattern(validatedExample, result.crawledPages, 10);
-      
-      res.json({ service_pages: servicePages });
-    } catch (error) {
-      console.error("Error finding service pages by pattern:", error);
-      const errorMessage = (error as any)?.message || "Failed to find service pages";
-      res.status(500).json({ message: errorMessage });
     }
-  });
+  );
 
   // Fallback: Extract blog posts from blog home page with pagination
-  app.post("/api/guideline-profiles/extract-blog-posts", requireAuth, async (req: any, res) => {
-    try {
-      const { blogHomeUrl } = req.body;
-      const userId = req.user.id;
-      
-      if (!blogHomeUrl || typeof blogHomeUrl !== 'string') {
-        return res.status(400).json({ 
-          message: "Blog home page URL is required" 
-        });
+  app.post(
+    "/api/guideline-profiles/extract-blog-posts",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const { blogHomeUrl } = req.body;
+        const userId = req.user.id;
+
+        if (!blogHomeUrl || typeof blogHomeUrl !== "string") {
+          return res.status(400).json({
+            message: "Blog home page URL is required",
+          });
+        }
+
+        // Import the web crawler utility
+        const { extractBlogPostsFromPage } = await import(
+          "./utils/web-crawler"
+        );
+        const { validateAndNormalizeUrl } = await import(
+          "./utils/url-validator"
+        );
+
+        // Validate URL
+        const validatedUrl = await validateAndNormalizeUrl(blogHomeUrl);
+
+        // Extract blog posts with pagination
+        const blogPosts = await extractBlogPostsFromPage(validatedUrl, 20, 5);
+
+        res.json({ blog_articles: blogPosts });
+      } catch (error) {
+        console.error("Error extracting blog posts:", error);
+        const errorMessage =
+          (error as any)?.message || "Failed to extract blog posts";
+        res.status(500).json({ message: errorMessage });
       }
-
-      // Import the web crawler utility
-      const { extractBlogPostsFromPage } = await import("./utils/web-crawler");
-      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
-
-      // Validate URL
-      const validatedUrl = await validateAndNormalizeUrl(blogHomeUrl);
-      
-      // Extract blog posts with pagination
-      const blogPosts = await extractBlogPostsFromPage(validatedUrl, 20, 5);
-      
-      res.json({ blog_articles: blogPosts });
-    } catch (error) {
-      console.error("Error extracting blog posts:", error);
-      const errorMessage = (error as any)?.message || "Failed to extract blog posts";
-      res.status(500).json({ message: errorMessage });
     }
-  });
+  );
 
   // Get existing extracted context for a profile
-  app.get("/api/guideline-profiles/:id/extracted-context", requireAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      
-      // Verify the guideline profile belongs to the user
-      const profile = await storage.getGuidelineProfile(id, req.user.id);
-      if (!profile) {
-        return res.status(404).json({ message: "Guideline profile not found" });
+  app.get(
+    "/api/guideline-profiles/:id/extracted-context",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const { id } = req.params;
+
+        // Verify the guideline profile belongs to the user
+        const profile = await storage.getGuidelineProfile(id, req.user.id);
+        if (!profile) {
+          return res
+            .status(404)
+            .json({ message: "Guideline profile not found" });
+        }
+
+        // Get all extracted context content
+        const contextContent = await storage.getBrandContextContent(id);
+
+        // Group by URL type and get metadata
+        const groupedContent = {
+          home: contextContent.find((c) => c.urlType === "home"),
+          about: contextContent.find((c) => c.urlType === "about"),
+          services: contextContent.filter((c) => c.urlType === "service"),
+          blogs: contextContent.filter((c) => c.urlType === "blog"),
+          totalPages: contextContent.length,
+          extractedAt:
+            contextContent.length > 0 ? contextContent[0].extractedAt : null,
+        };
+
+        res.json(groupedContent);
+      } catch (error) {
+        console.error("Error fetching extracted context:", error);
+        res.status(500).json({ message: "Failed to fetch extracted context" });
       }
-
-      // Get all extracted context content
-      const contextContent = await storage.getBrandContextContent(id);
-      
-      // Group by URL type and get metadata
-      const groupedContent = {
-        home: contextContent.find(c => c.urlType === 'home'),
-        about: contextContent.find(c => c.urlType === 'about'),
-        services: contextContent.filter(c => c.urlType === 'service'),
-        blogs: contextContent.filter(c => c.urlType === 'blog'),
-        totalPages: contextContent.length,
-        extractedAt: contextContent.length > 0 ? contextContent[0].extractedAt : null
-      };
-
-      res.json(groupedContent);
-    } catch (error) {
-      console.error("Error fetching extracted context:", error);
-      res.status(500).json({ message: "Failed to fetch extracted context" });
     }
-  });
+  );
 
   // Extract and save brand context from URLs
-  app.post("/api/guideline-profiles/:id/extract-context", requireAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const { contextUrls } = req.body;
-      
-      // Verify the guideline profile belongs to the user
-      const profile = await storage.getGuidelineProfile(id, req.user.id);
-      if (!profile) {
-        return res.status(404).json({ message: "Guideline profile not found" });
-      }
+  app.post(
+    "/api/guideline-profiles/:id/extract-context",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const { id } = req.params;
+        const { contextUrls } = req.body;
 
-      // Import utilities
-      const { validateAndNormalizeUrl } = await import("./utils/url-validator");
-      const { htmlToMarkdown } = await import("./utils/html-to-markdown");
-      const axios = (await import("axios")).default;
-
-      // Delete existing context content and embeddings for this profile
-      await storage.deleteBrandContextContent(id);
-      await storage.deleteBrandEmbeddings(req.user.id, id); // SECURITY: Pass userId for tenant isolation
-
-      const urlsToProcess: Array<{ url: string; type: string }> = [];
-
-      // Collect all URLs to process
-      if (contextUrls?.home_page) {
-        urlsToProcess.push({ url: contextUrls.home_page, type: 'home' });
-      }
-      if (contextUrls?.about_page) {
-        urlsToProcess.push({ url: contextUrls.about_page, type: 'about' });
-      }
-      if (contextUrls?.service_pages) {
-        contextUrls.service_pages.forEach((url: string) => {
-          if (url) urlsToProcess.push({ url, type: 'service' });
-        });
-      }
-      if (contextUrls?.blog_articles) {
-        contextUrls.blog_articles.forEach((url: string) => {
-          if (url) urlsToProcess.push({ url, type: 'blog' });
-        });
-      }
-
-      const results = [];
-      const errors = [];
-
-      // Process each URL
-      for (const { url, type } of urlsToProcess) {
-        try {
-          // Validate URL (security check)
-          const validatedUrl = await validateAndNormalizeUrl(url);
-
-          // Fetch page content
-          const response = await axios.get(validatedUrl, {
-            timeout: 10000,
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (compatible; BrandContextBot/1.0)'
-            }
-          });
-
-          // Convert HTML to markdown
-          const { markdown, title } = htmlToMarkdown(response.data, validatedUrl);
-
-          // Save to database
-          await storage.createBrandContextContent({
-            guidelineProfileId: id,
-            url: validatedUrl,
-            urlType: type,
-            markdownContent: markdown,
-            pageTitle: title
-          });
-
-          results.push({ url: validatedUrl, type, title, success: true });
-        } catch (error: any) {
-          console.error(`Error processing ${url}:`, error.message);
-          errors.push({ url, type, error: error.message });
+        // Verify the guideline profile belongs to the user
+        const profile = await storage.getGuidelineProfile(id, req.user.id);
+        if (!profile) {
+          return res
+            .status(404)
+            .json({ message: "Guideline profile not found" });
         }
-      }
 
-      // Generate embeddings for the extracted context (async, don't wait)
-      if (results.length > 0) {
-        const { ragService } = await import("./utils/rag-service");
-        const contextContents = await storage.getBrandContextContent(id);
-        
-        // Process embeddings in background (includes userId for security)
-        ragService.processMultipleContexts(
-          req.user.id, // SECURITY: Pass userId for tenant isolation
-          id,
-          contextContents.map(ctx => ({
-            content: ctx.markdownContent,
-            contextContentId: ctx.id,
-            urlType: ctx.urlType,
-            url: ctx.url
-          }))
-        ).catch(err => console.error("Error generating embeddings:", err));
-      }
+        // Import utilities
+        const { validateAndNormalizeUrl } = await import(
+          "./utils/url-validator"
+        );
+        const { htmlToMarkdown } = await import("./utils/html-to-markdown");
+        const axios = (await import("axios")).default;
 
-      res.json({
-        success: true,
-        processed: results.length,
-        failed: errors.length,
-        results,
-        errors
-      });
-    } catch (error) {
-      console.error("Error extracting brand context:", error);
-      res.status(500).json({ message: "Failed to extract brand context" });
+        // Delete existing context content and embeddings for this profile
+        await storage.deleteBrandContextContent(id);
+        await storage.deleteBrandEmbeddings(req.user.id, id); // SECURITY: Pass userId for tenant isolation
+
+        const urlsToProcess: Array<{ url: string; type: string }> = [];
+
+        // Collect all URLs to process
+        if (contextUrls?.home_page) {
+          urlsToProcess.push({ url: contextUrls.home_page, type: "home" });
+        }
+        if (contextUrls?.about_page) {
+          urlsToProcess.push({ url: contextUrls.about_page, type: "about" });
+        }
+        if (contextUrls?.service_pages) {
+          contextUrls.service_pages.forEach((url: string) => {
+            if (url) urlsToProcess.push({ url, type: "service" });
+          });
+        }
+        if (contextUrls?.blog_articles) {
+          contextUrls.blog_articles.forEach((url: string) => {
+            if (url) urlsToProcess.push({ url, type: "blog" });
+          });
+        }
+
+        const results = [];
+        const errors = [];
+
+        // Process each URL
+        for (const { url, type } of urlsToProcess) {
+          try {
+            // Validate URL (security check)
+            const validatedUrl = await validateAndNormalizeUrl(url);
+
+            // Fetch page content
+            const response = await axios.get(validatedUrl, {
+              timeout: 10000,
+              headers: {
+                "User-Agent": "Mozilla/5.0 (compatible; BrandContextBot/1.0)",
+              },
+            });
+
+            // Convert HTML to markdown
+            const { markdown, title } = htmlToMarkdown(
+              response.data,
+              validatedUrl
+            );
+
+            // Save to database
+            await storage.createBrandContextContent({
+              guidelineProfileId: id,
+              url: validatedUrl,
+              urlType: type,
+              markdownContent: markdown,
+              pageTitle: title,
+            });
+
+            results.push({ url: validatedUrl, type, title, success: true });
+          } catch (error: any) {
+            console.error(`Error processing ${url}:`, error.message);
+            errors.push({ url, type, error: error.message });
+          }
+        }
+
+        // Generate embeddings for the extracted context (async, don't wait)
+        if (results.length > 0) {
+          const { ragService } = await import("./utils/rag-service");
+          const contextContents = await storage.getBrandContextContent(id);
+
+          // Process embeddings in background (includes userId for security)
+          ragService
+            .processMultipleContexts(
+              req.user.id, // SECURITY: Pass userId for tenant isolation
+              id,
+              contextContents.map((ctx) => ({
+                content: ctx.markdownContent,
+                contextContentId: ctx.id,
+                urlType: ctx.urlType,
+                url: ctx.url,
+              }))
+            )
+            .catch((err) => console.error("Error generating embeddings:", err));
+        }
+
+        res.json({
+          success: true,
+          processed: results.length,
+          failed: errors.length,
+          results,
+          errors,
+        });
+      } catch (error) {
+        console.error("Error extracting brand context:", error);
+        res.status(500).json({ message: "Failed to extract brand context" });
+      }
     }
-  });
+  );
 
   // Public packages endpoint for pricing page
   app.get("/api/packages", async (req: any, res) => {
     try {
       const packages = await storage.getAllPackagesWithTiers();
-      console.log(`[API] /api/packages: Found ${packages.length} total packages`);
+      console.log(
+        `[API] /api/packages: Found ${packages.length} total packages`
+      );
       // Filter to only active packages for public consumption
-      const activePackages = packages.filter(pkg => pkg.isActive);
-      console.log(`[API] /api/packages: Returning ${activePackages.length} active packages`);
+      const activePackages = packages.filter((pkg) => pkg.isActive);
+      console.log(
+        `[API] /api/packages: Returning ${activePackages.length} active packages`
+      );
       res.json(activePackages);
     } catch (error) {
       console.error("Error fetching public packages:", error);
@@ -1704,9 +1997,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validation = completeProfileSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Invalid profile data",
-          errors: validation.error.errors
+          errors: validation.error.errors,
         });
       }
 
@@ -1720,7 +2013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.completeUserProfile(req.session.userId, validation.data);
-      
+
       res.json({ message: "Profile completed successfully" });
     } catch (error) {
       console.error("Complete profile error:", error);
@@ -1733,329 +2026,423 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     const isAdmin = await storage.isUserAdmin(req.user.id);
     if (!isAdmin) {
       return res.status(403).json({ message: "Admin access required" });
     }
-    
+
     next();
   };
 
   // Admin routes
-  app.get("/api/admin/stats", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const stats = await storage.getAdminStats();
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching admin stats:", error);
-      res.status(500).json({ message: "Failed to fetch admin stats" });
+  app.get(
+    "/api/admin/stats",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const stats = await storage.getAdminStats();
+        res.json(stats);
+      } catch (error) {
+        console.error("Error fetching admin stats:", error);
+        res.status(500).json({ message: "Failed to fetch admin stats" });
+      }
     }
-  });
+  );
 
   // Admin package routes with tier support
-  app.get("/api/admin/packages", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const packages = await storage.getAllPackagesWithTiers();
-      res.json(packages);
-    } catch (error) {
-      console.error("Error fetching packages:", error);
-      res.status(500).json({ message: "Failed to fetch packages" });
-    }
-  });
-
-  app.get("/api/admin/packages/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const packageData = await storage.getPackageWithTiers(req.params.id);
-      if (!packageData) {
-        return res.status(404).json({ message: "Package not found" });
+  app.get(
+    "/api/admin/packages",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const packages = await storage.getAllPackagesWithTiers();
+        res.json(packages);
+      } catch (error) {
+        console.error("Error fetching packages:", error);
+        res.status(500).json({ message: "Failed to fetch packages" });
       }
-      res.json(packageData);
-    } catch (error) {
-      console.error("Error fetching package:", error);
-      res.status(500).json({ message: "Failed to fetch package" });
     }
-  });
+  );
 
-  app.post("/api/admin/packages", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const packageData = req.body;
-      const newPackage = await storage.createPackage(packageData);
-      res.json(newPackage);
-    } catch (error) {
-      console.error("Error creating package:", error);
-      res.status(500).json({ message: "Failed to create package" });
-    }
-  });
-
-  app.post("/api/admin/packages/with-tiers", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { package: packageData, productIds, tiers } = req.body;
-      
-      // Create the package
-      const newPackage = await storage.createPackage(packageData);
-      
-      // Add products to package
-      for (const productId of productIds) {
-        await storage.addProductToPackage(newPackage.id, productId);
-      }
-      
-      // Create tiers with pricing and limits
-      for (let index = 0; index < tiers.length; index++) {
-        const tierData = tiers[index];
-        const tier = await storage.createTier({
-          packageId: newPackage.id,
-          name: tierData.name,
-          promotionalTag: tierData.promotionalTag,
-          sortOrder: index,
-          isActive: tierData.isActive,
-        });
-        
-        // Add tier prices
-        for (const priceData of tierData.prices) {
-          await storage.createTierPrice({
-            tierId: tier.id,
-            interval: priceData.interval,
-            amountMinor: priceData.amountMinor,
-            currency: priceData.currency,
-          });
+  app.get(
+    "/api/admin/packages/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const packageData = await storage.getPackageWithTiers(req.params.id);
+        if (!packageData) {
+          return res.status(404).json({ message: "Package not found" });
         }
-        
-        // Add tier limits
-        for (const limitData of tierData.limits) {
-          await storage.createTierLimit({
-            tierId: tier.id,
-            productId: limitData.productId,
-            includedInTier: limitData.includedInTier,
-            periodicity: limitData.periodicity,
-            quantity: limitData.quantity,
-            subfeatures: limitData.subfeatures,
-          });
+        res.json(packageData);
+      } catch (error) {
+        console.error("Error fetching package:", error);
+        res.status(500).json({ message: "Failed to fetch package" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/admin/packages",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const packageData = req.body;
+        const newPackage = await storage.createPackage(packageData);
+        res.json(newPackage);
+      } catch (error) {
+        console.error("Error creating package:", error);
+        res.status(500).json({ message: "Failed to create package" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/admin/packages/with-tiers",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { package: packageData, productIds, tiers } = req.body;
+
+        // Create the package
+        const newPackage = await storage.createPackage(packageData);
+
+        // Add products to package
+        for (const productId of productIds) {
+          await storage.addProductToPackage(newPackage.id, productId);
         }
-      }
-      
-      // Return the complete package with tiers
-      const completePackage = await storage.getPackageWithTiers(newPackage.id);
-      res.status(201).json(completePackage);
-    } catch (error) {
-      console.error("Error creating package with tiers:", error);
-      res.status(500).json({ message: "Failed to create package with tiers" });
-    }
-  });
 
-  app.put("/api/admin/packages/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const packageId = req.params.id;
-      const packageData = req.body;
-      
-      // Update basic package info
-      const updatedPackage = await storage.updatePackage(packageId, packageData);
-      if (!updatedPackage) {
-        return res.status(404).json({ message: "Package not found" });
-      }
-      
-      // Return the complete package with tiers
-      const completePackage = await storage.getPackageWithTiers(packageId);
-      res.json(completePackage);
-    } catch (error) {
-      console.error("Error updating package:", error);
-      res.status(500).json({ message: "Failed to update package" });
-    }
-  });
-
-  app.put("/api/admin/packages/with-tiers/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const packageId = req.params.id;
-      const { package: packageData, productIds, tiers } = req.body;
-      
-      // Update basic package info
-      const updatedPackage = await storage.updatePackage(packageId, packageData);
-      if (!updatedPackage) {
-        return res.status(404).json({ message: "Package not found" });
-      }
-      
-      // Remove existing package-product relationships and re-add them
-      const existingProducts = await storage.getPackageProducts(packageId);
-      for (const product of existingProducts) {
-        await storage.removeProductFromPackage(packageId, product.id);
-      }
-      
-      // Add new products to package
-      for (const productId of productIds) {
-        await storage.addProductToPackage(packageId, productId);
-      }
-      
-      // Delete existing tiers and their associated data
-      await storage.deletePackageTiers(packageId);
-      
-      // Create new tiers with pricing and limits
-      for (let index = 0; index < tiers.length; index++) {
-        const tierData = tiers[index];
-        const tier = await storage.createTier({
-          packageId: packageId,
-          name: tierData.name,
-          promotionalTag: tierData.promotionalTag,
-          sortOrder: index,
-          isActive: tierData.isActive,
-        });
-        
-        // Add tier prices
-        for (const priceData of tierData.prices) {
-          await storage.createTierPrice({
-            tierId: tier.id,
-            interval: priceData.interval,
-            amountMinor: priceData.amountMinor,
-            currency: priceData.currency,
+        // Create tiers with pricing and limits
+        for (let index = 0; index < tiers.length; index++) {
+          const tierData = tiers[index];
+          const tier = await storage.createTier({
+            packageId: newPackage.id,
+            name: tierData.name,
+            promotionalTag: tierData.promotionalTag,
+            sortOrder: index,
+            isActive: tierData.isActive,
           });
+
+          // Add tier prices
+          for (const priceData of tierData.prices) {
+            await storage.createTierPrice({
+              tierId: tier.id,
+              interval: priceData.interval,
+              amountMinor: priceData.amountMinor,
+              currency: priceData.currency,
+            });
+          }
+
+          // Add tier limits
+          for (const limitData of tierData.limits) {
+            await storage.createTierLimit({
+              tierId: tier.id,
+              productId: limitData.productId,
+              includedInTier: limitData.includedInTier,
+              periodicity: limitData.periodicity,
+              quantity: limitData.quantity,
+              subfeatures: limitData.subfeatures,
+            });
+          }
         }
-        
-        // Add tier limits
-        for (const limitData of tierData.limits) {
-          await storage.createTierLimit({
-            tierId: tier.id,
-            productId: limitData.productId,
-            includedInTier: limitData.includedInTier,
-            periodicity: limitData.periodicity,
-            quantity: limitData.quantity,
-            subfeatures: limitData.subfeatures,
+
+        // Return the complete package with tiers
+        const completePackage = await storage.getPackageWithTiers(
+          newPackage.id
+        );
+        res.status(201).json(completePackage);
+      } catch (error) {
+        console.error("Error creating package with tiers:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to create package with tiers" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/admin/packages/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const packageId = req.params.id;
+        const packageData = req.body;
+
+        // Update basic package info
+        const updatedPackage = await storage.updatePackage(
+          packageId,
+          packageData
+        );
+        if (!updatedPackage) {
+          return res.status(404).json({ message: "Package not found" });
+        }
+
+        // Return the complete package with tiers
+        const completePackage = await storage.getPackageWithTiers(packageId);
+        res.json(completePackage);
+      } catch (error) {
+        console.error("Error updating package:", error);
+        res.status(500).json({ message: "Failed to update package" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/admin/packages/with-tiers/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const packageId = req.params.id;
+        const { package: packageData, productIds, tiers } = req.body;
+
+        // Update basic package info
+        const updatedPackage = await storage.updatePackage(
+          packageId,
+          packageData
+        );
+        if (!updatedPackage) {
+          return res.status(404).json({ message: "Package not found" });
+        }
+
+        // Remove existing package-product relationships and re-add them
+        const existingProducts = await storage.getPackageProducts(packageId);
+        for (const product of existingProducts) {
+          await storage.removeProductFromPackage(packageId, product.id);
+        }
+
+        // Add new products to package
+        for (const productId of productIds) {
+          await storage.addProductToPackage(packageId, productId);
+        }
+
+        // Delete existing tiers and their associated data
+        await storage.deletePackageTiers(packageId);
+
+        // Create new tiers with pricing and limits
+        for (let index = 0; index < tiers.length; index++) {
+          const tierData = tiers[index];
+          const tier = await storage.createTier({
+            packageId: packageId,
+            name: tierData.name,
+            promotionalTag: tierData.promotionalTag,
+            sortOrder: index,
+            isActive: tierData.isActive,
           });
+
+          // Add tier prices
+          for (const priceData of tierData.prices) {
+            await storage.createTierPrice({
+              tierId: tier.id,
+              interval: priceData.interval,
+              amountMinor: priceData.amountMinor,
+              currency: priceData.currency,
+            });
+          }
+
+          // Add tier limits
+          for (const limitData of tierData.limits) {
+            await storage.createTierLimit({
+              tierId: tier.id,
+              productId: limitData.productId,
+              includedInTier: limitData.includedInTier,
+              periodicity: limitData.periodicity,
+              quantity: limitData.quantity,
+              subfeatures: limitData.subfeatures,
+            });
+          }
         }
+
+        // Return the complete package with tiers
+        const completePackage = await storage.getPackageWithTiers(packageId);
+        res.json(completePackage);
+      } catch (error) {
+        console.error("Error updating package with tiers:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to update package with tiers" });
       }
-      
-      // Return the complete package with tiers
-      const completePackage = await storage.getPackageWithTiers(packageId);
-      res.json(completePackage);
-    } catch (error) {
-      console.error("Error updating package with tiers:", error);
-      res.status(500).json({ message: "Failed to update package with tiers" });
     }
-  });
+  );
 
-  app.delete("/api/admin/packages/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const success = await storage.deletePackage(req.params.id);
-      if (!success) {
-        return res.status(404).json({ message: "Package not found" });
+  app.delete(
+    "/api/admin/packages/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const success = await storage.deletePackage(req.params.id);
+        if (!success) {
+          return res.status(404).json({ message: "Package not found" });
+        }
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting package:", error);
+        res.status(500).json({ message: "Failed to delete package" });
       }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting package:", error);
-      res.status(500).json({ message: "Failed to delete package" });
     }
-  });
+  );
 
-  app.get("/api/admin/products", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const products = await storage.getProductsWithPackages();
-      res.json(products);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      res.status(500).json({ message: "Failed to fetch products" });
-    }
-  });
-
-  app.post("/api/admin/products", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const product = await storage.createProduct(req.body);
-      res.status(201).json(product);
-    } catch (error) {
-      console.error("Error creating product:", error);
-      res.status(500).json({ message: "Failed to create product" });
-    }
-  });
-
-  app.get("/api/admin/products/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const product = await storage.getProductWithPackage(req.params.id);
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+  app.get(
+    "/api/admin/products",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const products = await storage.getProductsWithPackages();
+        res.json(products);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        res.status(500).json({ message: "Failed to fetch products" });
       }
-      res.json(product);
-    } catch (error) {
-      console.error("Error fetching product:", error);
-      res.status(500).json({ message: "Failed to fetch product" });
     }
-  });
+  );
 
-  app.put("/api/admin/products/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const product = await storage.updateProduct(req.params.id, req.body);
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+  app.post(
+    "/api/admin/products",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const product = await storage.createProduct(req.body);
+        res.status(201).json(product);
+      } catch (error) {
+        console.error("Error creating product:", error);
+        res.status(500).json({ message: "Failed to create product" });
       }
-      res.json(product);
-    } catch (error) {
-      console.error("Error updating product:", error);
-      res.status(500).json({ message: "Failed to update product" });
     }
-  });
+  );
 
-  app.delete("/api/admin/products/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const success = await storage.deleteProduct(req.params.id);
-      if (!success) {
-        return res.status(404).json({ message: "Product not found" });
+  app.get(
+    "/api/admin/products/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const product = await storage.getProductWithPackage(req.params.id);
+        if (!product) {
+          return res.status(404).json({ message: "Product not found" });
+        }
+        res.json(product);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        res.status(500).json({ message: "Failed to fetch product" });
       }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      res.status(500).json({ message: "Failed to delete product" });
     }
-  });
+  );
 
-  app.get("/api/admin/users", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
-
-  app.put("/api/admin/users/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const user = await storage.updateUser(req.params.id, req.body);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+  app.put(
+    "/api/admin/products/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const product = await storage.updateProduct(req.params.id, req.body);
+        if (!product) {
+          return res.status(404).json({ message: "Product not found" });
+        }
+        res.json(product);
+      } catch (error) {
+        console.error("Error updating product:", error);
+        res.status(500).json({ message: "Failed to update product" });
       }
-      res.json(user);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      res.status(500).json({ message: "Failed to update user" });
     }
-  });
+  );
 
-  app.put("/api/admin/users/:id/admin", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { isAdmin } = req.body;
-      await storage.updateUserAdminStatus(req.params.id, isAdmin);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating user admin status:", error);
-      res.status(500).json({ message: "Failed to update user admin status" });
+  app.delete(
+    "/api/admin/products/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const success = await storage.deleteProduct(req.params.id);
+        if (!success) {
+          return res.status(404).json({ message: "Product not found" });
+        }
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        res.status(500).json({ message: "Failed to delete product" });
+      }
     }
-  });
+  );
+
+  app.get(
+    "/api/admin/users",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const users = await storage.getAllUsers();
+        res.json(users);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ message: "Failed to fetch users" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/admin/users/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const user = await storage.updateUser(req.params.id, req.body);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        res.json(user);
+      } catch (error) {
+        console.error("Error updating user:", error);
+        res.status(500).json({ message: "Failed to update user" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/admin/users/:id/admin",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { isAdmin } = req.body;
+        await storage.updateUserAdminStatus(req.params.id, isAdmin);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error updating user admin status:", error);
+        res.status(500).json({ message: "Failed to update user admin status" });
+      }
+    }
+  );
 
   // Error Report Management - Admin can report errors from toast notifications
   app.post("/api/error-reports", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { errorTitle, errorMessage, errorContext } = req.body;
-      
+
       // Only allow admins to report errors
       const isAdmin = await storage.isUserAdmin(userId);
       if (!isAdmin) {
-        return res.status(403).json({ message: "Only admins can report errors" });
+        return res
+          .status(403)
+          .json({ message: "Only admins can report errors" });
       }
-      
+
       const report = await storage.createErrorReport(
         userId,
         errorTitle,
         errorMessage,
         errorContext
       );
-      
+
       res.json({ success: true, reportId: report.id });
     } catch (error) {
       console.error("Error creating error report:", error);
@@ -2063,117 +2450,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/error-reports", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const status = req.query.status as string | undefined;
-      const reports = await storage.getErrorReports(status);
-      res.json(reports);
-    } catch (error) {
-      console.error("Error fetching error reports:", error);
-      res.status(500).json({ message: "Failed to fetch error reports" });
+  app.get(
+    "/api/admin/error-reports",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const status = req.query.status as string | undefined;
+        const reports = await storage.getErrorReports(status);
+        res.json(reports);
+      } catch (error) {
+        console.error("Error fetching error reports:", error);
+        res.status(500).json({ message: "Failed to fetch error reports" });
+      }
     }
-  });
+  );
 
-  app.put("/api/admin/error-reports/:id/status", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { status } = req.body;
-      await storage.updateErrorReportStatus(req.params.id, status);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating error report status:", error);
-      res.status(500).json({ message: "Failed to update error report status" });
+  app.put(
+    "/api/admin/error-reports/:id/status",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { status } = req.body;
+        await storage.updateErrorReportStatus(req.params.id, status);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error updating error report status:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to update error report status" });
+      }
     }
-  });
+  );
 
   // Error Log Management for Admin Portal
-  app.get("/api/admin/error-logs", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 50;
-      const offset = (page - 1) * limit;
-      
-      const [logs, [{ count }]] = await Promise.all([
-        db.select().from(errorLogs)
-          .orderBy(sql`${errorLogs.createdAt} DESC`)
-          .limit(limit)
-          .offset(offset),
-        db.select({ count: sql`count(*)` }).from(errorLogs)
-      ]);
-      
-      res.json({
-        logs,
-        pagination: {
-          page,
-          limit,
-          total: Number(count),
-          pages: Math.ceil(Number(count) / limit)
+  app.get(
+    "/api/admin/error-logs",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = (page - 1) * limit;
+
+        const [logs, [{ count }]] = await Promise.all([
+          db
+            .select()
+            .from(errorLogs)
+            .orderBy(sql`${errorLogs.createdAt} DESC`)
+            .limit(limit)
+            .offset(offset),
+          db.select({ count: sql`count(*)` }).from(errorLogs),
+        ]);
+
+        res.json({
+          logs,
+          pagination: {
+            page,
+            limit,
+            total: Number(count),
+            pages: Math.ceil(Number(count) / limit),
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching error logs:", error);
+        res.status(500).json({ message: "Failed to fetch error logs" });
+      }
+    }
+  );
+
+  app.patch(
+    "/api/admin/error-logs/:id/status",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { status } = req.body;
+
+        // Validate status
+        if (!["to_do", "investigated", "fixed"].includes(status)) {
+          return res.status(400).json({
+            message:
+              "Invalid status. Must be 'to_do', 'investigated', or 'fixed'",
+          });
         }
-      });
-    } catch (error) {
-      console.error("Error fetching error logs:", error);
-      res.status(500).json({ message: "Failed to fetch error logs" });
-    }
-  });
 
-  app.patch("/api/admin/error-logs/:id/status", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { status } = req.body;
-      
-      // Validate status
-      if (!['to_do', 'investigated', 'fixed'].includes(status)) {
-        return res.status(400).json({ message: "Invalid status. Must be 'to_do', 'investigated', or 'fixed'" });
+        await db
+          .update(errorLogs)
+          .set({ status })
+          .where(eq(errorLogs.id, req.params.id));
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error updating error log status:", error);
+        res.status(500).json({ message: "Failed to update error log status" });
       }
-      
-      await db.update(errorLogs)
-        .set({ status })
-        .where(eq(errorLogs.id, req.params.id));
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating error log status:", error);
-      res.status(500).json({ message: "Failed to update error log status" });
     }
-  });
+  );
 
-  app.delete("/api/admin/error-logs/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const result = await db.delete(errorLogs).where(eq(errorLogs.id, req.params.id));
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting error log:", error);
-      res.status(500).json({ message: "Failed to delete error log" });
-    }
-  });
-
-  app.delete("/api/admin/error-logs", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      await db.delete(errorLogs);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error clearing error logs:", error);
-      res.status(500).json({ message: "Failed to clear error logs" });
-    }
-  });
-
-  app.delete("/api/admin/users/:id", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const success = await storage.deleteUser(req.params.id);
-      if (!success) {
-        return res.status(404).json({ message: "User not found" });
+  app.delete(
+    "/api/admin/error-logs/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const result = await db
+          .delete(errorLogs)
+          .where(eq(errorLogs.id, req.params.id));
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting error log:", error);
+        res.status(500).json({ message: "Failed to delete error log" });
       }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      res.status(500).json({ message: "Failed to delete user" });
     }
-  });
+  );
+
+  app.delete(
+    "/api/admin/error-logs",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        await db.delete(errorLogs);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error clearing error logs:", error);
+        res.status(500).json({ message: "Failed to clear error logs" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/admin/users/:id",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const success = await storage.deleteUser(req.params.id);
+        if (!success) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        res.status(500).json({ message: "Failed to delete user" });
+      }
+    }
+  );
 
   // Serve attached assets (videos, images, etc.)
-  app.use('/attached_assets', express.static(path.resolve(process.cwd(), 'attached_assets')));
+  app.use(
+    "/attached_assets",
+    express.static(path.resolve(process.cwd(), "attached_assets"))
+  );
 
   // Register CMS routes
   const { registerCmsRoutes } = await import("./cms-routes");
-  const { registerObjectStorageRoutes } = await import("./object-storage-routes");
+  const { registerObjectStorageRoutes } = await import(
+    "./object-storage-routes"
+  );
   registerCmsRoutes(app);
   registerObjectStorageRoutes(app);
 
@@ -2182,17 +2619,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const toolType = req.query.toolType as string | undefined;
-      
-      let query = db
+
+      // Build conditions
+      const conditions = [eq(generatedContent.userId, userId)];
+      if (toolType) {
+        conditions.push(eq(generatedContent.toolType, toolType));
+      }
+
+      const query = db
         .select()
         .from(generatedContent)
-        .where(eq(generatedContent.userId, userId));
-      
-      if (toolType) {
-        query = query.where(eq(generatedContent.toolType, toolType));
-      }
-      
-      const contents = await query.orderBy(sql`${generatedContent.createdAt} DESC`);
+        .where(and(...conditions));
+
+      const contents = await query.orderBy(
+        sql`${generatedContent.createdAt} DESC`
+      );
       res.json(contents);
     } catch (error) {
       console.error("Error fetching generated content:", error);
@@ -2204,16 +2645,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const { id } = req.params;
-      
+
       const [content] = await db
         .select()
         .from(generatedContent)
-        .where(eq(generatedContent.id, id) && eq(generatedContent.userId, userId));
-      
+        .where(
+          eq(generatedContent.id, id) && eq(generatedContent.userId, userId)
+        );
+
       if (!content) {
         return res.status(404).json({ message: "Generated content not found" });
       }
-      
+
       res.json(content);
     } catch (error) {
       console.error("Error fetching generated content:", error);
@@ -2225,19 +2668,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const { toolType, title, inputData, outputData } = req.body;
-      
+
       if (!toolType || !title || !inputData || !outputData) {
         return res.status(400).json({ message: "Missing required fields" });
       }
-      
-      const [savedContent] = await db.insert(generatedContent).values({
-        userId,
-        toolType,
-        title,
-        inputData,
-        outputData,
-      }).returning();
-      
+
+      const [savedContent] = await db
+        .insert(generatedContent)
+        .values({
+          userId,
+          toolType,
+          title,
+          inputData,
+          outputData,
+        })
+        .returning();
+
       res.json(savedContent);
     } catch (error) {
       console.error("Error saving generated content:", error);
@@ -2249,22 +2695,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/content-feedback", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { toolType, rating, feedbackText, inputData, outputData, guidelineProfileId } = req.body;
-      
+      const {
+        toolType,
+        rating,
+        feedbackText,
+        inputData,
+        outputData,
+        guidelineProfileId,
+      } = req.body;
+
       if (!toolType || !rating || !inputData || !outputData) {
         return res.status(400).json({ message: "Missing required fields" });
       }
-      
-      const [feedback] = await db.insert(contentFeedback).values({
-        userId,
-        toolType,
-        rating,
-        feedbackText: feedbackText || null,
-        inputData,
-        outputData,
-        guidelineProfileId: guidelineProfileId || null,
-      }).returning();
-      
+
+      const [feedback] = await db
+        .insert(contentFeedback)
+        .values({
+          userId,
+          toolType,
+          rating,
+          feedbackText: feedbackText || null,
+          inputData,
+          outputData,
+          guidelineProfileId: guidelineProfileId || null,
+        })
+        .returning();
+
       res.json(feedback);
     } catch (error) {
       console.error("Error saving content feedback:", error);
@@ -2272,59 +2728,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/generated-content/:id", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
-      
-      const [deletedContent] = await db
-        .delete(generatedContent)
-        .where(and(
-          eq(generatedContent.id, id),
-          eq(generatedContent.userId, userId)
-        ))
-        .returning();
-      
-      if (!deletedContent) {
-        return res.status(404).json({ message: "Generated content not found" });
+  app.delete(
+    "/api/generated-content/:id",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const [deletedContent] = await db
+          .delete(generatedContent)
+          .where(
+            and(
+              eq(generatedContent.id, id),
+              eq(generatedContent.userId, userId)
+            )
+          )
+          .returning();
+
+        if (!deletedContent) {
+          return res
+            .status(404)
+            .json({ message: "Generated content not found" });
+        }
+
+        res.json({ success: true, message: "Content deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting generated content:", error);
+        res.status(500).json({ message: "Failed to delete generated content" });
       }
-      
-      res.json({ success: true, message: "Content deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting generated content:", error);
-      res.status(500).json({ message: "Failed to delete generated content" });
     }
-  });
+  );
 
   // Content Writer v2 API Routes - Multi-stage article generation
   // Create new session and generate initial concepts
-  app.post("/api/content-writer/sessions", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { topic, guidelineProfileId, matchStyle = false, styleMatchingMethod = 'continuous' } = req.body;
-      
-      if (!topic) {
-        return res.status(400).json({ message: "Topic is required" });
-      }
+  app.post(
+    "/api/content-writer/sessions",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const {
+          topic,
+          guidelineProfileId,
+          matchStyle = false,
+          styleMatchingMethod = "continuous",
+        } = req.body;
 
-      // Create session
-      const session = await storage.createContentWriterSession({
-        userId,
-        topic,
-        guidelineProfileId: guidelineProfileId || null,
-        styleMatchingMethod,
-        status: 'concepts'
-      });
+        if (!topic) {
+          return res.status(400).json({ message: "Topic is required" });
+        }
 
-      // Generate 5 article concepts using ChatGPT
-      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', guidelineProfileId);
-      
-      // Skip brand context if using 'end-rewrite' method (will apply at the end instead)
-      const brandContext = (guidelineProfileId && styleMatchingMethod === 'continuous')
-        ? await ragService.getBrandContextForPrompt(userId, guidelineProfileId, `Article concepts for: ${topic}`, { matchStyle })
-        : '';
+        // Create session
+        const session = await storage.createContentWriterSession({
+          userId,
+          topic,
+          guidelineProfileId: guidelineProfileId || null,
+          styleMatchingMethod,
+          status: "concepts",
+        });
 
-      const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${topic}"
+        // Generate 5 article concepts using ChatGPT
+        const ragContext = await ragService.retrieveUserFeedback(
+          userId,
+          "content-writer",
+          guidelineProfileId
+        );
+
+        // Skip brand context if using 'end-rewrite' method (will apply at the end instead)
+        const brandContext =
+          guidelineProfileId && styleMatchingMethod === "continuous"
+            ? await ragService.getBrandContextForPrompt(
+                userId,
+                guidelineProfileId,
+                `Article concepts for: ${topic}`,
+                { matchStyle }
+              )
+            : "";
+
+        const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${topic}"
 
 ${brandContext}
 ${ragContext}
@@ -2341,117 +2823,164 @@ Return the response as a JSON array with this exact structure:
   }
 ]`;
 
-      const completion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: guidelineProfileId || undefined,
-        endpoint: 'content-writer-concepts',
-        metadata: { topic }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: conceptPrompt }],
-          temperature: 0.8,
-        });
-      });
+        const completion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: guidelineProfileId || undefined,
+            endpoint: "content-writer-concepts",
+            metadata: { topic },
+          },
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: conceptPrompt }],
+              temperature: 0.8,
+            });
+          }
+        );
 
-      const conceptsText = completion.choices[0]?.message?.content || '[]';
-      const concepts = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
+        const conceptsText = completion.choices[0]?.message?.content || "[]";
+        const concepts = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
 
-      // Save concepts to database
-      const conceptsToInsert = concepts.map((c: any, index: number) => ({
-        sessionId: session.id,
-        title: c.title,
-        summary: c.summary,
-        rankOrder: index + 1
-      }));
+        // Save concepts to database
+        const conceptsToInsert = concepts.map((c: any, index: number) => ({
+          sessionId: session.id,
+          title: c.title,
+          summary: c.summary,
+          rankOrder: index + 1,
+        }));
 
-      const savedConcepts = await storage.createContentWriterConcepts(conceptsToInsert, userId);
+        const savedConcepts = await storage.createContentWriterConcepts(
+          conceptsToInsert,
+          userId
+        );
 
-      res.json({ session, concepts: savedConcepts });
-    } catch (error) {
-      console.error("Error creating content writer session:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create session";
-      res.status(500).json({ message: `Failed to create session: ${errorMessage}` });
+        res.json({ session, concepts: savedConcepts });
+      } catch (error) {
+        console.error("Error creating content writer session:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to create session";
+        res
+          .status(500)
+          .json({ message: `Failed to create session: ${errorMessage}` });
+      }
     }
-  });
+  );
 
   // Get session with concepts
-  app.get("/api/content-writer/sessions/:id", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
+  app.get(
+    "/api/content-writer/sessions/:id",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
 
-      const session = await storage.getContentWriterSession(id, userId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
+        const session = await storage.getContentWriterSession(id, userId);
+        if (!session) {
+          return res.status(404).json({ message: "Session not found" });
+        }
+
+        const concepts = await storage.getSessionConcepts(id, userId);
+        const subtopics = await storage.getSessionSubtopics(id, userId);
+        const draft = await storage.getSessionDraft(id, userId);
+
+        res.json({ session, concepts, subtopics, draft });
+      } catch (error) {
+        console.error("Error fetching session:", error);
+        res.status(500).json({ message: "Failed to fetch session" });
       }
-
-      const concepts = await storage.getSessionConcepts(id, userId);
-      const subtopics = await storage.getSessionSubtopics(id, userId);
-      const draft = await storage.getSessionDraft(id, userId);
-
-      res.json({ session, concepts, subtopics, draft });
-    } catch (error) {
-      console.error("Error fetching session:", error);
-      res.status(500).json({ message: "Failed to fetch session" });
     }
-  });
+  );
 
   // Regenerate concepts
-  app.post("/api/content-writer/sessions/:id/regenerate", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
-      const { feedbackText, matchStyle = false } = req.body;
+  app.post(
+    "/api/content-writer/sessions/:id/regenerate",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { feedbackText, matchStyle = false } = req.body;
 
-      const session = await storage.getContentWriterSession(id, userId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-
-      // Save thumbs down feedback for all current concepts
-      const currentConcepts = await storage.getSessionConcepts(id, userId);
-      for (const concept of currentConcepts) {
-        const [feedback] = await db.insert(contentFeedback).values({
-          userId,
-          toolType: 'content-writer',
-          rating: 'thumbs_down',
-          feedbackText: feedbackText || 'Regenerated concepts',
-          inputData: { topic: session.topic },
-          outputData: { concept: concept.title },
-          guidelineProfileId: session.guidelineProfileId
-        }).returning();
-
-        await storage.updateConceptUserAction(concept.id, userId, 'regenerated', feedback.id);
-      }
-
-      // Generate new concepts
-      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
-      
-      // Skip brand context if using 'end-rewrite' method
-      const brandContext = (session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Article concepts for: ${session.topic}`, { matchStyle })
-        : '';
-
-      // Get target audience context (may be null if user hasn't set preferences yet)
-      let targetAudienceContext = '';
-      if (session.selectedTargetAudiences) {
-        if (session.guidelineProfileId) {
-          const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
-          if (guidelineProfile) {
-            targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, session.selectedTargetAudiences);
-          }
-        } else {
-          targetAudienceContext = formatSelectedTargetAudiences('', session.selectedTargetAudiences);
+        const session = await storage.getContentWriterSession(id, userId);
+        if (!session) {
+          return res.status(404).json({ message: "Session not found" });
         }
-      }
 
-      const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${session.topic}"
+        // Save thumbs down feedback for all current concepts
+        const currentConcepts = await storage.getSessionConcepts(id, userId);
+        for (const concept of currentConcepts) {
+          const [feedback] = await db
+            .insert(contentFeedback)
+            .values({
+              userId,
+              toolType: "content-writer",
+              rating: "thumbs_down",
+              feedbackText: feedbackText || "Regenerated concepts",
+              inputData: { topic: session.topic },
+              outputData: { concept: concept.title },
+              guidelineProfileId: session.guidelineProfileId,
+            })
+            .returning();
+
+          await storage.updateConceptUserAction(
+            concept.id,
+            userId,
+            "regenerated",
+            feedback.id
+          );
+        }
+
+        // Generate new concepts
+        const ragContext = await ragService.retrieveUserFeedback(
+          userId,
+          "content-writer",
+          session.guidelineProfileId || undefined
+        );
+
+        // Skip brand context if using 'end-rewrite' method
+        const brandContext =
+          session.guidelineProfileId &&
+          session.styleMatchingMethod === "continuous"
+            ? await ragService.getBrandContextForPrompt(
+                userId,
+                session.guidelineProfileId,
+                `Article concepts for: ${session.topic}`,
+                { matchStyle }
+              )
+            : "";
+
+        // Get target audience context (may be null if user hasn't set preferences yet)
+        let targetAudienceContext = "";
+        if (session.selectedTargetAudiences) {
+          if (session.guidelineProfileId) {
+            const guidelineProfile = await storage.getGuidelineProfile(
+              session.guidelineProfileId,
+              userId
+            );
+            if (guidelineProfile) {
+              targetAudienceContext = formatSelectedTargetAudiences(
+                guidelineProfile.content,
+                session.selectedTargetAudiences
+              );
+            }
+          } else {
+            targetAudienceContext = formatSelectedTargetAudiences(
+              "",
+              session.selectedTargetAudiences
+            );
+          }
+        }
+
+        const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${
+          session.topic
+        }"
 
 ${targetAudienceContext}
 ${brandContext}
 ${ragContext}
-${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ''}
+${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ""}
 
 ${getAntiFabricationInstructions()}
 
@@ -2467,143 +2996,213 @@ Return the response as a JSON array with this exact structure:
   }
 ]`;
 
-      const completion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: session.guidelineProfileId || undefined,
-        endpoint: 'content-writer-concepts-regenerate',
-        metadata: { topic: session.topic, feedbackText }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: conceptPrompt }],
-          temperature: 0.8,
-        });
-      });
+        const completion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: session.guidelineProfileId || undefined,
+            endpoint: "content-writer-concepts-regenerate",
+            metadata: { topic: session.topic, feedbackText },
+          },
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: conceptPrompt }],
+              temperature: 0.8,
+            });
+          }
+        );
 
-      const conceptsText = completion.choices[0]?.message?.content || '[]';
-      const concepts = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
+        const conceptsText = completion.choices[0]?.message?.content || "[]";
+        const concepts = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
 
-      const conceptsToInsert = concepts.map((c: any, index: number) => ({
-        sessionId: session.id,
-        title: c.title,
-        summary: c.summary,
-        rankOrder: currentConcepts.length + index + 1
-      }));
+        const conceptsToInsert = concepts.map((c: any, index: number) => ({
+          sessionId: session.id,
+          title: c.title,
+          summary: c.summary,
+          rankOrder: currentConcepts.length + index + 1,
+        }));
 
-      const newConcepts = await storage.createContentWriterConcepts(conceptsToInsert, userId);
+        const newConcepts = await storage.createContentWriterConcepts(
+          conceptsToInsert,
+          userId
+        );
 
-      res.json({ concepts: newConcepts });
-    } catch (error) {
-      console.error("Error regenerating concepts:", error);
-      res.status(500).json({ message: "Failed to regenerate concepts" });
+        res.json({ concepts: newConcepts });
+      } catch (error) {
+        console.error("Error regenerating concepts:", error);
+        res.status(500).json({ message: "Failed to regenerate concepts" });
+      }
     }
-  });
+  );
 
   // Update concept user action (choose, save, feedback)
-  app.patch("/api/content-writer/sessions/:sessionId/concepts/:conceptId", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { sessionId, conceptId } = req.params;
-      const { userAction, rating, feedbackText } = req.body;
+  app.patch(
+    "/api/content-writer/sessions/:sessionId/concepts/:conceptId",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { sessionId, conceptId } = req.params;
+        const { userAction, rating, feedbackText } = req.body;
 
-      const session = await storage.getContentWriterSession(sessionId, userId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
+        const session = await storage.getContentWriterSession(
+          sessionId,
+          userId
+        );
+        if (!session) {
+          return res.status(404).json({ message: "Session not found" });
+        }
 
-      let feedbackId = null;
-      if (rating) {
-        const [concept] = await db.select().from(contentWriterConcepts).where(eq(contentWriterConcepts.id, conceptId));
-        const [feedback] = await db.insert(contentFeedback).values({
+        let feedbackId = null;
+        if (rating) {
+          const [concept] = await db
+            .select()
+            .from(contentWriterConcepts)
+            .where(eq(contentWriterConcepts.id, conceptId));
+          const [feedback] = await db
+            .insert(contentFeedback)
+            .values({
+              userId,
+              toolType: "content-writer",
+              rating,
+              feedbackText: feedbackText || null,
+              inputData: { topic: session.topic },
+              outputData: { concept: concept.title },
+              guidelineProfileId: session.guidelineProfileId,
+            })
+            .returning();
+          feedbackId = feedback.id;
+        }
+
+        await storage.updateConceptUserAction(
+          conceptId,
           userId,
-          toolType: 'content-writer',
-          rating,
-          feedbackText: feedbackText || null,
-          inputData: { topic: session.topic },
-          outputData: { concept: concept.title },
-          guidelineProfileId: session.guidelineProfileId
-        }).returning();
-        feedbackId = feedback.id;
+          userAction,
+          feedbackId || undefined
+        );
+
+        if (userAction === "chosen") {
+          await storage.updateContentWriterSession(sessionId, userId, {
+            selectedConceptId: conceptId,
+            status: "subtopics",
+          });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error updating concept:", error);
+        res.status(500).json({ message: "Failed to update concept" });
       }
-
-      await storage.updateConceptUserAction(conceptId, userId, userAction, feedbackId || undefined);
-
-      if (userAction === 'chosen') {
-        await storage.updateContentWriterSession(sessionId, userId, {
-          selectedConceptId: conceptId,
-          status: 'subtopics'
-        });
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating concept:", error);
-      res.status(500).json({ message: "Failed to update concept" });
     }
-  });
+  );
 
   // Generate subtopics for chosen concept
-  app.post("/api/content-writer/sessions/:id/subtopics", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
-      const { objective, internalLinks, targetLength, toneOfVoice, language, useBrandGuidelines, selectedTargetAudiences, matchStyle = false } = req.body;
+  app.post(
+    "/api/content-writer/sessions/:id/subtopics",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const {
+          objective,
+          internalLinks,
+          targetLength,
+          toneOfVoice,
+          language,
+          useBrandGuidelines,
+          selectedTargetAudiences,
+          matchStyle = false,
+        } = req.body;
 
-      const session = await storage.getContentWriterSession(id, userId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-
-      // Update session with user preferences
-      await storage.updateContentWriterSession(id, userId, {
-        objective,
-        internalLinks,
-        targetLength,
-        toneOfVoice,
-        language,
-        useBrandGuidelines,
-        selectedTargetAudiences
-      });
-
-      // Get chosen concept
-      const [chosenConcept] = await db.select()
-        .from(contentWriterConcepts)
-        .where(eq(contentWriterConcepts.id, session.selectedConceptId));
-
-      if (!chosenConcept) {
-        return res.status(400).json({ message: "No concept selected" });
-      }
-
-      // Build context
-      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', session.guidelineProfileId);
-      
-      // Skip brand context if using 'end-rewrite' method
-      const brandContext = (useBrandGuidelines && session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Subtopics for: ${chosenConcept.title}`, { matchStyle })
-        : '';
-
-      // Get target audience context
-      let targetAudienceContext = '';
-      if (useBrandGuidelines && session.guidelineProfileId) {
-        const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
-        if (guidelineProfile) {
-          targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, selectedTargetAudiences);
+        const session = await storage.getContentWriterSession(id, userId);
+        if (!session) {
+          return res.status(404).json({ message: "Session not found" });
         }
-      } else {
-        targetAudienceContext = formatSelectedTargetAudiences('', selectedTargetAudiences);
-      }
 
-      const languageInstruction = language ? getLanguageInstruction(language) : getLanguageInstruction('en-US');
-      
-      const subtopicPrompt = `Generate 10 subtopic ideas for an article about: "${chosenConcept.title}"
+        // Update session with user preferences
+        await storage.updateContentWriterSession(id, userId, {
+          objective,
+          internalLinks,
+          targetLength,
+          toneOfVoice,
+          language,
+          useBrandGuidelines,
+          selectedTargetAudiences,
+        });
+
+        // Get chosen concept
+        if (!session.selectedConceptId) {
+          return res.status(400).json({ message: "No concept selected" });
+        }
+        const [chosenConcept] = await db
+          .select()
+          .from(contentWriterConcepts)
+          .where(eq(contentWriterConcepts.id, session.selectedConceptId));
+
+        if (!chosenConcept) {
+          return res.status(400).json({ message: "No concept selected" });
+        }
+
+        // Build context
+        const ragContext = await ragService.retrieveUserFeedback(
+          userId,
+          "content-writer",
+          session.guidelineProfileId || undefined
+        );
+
+        // Skip brand context if using 'end-rewrite' method
+        const brandContext =
+          useBrandGuidelines &&
+          session.guidelineProfileId &&
+          session.styleMatchingMethod === "continuous"
+            ? await ragService.getBrandContextForPrompt(
+                userId,
+                session.guidelineProfileId,
+                `Subtopics for: ${chosenConcept.title}`,
+                { matchStyle }
+              )
+            : "";
+
+        // Get target audience context
+        let targetAudienceContext = "";
+        if (useBrandGuidelines && session.guidelineProfileId) {
+          const guidelineProfile = await storage.getGuidelineProfile(
+            session.guidelineProfileId,
+            userId
+          );
+          if (guidelineProfile) {
+            targetAudienceContext = formatSelectedTargetAudiences(
+              guidelineProfile.content,
+              selectedTargetAudiences
+            );
+          }
+        } else {
+          targetAudienceContext = formatSelectedTargetAudiences(
+            "",
+            selectedTargetAudiences
+          );
+        }
+
+        const languageInstruction = language
+          ? getLanguageInstruction(language)
+          : getLanguageInstruction("en-US");
+
+        const subtopicPrompt = `Generate 10 subtopic ideas for an article about: "${
+          chosenConcept.title
+        }"
 
 Concept Summary: ${chosenConcept.summary}
 
-Article Objectives: ${objective || 'Inform and engage readers'}
+Article Objectives: ${objective || "Inform and engage readers"}
 Target Length: ${targetLength || 1000} words
-${toneOfVoice ? `Tone of Voice: ${toneOfVoice}` : ''}
+${toneOfVoice ? `Tone of Voice: ${toneOfVoice}` : ""}
 ${languageInstruction}
-${internalLinks && internalLinks.length > 0 ? `Internal Links to Include: ${internalLinks.join(', ')}` : ''}
+${
+  internalLinks && internalLinks.length > 0
+    ? `Internal Links to Include: ${internalLinks.join(", ")}`
+    : ""
+}
 ${targetAudienceContext}
 
 ${brandContext}
@@ -2627,78 +3226,119 @@ Return the response as a JSON array with this exact structure:
   }
 ]`;
 
-      const completion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: session.guidelineProfileId || undefined,
-        endpoint: 'content-writer-subtopics',
-        metadata: { conceptTitle: chosenConcept.title, targetLength, objective }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: subtopicPrompt }],
-          temperature: 0.7,
-        });
-      });
+        const completion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: session.guidelineProfileId || undefined,
+            endpoint: "content-writer-subtopics",
+            metadata: {
+              conceptTitle: chosenConcept.title,
+              targetLength,
+              objective,
+            },
+          },
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: subtopicPrompt }],
+              temperature: 0.7,
+            });
+          }
+        );
 
-      const subtopicsText = completion.choices[0]?.message?.content || '[]';
-      const subtopics = JSON.parse(stripMarkdownCodeBlocks(subtopicsText));
+        const subtopicsText = completion.choices[0]?.message?.content || "[]";
+        const subtopics = JSON.parse(stripMarkdownCodeBlocks(subtopicsText));
 
-      const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
-        sessionId: session.id,
-        parentConceptId: chosenConcept.id,
-        title: s.title,
-        summary: s.summary,
-        rankOrder: index + 1,
-        isSelected: false
-      }));
+        const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
+          sessionId: session.id,
+          parentConceptId: chosenConcept.id,
+          title: s.title,
+          summary: s.summary,
+          rankOrder: index + 1,
+          isSelected: false,
+        }));
 
-      const savedSubtopics = await storage.createContentWriterSubtopics(subtopicsToInsert, userId);
+        const savedSubtopics = await storage.createContentWriterSubtopics(
+          subtopicsToInsert,
+          userId
+        );
 
-      res.json({ subtopics: savedSubtopics });
-    } catch (error) {
-      console.error("Error generating subtopics:", error);
-      res.status(500).json({ message: "Failed to generate subtopics" });
+        res.json({ subtopics: savedSubtopics });
+      } catch (error) {
+        console.error("Error generating subtopics:", error);
+        res.status(500).json({ message: "Failed to generate subtopics" });
+      }
     }
-  });
+  );
 
   // Request more subtopics
-  app.post("/api/content-writer/sessions/:id/subtopics/more", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
-      const { matchStyle = false } = req.body;
+  app.post(
+    "/api/content-writer/sessions/:id/subtopics/more",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { matchStyle = false } = req.body;
 
-      const session = await storage.getContentWriterSession(id, userId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-
-      const existingSubtopics = await storage.getSessionSubtopics(id, userId);
-      const [chosenConcept] = await db.select()
-        .from(contentWriterConcepts)
-        .where(eq(contentWriterConcepts.id, session.selectedConceptId));
-
-      const existingTitles = existingSubtopics.map(s => s.title).join('\n- ');
-
-      // Skip brand context if using 'end-rewrite' method
-      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `More subtopics for: ${chosenConcept.title}`, { matchStyle })
-        : '';
-
-      // Get target audience context
-      let targetAudienceContext = '';
-      if (session.useBrandGuidelines && session.guidelineProfileId) {
-        const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
-        if (guidelineProfile) {
-          targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, session.selectedTargetAudiences);
+        const session = await storage.getContentWriterSession(id, userId);
+        if (!session) {
+          return res.status(404).json({ message: "Session not found" });
         }
-      } else {
-        targetAudienceContext = formatSelectedTargetAudiences('', session.selectedTargetAudiences);
-      }
 
-      const languageInstruction = session.language ? getLanguageInstruction(session.language) : getLanguageInstruction('en-US');
-      
-      const morePrompt = `Generate 5 additional subtopic ideas for an article about: "${chosenConcept.title}"
+        const existingSubtopics = await storage.getSessionSubtopics(id, userId);
+        if (!session.selectedConceptId) {
+          return res.status(400).json({ message: "No concept selected" });
+        }
+        const [chosenConcept] = await db
+          .select()
+          .from(contentWriterConcepts)
+          .where(eq(contentWriterConcepts.id, session.selectedConceptId));
+
+        const existingTitles = existingSubtopics
+          .map((s) => s.title)
+          .join("\n- ");
+
+        // Skip brand context if using 'end-rewrite' method
+        const brandContext =
+          session.useBrandGuidelines &&
+          session.guidelineProfileId &&
+          session.styleMatchingMethod === "continuous"
+            ? await ragService.getBrandContextForPrompt(
+                userId,
+                session.guidelineProfileId,
+                `More subtopics for: ${chosenConcept.title}`,
+                { matchStyle }
+              )
+            : "";
+
+        // Get target audience context
+        let targetAudienceContext = "";
+        if (session.useBrandGuidelines && session.guidelineProfileId) {
+          const guidelineProfile = await storage.getGuidelineProfile(
+            session.guidelineProfileId,
+            userId
+          );
+          if (guidelineProfile) {
+            targetAudienceContext = formatSelectedTargetAudiences(
+              guidelineProfile.content,
+              session.selectedTargetAudiences
+            );
+          }
+        } else {
+          targetAudienceContext = formatSelectedTargetAudiences(
+            "",
+            session.selectedTargetAudiences
+          );
+        }
+
+        const languageInstruction = session.language
+          ? getLanguageInstruction(session.language)
+          : getLanguageInstruction("en-US");
+
+        const morePrompt = `Generate 5 additional subtopic ideas for an article about: "${
+          chosenConcept.title
+        }"
 
 Already have these subtopics:
 - ${existingTitles}
@@ -2721,115 +3361,165 @@ Return the response as a JSON array with this structure:
   }
 ]`;
 
-      const completion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: session.guidelineProfileId || undefined,
-        endpoint: 'content-writer-subtopics-more',
-        metadata: { conceptTitle: chosenConcept.title, existingCount: existingSubtopics.length }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: morePrompt }],
-          temperature: 0.7,
-        });
-      });
+        const completion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: session.guidelineProfileId || undefined,
+            endpoint: "content-writer-subtopics-more",
+            metadata: {
+              conceptTitle: chosenConcept.title,
+              existingCount: existingSubtopics.length,
+            },
+          },
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: morePrompt }],
+              temperature: 0.7,
+            });
+          }
+        );
 
-      const subtopicsText = completion.choices[0]?.message?.content || '[]';
-      const subtopics = JSON.parse(stripMarkdownCodeBlocks(subtopicsText));
+        const subtopicsText = completion.choices[0]?.message?.content || "[]";
+        const subtopics = JSON.parse(stripMarkdownCodeBlocks(subtopicsText));
 
-      const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
-        sessionId: session.id,
-        parentConceptId: chosenConcept.id,
-        title: s.title,
-        summary: s.summary,
-        rankOrder: existingSubtopics.length + index + 1,
-        isSelected: false
-      }));
+        const subtopicsToInsert = subtopics.map((s: any, index: number) => ({
+          sessionId: session.id,
+          parentConceptId: chosenConcept.id,
+          title: s.title,
+          summary: s.summary,
+          rankOrder: existingSubtopics.length + index + 1,
+          isSelected: false,
+        }));
 
-      const newSubtopics = await storage.createContentWriterSubtopics(subtopicsToInsert, userId);
+        const newSubtopics = await storage.createContentWriterSubtopics(
+          subtopicsToInsert,
+          userId
+        );
 
-      res.json({ subtopics: newSubtopics });
-    } catch (error) {
-      console.error("Error generating more subtopics:", error);
-      res.status(500).json({ message: "Failed to generate subtopics" });
+        res.json({ subtopics: newSubtopics });
+      } catch (error) {
+        console.error("Error generating more subtopics:", error);
+        res.status(500).json({ message: "Failed to generate subtopics" });
+      }
     }
-  });
+  );
 
   // Update subtopic selection
-  app.patch("/api/content-writer/sessions/:sessionId/subtopics/:subtopicId", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { sessionId, subtopicId } = req.params;
-      const { isSelected, userAction, rating, feedbackText } = req.body;
+  app.patch(
+    "/api/content-writer/sessions/:sessionId/subtopics/:subtopicId",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { sessionId, subtopicId } = req.params;
+        const { isSelected, userAction, rating, feedbackText } = req.body;
 
-      const session = await storage.getContentWriterSession(sessionId, userId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
+        const session = await storage.getContentWriterSession(
+          sessionId,
+          userId
+        );
+        if (!session) {
+          return res.status(404).json({ message: "Session not found" });
+        }
 
-      if (rating) {
-        const [subtopic] = await db.select().from(contentWriterSubtopics).where(eq(contentWriterSubtopics.id, subtopicId));
-        await db.insert(contentFeedback).values({
+        if (rating) {
+          const [subtopic] = await db
+            .select()
+            .from(contentWriterSubtopics)
+            .where(eq(contentWriterSubtopics.id, subtopicId));
+          await db.insert(contentFeedback).values({
+            userId,
+            toolType: "content-writer",
+            rating,
+            feedbackText: feedbackText || null,
+            inputData: { subtopic: subtopic.title },
+            outputData: { summary: subtopic.summary },
+            guidelineProfileId: session.guidelineProfileId,
+          });
+        }
+
+        await storage.updateSubtopicSelection(
+          subtopicId,
           userId,
-          toolType: 'content-writer',
-          rating,
-          feedbackText: feedbackText || null,
-          inputData: { subtopic: subtopic.title },
-          outputData: { summary: subtopic.summary },
-          guidelineProfileId: session.guidelineProfileId
-        });
+          isSelected,
+          userAction
+        );
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error updating subtopic:", error);
+        res.status(500).json({ message: "Failed to update subtopic" });
       }
-
-      await storage.updateSubtopicSelection(subtopicId, userId, isSelected, userAction);
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating subtopic:", error);
-      res.status(500).json({ message: "Failed to update subtopic" });
     }
-  });
+  );
 
   // Generate final article
-  app.post("/api/content-writer/sessions/:id/generate", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
-      const { matchStyle = false } = req.body;
+  app.post(
+    "/api/content-writer/sessions/:id/generate",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { matchStyle = false } = req.body;
 
-      const session = await storage.getContentWriterSession(id, userId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-
-      const selectedSubtopics = (await storage.getSessionSubtopics(id, userId))
-        .filter(s => s.isSelected);
-
-      if (selectedSubtopics.length === 0) {
-        return res.status(400).json({ message: "No subtopics selected" });
-      }
-
-      const [chosenConcept] = await db.select()
-        .from(contentWriterConcepts)
-        .where(eq(contentWriterConcepts.id, session.selectedConceptId));
-
-      // Skip brand context if using 'end-rewrite' method (will apply at the very end instead)
-      const brandContext = (session.useBrandGuidelines && session.guidelineProfileId && session.styleMatchingMethod === 'continuous')
-        ? await ragService.getBrandContextForPrompt(userId, session.guidelineProfileId, `Article for: ${chosenConcept.title}`, { matchStyle })
-        : '';
-
-      // Get target audience context
-      let targetAudienceContext = '';
-      if (session.useBrandGuidelines && session.guidelineProfileId) {
-        const guidelineProfile = await storage.getGuidelineProfile(session.guidelineProfileId, userId);
-        if (guidelineProfile) {
-          targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, session.selectedTargetAudiences);
+        const session = await storage.getContentWriterSession(id, userId);
+        if (!session) {
+          return res.status(404).json({ message: "Session not found" });
         }
-      } else {
-        targetAudienceContext = formatSelectedTargetAudiences('', session.selectedTargetAudiences);
-      }
 
-      // Generate main brief
-      const mainBriefPrompt = `Create a detailed content brief for: "${chosenConcept.title}"
+        const selectedSubtopics = (
+          await storage.getSessionSubtopics(id, userId)
+        ).filter((s) => s.isSelected);
+
+        if (selectedSubtopics.length === 0) {
+          return res.status(400).json({ message: "No subtopics selected" });
+        }
+
+        if (!session.selectedConceptId) {
+          return res.status(400).json({ message: "No concept selected" });
+        }
+        const [chosenConcept] = await db
+          .select()
+          .from(contentWriterConcepts)
+          .where(eq(contentWriterConcepts.id, session.selectedConceptId));
+
+        // Skip brand context if using 'end-rewrite' method (will apply at the very end instead)
+        const brandContext =
+          session.useBrandGuidelines &&
+          session.guidelineProfileId &&
+          session.styleMatchingMethod === "continuous"
+            ? await ragService.getBrandContextForPrompt(
+                userId,
+                session.guidelineProfileId,
+                `Article for: ${chosenConcept.title}`,
+                { matchStyle }
+              )
+            : "";
+
+        // Get target audience context
+        let targetAudienceContext = "";
+        if (session.useBrandGuidelines && session.guidelineProfileId) {
+          const guidelineProfile = await storage.getGuidelineProfile(
+            session.guidelineProfileId,
+            userId
+          );
+          if (guidelineProfile) {
+            targetAudienceContext = formatSelectedTargetAudiences(
+              guidelineProfile.content,
+              session.selectedTargetAudiences
+            );
+          }
+        } else {
+          targetAudienceContext = formatSelectedTargetAudiences(
+            "",
+            session.selectedTargetAudiences
+          );
+        }
+
+        // Generate main brief
+        const mainBriefPrompt = `Create a detailed content brief for: "${chosenConcept.title}"
 
 Summary: ${chosenConcept.summary}
 Objective: ${session.objective}
@@ -2845,91 +3535,108 @@ Provide a comprehensive brief covering:
 4. SEO considerations
 5. Call to action`;
 
-      const briefCompletion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: session.guidelineProfileId || undefined,
-        endpoint: 'content-writer-main-brief',
-        metadata: { conceptTitle: chosenConcept.title }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: mainBriefPrompt }],
-          temperature: 0.5,
-        });
-      });
+        const briefCompletion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: session.guidelineProfileId || undefined,
+            endpoint: "content-writer-main-brief",
+            metadata: { conceptTitle: chosenConcept.title },
+          },
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: mainBriefPrompt }],
+              temperature: 0.5,
+            });
+          }
+        );
 
-      const mainBrief = briefCompletion.choices[0]?.message?.content || '';
+        const mainBrief = briefCompletion.choices[0]?.message?.content || "";
 
-      // Generate subtopic briefs
-      const subtopicBriefs = [];
-      for (const subtopic of selectedSubtopics) {
-        const subtopicBriefPrompt = `Create a brief for this subtopic: "${subtopic.title}"
+        // Generate subtopic briefs
+        const subtopicBriefs = [];
+        for (const subtopic of selectedSubtopics) {
+          const subtopicBriefPrompt = `Create a brief for this subtopic: "${subtopic.title}"
 Summary: ${subtopic.summary}
 This is part of the main article: "${chosenConcept.title}"
 
 Provide guidance on key points to cover.`;
 
-        const subtopicBriefCompletion = await loggedOpenAICall({
-          userId,
-          guidelineProfileId: session.guidelineProfileId || undefined,
-          endpoint: 'content-writer-subtopic-brief',
-          metadata: { subtopicTitle: subtopic.title }
-        }, async () => {
-          return await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: subtopicBriefPrompt }],
-            temperature: 0.5,
+          const subtopicBriefCompletion = await loggedOpenAICall(
+            {
+              userId,
+              guidelineProfileId: session.guidelineProfileId || undefined,
+              endpoint: "content-writer-subtopic-brief",
+              metadata: { subtopicTitle: subtopic.title },
+            },
+            async () => {
+              return await openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [{ role: "user", content: subtopicBriefPrompt }],
+                temperature: 0.5,
+              });
+            }
+          );
+
+          subtopicBriefs.push({
+            subtopicId: subtopic.id,
+            brief: subtopicBriefCompletion.choices[0]?.message?.content || "",
           });
-        });
+        }
 
-        subtopicBriefs.push({
-          subtopicId: subtopic.id,
-          brief: subtopicBriefCompletion.choices[0]?.message?.content || ''
-        });
-      }
+        // Generate content for each subtopic
+        const subtopicContents = [];
+        const languageInstruction = session.language
+          ? getLanguageInstruction(session.language)
+          : getLanguageInstruction("en-US");
 
-      // Generate content for each subtopic
-      const subtopicContents = [];
-      const languageInstruction = session.language ? getLanguageInstruction(session.language) : getLanguageInstruction('en-US');
-      
-      for (const subtopic of selectedSubtopics) {
-        const brief = subtopicBriefs.find(b => b.subtopicId === subtopic.id)?.brief || '';
-        const contentPrompt = `Write detailed content for: "${subtopic.title}"
+        for (const subtopic of selectedSubtopics) {
+          const brief =
+            subtopicBriefs.find((b) => b.subtopicId === subtopic.id)?.brief ||
+            "";
+          const contentPrompt = `Write detailed content for: "${subtopic.title}"
 
 Brief: ${brief}
 ${targetAudienceContext}
 
 ${brandContext}
-${session.toneOfVoice ? `Tone: ${session.toneOfVoice}` : ''}
+${session.toneOfVoice ? `Tone: ${session.toneOfVoice}` : ""}
 ${languageInstruction}
 
 ${getWebArticleStyleInstructions()}
 
 ${getAntiFabricationInstructions()}
 
-Write approximately ${Math.floor((session.targetLength || 1000) / selectedSubtopics.length)} words.`;
+Write approximately ${Math.floor(
+            (session.targetLength || 1000) / selectedSubtopics.length
+          )} words.`;
 
-        const contentCompletion = await loggedOpenAICall({
-          userId,
-          guidelineProfileId: session.guidelineProfileId || undefined,
-          endpoint: 'content-writer-subtopic-content',
-          metadata: { subtopicTitle: subtopic.title }
-        }, async () => {
-          return await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: contentPrompt }],
-            temperature: 0.7,
+          const contentCompletion = await loggedOpenAICall(
+            {
+              userId,
+              guidelineProfileId: session.guidelineProfileId || undefined,
+              endpoint: "content-writer-subtopic-content",
+              metadata: { subtopicTitle: subtopic.title },
+            },
+            async () => {
+              return await openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [{ role: "user", content: contentPrompt }],
+                temperature: 0.7,
+              });
+            }
+          );
+
+          subtopicContents.push({
+            subtopicId: subtopic.id,
+            content: contentCompletion.choices[0]?.message?.content || "",
           });
-        });
+        }
 
-        subtopicContents.push({
-          subtopicId: subtopic.id,
-          content: contentCompletion.choices[0]?.message?.content || ''
-        });
-      }
-
-      // Generate top and tail (intro/conclusion)
-      const topTailPrompt = `Write an engaging introduction and conclusion for: "${chosenConcept.title}"
+        // Generate top and tail (intro/conclusion)
+        const topTailPrompt = `Write an engaging introduction and conclusion for: "${
+          chosenConcept.title
+        }"
 
 Main Brief: ${mainBrief}
 ${targetAudienceContext}
@@ -2945,36 +3652,41 @@ Provide:
 1. A compelling introduction (2-3 paragraphs)
 2. A strong conclusion with call to action`;
 
-      const topTailCompletion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: session.guidelineProfileId || undefined,
-        endpoint: 'content-writer-intro-conclusion',
-        metadata: { conceptTitle: chosenConcept.title }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: topTailPrompt }],
-          temperature: 0.7,
-        });
-      });
+        const topTailCompletion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: session.guidelineProfileId || undefined,
+            endpoint: "content-writer-intro-conclusion",
+            metadata: { conceptTitle: chosenConcept.title },
+          },
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: topTailPrompt }],
+              temperature: 0.7,
+            });
+          }
+        );
 
-      const topAndTail = topTailCompletion.choices[0]?.message?.content || '';
+        const topAndTail = topTailCompletion.choices[0]?.message?.content || "";
 
-      // Assemble article
-      const introduction = topAndTail.split('Conclusion')[0] || topAndTail;
-      const conclusion = topAndTail.split('Conclusion')[1] || '';
+        // Assemble article
+        const introduction = topAndTail.split("Conclusion")[0] || topAndTail;
+        const conclusion = topAndTail.split("Conclusion")[1] || "";
 
-      let fullArticle = `# ${chosenConcept.title}\n\n${introduction}\n\n`;
-      
-      for (const subtopic of selectedSubtopics) {
-        const content = subtopicContents.find(c => c.subtopicId === subtopic.id)?.content || '';
-        fullArticle += `## ${subtopic.title}\n\n${content}\n\n`;
-      }
+        let fullArticle = `# ${chosenConcept.title}\n\n${introduction}\n\n`;
 
-      fullArticle += `## Conclusion\n\n${conclusion}`;
+        for (const subtopic of selectedSubtopics) {
+          const content =
+            subtopicContents.find((c) => c.subtopicId === subtopic.id)
+              ?.content || "";
+          fullArticle += `## ${subtopic.title}\n\n${content}\n\n`;
+        }
 
-      // Review and refine
-      const reviewPrompt = `Review and refine this article for consistency, formatting, and natural flow. Remove any AI-sounding phrases and ensure it reads naturally:
+        fullArticle += `## Conclusion\n\n${conclusion}`;
+
+        // Review and refine
+        const reviewPrompt = `Review and refine this article for consistency, formatting, and natural flow. Remove any AI-sounding phrases and ensure it reads naturally:
 
 ${fullArticle}
 
@@ -2993,37 +3705,48 @@ CRITICAL INSTRUCTIONS:
 
 Return the refined article maintaining the structure.`;
 
-      const reviewCompletion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: session.guidelineProfileId || undefined,
-        endpoint: 'content-writer-review-refine',
-        metadata: { conceptTitle: chosenConcept.title, wordCount: fullArticle.split(' ').length }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: reviewPrompt }],
-          temperature: 0.3,
-        });
-      });
-
-      let finalArticle = reviewCompletion.choices[0]?.message?.content || fullArticle;
-
-      // SPLIT TEST: End-rewrite method - Analyze brand style and rewrite entire article
-      if (session.styleMatchingMethod === 'end-rewrite' && session.guidelineProfileId && matchStyle) {
-        // Retrieve ALL brand context chunks (not just top 5)
-        const allBrandContext = await ragService.getBrandContextForPrompt(
-          userId, 
-          session.guidelineProfileId, 
-          `Complete brand style analysis for article rewrite: ${chosenConcept.title}`,
-          { 
-            limit: 20, // Get more context for comprehensive analysis
-            minSimilarity: 0.6, // Lower threshold to get more examples
-            matchStyle: false // Don't add the instruction yet, we'll do it in the rewrite prompt
+        const reviewCompletion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: session.guidelineProfileId || undefined,
+            endpoint: "content-writer-review-refine",
+            metadata: {
+              conceptTitle: chosenConcept.title,
+              wordCount: fullArticle.split(" ").length,
+            },
+          },
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: reviewPrompt }],
+              temperature: 0.3,
+            });
           }
         );
 
-        if (allBrandContext) {
-          const styleRewritePrompt = `You are a professional content writer tasked with rewriting an article to match a specific brand's writing style.
+        let finalArticle =
+          reviewCompletion.choices[0]?.message?.content || fullArticle;
+
+        // SPLIT TEST: End-rewrite method - Analyze brand style and rewrite entire article
+        if (
+          session.styleMatchingMethod === "end-rewrite" &&
+          session.guidelineProfileId &&
+          matchStyle
+        ) {
+          // Retrieve ALL brand context chunks (not just top 5)
+          const allBrandContext = await ragService.getBrandContextForPrompt(
+            userId,
+            session.guidelineProfileId,
+            `Complete brand style analysis for article rewrite: ${chosenConcept.title}`,
+            {
+              limit: 20, // Get more context for comprehensive analysis
+              minSimilarity: 0.6, // Lower threshold to get more examples
+              matchStyle: false, // Don't add the instruction yet, we'll do it in the rewrite prompt
+            }
+          );
+
+          if (allBrandContext) {
+            const styleRewritePrompt = `You are a professional content writer tasked with rewriting an article to match a specific brand's writing style.
 
 STEP 1: ANALYZE THE BRAND'S WRITING STYLE
 Carefully analyze the following brand context documents to understand:
@@ -3055,56 +3778,67 @@ ${finalArticle}
 
 Return ONLY the rewritten article, maintaining the markdown structure.`;
 
-          const styleRewriteCompletion = await loggedOpenAICall({
-            userId,
-            guidelineProfileId: session.guidelineProfileId,
-            endpoint: 'content-writer-style-rewrite',
-            metadata: { 
-              conceptTitle: chosenConcept.title, 
-              method: 'end-rewrite',
-              wordCount: finalArticle.split(' ').length 
-            }
-          }, async () => {
-            return await openai.chat.completions.create({
-              model: "gpt-4o-mini",
-              messages: [{ role: "user", content: styleRewritePrompt }],
-              temperature: 0.4, // Slightly lower temp for consistency
-            });
-          });
+            const styleRewriteCompletion = await loggedOpenAICall(
+              {
+                userId,
+                guidelineProfileId: session.guidelineProfileId,
+                endpoint: "content-writer-style-rewrite",
+                metadata: {
+                  conceptTitle: chosenConcept.title,
+                  method: "end-rewrite",
+                  wordCount: finalArticle.split(" ").length,
+                },
+              },
+              async () => {
+                return await openai.chat.completions.create({
+                  model: "gpt-4o-mini",
+                  messages: [{ role: "user", content: styleRewritePrompt }],
+                  temperature: 0.4, // Slightly lower temp for consistency
+                });
+              }
+            );
 
-          finalArticle = styleRewriteCompletion.choices[0]?.message?.content || finalArticle;
+            finalArticle =
+              styleRewriteCompletion.choices[0]?.message?.content ||
+              finalArticle;
+          }
         }
+
+        // Save draft
+        const draft = await storage.createContentWriterDraft(
+          {
+            sessionId: session.id,
+            mainBrief,
+            subtopicBriefs,
+            subtopicContents,
+            topAndTail,
+            finalArticle,
+            metadata: { wordCount: finalArticle.split(" ").length },
+          },
+          userId
+        );
+
+        await storage.updateContentWriterSession(id, userId, {
+          status: "completed",
+        });
+
+        // Create in-app notification
+        await storage.createNotification({
+          userId,
+          type: "article_complete",
+          title: "Article Ready!",
+          message: `Your article "${session.topic}" has been completed and is ready for review.`,
+          relatedResourceType: "content_writer_draft",
+          relatedResourceId: draft.id,
+        });
+
+        res.json({ draft });
+      } catch (error) {
+        console.error("Error generating article:", error);
+        res.status(500).json({ message: "Failed to generate article" });
       }
-
-      // Save draft
-      const draft = await storage.createContentWriterDraft({
-        sessionId: session.id,
-        mainBrief,
-        subtopicBriefs,
-        subtopicContents,
-        topAndTail,
-        finalArticle,
-        metadata: { wordCount: finalArticle.split(' ').length }
-      }, userId);
-
-      await storage.updateContentWriterSession(id, userId, { status: 'completed' });
-
-      // Create in-app notification
-      await storage.createNotification({
-        userId,
-        type: 'article_complete',
-        title: 'Article Ready!',
-        message: `Your article "${session.topic}" has been completed and is ready for review.`,
-        relatedResourceType: 'content_writer_draft',
-        relatedResourceId: draft.id,
-      });
-
-      res.json({ draft });
-    } catch (error) {
-      console.error("Error generating article:", error);
-      res.status(500).json({ message: "Failed to generate article" });
     }
-  });
+  );
 
   // Get all user's content writer drafts
   app.get("/api/content-writer/drafts", requireAuth, async (req: any, res) => {
@@ -3119,354 +3853,425 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
   });
 
   // Delete a content writer draft
-  app.delete("/api/content-writer/drafts/:id", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
-      
-      const success = await storage.deleteContentWriterDraft(id, userId);
-      
-      if (!success) {
-        return res.status(404).json({ message: "Draft not found" });
+  app.delete(
+    "/api/content-writer/drafts/:id",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const success = await storage.deleteContentWriterDraft(id, userId);
+
+        if (!success) {
+          return res.status(404).json({ message: "Draft not found" });
+        }
+
+        res.json({ success: true, message: "Draft deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting content writer draft:", error);
+        res.status(500).json({ message: "Failed to delete draft" });
       }
-      
-      res.json({ success: true, message: "Draft deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting content writer draft:", error);
-      res.status(500).json({ message: "Failed to delete draft" });
     }
-  });
+  );
 
   // LangGraph-powered Content Writer v2 API Routes
   // 1. Start new LangGraph workflow
-  app.post("/api/langgraph/content-writer/start", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      
-      // Validate request body with Zod
-      const validationResult = langgraphStartSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          message: "Invalid request body", 
-          errors: validationResult.error.errors 
-        });
-      }
+  app.post(
+    "/api/langgraph/content-writer/start",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
 
-      const { 
-        topic, 
-        guidelineProfileId,
-        objective,
-        targetLength,
-        toneOfVoice,
-        language,
-        internalLinks,
-        useBrandGuidelines,
-        selectedTargetAudiences,
-        styleMatchingMethod,
-        matchStyle
-      } = validationResult.data;
-
-      // Create content_writer_session for backward compatibility
-      const session = await storage.createContentWriterSession({
-        userId,
-        topic,
-        guidelineProfileId: guidelineProfileId || null,
-        styleMatchingMethod: styleMatchingMethod || 'continuous',
-        status: 'concepts',
-        objective,
-        targetLength,
-        toneOfVoice,
-        language,
-        internalLinks,
-        selectedTargetAudiences
-      });
-
-      // Verify session was created successfully
-      if (!session || !session.id) {
-        throw new Error("Failed to create content writer session");
-      }
-
-      // Verify session exists in database before proceeding
-      const verifiedSession = await storage.getContentWriterSession(session.id, userId);
-      if (!verifiedSession) {
-        throw new Error(`Session created but not found in database: ${session.id}`);
-      }
-
-      // Create initial state for LangGraph
-      const initialState = {
-        topic,
-        guidelineProfileId,
-        userId,
-        sessionId: session.id,
-        concepts: [],
-        subtopics: [],
-        selectedSubtopicIds: [],
-        errors: [],
-        metadata: {
-          currentStep: 'concepts' as const,
-          startedAt: new Date().toISOString()
-        },
-        objective,
-        targetLength,
-        toneOfVoice,
-        language,
-        internalLinks,
-        useBrandGuidelines,
-        selectedTargetAudiences,
-        styleMatchingMethod: styleMatchingMethod || 'continuous',
-        matchStyle,
-        status: 'pending' as const
-      };
-
-      // Execute LangGraph workflow
-      const result = await executeContentWriterGraph(initialState, {
-        userId,
-        sessionId: session.id
-      });
-
-      // Determine thread status based on result state
-      const threadStatus = result.state.status === 'completed' 
-        ? 'completed' 
-        : result.state.status === 'failed' 
-        ? 'error' 
-        : result.state.metadata?.humanApprovalPending 
-        ? 'paused' 
-        : 'active';
-
-      // Check if thread already exists (created by checkpointer), then update or create
-      const existingThread = await storage.getLanggraphThread(result.threadId, userId);
-      
-      if (existingThread) {
-        // Update existing thread with metadata and sessionId
-        await storage.updateLanggraphThread(result.threadId, userId, {
-          sessionId: session.id,
-          status: threadStatus,
-          metadata: {
-            topic,
-            guidelineProfileId,
-            currentStep: result.state.metadata?.currentStep || 'concepts',
-            completed: result.state.status === 'completed',
-            errors: result.state.errors || []
-          }
-        });
-      } else {
-        // Create langgraph_thread record with initial status
-        await storage.createLanggraphThread({
-          id: result.threadId,
-          userId,
-          sessionId: session.id,
-          status: threadStatus,
-          metadata: {
-            topic,
-            guidelineProfileId,
-            currentStep: result.state.metadata?.currentStep || 'concepts',
-            completed: result.state.status === 'completed',
-            errors: result.state.errors || []
-          }
-        });
-      }
-
-      res.json({
-        threadId: result.threadId,
-        sessionId: session.id,
-        state: result.state
-      });
-    } catch (error) {
-      console.error("Error starting LangGraph workflow:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to start workflow";
-      res.status(500).json({ message: `Failed to start workflow: ${errorMessage}` });
-    }
-  });
-
-  // 2. Resume existing workflow with user inputs
-  app.post("/api/langgraph/content-writer/resume/:threadId", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { threadId } = req.params;
-      
-      // Validate request body with Zod
-      const validationResult = langgraphResumeSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          message: "Invalid request body", 
-          errors: validationResult.error.errors 
-        });
-      }
-
-      const { selectedConceptId, selectedSubtopicIds } = validationResult.data;
-
-      // Verify thread belongs to user (security)
-      const thread = await storage.getLanggraphThread(threadId, userId);
-      if (!thread) {
-        return res.status(404).json({ message: "Thread not found" });
-      }
-
-      // Prepare updates
-      const updates: any = {};
-      if (selectedConceptId !== undefined) {
-        updates.selectedConceptId = selectedConceptId;
-      }
-      if (selectedSubtopicIds !== undefined) {
-        updates.selectedSubtopicIds = selectedSubtopicIds;
-      }
-
-      // Update session in database if sessionId exists
-      if (thread.sessionId && selectedConceptId !== undefined) {
-        await storage.updateContentWriterSession(thread.sessionId, userId, {
-          selectedConceptId: selectedConceptId,
-          status: 'subtopics'
-        });
-      }
-
-      // Resume LangGraph workflow
-      const result = await resumeContentWriterGraph(
-        threadId,
-        {
-          userId,
-          sessionId: thread.sessionId || undefined
-        },
-        updates
-      );
-
-      // Determine thread status based on result state
-      const threadStatus = result.state.status === 'completed' 
-        ? 'completed' 
-        : result.state.status === 'failed' 
-        ? 'error' 
-        : result.state.metadata?.humanApprovalPending 
-        ? 'paused' 
-        : 'active';
-
-      // Update thread with comprehensive metadata
-      const existingMetadata = (thread.metadata as Record<string, any>) || {};
-      await storage.updateLanggraphThread(threadId, userId, {
-        status: threadStatus,
-        lastCheckpointId: result.threadId,
-        metadata: {
-          ...existingMetadata,
-          currentStep: result.state.metadata?.currentStep || existingMetadata.currentStep,
-          completed: result.state.status === 'completed',
-          errors: result.state.errors || [],
-          lastUpdatedAt: new Date().toISOString(),
-          regenerationCount: result.state.metadata?.regenerationCount || 0
-        }
-      });
-
-      res.json({
-        threadId: result.threadId,
-        state: result.state
-      });
-    } catch (error) {
-      console.error("Error resuming LangGraph workflow:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to resume workflow";
-      res.status(500).json({ message: `Failed to resume workflow: ${errorMessage}` });
-    }
-  });
-
-  // 3. Get current workflow state
-  app.get("/api/langgraph/content-writer/status/:threadId", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { threadId } = req.params;
-
-      // Verify thread belongs to user (security)
-      const thread = await storage.getLanggraphThread(threadId, userId);
-      if (!thread) {
-        return res.status(404).json({ message: "Thread not found" });
-      }
-
-      // Get graph state
-      const state = await getGraphState(threadId, {
-        userId,
-        sessionId: thread.sessionId || undefined
-      });
-
-      if (!state) {
-        return res.status(404).json({ message: "State not found for thread" });
-      }
-
-      // Determine current step and completion status
-      const currentStep = state.metadata?.currentStep || 'concepts';
-      const completed = state.status === 'completed' || state.metadata?.currentStep === 'completed';
-
-      res.json({
-        threadId,
-        state,
-        currentStep,
-        completed
-      });
-    } catch (error) {
-      console.error("Error getting workflow status:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to get workflow status";
-      res.status(500).json({ message: `Failed to get workflow status: ${errorMessage}` });
-    }
-  });
-
-  // 4. Regenerate concepts for a thread
-  app.post("/api/langgraph/content-writer/regenerate/:threadId", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { threadId } = req.params;
-      const { feedbackText, matchStyle = false } = req.body;
-
-      // Verify thread belongs to user (security)
-      const thread = await storage.getLanggraphThread(threadId, userId);
-      if (!thread) {
-        return res.status(404).json({ message: "Thread not found" });
-      }
-
-      // Get current graph state
-      const currentState = await getGraphState(threadId, {
-        userId,
-        sessionId: thread.sessionId || undefined
-      });
-
-      if (!currentState) {
-        return res.status(404).json({ message: "State not found for thread" });
-      }
-
-      // Save thumbs down feedback for all current concepts
-      if (currentState.concepts && currentState.concepts.length > 0) {
-        for (const concept of currentState.concepts) {
-          await db.insert(contentFeedback).values({
-            userId,
-            toolType: 'content-writer',
-            rating: 'thumbs_down',
-            feedbackText: feedbackText || 'Regenerated concepts',
-            inputData: { topic: currentState.topic },
-            outputData: { concept: concept.title },
-            guidelineProfileId: currentState.guidelineProfileId || null
+        // Validate request body with Zod
+        const validationResult = langgraphStartSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          return res.status(400).json({
+            message: "Invalid request body",
+            errors: validationResult.error.errors,
           });
         }
-      }
 
-      // Generate new concepts with feedback
-      const ragContext = await ragService.retrieveUserFeedback(userId, 'content-writer', currentState.guidelineProfileId);
-      
-      // Skip brand context if using 'end-rewrite' method
-      const brandContext = (currentState.guidelineProfileId && currentState.styleMatchingMethod === 'continuous')
-        ? await ragService.getBrandContextForPrompt(userId, currentState.guidelineProfileId, `Article concepts for: ${currentState.topic}`, { matchStyle })
-        : '';
+        const {
+          topic,
+          guidelineProfileId,
+          objective,
+          targetLength,
+          toneOfVoice,
+          language,
+          internalLinks,
+          useBrandGuidelines,
+          selectedTargetAudiences,
+          styleMatchingMethod,
+          matchStyle,
+        } = validationResult.data;
 
-      // Get target audience context
-      let targetAudienceContext = '';
-      if (currentState.selectedTargetAudiences) {
-        if (currentState.guidelineProfileId) {
-          const guidelineProfile = await storage.getGuidelineProfile(currentState.guidelineProfileId, userId);
-          if (guidelineProfile) {
-            targetAudienceContext = formatSelectedTargetAudiences(guidelineProfile.content, currentState.selectedTargetAudiences);
-          }
-        } else {
-          targetAudienceContext = formatSelectedTargetAudiences('', currentState.selectedTargetAudiences);
+        // Create content_writer_session for backward compatibility
+        const session = await storage.createContentWriterSession({
+          userId,
+          topic,
+          guidelineProfileId: guidelineProfileId || null,
+          styleMatchingMethod: styleMatchingMethod || "continuous",
+          status: "concepts",
+          objective,
+          targetLength,
+          toneOfVoice,
+          language,
+          internalLinks,
+          selectedTargetAudiences,
+        });
+
+        // Verify session was created successfully
+        if (!session || !session.id) {
+          throw new Error("Failed to create content writer session");
         }
-      }
 
-      const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${currentState.topic}"
+        // Verify session exists in database before proceeding
+        const verifiedSession = await storage.getContentWriterSession(
+          session.id,
+          userId
+        );
+        if (!verifiedSession) {
+          throw new Error(
+            `Session created but not found in database: ${session.id}`
+          );
+        }
+
+        // Create initial state for LangGraph
+        const initialState = {
+          topic,
+          guidelineProfileId,
+          userId,
+          sessionId: session.id,
+          concepts: [],
+          subtopics: [],
+          selectedSubtopicIds: [],
+          errors: [],
+          metadata: {
+            currentStep: "concepts" as const,
+            startedAt: new Date().toISOString(),
+          },
+          objective,
+          targetLength,
+          toneOfVoice,
+          language,
+          internalLinks,
+          useBrandGuidelines,
+          selectedTargetAudiences,
+          styleMatchingMethod: styleMatchingMethod || "continuous",
+          matchStyle,
+          status: "pending" as const,
+        };
+
+        // Execute LangGraph workflow
+        const result = await executeContentWriterGraph(initialState, {
+          userId,
+          sessionId: session.id,
+        });
+
+        // Determine thread status based on result state
+        const threadStatus =
+          result.state.status === "completed"
+            ? "completed"
+            : result.state.status === "failed"
+            ? "error"
+            : result.state.metadata?.humanApprovalPending
+            ? "paused"
+            : "active";
+
+        // Check if thread already exists (created by checkpointer), then update or create
+        const existingThread = await storage.getLanggraphThread(
+          result.threadId,
+          userId
+        );
+
+        if (existingThread) {
+          // Update existing thread with metadata and sessionId
+          await storage.updateLanggraphThread(result.threadId, userId, {
+            sessionId: session.id,
+            status: threadStatus,
+            metadata: {
+              topic,
+              guidelineProfileId,
+              currentStep: result.state.metadata?.currentStep || "concepts",
+              completed: result.state.status === "completed",
+              errors: result.state.errors || [],
+            },
+          });
+        } else {
+          // Create langgraph_thread record with initial status
+          await storage.createLanggraphThread({
+            id: result.threadId,
+            userId,
+            sessionId: session.id,
+            status: threadStatus,
+            metadata: {
+              topic,
+              guidelineProfileId,
+              currentStep: result.state.metadata?.currentStep || "concepts",
+              completed: result.state.status === "completed",
+              errors: result.state.errors || [],
+            },
+          });
+        }
+
+        res.json({
+          threadId: result.threadId,
+          sessionId: session.id,
+          state: result.state,
+        });
+      } catch (error) {
+        console.error("Error starting LangGraph workflow:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to start workflow";
+        res
+          .status(500)
+          .json({ message: `Failed to start workflow: ${errorMessage}` });
+      }
+    }
+  );
+
+  // 2. Resume existing workflow with user inputs
+  app.post(
+    "/api/langgraph/content-writer/resume/:threadId",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { threadId } = req.params;
+
+        // Validate request body with Zod
+        const validationResult = langgraphResumeSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          return res.status(400).json({
+            message: "Invalid request body",
+            errors: validationResult.error.errors,
+          });
+        }
+
+        const { selectedConceptId, selectedSubtopicIds } =
+          validationResult.data;
+
+        // Verify thread belongs to user (security)
+        const thread = await storage.getLanggraphThread(threadId, userId);
+        if (!thread) {
+          return res.status(404).json({ message: "Thread not found" });
+        }
+
+        // Prepare updates
+        const updates: any = {};
+        if (selectedConceptId !== undefined) {
+          updates.selectedConceptId = selectedConceptId;
+        }
+        if (selectedSubtopicIds !== undefined) {
+          updates.selectedSubtopicIds = selectedSubtopicIds;
+        }
+
+        // Update session in database if sessionId exists
+        if (thread.sessionId && selectedConceptId !== undefined) {
+          await storage.updateContentWriterSession(thread.sessionId, userId, {
+            selectedConceptId: selectedConceptId,
+            status: "subtopics",
+          });
+        }
+
+        // Resume LangGraph workflow
+        const result = await resumeContentWriterGraph(
+          threadId,
+          {
+            userId,
+            sessionId: thread.sessionId || undefined,
+          },
+          updates
+        );
+
+        // Determine thread status based on result state
+        const threadStatus =
+          result.state.status === "completed"
+            ? "completed"
+            : result.state.status === "failed"
+            ? "error"
+            : result.state.metadata?.humanApprovalPending
+            ? "paused"
+            : "active";
+
+        // Update thread with comprehensive metadata
+        const existingMetadata = (thread.metadata as Record<string, any>) || {};
+        await storage.updateLanggraphThread(threadId, userId, {
+          status: threadStatus,
+          lastCheckpointId: result.threadId,
+          metadata: {
+            ...existingMetadata,
+            currentStep:
+              result.state.metadata?.currentStep ||
+              existingMetadata.currentStep,
+            completed: result.state.status === "completed",
+            errors: result.state.errors || [],
+            lastUpdatedAt: new Date().toISOString(),
+            regenerationCount: result.state.metadata?.regenerationCount || 0,
+          },
+        });
+
+        res.json({
+          threadId: result.threadId,
+          state: result.state,
+        });
+      } catch (error) {
+        console.error("Error resuming LangGraph workflow:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to resume workflow";
+        res
+          .status(500)
+          .json({ message: `Failed to resume workflow: ${errorMessage}` });
+      }
+    }
+  );
+
+  // 3. Get current workflow state
+  app.get(
+    "/api/langgraph/content-writer/status/:threadId",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { threadId } = req.params;
+
+        // Verify thread belongs to user (security)
+        const thread = await storage.getLanggraphThread(threadId, userId);
+        if (!thread) {
+          return res.status(404).json({ message: "Thread not found" });
+        }
+
+        // Get graph state
+        const state = await getGraphState(threadId, {
+          userId,
+          sessionId: thread.sessionId || undefined,
+        });
+
+        if (!state) {
+          return res
+            .status(404)
+            .json({ message: "State not found for thread" });
+        }
+
+        // Determine current step and completion status
+        const currentStep = state.metadata?.currentStep || "concepts";
+        const completed =
+          state.status === "completed" ||
+          state.metadata?.currentStep === "completed";
+
+        res.json({
+          threadId,
+          state,
+          currentStep,
+          completed,
+        });
+      } catch (error) {
+        console.error("Error getting workflow status:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to get workflow status";
+        res
+          .status(500)
+          .json({ message: `Failed to get workflow status: ${errorMessage}` });
+      }
+    }
+  );
+
+  // 4. Regenerate concepts for a thread
+  app.post(
+    "/api/langgraph/content-writer/regenerate/:threadId",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { threadId } = req.params;
+        const { feedbackText, matchStyle = false } = req.body;
+
+        // Verify thread belongs to user (security)
+        const thread = await storage.getLanggraphThread(threadId, userId);
+        if (!thread) {
+          return res.status(404).json({ message: "Thread not found" });
+        }
+
+        // Get current graph state
+        const currentState = await getGraphState(threadId, {
+          userId,
+          sessionId: thread.sessionId || undefined,
+        });
+
+        if (!currentState) {
+          return res
+            .status(404)
+            .json({ message: "State not found for thread" });
+        }
+
+        // Save thumbs down feedback for all current concepts
+        if (currentState.concepts && currentState.concepts.length > 0) {
+          for (const concept of currentState.concepts) {
+            await db.insert(contentFeedback).values({
+              userId,
+              toolType: "content-writer",
+              rating: "thumbs_down",
+              feedbackText: feedbackText || "Regenerated concepts",
+              inputData: { topic: currentState.topic },
+              outputData: { concept: concept.title },
+              guidelineProfileId: currentState.guidelineProfileId || null,
+            });
+          }
+        }
+
+        // Generate new concepts with feedback
+        const ragContext = await ragService.retrieveUserFeedback(
+          userId,
+          "content-writer",
+          currentState.guidelineProfileId
+        );
+
+        // Skip brand context if using 'end-rewrite' method
+        const brandContext =
+          currentState.guidelineProfileId &&
+          currentState.styleMatchingMethod === "continuous"
+            ? await ragService.getBrandContextForPrompt(
+                userId,
+                currentState.guidelineProfileId,
+                `Article concepts for: ${currentState.topic}`,
+                { matchStyle }
+              )
+            : "";
+
+        // Get target audience context
+        let targetAudienceContext = "";
+        if (currentState.selectedTargetAudiences) {
+          if (currentState.guidelineProfileId) {
+            const guidelineProfile = await storage.getGuidelineProfile(
+              currentState.guidelineProfileId,
+              userId
+            );
+            if (guidelineProfile) {
+              targetAudienceContext = formatSelectedTargetAudiences(
+                guidelineProfile.content,
+                currentState.selectedTargetAudiences
+              );
+            }
+          } else {
+            targetAudienceContext = formatSelectedTargetAudiences(
+              "",
+              currentState.selectedTargetAudiences
+            );
+          }
+        }
+
+        const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${
+          currentState.topic
+        }"
 
 ${targetAudienceContext}
 ${brandContext}
 ${ragContext}
-${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ''}
+${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ""}
 
 ${getAntiFabricationInstructions()}
 
@@ -3482,148 +4287,176 @@ Return the response as a JSON array with this exact structure:
   }
 ]`;
 
-      const completion = await loggedOpenAICall({
-        userId,
-        guidelineProfileId: currentState.guidelineProfileId || undefined,
-        endpoint: 'content-writer-concepts-regenerate',
-        metadata: { topic: currentState.topic, feedbackText }
-      }, async () => {
-        return await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: conceptPrompt }],
-          temperature: 0.8,
-        });
-      });
-
-      const conceptsText = completion.choices[0]?.message?.content || '[]';
-      const conceptsData = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
-
-      const newConcepts = conceptsData.map((c: any, index: number) => ({
-        id: nanoid(),
-        title: c.title,
-        summary: c.summary,
-        rankOrder: index + 1,
-      }));
-
-      // Update state with new concepts, clear selectedConceptId, and update metadata
-      // Set currentStep to 'awaitConceptApproval' to match normal flow after generating concepts
-      // Use updateGraphState() instead of resumeContentWriterGraph() to avoid triggering graph execution
-      const updatedState = await updateGraphState(
-        threadId,
-        {
-          userId,
-          sessionId: thread.sessionId || undefined
-        },
-        {
-          concepts: newConcepts,
-          selectedConceptId: undefined, // Clear any previously selected concept
-          metadata: {
-            ...currentState.metadata,
-            currentStep: 'awaitConceptApproval',
-            regenerationCount: (currentState.metadata?.regenerationCount || 0) + 1,
+        const completion = await loggedOpenAICall(
+          {
+            userId,
+            guidelineProfileId: currentState.guidelineProfileId || undefined,
+            endpoint: "content-writer-concepts-regenerate",
+            metadata: { topic: currentState.topic, feedbackText },
           },
-          status: 'processing',
-        }
-      );
+          async () => {
+            return await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: conceptPrompt }],
+              temperature: 0.8,
+            });
+          }
+        );
 
-      // Update thread metadata
-      const existingMetadata = (thread.metadata as Record<string, any>) || {};
-      await storage.updateLanggraphThread(threadId, userId, {
-        metadata: {
-          ...existingMetadata,
-          currentStep: 'awaitConceptApproval',
-          regenerationCount: (existingMetadata.regenerationCount || 0) + 1,
-          lastUpdatedAt: new Date().toISOString(),
-        }
-      });
+        const conceptsText = completion.choices[0]?.message?.content || "[]";
+        const conceptsData = JSON.parse(stripMarkdownCodeBlocks(conceptsText));
 
-      res.json({
-        threadId: updatedState.threadId,
-        state: updatedState.state
-      });
-    } catch (error) {
-      console.error("Error regenerating concepts:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to regenerate concepts";
-      res.status(500).json({ message: `Failed to regenerate concepts: ${errorMessage}` });
+        const newConcepts = conceptsData.map((c: any, index: number) => ({
+          id: nanoid(),
+          title: c.title,
+          summary: c.summary,
+          rankOrder: index + 1,
+        }));
+
+        // Update state with new concepts, clear selectedConceptId, and update metadata
+        // Set currentStep to 'awaitConceptApproval' to match normal flow after generating concepts
+        // Use updateGraphState() instead of resumeContentWriterGraph() to avoid triggering graph execution
+        const updatedState = await updateGraphState(
+          threadId,
+          {
+            userId,
+            sessionId: thread.sessionId || undefined,
+          },
+          {
+            concepts: newConcepts,
+            selectedConceptId: undefined, // Clear any previously selected concept
+            metadata: {
+              ...currentState.metadata,
+              currentStep: "awaitConceptApproval",
+              regenerationCount:
+                (currentState.metadata?.regenerationCount || 0) + 1,
+            },
+            status: "processing",
+          }
+        );
+
+        // Update thread metadata
+        const existingMetadata = (thread.metadata as Record<string, any>) || {};
+        await storage.updateLanggraphThread(threadId, userId, {
+          metadata: {
+            ...existingMetadata,
+            currentStep: "awaitConceptApproval",
+            regenerationCount: (existingMetadata.regenerationCount || 0) + 1,
+            lastUpdatedAt: new Date().toISOString(),
+          },
+        });
+
+        res.json({
+          threadId: updatedState.threadId,
+          state: updatedState.state,
+        });
+      } catch (error) {
+        console.error("Error regenerating concepts:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to regenerate concepts";
+        res
+          .status(500)
+          .json({ message: `Failed to regenerate concepts: ${errorMessage}` });
+      }
     }
-  });
+  );
 
   // 5. List user's threads
-  app.get("/api/langgraph/content-writer/threads", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { sessionId } = req.query;
+  app.get(
+    "/api/langgraph/content-writer/threads",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { sessionId } = req.query;
 
-      // Get threads with optional sessionId filter
-      const threads = await storage.getUserLanggraphThreads(
-        userId,
-        sessionId as string | undefined
-      );
+        // Get threads with optional sessionId filter
+        const threads = await storage.getUserLanggraphThreads(
+          userId,
+          sessionId as string | undefined
+        );
 
-      // Format response
-      const formattedThreads = threads.map(thread => ({
-        threadId: thread.id,
-        sessionId: thread.sessionId,
-        status: thread.status,
-        createdAt: thread.createdAt,
-        updatedAt: thread.updatedAt,
-        metadata: thread.metadata,
-        session: thread.session ? {
-          id: thread.session.id,
-          topic: thread.session.topic,
-          status: thread.session.status,
-          guidelineProfileId: thread.session.guidelineProfileId
-        } : undefined
-      }));
+        // Format response
+        const formattedThreads = threads.map((thread) => ({
+          threadId: thread.id,
+          sessionId: thread.sessionId,
+          status: thread.status,
+          createdAt: thread.createdAt,
+          updatedAt: thread.updatedAt,
+          metadata: thread.metadata,
+          session: thread.session
+            ? {
+                id: thread.session.id,
+                topic: thread.session.topic,
+                status: thread.session.status,
+                guidelineProfileId: thread.session.guidelineProfileId,
+              }
+            : undefined,
+        }));
 
-      res.json({
-        threads: formattedThreads
-      });
-    } catch (error) {
-      console.error("Error listing threads:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to list threads";
-      res.status(500).json({ message: `Failed to list threads: ${errorMessage}` });
+        res.json({
+          threads: formattedThreads,
+        });
+      } catch (error) {
+        console.error("Error listing threads:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to list threads";
+        res
+          .status(500)
+          .json({ message: `Failed to list threads: ${errorMessage}` });
+      }
     }
-  });
+  );
 
   // Usage Statistics API
   app.get("/api/user/usage-stats", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      
+
       // Get user's tier subscriptions
       const tierSubs = await storage.getUserTierSubscriptions(userId);
-      const activeTierSub = tierSubs.find(sub => sub.isActive === true);
-      
+      const activeTierSub = tierSubs.find((sub) => sub.isActive === true);
+
       if (!activeTierSub) {
         return res.json({ usageStats: [], hasActiveTier: false });
       }
 
       // Get all products accessible in this tier
       const products = await storage.getProductsForTier(activeTierSub.tierId);
-      
+
       const usageStats = await Promise.all(
         products.map(async (product) => {
-          const accessInfo = await storage.getUserProductAccess(userId, product.id);
-          const currentUsage = await storage.getUserProductUsage(userId, product.id);
-          
+          const accessInfo = await storage.getUserProductAccess(
+            userId,
+            product.id
+          );
+          const currentUsage = await storage.getUserProductUsage(
+            userId,
+            product.id
+          );
+
           return {
             productId: product.id,
             productName: product.name,
             currentUsage: currentUsage || 0,
             limit: accessInfo.tierLimit?.quantity || 0,
-            period: accessInfo.tierLimit?.period || 'monthly',
+            period: accessInfo.tierLimit?.periodicity || "monthly",
             subfeatures: accessInfo.tierLimit?.subfeatures || {},
-            remaining: Math.max(0, (accessInfo.tierLimit?.quantity || 0) - (currentUsage || 0))
+            remaining: Math.max(
+              0,
+              (accessInfo.tierLimit?.quantity || 0) - (currentUsage || 0)
+            ),
           };
         })
       );
 
-      res.json({ 
+      res.json({
         usageStats,
         hasActiveTier: true,
         tierName: activeTierSub.tierName,
-        tierId: activeTierSub.tierId
+        tierId: activeTierSub.tierId,
       });
     } catch (error) {
       console.error("Error fetching usage stats:", error);
@@ -3636,10 +4469,13 @@ Return the response as a JSON array with this exact structure:
     try {
       const userId = req.user.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      
-      const notificationsData = await storage.getUserNotifications(userId, limit);
+
+      const notificationsData = await storage.getUserNotifications(
+        userId,
+        limit
+      );
       const unreadCount = await storage.getUnreadNotificationCount(userId);
-      
+
       res.json({ notifications: notificationsData, unreadCount });
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -3647,45 +4483,57 @@ Return the response as a JSON array with this exact structure:
     }
   });
 
-  app.patch("/api/notifications/:id/read", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { id } = req.params;
-      
-      const success = await storage.markNotificationAsRead(id, userId);
-      if (!success) {
-        return res.status(404).json({ message: "Notification not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-      res.status(500).json({ message: "Failed to mark notification as read" });
-    }
-  });
+  app.patch(
+    "/api/notifications/:id/read",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { id } = req.params;
 
-  app.patch("/api/notifications/read-all", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      
-      const success = await storage.markAllNotificationsAsRead(userId);
-      res.json({ success });
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      res.status(500).json({ message: "Failed to mark all notifications as read" });
+        const success = await storage.markNotificationAsRead(id, userId);
+        if (!success) {
+          return res.status(404).json({ message: "Notification not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to mark notification as read" });
+      }
     }
-  });
+  );
+
+  app.patch(
+    "/api/notifications/read-all",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+
+        const success = await storage.markAllNotificationsAsRead(userId);
+        res.json({ success });
+      } catch (error) {
+        console.error("Error marking all notifications as read:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to mark all notifications as read" });
+      }
+    }
+  );
 
   app.delete("/api/notifications/:id", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { id } = req.params;
-      
+
       const success = await storage.deleteNotification(id, userId);
       if (!success) {
         return res.status(404).json({ message: "Notification not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting notification:", error);
@@ -3694,43 +4542,62 @@ Return the response as a JSON array with this exact structure:
   });
 
   // User notification preferences API
-  app.get("/api/user/notification-preferences", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const preferences = await storage.getUserNotificationPreferences(userId);
-      
-      res.json({ preferences: preferences || { 
-        emailOnArticleComplete: true,
-        emailOnSystemMessages: true
-      }});
-    } catch (error) {
-      console.error("Error fetching notification preferences:", error);
-      res.status(500).json({ message: "Failed to fetch notification preferences" });
-    }
-  });
+  app.get(
+    "/api/user/notification-preferences",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const preferences = await storage.getUserNotificationPreferences(
+          userId
+        );
 
-  app.patch("/api/user/notification-preferences", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { emailOnArticleComplete, emailOnSystemMessages } = req.body;
-      
-      const preferences = await storage.upsertUserNotificationPreferences(userId, {
-        emailOnArticleComplete,
-        emailOnSystemMessages
-      });
-      
-      res.json({ preferences });
-    } catch (error) {
-      console.error("Error updating notification preferences:", error);
-      res.status(500).json({ message: "Failed to update notification preferences" });
+        res.json({
+          preferences: preferences || {
+            emailOnArticleComplete: true,
+            emailOnSystemMessages: true,
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching notification preferences:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to fetch notification preferences" });
+      }
     }
-  });
+  );
+
+  app.patch(
+    "/api/user/notification-preferences",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const { emailOnArticleComplete, emailOnSystemMessages } = req.body;
+
+        const preferences = await storage.upsertUserNotificationPreferences(
+          userId,
+          {
+            emailOnArticleComplete,
+            emailOnSystemMessages,
+          }
+        );
+
+        res.json({ preferences });
+      } catch (error) {
+        console.error("Error updating notification preferences:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to update notification preferences" });
+      }
+    }
+  );
 
   // AI Usage Logs API - Admin only
   app.get("/api/admin/ai-usage-logs", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      
+
       // Check if user is admin
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
@@ -3739,15 +4606,7 @@ Return the response as a JSON array with this exact structure:
 
       const { limit = 100, offset = 0, provider, endpoint } = req.query;
 
-      // Build query
-      let query = db
-        .select()
-        .from(aiUsageLogs)
-        .orderBy(sql`${aiUsageLogs.createdAt} DESC`)
-        .limit(parseInt(limit as string))
-        .offset(parseInt(offset as string));
-
-      // Add filters if provided
+      // Build conditions first
       const conditions = [];
       if (provider) {
         conditions.push(eq(aiUsageLogs.provider, provider as string));
@@ -3756,21 +4615,31 @@ Return the response as a JSON array with this exact structure:
         conditions.push(eq(aiUsageLogs.endpoint, endpoint as string));
       }
 
+      // Build query with conditions - apply where before orderBy/limit/offset
+      let query = db.select().from(aiUsageLogs);
+
       if (conditions.length > 0) {
-        query = query.where(sql`${conditions.join(' AND ')}`);
+        query = query.where(and(...conditions)) as typeof query;
       }
 
-      const logs = await query;
-      const totalQuery = await db.select({ count: sql<number>`count(*)` }).from(aiUsageLogs);
+      query = query
+        .orderBy(sql`${aiUsageLogs.createdAt} DESC`)
+        .limit(parseInt(limit as string))
+        .offset(parseInt(offset as string)) as typeof query;
+
+      const logs = await (query as any);
+      const totalQuery = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(aiUsageLogs);
       const total = totalQuery[0]?.count || 0;
 
-      res.json({ 
-        logs, 
+      res.json({
+        logs,
         total,
         pagination: {
           limit: parseInt(limit as string),
-          offset: parseInt(offset as string)
-        }
+          offset: parseInt(offset as string),
+        },
       });
     } catch (error) {
       console.error("Error fetching AI usage logs:", error);
@@ -3782,7 +4651,7 @@ Return the response as a JSON array with this exact structure:
   app.get("/api/admin/ai-usage-summary", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      
+
       // Check if user is admin
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
@@ -3794,13 +4663,20 @@ Return the response as a JSON array with this exact structure:
       // Build date filter
       const conditions = [];
       if (startDate) {
-        conditions.push(sql`${aiUsageLogs.createdAt} >= ${new Date(startDate as string)}`);
+        conditions.push(
+          sql`${aiUsageLogs.createdAt} >= ${new Date(startDate as string)}`
+        );
       }
       if (endDate) {
-        conditions.push(sql`${aiUsageLogs.createdAt} <= ${new Date(endDate as string)}`);
+        conditions.push(
+          sql`${aiUsageLogs.createdAt} <= ${new Date(endDate as string)}`
+        );
       }
 
-      const whereClause = conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+      const whereClause =
+        conditions.length > 0
+          ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
+          : sql``;
 
       // Get summary by provider
       const summaryByProvider = await db.execute(sql`
@@ -3843,13 +4719,17 @@ Return the response as a JSON array with this exact structure:
       `);
 
       res.json({
-        overall: overallTotal.rows[0] || { total_calls: 0, total_tokens: 0, total_cost: 0 },
+        overall: overallTotal.rows[0] || {
+          total_calls: 0,
+          total_tokens: 0,
+          total_cost: 0,
+        },
         byProvider: summaryByProvider.rows || [],
         byEndpoint: summaryByEndpoint.rows || [],
         dateRange: {
           startDate: startDate || null,
-          endDate: endDate || null
-        }
+          endDate: endDate || null,
+        },
       });
     } catch (error) {
       console.error("Error fetching AI usage summary:", error);
@@ -3858,42 +4738,61 @@ Return the response as a JSON array with this exact structure:
   });
 
   // LangGraph Metrics API - Admin only
-  app.get("/api/admin/langgraph-metrics", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      
-      // Check if user is admin
-      const user = await storage.getUser(userId);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ message: "Admin access required" });
-      }
+  app.get(
+    "/api/admin/langgraph-metrics",
+    requireAuth,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
 
-      const { startDate, endDate } = req.query;
+        // Check if user is admin
+        const user = await storage.getUser(userId);
+        if (!user?.isAdmin) {
+          return res.status(403).json({ message: "Admin access required" });
+        }
 
-      // Build date filter for threads
-      const threadConditions = [];
-      if (startDate) {
-        threadConditions.push(sql`${langgraphThreads.createdAt} >= ${new Date(startDate as string)}`);
-      }
-      if (endDate) {
-        threadConditions.push(sql`${langgraphThreads.createdAt} <= ${new Date(endDate as string)}`);
-      }
+        const { startDate, endDate } = req.query;
 
-      const threadWhereClause = threadConditions.length > 0 ? sql`WHERE ${sql.join(threadConditions, sql` AND `)}` : sql``;
+        // Build date filter for threads
+        const threadConditions = [];
+        if (startDate) {
+          threadConditions.push(
+            sql`${langgraphThreads.createdAt} >= ${new Date(
+              startDate as string
+            )}`
+          );
+        }
+        if (endDate) {
+          threadConditions.push(
+            sql`${langgraphThreads.createdAt} <= ${new Date(endDate as string)}`
+          );
+        }
 
-      // Build date filter for AI usage logs
-      const logConditions = [];
-      if (startDate) {
-        logConditions.push(sql`${aiUsageLogs.createdAt} >= ${new Date(startDate as string)}`);
-      }
-      if (endDate) {
-        logConditions.push(sql`${aiUsageLogs.createdAt} <= ${new Date(endDate as string)}`);
-      }
+        const threadWhereClause =
+          threadConditions.length > 0
+            ? sql`WHERE ${sql.join(threadConditions, sql` AND `)}`
+            : sql``;
 
-      const logWhereClause = logConditions.length > 0 ? sql`WHERE ${sql.join(logConditions, sql` AND `)}` : sql``;
+        // Build date filter for AI usage logs
+        const logConditions = [];
+        if (startDate) {
+          logConditions.push(
+            sql`${aiUsageLogs.createdAt} >= ${new Date(startDate as string)}`
+          );
+        }
+        if (endDate) {
+          logConditions.push(
+            sql`${aiUsageLogs.createdAt} <= ${new Date(endDate as string)}`
+          );
+        }
 
-      // Get overall thread metrics
-      const overallThreadMetrics = await db.execute(sql`
+        const logWhereClause =
+          logConditions.length > 0
+            ? sql`WHERE ${sql.join(logConditions, sql` AND `)}`
+            : sql``;
+
+        // Get overall thread metrics
+        const overallThreadMetrics = await db.execute(sql`
         SELECT 
           COUNT(*) as total_threads,
           COUNT(*) FILTER (WHERE status = 'completed') as completed_threads,
@@ -3904,8 +4803,8 @@ Return the response as a JSON array with this exact structure:
         ${threadWhereClause}
       `);
 
-      // Get quality metrics from thread metadata
-      const qualityMetrics = await db.execute(sql`
+        // Get quality metrics from thread metadata
+        const qualityMetrics = await db.execute(sql`
         SELECT 
           AVG(CAST(metadata->>'brandScore' AS FLOAT)) FILTER (WHERE metadata->>'brandScore' IS NOT NULL) as avg_brand_score,
           AVG(CAST(metadata->>'factScore' AS FLOAT)) FILTER (WHERE metadata->>'factScore' IS NOT NULL) as avg_fact_score,
@@ -3917,9 +4816,9 @@ Return the response as a JSON array with this exact structure:
         ${threadWhereClause}
       `);
 
-      // Get per-node performance metrics from AI usage logs
-      // Filter for content-writer related endpoints
-      const nodePerformance = await db.execute(sql`
+        // Get per-node performance metrics from AI usage logs
+        // Filter for content-writer related endpoints
+        const nodePerformance = await db.execute(sql`
         SELECT 
           endpoint,
           COUNT(*) as call_count,
@@ -3941,147 +4840,197 @@ Return the response as a JSON array with this exact structure:
         ORDER BY total_cost DESC
       `);
 
-      const overall = overallThreadMetrics.rows[0] || {
-        total_threads: 0,
-        completed_threads: 0,
-        failed_threads: 0,
-        paused_threads: 0,
-        avg_execution_time_ms: null
-      };
+        const overall = overallThreadMetrics.rows[0] || {
+          total_threads: 0,
+          completed_threads: 0,
+          failed_threads: 0,
+          paused_threads: 0,
+          avg_execution_time_ms: null,
+        };
 
-      const quality = qualityMetrics.rows[0] || {
-        avg_brand_score: null,
-        avg_fact_score: null,
-        avg_regeneration_count: null,
-        threads_regenerated: 0,
-        threads_requiring_review: 0,
-        total_counted_threads: 0
-      };
+        const quality = qualityMetrics.rows[0] || {
+          avg_brand_score: null,
+          avg_fact_score: null,
+          avg_regeneration_count: null,
+          threads_regenerated: 0,
+          threads_requiring_review: 0,
+          total_counted_threads: 0,
+        };
 
-      // Calculate percentages
-      const totalThreads = parseInt(quality.total_counted_threads as string) || 0;
-      const percentageRegenerated = totalThreads > 0 
-        ? ((parseInt(quality.threads_regenerated as string) || 0) / totalThreads) * 100 
-        : 0;
-      const percentageRequiringReview = totalThreads > 0 
-        ? ((parseInt(quality.threads_requiring_review as string) || 0) / totalThreads) * 100 
-        : 0;
+        // Calculate percentages
+        const totalThreads =
+          parseInt(quality.total_counted_threads as string) || 0;
+        const percentageRegenerated =
+          totalThreads > 0
+            ? ((parseInt(quality.threads_regenerated as string) || 0) /
+                totalThreads) *
+              100
+            : 0;
+        const percentageRequiringReview =
+          totalThreads > 0
+            ? ((parseInt(quality.threads_requiring_review as string) || 0) /
+                totalThreads) *
+              100
+            : 0;
 
-      res.json({
-        overall: {
-          total_threads: parseInt(overall.total_threads as string) || 0,
-          completed_threads: parseInt(overall.completed_threads as string) || 0,
-          failed_threads: parseInt(overall.failed_threads as string) || 0,
-          paused_threads: parseInt(overall.paused_threads as string) || 0,
-          avg_execution_time_ms: overall.avg_execution_time_ms ? parseFloat(overall.avg_execution_time_ms as string) : null
-        },
-        quality: {
-          avg_brand_score: quality.avg_brand_score ? parseFloat(quality.avg_brand_score as string) : null,
-          avg_fact_score: quality.avg_fact_score ? parseFloat(quality.avg_fact_score as string) : null,
-          avg_regeneration_count: quality.avg_regeneration_count ? parseFloat(quality.avg_regeneration_count as string) : null,
-          percentage_regenerated: percentageRegenerated,
-          percentage_requiring_review: percentageRequiringReview
-        },
-        perNode: nodePerformance.rows.map((row: any) => ({
-          endpoint: row.endpoint,
-          call_count: parseInt(row.call_count as string) || 0,
-          total_tokens: parseInt(row.total_tokens as string) || 0,
-          total_cost: parseFloat(row.total_cost as string) || 0,
-          avg_duration_ms: row.avg_duration_ms ? parseFloat(row.avg_duration_ms as string) : 0,
-          success_rate: row.total_count > 0 
-            ? ((parseInt(row.success_count as string) || 0) / (parseInt(row.total_count as string) || 1)) * 100 
-            : 0
-        })),
-        dateRange: {
-          startDate: startDate || null,
-          endDate: endDate || null
-        }
-      });
-    } catch (error) {
-      console.error("Error fetching LangGraph metrics:", error);
-      res.status(500).json({ message: "Failed to fetch LangGraph metrics" });
+        res.json({
+          overall: {
+            total_threads: parseInt(overall.total_threads as string) || 0,
+            completed_threads:
+              parseInt(overall.completed_threads as string) || 0,
+            failed_threads: parseInt(overall.failed_threads as string) || 0,
+            paused_threads: parseInt(overall.paused_threads as string) || 0,
+            avg_execution_time_ms: overall.avg_execution_time_ms
+              ? parseFloat(overall.avg_execution_time_ms as string)
+              : null,
+          },
+          quality: {
+            avg_brand_score: quality.avg_brand_score
+              ? parseFloat(quality.avg_brand_score as string)
+              : null,
+            avg_fact_score: quality.avg_fact_score
+              ? parseFloat(quality.avg_fact_score as string)
+              : null,
+            avg_regeneration_count: quality.avg_regeneration_count
+              ? parseFloat(quality.avg_regeneration_count as string)
+              : null,
+            percentage_regenerated: percentageRegenerated,
+            percentage_requiring_review: percentageRequiringReview,
+          },
+          perNode: nodePerformance.rows.map((row: any) => ({
+            endpoint: row.endpoint,
+            call_count: parseInt(row.call_count as string) || 0,
+            total_tokens: parseInt(row.total_tokens as string) || 0,
+            total_cost: parseFloat(row.total_cost as string) || 0,
+            avg_duration_ms: row.avg_duration_ms
+              ? parseFloat(row.avg_duration_ms as string)
+              : 0,
+            success_rate:
+              row.total_count > 0
+                ? ((parseInt(row.success_count as string) || 0) /
+                    (parseInt(row.total_count as string) || 1)) *
+                  100
+                : 0,
+          })),
+          dateRange: {
+            startDate: startDate || null,
+            endDate: endDate || null,
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching LangGraph metrics:", error);
+        res.status(500).json({ message: "Failed to fetch LangGraph metrics" });
+      }
     }
-  });
+  );
 
   // LangGraph Thread Admin Management Endpoints
-  
+
   // Get all LangGraph threads with filtering (admin only)
-  app.get("/api/admin/langgraph-threads", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { status, startDate, endDate, search } = req.query;
+  app.get(
+    "/api/admin/langgraph-threads",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { status, startDate, endDate, search } = req.query;
 
-      const filters: any = {};
-      if (status) filters.status = status as string;
-      if (startDate) filters.startDate = startDate as string;
-      if (endDate) filters.endDate = endDate as string;
-      if (search) filters.search = search as string;
+        const filters: any = {};
+        if (status) filters.status = status as string;
+        if (startDate) filters.startDate = startDate as string;
+        if (endDate) filters.endDate = endDate as string;
+        if (search) filters.search = search as string;
 
-      const threads = await storage.getAllLanggraphThreads(filters);
-      res.json(threads);
-    } catch (error) {
-      console.error("Error fetching LangGraph threads:", error);
-      res.status(500).json({ message: "Failed to fetch threads" });
+        const threads = await storage.getAllLanggraphThreads(filters);
+        res.json(threads);
+      } catch (error) {
+        console.error("Error fetching LangGraph threads:", error);
+        res.status(500).json({ message: "Failed to fetch threads" });
+      }
     }
-  });
+  );
 
   // Get full thread details (admin only)
-  app.get("/api/admin/langgraph-threads/:threadId", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { threadId } = req.params;
+  app.get(
+    "/api/admin/langgraph-threads/:threadId",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { threadId } = req.params;
 
-      const details = await storage.getLanggraphThreadDetails(threadId);
-      if (!details) {
-        return res.status(404).json({ message: "Thread not found" });
+        const details = await storage.getLanggraphThreadDetails(threadId);
+        if (!details) {
+          return res.status(404).json({ message: "Thread not found" });
+        }
+
+        res.json(details);
+      } catch (error) {
+        console.error("Error fetching thread details:", error);
+        res.status(500).json({ message: "Failed to fetch thread details" });
       }
-
-      res.json(details);
-    } catch (error) {
-      console.error("Error fetching thread details:", error);
-      res.status(500).json({ message: "Failed to fetch thread details" });
     }
-  });
+  );
 
   // Cancel a thread (admin only)
-  app.patch("/api/admin/langgraph-threads/:threadId/cancel", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { threadId } = req.params;
-      const adminUserId = req.user.id;
+  app.patch(
+    "/api/admin/langgraph-threads/:threadId/cancel",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { threadId } = req.params;
+        const adminUserId = req.user.id;
 
-      const updated = await storage.cancelLanggraphThread(threadId, adminUserId);
-      if (!updated) {
-        return res.status(404).json({ message: "Thread not found" });
+        const updated = await storage.cancelLanggraphThread(
+          threadId,
+          adminUserId
+        );
+        if (!updated) {
+          return res.status(404).json({ message: "Thread not found" });
+        }
+
+        res.json({ message: "Thread cancelled successfully", thread: updated });
+      } catch (error) {
+        console.error("Error cancelling thread:", error);
+        res.status(500).json({ message: "Failed to cancel thread" });
       }
-
-      res.json({ message: "Thread cancelled successfully", thread: updated });
-    } catch (error) {
-      console.error("Error cancelling thread:", error);
-      res.status(500).json({ message: "Failed to cancel thread" });
     }
-  });
+  );
 
   // Delete a thread and its checkpoints (admin only)
-  app.delete("/api/admin/langgraph-threads/:threadId", requireAuth, requireAdmin, async (req: any, res) => {
-    try {
-      const { threadId } = req.params;
+  app.delete(
+    "/api/admin/langgraph-threads/:threadId",
+    requireAuth,
+    requireAdmin,
+    async (req: any, res) => {
+      try {
+        const { threadId } = req.params;
 
-      const success = await storage.deleteLanggraphThread(threadId);
-      if (!success) {
-        return res.status(404).json({ message: "Thread not found" });
+        const success = await storage.deleteLanggraphThread(threadId);
+        if (!success) {
+          return res.status(404).json({ message: "Thread not found" });
+        }
+
+        res.json({ message: "Thread deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting thread:", error);
+        res.status(500).json({ message: "Failed to delete thread" });
       }
-
-      res.json({ message: "Thread deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting thread:", error);
-      res.status(500).json({ message: "Failed to delete thread" });
     }
-  });
+  );
 
   // Crawl Job endpoints
   // Start a new crawl job
   app.post("/api/crawl/start", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { guidelineProfileId, homepageUrl, exclusionPatterns, inclusionPatterns } = req.body;
+      const {
+        guidelineProfileId,
+        homepageUrl,
+        exclusionPatterns,
+        inclusionPatterns,
+      } = req.body;
 
       // Validate inputs
       if (!homepageUrl) {
@@ -4121,7 +5070,7 @@ Return the response as a JSON array with this exact structure:
       res.json(status);
     } catch (error: any) {
       console.error("Error getting crawl job status:", error);
-      if (error.message === 'Crawl job not found') {
+      if (error.message === "Crawl job not found") {
         return res.status(404).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to get crawl job status" });
@@ -4138,7 +5087,10 @@ Return the response as a JSON array with this exact structure:
       if (success) {
         res.json({ message: "Crawl job cancelled successfully" });
       } else {
-        res.status(400).json({ message: "Unable to cancel crawl job. It may have already completed or been cancelled." });
+        res.status(400).json({
+          message:
+            "Unable to cancel crawl job. It may have already completed or been cancelled.",
+        });
       }
     } catch (error) {
       console.error("Error cancelling crawl job:", error);
@@ -4168,9 +5120,14 @@ Return the response as a JSON array with this exact structure:
         // Return default configuration
         res.json({
           enabled: false,
-          enabledAgents: ['proofreader', 'brand_guardian', 'fact_checker', 'regulatory'],
+          enabledAgents: [
+            "proofreader",
+            "brand_guardian",
+            "fact_checker",
+            "regulatory",
+          ],
           autoApplyThreshold: 90,
-          conflictResolutionStrategy: 'human_review',
+          conflictResolutionStrategy: "human_review",
         });
       }
     } catch (error) {
@@ -4183,10 +5140,22 @@ Return the response as a JSON array with this exact structure:
   app.post("/api/qc/config", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { guidelineProfileId, toolType, enabled, enabledAgents, autoApplyThreshold, conflictResolutionStrategy, agentSettings } = req.body;
+      const {
+        guidelineProfileId,
+        toolType,
+        enabled,
+        enabledAgents,
+        autoApplyThreshold,
+        conflictResolutionStrategy,
+        agentSettings,
+      } = req.body;
 
       // Check if config exists
-      const existing = await storage.getQCConfiguration(userId, guidelineProfileId, toolType);
+      const existing = await storage.getQCConfiguration(
+        userId,
+        guidelineProfileId,
+        toolType
+      );
 
       let config;
       if (existing) {
@@ -4237,7 +5206,7 @@ Return the response as a JSON array with this exact structure:
   app.post("/api/qc/decisions", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { 
+      const {
         guidelineProfileId,
         conflictType,
         conflictDescription,
@@ -4245,7 +5214,7 @@ Return the response as a JSON array with this exact structure:
         option2,
         selectedOption,
         applyToFuture,
-        pattern
+        pattern,
       } = req.body;
 
       const decision = await storage.createQCUserDecision({
@@ -4275,7 +5244,8 @@ Return the response as a JSON array with this exact structure:
 
       const filters: any = {};
       if (conflictType) filters.conflictType = conflictType;
-      if (applyToFuture !== undefined) filters.applyToFuture = applyToFuture === 'true';
+      if (applyToFuture !== undefined)
+        filters.applyToFuture = applyToFuture === "true";
 
       const decisions = await storage.getQCUserDecisions(
         userId,
@@ -4299,59 +5269,64 @@ Return the response as a JSON array with this exact structure:
     try {
       const userId = req.user.id;
       const crawlId = req.params.id;
-      
+
       // Verify crawl belongs to user
       const crawl = await storage.getCrawlJob(crawlId, userId);
       if (!crawl) {
         return res.status(404).json({ message: "Crawl not found" });
       }
-      
+
       // Get all pages with reviews
       const pagesWithReviews = await storage.getPageReviews(crawlId, userId);
-      
+
       // Apply filters
       let filteredPages = pagesWithReviews;
-      
+
       const { search, classification, exclude, page, limit } = req.query;
-      
+
       // Filter by search query (URL, title, description)
-      if (search && typeof search === 'string') {
+      if (search && typeof search === "string") {
         const searchLower = search.toLowerCase();
-        filteredPages = filteredPages.filter((p: any) => 
-          p.rawUrl.toLowerCase().includes(searchLower) ||
-          p.title?.toLowerCase().includes(searchLower) ||
-          p.metaDescription?.toLowerCase().includes(searchLower) ||
-          p.review?.description?.toLowerCase().includes(searchLower)
+        filteredPages = filteredPages.filter(
+          (p: any) =>
+            p.rawUrl.toLowerCase().includes(searchLower) ||
+            p.title?.toLowerCase().includes(searchLower) ||
+            p.metaDescription?.toLowerCase().includes(searchLower) ||
+            p.review?.description?.toLowerCase().includes(searchLower)
         );
       }
-      
+
       // Filter by classification
-      if (classification && typeof classification === 'string') {
-        filteredPages = filteredPages.filter((p: any) => p.review?.classification === classification);
+      if (classification && typeof classification === "string") {
+        filteredPages = filteredPages.filter(
+          (p: any) => p.review?.classification === classification
+        );
       }
-      
+
       // Filter by exclude flag
       if (exclude !== undefined) {
-        const excludeValue = exclude === 'true';
-        filteredPages = filteredPages.filter((p: any) => p.review?.exclude === excludeValue);
+        const excludeValue = exclude === "true";
+        filteredPages = filteredPages.filter(
+          (p: any) => p.review?.exclude === excludeValue
+        );
       }
-      
+
       // Get total count before pagination
       const totalCount = filteredPages.length;
-      
+
       // Apply pagination
       const pageNum = page ? parseInt(page as string, 10) : 1;
       const pageLimit = limit ? parseInt(limit as string, 10) : 50;
       const offset = (pageNum - 1) * pageLimit;
-      
+
       const paginatedPages = filteredPages.slice(offset, offset + pageLimit);
-      
-      res.json({ 
+
+      res.json({
         pages: paginatedPages,
         total: totalCount,
         page: pageNum,
         limit: pageLimit,
-        totalPages: Math.ceil(totalCount / pageLimit)
+        totalPages: Math.ceil(totalCount / pageLimit),
       });
     } catch (error) {
       console.error("Error getting crawl pages:", error);
@@ -4364,34 +5339,42 @@ Return the response as a JSON array with this exact structure:
     try {
       const userId = req.user.id;
       const pageId = req.params.id;
-      
+
       // Validate using shared schema
       const validatedData = updatePageReviewSchema.parse(req.body);
-      
+
       // Ensure at least one field is provided
       if (Object.keys(validatedData).length === 0) {
-        return res.status(400).json({ message: "At least one field must be provided" });
+        return res
+          .status(400)
+          .json({ message: "At least one field must be provided" });
       }
-      
+
       // Verify page belongs to user
       const page = await storage.getPageById(pageId, userId);
       if (!page) {
         return res.status(404).json({ message: "Page not found" });
       }
-      
+
       // Check if review exists
       const existingReview = await storage.getPageReview(pageId, userId);
-      
+
       if (existingReview) {
         // Update existing review
-        const updated = await storage.updatePageReview(existingReview.id, userId, validatedData);
+        const updated = await storage.updatePageReview(
+          existingReview.id,
+          userId,
+          validatedData
+        );
         return res.json(updated);
       } else {
         // Create new review - ensure required fields
         if (!validatedData.classification) {
-          return res.status(400).json({ message: "Classification is required for new review" });
+          return res
+            .status(400)
+            .json({ message: "Classification is required for new review" });
         }
-        
+
         const created = await storage.createPageReview({
           pageId,
           userId,
@@ -4403,9 +5386,9 @@ Return the response as a JSON array with this exact structure:
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Validation error",
-          errors: error.errors 
+          errors: error.errors,
         });
       }
       console.error("Error updating page review:", error);
@@ -4416,7 +5399,7 @@ Return the response as a JSON array with this exact structure:
   // ============================================================================
   // Social Content Generator Routes
   // ============================================================================
-  
+
   // Register Social Content Generator routes
   registerSocialContentRoutes(app); // Legacy - keeping for backward compatibility
   registerSocialContentRoutesNew(app); // New location

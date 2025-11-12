@@ -10,7 +10,9 @@ const isAdmin = async (req: any, res: any, next: any) => {
 
     const user = await storage.getUser(req.session.userId);
     if (!user || !user.isAdmin) {
-      return res.status(403).json({ message: "Forbidden - Admin access required" });
+      return res
+        .status(403)
+        .json({ message: "Forbidden - Admin access required" });
     }
 
     next();
@@ -30,29 +32,42 @@ export function registerCmsRoutes(app: Express) {
       res.json({ message: "Migration completed successfully" });
     } catch (error: any) {
       console.error("Error migrating pages:", error);
-      res.status(500).json({ message: "Migration failed", error: error?.message || "Unknown error" });
+      res
+        .status(500)
+        .json({
+          message: "Migration failed",
+          error: error?.message || "Unknown error",
+        });
     }
   });
 
   // Public endpoint to get published pages by slug
   app.get("/api/public/pages/:slug*", async (req, res) => {
     try {
-      const slug = req.params.slug || req.params["0"];
-      const normalizedSlug = slug.startsWith('/') ? slug : `/${slug}`;
-      
+      const slug =
+        (req.params as Record<string, string>)["slug*"] ||
+        (req.params as Record<string, string>)["0"] ||
+        "";
+      const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`;
+
       const page = await storage.getCmsPageBySlug(normalizedSlug);
       if (!page || page.status !== "published") {
         return res.status(404).json({ message: "Page not found" });
       }
-      
+
       res.json(page);
     } catch (error: any) {
       console.error("Error fetching CMS page:", error);
-      res.status(500).json({ message: "Failed to fetch page", error: error?.message || "Unknown error" });
+      res
+        .status(500)
+        .json({
+          message: "Failed to fetch page",
+          error: error?.message || "Unknown error",
+        });
     }
   });
   // Admin-only CMS routes
-  
+
   // Get all CMS pages
   app.get("/api/cms/pages", isAdmin, async (req, res) => {
     try {
@@ -84,12 +99,17 @@ export function registerCmsRoutes(app: Express) {
     try {
       const validatedData = insertCmsPageSchema.parse(req.body);
       const authorId = req.session.userId;
-      
+
       const page = await storage.createCmsPage(authorId, validatedData);
       res.status(201).json(page);
     } catch (error: any) {
       console.error("Error creating CMS page:", error);
-      res.status(400).json({ message: "Failed to create page", error: error?.message || "Unknown error" });
+      res
+        .status(400)
+        .json({
+          message: "Failed to create page",
+          error: error?.message || "Unknown error",
+        });
     }
   });
 
@@ -101,7 +121,12 @@ export function registerCmsRoutes(app: Express) {
       res.json(page);
     } catch (error: any) {
       console.error("Error updating CMS page:", error);
-      res.status(400).json({ message: "Failed to update page", error: error?.message || "Unknown error" });
+      res
+        .status(400)
+        .json({
+          message: "Failed to update page",
+          error: error?.message || "Unknown error",
+        });
     }
   });
 
@@ -112,7 +137,12 @@ export function registerCmsRoutes(app: Express) {
       res.json(page);
     } catch (error: any) {
       console.error("Error publishing CMS page:", error);
-      res.status(400).json({ message: "Failed to publish page", error: error?.message || "Unknown error" });
+      res
+        .status(400)
+        .json({
+          message: "Failed to publish page",
+          error: error?.message || "Unknown error",
+        });
     }
   });
 
@@ -130,17 +160,15 @@ export function registerCmsRoutes(app: Express) {
     }
   });
 
-
-
   // Get published pages by type
   app.get("/api/public/pages", async (req, res) => {
     try {
       const { type } = req.query;
       let pages = await storage.getCmsPages(type as string);
-      
+
       // Filter to only published pages
-      pages = pages.filter(page => page.status === 'published');
-      
+      pages = pages.filter((page) => page.status === "published");
+
       res.json(pages);
     } catch (error) {
       console.error("Error fetching public pages:", error);

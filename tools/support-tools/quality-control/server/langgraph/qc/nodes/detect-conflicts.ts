@@ -5,29 +5,32 @@ import type { QCConflict, QCChange, QCSeverity } from "@shared/schema";
 /**
  * Detect Conflicts Node - Identifies overlapping suggestions from different agents
  */
-export async function detectConflicts(state: QCState): Promise<Partial<QCState>> {
+export async function detectConflicts(
+  state: QCState
+): Promise<Partial<QCState>> {
   const conflicts: QCConflict[] = [];
   const suggestions = state.allSuggestions || [];
-  
+
   if (suggestions.length === 0) {
     return { conflicts: [] };
   }
-  
+
   // Group suggestions by location overlap
   const locationGroups = new Map<string, QCChange[]>();
-  
+
   for (const suggestion of suggestions) {
     if (!suggestion.location) continue;
-    
+
     // Find overlapping suggestions
     let foundGroup = false;
-    
-    for (const [groupKey, group] of locationGroups.entries()) {
-      const [start, end] = groupKey.split('-').map(Number);
-      
+
+    for (const [groupKey, group] of Array.from(locationGroups.entries())) {
+      const [start, end] = groupKey.split("-").map(Number);
+
       // Check if locations overlap
       if (
-        (suggestion.location.start >= start && suggestion.location.start <= end) ||
+        (suggestion.location.start >= start &&
+          suggestion.location.start <= end) ||
         (suggestion.location.end >= start && suggestion.location.end <= end) ||
         (suggestion.location.start <= start && suggestion.location.end >= end)
       ) {
@@ -36,19 +39,21 @@ export async function detectConflicts(state: QCState): Promise<Partial<QCState>>
         break;
       }
     }
-    
+
     if (!foundGroup) {
       const key = `${suggestion.location.start}-${suggestion.location.end}`;
       locationGroups.set(key, [suggestion]);
     }
   }
-  
+
   // Identify conflicts within groups
-  for (const [location, group] of locationGroups.entries()) {
+  for (const [location, group] of Array.from(locationGroups.entries())) {
     if (group.length > 1) {
       // Check if suggestions are actually conflicting
-      const uniqueSuggestions = new Set(group.map(s => s.suggested));
-      
+      const uniqueSuggestions = new Set(
+        group.map((s: QCChange) => s.suggested)
+      );
+
       if (uniqueSuggestions.size > 1) {
         // Real conflict - different agents want different changes
         const conflict: QCConflict = {
@@ -58,12 +63,12 @@ export async function detectConflicts(state: QCState): Promise<Partial<QCState>>
           severity: getHighestSeverity(group),
           conflictingChanges: group,
         };
-        
+
         conflicts.push(conflict);
       }
     }
   }
-  
+
   return {
     conflicts,
     metadata: {
@@ -78,21 +83,23 @@ export async function detectConflicts(state: QCState): Promise<Partial<QCState>>
  * Determine conflict type based on agents involved
  */
 function determineConflictType(changes: QCChange[]): string {
-  const agents = [...new Set(changes.map(c => c.agentType))].sort();
-  return agents.join('_vs_');
+  const agents = Array.from(
+    new Set(changes.map((c: QCChange) => c.agentType))
+  ).sort();
+  return agents.join("_vs_");
 }
 
 /**
  * Get the highest severity from a group of changes
  */
 function getHighestSeverity(changes: QCChange[]): QCSeverity {
-  const severityOrder: QCSeverity[] = ['critical', 'high', 'medium', 'low'];
-  
+  const severityOrder: QCSeverity[] = ["critical", "high", "medium", "low"];
+
   for (const severity of severityOrder) {
-    if (changes.some(c => c.severity === severity)) {
+    if (changes.some((c) => c.severity === severity)) {
       return severity;
     }
   }
-  
-  return 'low';
+
+  return "low";
 }

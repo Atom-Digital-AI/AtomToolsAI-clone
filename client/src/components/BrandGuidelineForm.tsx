@@ -4,10 +4,30 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, AlertCircle, Sparkles, Upload, Copy, Loader2 as LoaderIcon, Eye } from "lucide-react";
-import { BrandGuidelineContent, TargetAudience, brandGuidelineContentSchema, GuidelineProfile } from "@shared/schema";
+import {
+  Plus,
+  Trash2,
+  AlertCircle,
+  Sparkles,
+  Upload,
+  Copy,
+  Loader2 as LoaderIcon,
+  Eye,
+} from "lucide-react";
+import {
+  BrandGuidelineContent,
+  TargetAudience,
+  brandGuidelineContentSchema,
+  GuidelineProfile,
+} from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import TagInput from "@/components/TagInput";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useRegulatoryProfiles } from "@/hooks/useGuidelineProfiles";
@@ -24,7 +44,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ManualServiceUrlDialog, ManualBlogUrlDialog } from "@/components/ContextPageFallbackDialogs";
+import {
+  ManualServiceUrlDialog,
+  ManualBlogUrlDialog,
+} from "@/components/ContextPageFallbackDialogs";
 import { ProgressModal } from "@/components/ProgressModal";
 import { UnifiedFallbackModal } from "@/components/UnifiedFallbackModal";
 import UrlTaggingPage from "@/pages/UrlTaggingPage";
@@ -35,12 +58,18 @@ interface BrandGuidelineFormProps {
   profileId?: string; // ID of the guideline profile (for existing profiles)
 }
 
-export default function BrandGuidelineForm({ value, onChange, profileId }: BrandGuidelineFormProps) {
+export default function BrandGuidelineForm({
+  value,
+  onChange,
+  profileId,
+}: BrandGuidelineFormProps) {
   const [formData, setFormData] = useState<BrandGuidelineContent>({});
   const [isLegacy, setIsLegacy] = useState(false);
   const [legacyText, setLegacyText] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [regulatoryMode, setRegulatoryMode] = useState<"none" | "existing" | "new">("none");
+  const [regulatoryMode, setRegulatoryMode] = useState<
+    "none" | "existing" | "new"
+  >("none");
   const [isAutoPopulating, setIsAutoPopulating] = useState(false);
   const [isExtractingContext, setIsExtractingContext] = useState(false);
   const [isDiscoveringPages, setIsDiscoveringPages] = useState(false);
@@ -53,21 +82,47 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     reachedLimit?: boolean;
   } | null>(null);
   const [showAutoPopulateDialog, setShowAutoPopulateDialog] = useState(false);
-  const [pendingAutoPopulateData, setPendingAutoPopulateData] = useState<BrandGuidelineContent | null>(null);
-  const [autoPopulateSource, setAutoPopulateSource] = useState<"url" | "pdf">("url");
-  const [showExtractWarningDialog, setShowExtractWarningDialog] = useState(false);
-  const [showServiceFallbackDialog, setShowServiceFallbackDialog] = useState(false);
+  const [pendingAutoPopulateData, setPendingAutoPopulateData] =
+    useState<BrandGuidelineContent | null>(null);
+  const [autoPopulateSource, setAutoPopulateSource] = useState<"url" | "pdf">(
+    "url"
+  );
+  const [showExtractWarningDialog, setShowExtractWarningDialog] =
+    useState(false);
+  const [showServiceFallbackDialog, setShowServiceFallbackDialog] =
+    useState(false);
   const [showBlogFallbackDialog, setShowBlogFallbackDialog] = useState(false);
-  const [showUnifiedFallbackModal, setShowUnifiedFallbackModal] = useState(false);
-  const [missingPages, setMissingPages] = useState<{ about?: boolean; products?: boolean; blogs?: boolean }>({});
+  const [showUnifiedFallbackModal, setShowUnifiedFallbackModal] =
+    useState(false);
+  const [missingPages, setMissingPages] = useState<{
+    about?: boolean;
+    products?: boolean;
+    blogs?: boolean;
+  }>({});
   const [showTaggingMode, setShowTaggingMode] = useState(false);
-  const [crawledUrlsForTagging, setCrawledUrlsForTagging] = useState<{ url: string; title: string; autoCategory?: string }[]>([]);
+  const [crawledUrlsForTagging, setCrawledUrlsForTagging] = useState<
+    {
+      url: string;
+      title: string;
+      autoCategory?:
+        | "untagged"
+        | "about"
+        | "blog"
+        | "product"
+        | "legals"
+        | "company"
+        | "knowledge";
+    }[]
+  >([]);
   const [cachedHomepageUrl, setCachedHomepageUrl] = useState<string>("");
   const [crawlJobId, setCrawlJobId] = useState<string | null>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showRecrawlDialog, setShowRecrawlDialog] = useState(false);
-  const [showOverwriteConfirmDialog, setShowOverwriteConfirmDialog] = useState(false);
-  const [pendingDiscoverMode, setPendingDiscoverMode] = useState<"fillEmpty" | "overwrite" | null>(null);
+  const [showOverwriteConfirmDialog, setShowOverwriteConfirmDialog] =
+    useState(false);
+  const [pendingDiscoverMode, setPendingDiscoverMode] = useState<
+    "fillEmpty" | "overwrite" | null
+  >(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const lastSentToParentRef = useRef<string>("");
@@ -85,20 +140,21 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     extractedAt: string | null;
   }
 
-  const { data: existingContext, refetch: refetchExtractedContext } = useQuery<ExtractedContext>({
-    queryKey: ['/api/guideline-profiles', profileId, 'extracted-context'],
-    enabled: !!profileId,
-  });
+  const { data: existingContext, refetch: refetchExtractedContext } =
+    useQuery<ExtractedContext>({
+      queryKey: ["/api/guideline-profiles", profileId, "extracted-context"],
+      enabled: !!profileId,
+    });
 
   // Fetch the profile data to check for cached crawled URLs
   const { data: profileData } = useQuery<GuidelineProfile>({
-    queryKey: profileId ? ['guideline-profiles', profileId] : [],
+    queryKey: profileId ? ["guideline-profiles", profileId] : [],
     queryFn: async () => {
       const response = await fetch(`/api/guideline-profiles/${profileId}`, {
-        credentials: 'include',
+        credentials: "include",
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+        throw new Error("Failed to fetch profile");
       }
       return response.json();
     },
@@ -114,25 +170,30 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
   }
 
   const { data: backgroundJobStatus } = useQuery<CrawlJobStatus>({
-    queryKey: ['/api/crawl', crawlJobId, 'status'],
+    queryKey: ["/api/crawl", crawlJobId, "status"],
     enabled: !!crawlJobId && !showProgressModal,
     refetchInterval: (query) => {
       const data = query.state.data;
       if (!data) return false;
-      if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+      if (["completed", "failed", "cancelled"].includes(data.status)) {
         return false;
       }
       return 2000; // Poll every 2 seconds when in background
     },
   });
 
-  const isJobRunningInBackground = backgroundJobStatus && 
-    ['running', 'pending'].includes(backgroundJobStatus.status) && 
+  const isJobRunningInBackground =
+    backgroundJobStatus &&
+    ["running", "pending"].includes(backgroundJobStatus.status) &&
     !showProgressModal;
 
   // Handle background job completion
   useEffect(() => {
-    if (backgroundJobStatus?.status === 'completed' && backgroundJobStatus.results && !showProgressModal) {
+    if (
+      backgroundJobStatus?.status === "completed" &&
+      backgroundJobStatus.results &&
+      !showProgressModal
+    ) {
       // Job completed in background - trigger the completion handler
       handleCrawlComplete(backgroundJobStatus.results);
       // Clear the job ID so we stop polling
@@ -152,14 +213,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     } else {
       setIsLegacy(false);
       const data = value || {};
-      
+
       // Only update formData if the incoming value is different from what we last sent to parent
       // This prevents infinite loops when parent echoes back our onChange
       const newDataString = JSON.stringify(data);
       if (newDataString !== lastSentToParentRef.current) {
         setFormData(data);
       }
-      
+
       if (data.regulatory_guideline_id) {
         setRegulatoryMode("existing");
       } else if (data.temporary_regulatory_text) {
@@ -174,12 +235,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     if (!isLegacy) {
       const result = brandGuidelineContentSchema.safeParse(formData);
       if (!result.success) {
-        const errors = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+        const errors = result.error.errors.map(
+          (err) => `${err.path.join(".")}: ${err.message}`
+        );
         setValidationErrors(errors);
       } else {
         setValidationErrors([]);
       }
-      
+
       // Only call onChange if formData actually changed from what we last sent
       const currentFormDataString = JSON.stringify(formData);
       if (currentFormDataString !== lastSentToParentRef.current) {
@@ -209,7 +272,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     field: K,
     value: BrandGuidelineContent[K]
   ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const addColor = () => {
@@ -233,11 +296,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     const audiences = formData.target_audience || [];
     updateField("target_audience", [
       ...audiences,
-      { gender: "", profession: "", interests: [], other_keywords: [] }
+      { gender: "", profession: "", interests: [], other_keywords: [] },
     ]);
   };
 
-  const updateTargetAudience = (index: number, field: keyof TargetAudience, value: any) => {
+  const updateTargetAudience = (
+    index: number,
+    field: keyof TargetAudience,
+    value: any
+  ) => {
     const audiences = [...(formData.target_audience || [])];
     audiences[index] = { ...audiences[index], [field]: value };
     updateField("target_audience", audiences);
@@ -255,9 +322,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     // Deep clone to avoid shared references for arrays
     const duplicatedAudience = {
       ...audienceToDuplicate,
-      interests: audienceToDuplicate.interests ? [...audienceToDuplicate.interests] : [],
-      other_keywords: audienceToDuplicate.other_keywords ? [...audienceToDuplicate.other_keywords] : [],
-      age_range: audienceToDuplicate.age_range ? { ...audienceToDuplicate.age_range } : undefined,
+      interests: audienceToDuplicate.interests
+        ? [...audienceToDuplicate.interests]
+        : [],
+      other_keywords: audienceToDuplicate.other_keywords
+        ? [...audienceToDuplicate.other_keywords]
+        : [],
+      age_range: audienceToDuplicate.age_range
+        ? { ...audienceToDuplicate.age_range }
+        : undefined,
     };
     audiences.splice(index + 1, 0, duplicatedAudience);
     updateField("target_audience", audiences);
@@ -276,7 +349,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     );
   };
 
-  const mergeData = (newData: BrandGuidelineContent, fillEmptyOnly: boolean): BrandGuidelineContent => {
+  const mergeData = (
+    newData: BrandGuidelineContent,
+    fillEmptyOnly: boolean
+  ): BrandGuidelineContent => {
     if (!fillEmptyOnly) {
       // Overwrite all - simple merge
       return { ...formData, ...newData };
@@ -284,15 +360,19 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
     // Fill empty only - preserve existing values
     const merged: BrandGuidelineContent = { ...formData };
-    
+
     Object.keys(newData).forEach((key) => {
       const fieldKey = key as keyof BrandGuidelineContent;
       const existingValue = merged[fieldKey];
       const newValue = newData[fieldKey];
 
       // Only fill if current value is empty/null/undefined
-      if (existingValue === null || existingValue === undefined || existingValue === '' ||
-          (Array.isArray(existingValue) && existingValue.length === 0)) {
+      if (
+        existingValue === null ||
+        existingValue === undefined ||
+        existingValue === "" ||
+        (Array.isArray(existingValue) && existingValue.length === 0)
+      ) {
         (merged as any)[fieldKey] = newValue;
       }
     });
@@ -302,11 +382,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
   const handleAutoPopulate = async () => {
     let domainUrl = formData.domain_url?.trim();
-    
+
     if (!domainUrl) {
       toast({
         title: "Domain URL Required",
-        description: "Please enter a domain URL first to auto-populate brand guidelines.",
+        description:
+          "Please enter a domain URL first to auto-populate brand guidelines.",
         variant: "destructive",
       });
       return;
@@ -320,13 +401,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
     try {
       setIsAutoPopulating(true);
-      
+
       const res = await apiRequest(
         "POST",
         "/api/guideline-profiles/auto-populate",
         { domainUrl }
       );
-      const response = await res.json() as BrandGuidelineContent;
+      const response = (await res.json()) as BrandGuidelineContent;
 
       // Check if there's existing data
       if (hasExistingData()) {
@@ -340,9 +421,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         setFormData(updatedData);
         onChange(updatedData);
 
-        const analyzedPagesInfo = response.analyzed_pages && response.analyzed_pages.length > 0
-          ? `\n\nAnalyzed ${response.analyzed_pages.length} page(s):\n${response.analyzed_pages.map(url => `• ${url}`).join('\n')}`
-          : "";
+        const analyzedPagesInfo =
+          response.analyzed_pages && response.analyzed_pages.length > 0
+            ? `\n\nAnalyzed ${
+                response.analyzed_pages.length
+              } page(s):\n${response.analyzed_pages
+                .map((url) => `• ${url}`)
+                .join("\n")}`
+            : "";
 
         toast({
           title: "Success!",
@@ -353,11 +439,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       console.error("Auto-populate error:", error);
       showAdminErrorToast(
         "Auto-populate Failed",
-        error.message || "Failed to analyze website. Please check the URL and try again.",
+        error.message ||
+          "Failed to analyze website. Please check the URL and try again.",
         user?.isAdmin || false,
         {
           domainUrl,
-          feature: "auto-populate-brand-guidelines"
+          feature: "auto-populate-brand-guidelines",
         }
       );
     } finally {
@@ -365,12 +452,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     }
   };
 
-  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (file.type !== 'application/pdf') {
+    if (file.type !== "application/pdf") {
       toast({
         title: "Invalid File Type",
         description: "Please upload a PDF file.",
@@ -398,7 +487,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         reader.onload = () => {
           const result = reader.result as string;
           // Remove data:application/pdf;base64, prefix
-          const base64String = result.split(',')[1];
+          const base64String = result.split(",")[1];
           resolve(base64String);
         };
         reader.onerror = reject;
@@ -410,7 +499,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         "/api/guideline-profiles/auto-populate-pdf",
         { pdfBase64: base64 }
       );
-      const response = await res.json() as BrandGuidelineContent;
+      const response = (await res.json()) as BrandGuidelineContent;
 
       // Check if there's existing data
       if (hasExistingData()) {
@@ -438,13 +527,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         {
           fileName: file.name,
           fileSize: file.size,
-          feature: "auto-populate-brand-guidelines-pdf"
+          feature: "auto-populate-brand-guidelines-pdf",
         }
       );
     } finally {
       setIsAutoPopulating(false);
       // Reset file input
-      event.target.value = '';
+      event.target.value = "";
     }
   };
 
@@ -456,8 +545,10 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     onChange(updatedData);
 
     const source = autoPopulateSource === "url" ? "website" : "PDF";
-    const mode = fillEmptyOnly ? "filled empty fields" : "overwritten all fields";
-    
+    const mode = fillEmptyOnly
+      ? "filled empty fields"
+      : "overwritten all fields";
+
     toast({
       title: "Success!",
       description: `Brand guidelines from ${source} have been applied (${mode}).`,
@@ -470,11 +561,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
   const handleDiscoverPages = async () => {
     let homepageUrl = formData.domain_url?.trim();
-    
+
     if (!homepageUrl) {
       toast({
         title: "Homepage URL Required",
-        description: "Please enter a domain URL first to discover context pages.",
+        description:
+          "Please enter a domain URL first to discover context pages.",
         variant: "destructive",
       });
       return;
@@ -488,11 +580,11 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
     // Check if we have existing context URLs that would be overwritten
     const contextUrls = formData.context_urls;
-    const hasExistingUrls = contextUrls && (
-      contextUrls.about_page ||
-      (contextUrls.service_pages && contextUrls.service_pages.length > 0) ||
-      (contextUrls.blog_articles && contextUrls.blog_articles.length > 0)
-    );
+    const hasExistingUrls =
+      contextUrls &&
+      (contextUrls.about_page ||
+        (contextUrls.service_pages && contextUrls.service_pages.length > 0) ||
+        (contextUrls.blog_articles && contextUrls.blog_articles.length > 0));
 
     if (hasExistingUrls) {
       setCachedHomepageUrl(homepageUrl);
@@ -501,7 +593,11 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     }
 
     // Check if we have cached crawled URLs
-    if (profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0) {
+    if (
+      profileData?.crawledUrls &&
+      Array.isArray(profileData.crawledUrls) &&
+      profileData.crawledUrls.length > 0
+    ) {
       setCachedHomepageUrl(homepageUrl);
       setShowRecrawlDialog(true);
       return;
@@ -515,19 +611,18 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     try {
       setIsDiscoveringPages(true);
       setCachedHomepageUrl(homepageUrl); // Cache for fallback scenarios
-      
+
       // Start the background crawl job
-      const res = await apiRequest(
-        "POST",
-        "/api/crawl/start",
-        { 
-          homepageUrl,
-          guidelineProfileId: profileId,
-          exclusionPatterns: formData.exclusion_patterns || [],
-          inclusionPatterns: formData.inclusion_patterns || []
-        }
-      );
-      const { jobId } = await res.json() as { jobId: string; message: string };
+      const res = await apiRequest("POST", "/api/crawl/start", {
+        homepageUrl,
+        guidelineProfileId: profileId,
+        exclusionPatterns: formData.exclusion_patterns || [],
+        inclusionPatterns: formData.inclusion_patterns || [],
+      });
+      const { jobId } = (await res.json()) as {
+        jobId: string;
+        message: string;
+      };
 
       // Show progress modal
       setCrawlJobId(jobId);
@@ -536,11 +631,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       console.error("Discover pages error:", error);
       showAdminErrorToast(
         "Discovery Failed",
-        error.message || "Failed to start page discovery. Please check the URL and try again.",
+        error.message ||
+          "Failed to start page discovery. Please check the URL and try again.",
         user?.isAdmin || false,
         {
           homepageUrl,
-          feature: "discover-context-pages"
+          feature: "discover-context-pages",
         }
       );
       setIsDiscoveringPages(false);
@@ -553,12 +649,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       // Determine which pages are missing based on pendingDiscoverMode
       const contextUrls = formData.context_urls || {};
       let aboutMissing, servicesMissing, blogsMissing;
-      
+
       if (pendingDiscoverMode === "fillEmpty") {
         // Only check for empty fields
         aboutMissing = !contextUrls.about_page;
-        servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
-        blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
+        servicesMissing =
+          !contextUrls.service_pages || contextUrls.service_pages.length === 0;
+        blogsMissing =
+          !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
       } else {
         // For overwrite mode or default, all fields are considered "missing" and will be replaced
         aboutMissing = true;
@@ -572,12 +670,26 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           products: servicesMissing,
           blogs: blogsMissing,
         });
-        setCrawledUrlsForTagging(profileData.crawledUrls as { url: string; title: string; autoCategory?: string }[]);
+        setCrawledUrlsForTagging(
+          profileData.crawledUrls as {
+            url: string;
+            title: string;
+            autoCategory?:
+              | "untagged"
+              | "about"
+              | "blog"
+              | "product"
+              | "legals"
+              | "company"
+              | "knowledge";
+          }[]
+        );
         setShowTaggingMode(true);
       } else {
         toast({
           title: "All Pages Already Set",
-          description: "You already have all context pages configured. You can use the tagging page to review them.",
+          description:
+            "You already have all context pages configured. You can use the tagging page to review them.",
         });
       }
     }
@@ -596,12 +708,18 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     setPendingDiscoverMode(null);
   };
 
-  const handleProceedWithOverwrite = async (mode: "fillEmpty" | "overwrite") => {
+  const handleProceedWithOverwrite = async (
+    mode: "fillEmpty" | "overwrite"
+  ) => {
     setShowOverwriteConfirmDialog(false);
     setPendingDiscoverMode(mode);
-    
+
     // Check if we have cached crawled URLs
-    if (profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0) {
+    if (
+      profileData?.crawledUrls &&
+      Array.isArray(profileData.crawledUrls) &&
+      profileData.crawledUrls.length > 0
+    ) {
       setShowRecrawlDialog(true);
     } else {
       await startCrawl(cachedHomepageUrl || formData.domain_url || "");
@@ -614,7 +732,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     setIsDiscoveringPages(false);
     setShowProgressModal(false);
     setDiscoveredPages(results);
-    
+
     // Apply discovered URLs based on pendingDiscoverMode
     let updatedContextUrls;
     if (pendingDiscoverMode === "fillEmpty") {
@@ -623,12 +741,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       updatedContextUrls = {
         home_page: existing.home_page || results.home_page,
         about_page: existing.about_page || results.about_page,
-        service_pages: existing.service_pages && existing.service_pages.length > 0 
-          ? existing.service_pages 
-          : results.service_pages,
-        blog_articles: existing.blog_articles && existing.blog_articles.length > 0
-          ? existing.blog_articles
-          : results.blog_articles,
+        service_pages:
+          existing.service_pages && existing.service_pages.length > 0
+            ? existing.service_pages
+            : results.service_pages,
+        blog_articles:
+          existing.blog_articles && existing.blog_articles.length > 0
+            ? existing.blog_articles
+            : results.blog_articles,
       };
     } else {
       // Overwrite all or no mode set (default behavior)
@@ -639,33 +759,44 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         blog_articles: results.blog_articles,
       };
     }
-    
+
     updateField("context_urls", updatedContextUrls);
 
     // Save crawled URLs to the database if we have them
     if (profileId && results.crawledUrls && results.crawledUrls.length > 0) {
       try {
-        await apiRequest(
-          "PUT",
-          `/api/guideline-profiles/${profileId}`,
-          { crawledUrls: results.crawledUrls }
-        );
+        await apiRequest("PUT", `/api/guideline-profiles/${profileId}`, {
+          crawledUrls: results.crawledUrls,
+        });
         // Invalidate profile cache to show saved results immediately
-        queryClient.invalidateQueries({ queryKey: ['guideline-profiles', profileId] });
+        queryClient.invalidateQueries({
+          queryKey: ["guideline-profiles", profileId],
+        });
       } catch (error) {
         console.error("Failed to save crawled URLs:", error);
       }
     }
 
     const aboutMissing = !updatedContextUrls.about_page;
-    const servicesMissing = !updatedContextUrls.service_pages || updatedContextUrls.service_pages.length < 10;
-    const blogsMissing = !updatedContextUrls.blog_articles || updatedContextUrls.blog_articles.length < 20;
+    const servicesMissing =
+      !updatedContextUrls.service_pages ||
+      updatedContextUrls.service_pages.length < 10;
+    const blogsMissing =
+      !updatedContextUrls.blog_articles ||
+      updatedContextUrls.blog_articles.length < 20;
     const reachedLimit = results.reachedLimit === true;
 
-    const mode = pendingDiscoverMode === "fillEmpty" ? " (filled empty fields only)" : "";
+    const mode =
+      pendingDiscoverMode === "fillEmpty" ? " (filled empty fields only)" : "";
     toast({
       title: "Pages Discovered!",
-      description: `Found ${results.about_page ? 1 : 0} about page, ${results.service_pages.length} product/service pages, and ${results.blog_articles.length} blog articles after crawling ${results.totalPagesCrawled || 0} pages${mode}. Review and edit before extracting.`,
+      description: `Found ${results.about_page ? 1 : 0} about page, ${
+        results.service_pages.length
+      } product/service pages, and ${
+        results.blog_articles.length
+      } blog articles after crawling ${
+        results.totalPagesCrawled || 0
+      } pages${mode}. Review and edit before extracting.`,
     });
 
     // Reset pending mode
@@ -678,7 +809,20 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         products: servicesMissing,
         blogs: blogsMissing,
       });
-      setCrawledUrlsForTagging((results.crawledUrls || []) as { url: string; title: string; autoCategory?: string }[]);
+      setCrawledUrlsForTagging(
+        (results.crawledUrls || []) as {
+          url: string;
+          title: string;
+          autoCategory?:
+            | "untagged"
+            | "about"
+            | "blog"
+            | "product"
+            | "legals"
+            | "company"
+            | "knowledge";
+        }[]
+      );
       setShowUnifiedFallbackModal(true);
     }
   };
@@ -710,16 +854,23 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     try {
       setIsExtractingContext(true);
 
-      const response = await apiRequest(
+      const response = (await apiRequest(
         "POST",
         `/api/guideline-profiles/${profileId}/extract-context`,
         { contextUrls: formData.context_urls }
-      ) as unknown as { success: boolean; processed: number; failed: number; errors: any[] };
+      )) as unknown as {
+        success: boolean;
+        processed: number;
+        failed: number;
+        errors: any[];
+      };
 
       if (response.success) {
         toast({
           title: "Context Extracted Successfully",
-          description: `Processed ${response.processed} pages${response.failed > 0 ? `, ${response.failed} failed` : ''}.`,
+          description: `Processed ${response.processed} pages${
+            response.failed > 0 ? `, ${response.failed} failed` : ""
+          }.`,
         });
         // Refetch the extracted context to update the UI
         refetchExtractedContext();
@@ -733,7 +884,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         {
           profileId,
           contextUrls: formData.context_urls,
-          feature: "extract-context-pages"
+          feature: "extract-context-pages",
         }
       );
     } finally {
@@ -764,22 +915,25 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         "/api/guideline-profiles/find-services-by-pattern",
         { exampleServiceUrl, homepageUrl: cachedHomepageUrl }
       );
-      const data = await res.json() as { service_pages: string[] };
-      
+      const data = (await res.json()) as { service_pages: string[] };
+
       // Update context URLs with found service pages
       const currentUrls = formData.context_urls || {};
       updateField("context_urls", {
         ...currentUrls,
         service_pages: data.service_pages,
       });
-      
+
       toast({
         title: "Product/Service Pages Found!",
         description: `Found ${data.service_pages.length} pages matching the URL pattern.`,
       });
-      
+
       // Show blog dialog next if blogs are missing
-      if (!formData.context_urls?.blog_articles || formData.context_urls.blog_articles.length === 0) {
+      if (
+        !formData.context_urls?.blog_articles ||
+        formData.context_urls.blog_articles.length === 0
+      ) {
         setShowBlogFallbackDialog(true);
       }
     } catch (error: any) {
@@ -799,15 +953,15 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         "/api/guideline-profiles/extract-blog-posts",
         { blogHomeUrl }
       );
-      const data = await res.json() as { blog_articles: string[] };
-      
+      const data = (await res.json()) as { blog_articles: string[] };
+
       // Update context URLs with found blog articles
       const currentUrls = formData.context_urls || {};
       updateField("context_urls", {
         ...currentUrls,
         blog_articles: data.blog_articles,
       });
-      
+
       toast({
         title: "Blog Posts Found!",
         description: `Extracted ${data.blog_articles.length} blog article links.`,
@@ -832,19 +986,25 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     // The user is already on the form, they can navigate to the Context Pages tab
   };
 
-  const handleTaggingSubmit = async (taggedUrls: { 
-    about?: string; 
-    products: string[]; 
-    blogs: string[]; 
-    legals: string[]; 
-    companyPages: string[]; 
-    knowledgeBase: string[] 
+  const handleTaggingSubmit = async (taggedUrls: {
+    about?: string;
+    products: string[];
+    blogs: string[];
+    legals: string[];
+    companyPages: string[];
+    knowledgeBase: string[];
   }) => {
     // Get current profile to merge with
     if (!profileId) {
       toast({
         title: "URLs Tagged Successfully!",
-        description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${taggedUrls.products.length} product/service pages, ${taggedUrls.blogs.length} blog articles, ${taggedUrls.legals.length} legal pages, ${taggedUrls.companyPages.length} company pages, and ${taggedUrls.knowledgeBase.length} knowledge base pages.`,
+        description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${
+          taggedUrls.products.length
+        } product/service pages, ${taggedUrls.blogs.length} blog articles, ${
+          taggedUrls.legals.length
+        } legal pages, ${taggedUrls.companyPages.length} company pages, and ${
+          taggedUrls.knowledgeBase.length
+        } knowledge base pages.`,
       });
       setShowTaggingMode(false);
       return;
@@ -852,10 +1012,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
     try {
       // Fetch current profile to get latest content
-      const currentProfile = await fetch(`/api/guideline-profiles/${profileId}`).then(r => r.json());
+      const currentProfile = await fetch(
+        `/api/guideline-profiles/${profileId}`
+      ).then((r) => r.json());
       const currentContent = currentProfile.content || {};
       const currentUrls = currentContent.context_urls || {};
-      
+
       // Apply tagged URLs based on pendingDiscoverMode
       let updatedContextUrls;
       if (pendingDiscoverMode === "fillEmpty") {
@@ -863,53 +1025,84 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         updatedContextUrls = {
           ...currentUrls,
           about_page: currentUrls.about_page || taggedUrls.about,
-          service_pages: currentUrls.service_pages && currentUrls.service_pages.length > 0 
-            ? currentUrls.service_pages 
-            : taggedUrls.products,
-          blog_articles: currentUrls.blog_articles && currentUrls.blog_articles.length > 0
-            ? currentUrls.blog_articles
-            : taggedUrls.blogs,
-          legals: currentUrls.legals && currentUrls.legals.length > 0
-            ? currentUrls.legals
-            : taggedUrls.legals,
-          company_pages: currentUrls.company_pages && currentUrls.company_pages.length > 0
-            ? currentUrls.company_pages
-            : taggedUrls.companyPages,
-          knowledge_base: currentUrls.knowledge_base && currentUrls.knowledge_base.length > 0
-            ? currentUrls.knowledge_base
-            : taggedUrls.knowledgeBase,
+          service_pages:
+            currentUrls.service_pages && currentUrls.service_pages.length > 0
+              ? currentUrls.service_pages
+              : taggedUrls.products,
+          blog_articles:
+            currentUrls.blog_articles && currentUrls.blog_articles.length > 0
+              ? currentUrls.blog_articles
+              : taggedUrls.blogs,
+          legals:
+            currentUrls.legals && currentUrls.legals.length > 0
+              ? currentUrls.legals
+              : taggedUrls.legals,
+          company_pages:
+            currentUrls.company_pages && currentUrls.company_pages.length > 0
+              ? currentUrls.company_pages
+              : taggedUrls.companyPages,
+          knowledge_base:
+            currentUrls.knowledge_base && currentUrls.knowledge_base.length > 0
+              ? currentUrls.knowledge_base
+              : taggedUrls.knowledgeBase,
         };
       } else {
         // Overwrite mode or default - replace with tagged URLs
         updatedContextUrls = {
           ...currentUrls,
           about_page: taggedUrls.about || currentUrls.about_page,
-          service_pages: taggedUrls.products.length > 0 ? taggedUrls.products : currentUrls.service_pages,
-          blog_articles: taggedUrls.blogs.length > 0 ? taggedUrls.blogs : currentUrls.blog_articles,
-          legals: taggedUrls.legals.length > 0 ? taggedUrls.legals : currentUrls.legals,
-          company_pages: taggedUrls.companyPages.length > 0 ? taggedUrls.companyPages : currentUrls.company_pages,
-          knowledge_base: taggedUrls.knowledgeBase.length > 0 ? taggedUrls.knowledgeBase : currentUrls.knowledge_base,
+          service_pages:
+            taggedUrls.products.length > 0
+              ? taggedUrls.products
+              : currentUrls.service_pages,
+          blog_articles:
+            taggedUrls.blogs.length > 0
+              ? taggedUrls.blogs
+              : currentUrls.blog_articles,
+          legals:
+            taggedUrls.legals.length > 0
+              ? taggedUrls.legals
+              : currentUrls.legals,
+          company_pages:
+            taggedUrls.companyPages.length > 0
+              ? taggedUrls.companyPages
+              : currentUrls.company_pages,
+          knowledge_base:
+            taggedUrls.knowledgeBase.length > 0
+              ? taggedUrls.knowledgeBase
+              : currentUrls.knowledge_base,
         };
       }
-      
+
       // Update local state
       updateField("context_urls", updatedContextUrls);
 
       // Save merged content to database
-      const updatedContent = { ...currentContent, context_urls: updatedContextUrls };
+      const updatedContent = {
+        ...currentContent,
+        context_urls: updatedContextUrls,
+      };
       await apiRequest("PUT", `/api/guideline-profiles/${profileId}`, {
         content: updatedContent,
       });
-      
+
       // Invalidate cache to refresh the profile data
-      queryClient.invalidateQueries({ queryKey: ['guideline-profiles', profileId] });
-      
+      queryClient.invalidateQueries({
+        queryKey: ["guideline-profiles", profileId],
+      });
+
       // Reset pending mode after successful tagging
       setPendingDiscoverMode(null);
-      
+
       toast({
         title: "URLs Tagged & Saved!",
-        description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${taggedUrls.products.length} product/service pages, ${taggedUrls.blogs.length} blog articles, ${taggedUrls.legals.length} legal pages, ${taggedUrls.companyPages.length} company pages, and ${taggedUrls.knowledgeBase.length} knowledge base pages.`,
+        description: `Tagged ${taggedUrls.about ? 1 : 0} about page, ${
+          taggedUrls.products.length
+        } product/service pages, ${taggedUrls.blogs.length} blog articles, ${
+          taggedUrls.legals.length
+        } legal pages, ${taggedUrls.companyPages.length} company pages, and ${
+          taggedUrls.knowledgeBase.length
+        } knowledge base pages.`,
       });
     } catch (error) {
       console.error("Failed to save tagged URLs:", error);
@@ -945,9 +1138,13 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-yellow-500 mb-2">Legacy Format Detected</h3>
+            <h3 className="text-lg font-semibold text-yellow-500 mb-2">
+              Legacy Format Detected
+            </h3>
             <p className="text-sm text-gray-300 mb-4">
-              This profile uses the old text-based format. Convert it to the new structured format to unlock advanced features like color palettes, target audiences, and more.
+              This profile uses the old text-based format. Convert it to the new
+              structured format to unlock advanced features like color palettes,
+              target audiences, and more.
             </p>
             <div className="mb-4">
               <Label className="text-gray-300">Current Content:</Label>
@@ -955,7 +1152,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                 {legacyText}
               </p>
             </div>
-            <Button 
+            <Button
               onClick={handleConvertToStructured}
               data-testid="button-convert-to-structured"
               className="bg-yellow-600 hover:bg-yellow-700"
@@ -972,7 +1169,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
     <div className="space-y-6">
       {validationErrors.length > 0 && (
         <div className="p-4 bg-red-950/20 border border-red-800 rounded-lg">
-          <h4 className="text-red-500 font-semibold mb-2">Validation Errors:</h4>
+          <h4 className="text-red-500 font-semibold mb-2">
+            Validation Errors:
+          </h4>
           <ul className="list-disc list-inside text-sm text-red-400">
             {validationErrors.map((error, i) => (
               <li key={i}>{error}</li>
@@ -988,7 +1187,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             <div className="flex items-center gap-3">
               <LoaderIcon className="w-5 h-5 animate-spin text-white" />
               <div>
-                <h4 className="text-white font-semibold">Auto Discovery Running in Background</h4>
+                <h4 className="text-white font-semibold">
+                  Auto Discovery Running in Background
+                </h4>
                 <p className="text-indigo-100 text-sm">
                   Progress: {backgroundJobStatus?.progress || 0}% complete
                 </p>
@@ -1009,7 +1210,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
       {/* Domain URL - Outside of tabs, applies to all sections */}
       <div className="p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
-        <Label htmlFor="domain-url" className="text-gray-200 text-sm font-medium">Domain URL</Label>
+        <Label
+          htmlFor="domain-url"
+          className="text-gray-200 text-sm font-medium"
+        >
+          Domain URL
+        </Label>
         <div className="flex gap-2 mt-2">
           <Input
             id="domain-url"
@@ -1052,7 +1258,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             <Button
               type="button"
               data-testid="button-upload-pdf"
-              onClick={() => document.getElementById('pdf-upload')?.click()}
+              onClick={() => document.getElementById("pdf-upload")?.click()}
               disabled={isAutoPopulating}
               className="bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap"
             >
@@ -1062,23 +1268,65 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          Enter your website URL and click Auto Populate, or upload a PDF brand guideline document to extract information automatically.
+          Enter your website URL and click Auto Populate, or upload a PDF brand
+          guideline document to extract information automatically.
         </p>
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="flex flex-wrap w-full bg-gray-800 h-auto p-1 gap-1">
-          <TabsTrigger value="basic" data-testid="tab-basic-info" className="flex-1 min-w-[120px]">Basic Info</TabsTrigger>
-          <TabsTrigger value="visual" data-testid="tab-visual-identity" className="flex-1 min-w-[120px]">Visual Identity</TabsTrigger>
-          <TabsTrigger value="audience" data-testid="tab-audience" className="flex-1 min-w-[120px]">Audience</TabsTrigger>
-          <TabsTrigger value="voice" data-testid="tab-brand-voice" className="flex-1 min-w-[120px]">Brand Voice</TabsTrigger>
-          <TabsTrigger value="context" data-testid="tab-context" className="flex-1 min-w-[120px]">Context</TabsTrigger>
-          <TabsTrigger value="regulatory" data-testid="tab-regulatory" className="flex-1 min-w-[120px]">Regulatory</TabsTrigger>
+          <TabsTrigger
+            value="basic"
+            data-testid="tab-basic-info"
+            className="flex-1 min-w-[120px]"
+          >
+            Basic Info
+          </TabsTrigger>
+          <TabsTrigger
+            value="visual"
+            data-testid="tab-visual-identity"
+            className="flex-1 min-w-[120px]"
+          >
+            Visual Identity
+          </TabsTrigger>
+          <TabsTrigger
+            value="audience"
+            data-testid="tab-audience"
+            className="flex-1 min-w-[120px]"
+          >
+            Audience
+          </TabsTrigger>
+          <TabsTrigger
+            value="voice"
+            data-testid="tab-brand-voice"
+            className="flex-1 min-w-[120px]"
+          >
+            Brand Voice
+          </TabsTrigger>
+          <TabsTrigger
+            value="context"
+            data-testid="tab-context"
+            className="flex-1 min-w-[120px]"
+          >
+            Context
+          </TabsTrigger>
+          <TabsTrigger
+            value="regulatory"
+            data-testid="tab-regulatory"
+            className="flex-1 min-w-[120px]"
+          >
+            Regulatory
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6 mt-6">
           <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-            <Label htmlFor="tone-of-voice" className="text-gray-200 font-semibold text-sm">Tone of Voice</Label>
+            <Label
+              htmlFor="tone-of-voice"
+              className="text-gray-200 font-semibold text-sm"
+            >
+              Tone of Voice
+            </Label>
             <Textarea
               id="tone-of-voice"
               data-testid="textarea-tone-of-voice"
@@ -1091,7 +1339,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
 
           <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-            <Label htmlFor="style-preferences" className="text-gray-200 font-semibold text-sm">Style Preferences</Label>
+            <Label
+              htmlFor="style-preferences"
+              className="text-gray-200 font-semibold text-sm"
+            >
+              Style Preferences
+            </Label>
             <Textarea
               id="style-preferences"
               data-testid="textarea-style-preferences"
@@ -1106,7 +1359,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
         <TabsContent value="visual" className="space-y-6 mt-6">
           <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-            <Label className="text-gray-200 font-semibold text-sm">Color Palette</Label>
+            <Label className="text-gray-200 font-semibold text-sm">
+              Color Palette
+            </Label>
             <div className="space-y-2 mt-2">
               {(formData.color_palette || []).map((color, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -1147,7 +1402,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
 
           <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-            <Label htmlFor="visual-style" className="text-gray-200 font-semibold text-sm">Visual Style</Label>
+            <Label
+              htmlFor="visual-style"
+              className="text-gray-200 font-semibold text-sm"
+            >
+              Visual Style
+            </Label>
             <Textarea
               id="visual-style"
               data-testid="textarea-visual-style"
@@ -1162,7 +1422,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
         <TabsContent value="audience" className="space-y-6 mt-6">
           <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-            <Label className="text-gray-200 font-semibold text-sm">Target Audiences</Label>
+            <Label className="text-gray-200 font-semibold text-sm">
+              Target Audiences
+            </Label>
             <div className="space-y-4 mt-3">
               {(formData.target_audience || []).map((audience, index) => (
                 <div
@@ -1170,7 +1432,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   className="p-4 bg-gray-800 rounded-lg border border-gray-700 space-y-3"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-semibold text-gray-200">Audience {index + 1}</h4>
+                    <h4 className="text-sm font-semibold text-gray-200">
+                      Audience {index + 1}
+                    </h4>
                     <div className="flex gap-1">
                       <Button
                         data-testid={`button-duplicate-audience-${index}`}
@@ -1196,24 +1460,42 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor={`gender-${index}`} className="text-gray-300 text-xs">Gender</Label>
+                      <Label
+                        htmlFor={`gender-${index}`}
+                        className="text-gray-300 text-xs"
+                      >
+                        Gender
+                      </Label>
                       <Input
                         id={`gender-${index}`}
                         data-testid={`input-audience-gender-${index}`}
                         value={audience.gender || ""}
-                        onChange={(e) => updateTargetAudience(index, "gender", e.target.value)}
+                        onChange={(e) =>
+                          updateTargetAudience(index, "gender", e.target.value)
+                        }
                         placeholder="e.g., All, Male, Female"
                         className="mt-1 bg-gray-900 border-gray-600 text-white"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor={`profession-${index}`} className="text-gray-300 text-xs">Profession</Label>
+                      <Label
+                        htmlFor={`profession-${index}`}
+                        className="text-gray-300 text-xs"
+                      >
+                        Profession
+                      </Label>
                       <Input
                         id={`profession-${index}`}
                         data-testid={`input-audience-profession-${index}`}
                         value={audience.profession || ""}
-                        onChange={(e) => updateTargetAudience(index, "profession", e.target.value)}
+                        onChange={(e) =>
+                          updateTargetAudience(
+                            index,
+                            "profession",
+                            e.target.value
+                          )
+                        }
                         placeholder="e.g., Marketing Managers"
                         className="mt-1 bg-gray-900 border-gray-600 text-white"
                       />
@@ -1221,12 +1503,19 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   </div>
 
                   <div>
-                    <Label htmlFor={`geography-${index}`} className="text-gray-300 text-xs">Target Geography</Label>
+                    <Label
+                      htmlFor={`geography-${index}`}
+                      className="text-gray-300 text-xs"
+                    >
+                      Target Geography
+                    </Label>
                     <Input
                       id={`geography-${index}`}
                       data-testid={`input-audience-geography-${index}`}
                       value={audience.geography || ""}
-                      onChange={(e) => updateTargetAudience(index, "geography", e.target.value)}
+                      onChange={(e) =>
+                        updateTargetAudience(index, "geography", e.target.value)
+                      }
                       placeholder="e.g., UK, United States, Europe, Asia-Pacific"
                       className="mt-1 bg-gray-900 border-gray-600 text-white"
                     />
@@ -1241,10 +1530,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                         min="0"
                         max="120"
                         value={audience.age_range?.from_age || ""}
-                        onChange={(e) => updateTargetAudience(index, "age_range", {
-                          ...audience.age_range,
-                          from_age: parseInt(e.target.value) || 0
-                        })}
+                        onChange={(e) =>
+                          updateTargetAudience(index, "age_range", {
+                            ...audience.age_range,
+                            from_age: parseInt(e.target.value) || 0,
+                          })
+                        }
                         placeholder="From age"
                         className="bg-gray-900 border-gray-600 text-white"
                       />
@@ -1254,10 +1545,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                         min="0"
                         max="120"
                         value={audience.age_range?.to_age || ""}
-                        onChange={(e) => updateTargetAudience(index, "age_range", {
-                          ...audience.age_range,
-                          to_age: parseInt(e.target.value) || 0
-                        })}
+                        onChange={(e) =>
+                          updateTargetAudience(index, "age_range", {
+                            ...audience.age_range,
+                            to_age: parseInt(e.target.value) || 0,
+                          })
+                        }
                         placeholder="To age"
                         className="bg-gray-900 border-gray-600 text-white"
                       />
@@ -1265,14 +1558,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   </div>
 
                   <div>
-                    <Label className="text-gray-300 text-xs">
-                      Interests
-                    </Label>
+                    <Label className="text-gray-300 text-xs">Interests</Label>
                     <div className="mt-1">
                       <TagInput
                         data-testid={`input-audience-interests-${index}`}
                         value={audience.interests || []}
-                        onChange={(tags) => updateTargetAudience(index, "interests", tags)}
+                        onChange={(tags) =>
+                          updateTargetAudience(index, "interests", tags)
+                        }
                         placeholder="e.g., Technology, Marketing, Design"
                       />
                     </div>
@@ -1286,7 +1579,9 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                       <TagInput
                         data-testid={`input-audience-keywords-${index}`}
                         value={audience.other_keywords || []}
-                        onChange={(tags) => updateTargetAudience(index, "other_keywords", tags)}
+                        onChange={(tags) =>
+                          updateTargetAudience(index, "other_keywords", tags)
+                        }
                         placeholder="e.g., B2B, SaaS, Enterprise"
                       />
                     </div>
@@ -1336,7 +1631,12 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
           </div>
 
           <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-            <Label htmlFor="language-style" className="text-gray-200 font-semibold text-sm">Language Style</Label>
+            <Label
+              htmlFor="language-style"
+              className="text-gray-200 font-semibold text-sm"
+            >
+              Language Style
+            </Label>
             <Textarea
               id="language-style"
               data-testid="textarea-language-style"
@@ -1354,16 +1654,28 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             {/* Section 1: Home Page URL */}
             <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                  1
+                </span>
                 Home Page URL
               </h3>
-              <Label htmlFor="context-home-page" className="text-gray-200 font-semibold text-sm">Website Homepage</Label>
+              <Label
+                htmlFor="context-home-page"
+                className="text-gray-200 font-semibold text-sm"
+              >
+                Website Homepage
+              </Label>
               <Input
                 id="context-home-page"
                 data-testid="input-context-home-page"
                 type="url"
                 value={formData.context_urls?.home_page || ""}
-                onChange={(e) => updateField("context_urls", { ...formData.context_urls, home_page: e.target.value })}
+                onChange={(e) =>
+                  updateField("context_urls", {
+                    ...formData.context_urls,
+                    home_page: e.target.value,
+                  })
+                }
                 placeholder="https://yourbrand.com"
                 className="mt-2 bg-gray-800 border-gray-700 text-white"
               />
@@ -1375,20 +1687,27 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             {/* Section 2: Brand Context Pages */}
             <div className="p-5 bg-blue-950/20 border-2 border-blue-700 rounded-lg">
               <h3 className="text-lg font-semibold text-blue-300 mb-4 flex items-center gap-2">
-                <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                  2
+                </span>
                 Brand Context Pages
               </h3>
               <p className="text-sm text-gray-300 mb-6">
-                Provide URLs to key pages of your website. We'll extract the main content from each page and convert it to markdown format for use in content generation.
+                Provide URLs to key pages of your website. We'll extract the
+                main content from each page and convert it to markdown format
+                for use in content generation.
               </p>
 
               {/* Subdivision A: Auto-Discovery & Crawl Tools */}
               <div className="mb-6 p-4 bg-purple-950/30 border border-purple-700/50 rounded-lg">
-                <h4 className="text-md font-semibold text-purple-300 mb-3">Auto-Discovery & Crawl Tools</h4>
+                <h4 className="text-md font-semibold text-purple-300 mb-3">
+                  Auto-Discovery & Crawl Tools
+                </h4>
                 <p className="text-xs text-gray-400 mb-4">
-                  Use our crawler to automatically discover pages from your website, then tag them for use in content generation.
+                  Use our crawler to automatically discover pages from your
+                  website, then tag them for use in content generation.
                 </p>
-                
+
                 {/* Auto-Discover Button */}
                 <Button
                   type="button"
@@ -1410,27 +1729,48 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   )}
                 </Button>
                 <p className="text-xs text-gray-400 mb-6">
-                  {formData.domain_url 
+                  {formData.domain_url
                     ? "We'll crawl your website to find About, Services, and Blog pages automatically."
                     : "Enter a Domain URL in the Basic Info tab first to use auto-discovery."}
                 </p>
 
                 {/* Saved Crawl Results */}
-                {profileData?.crawledUrls && Array.isArray(profileData.crawledUrls) && profileData.crawledUrls.length > 0 ? (
+                {profileData?.crawledUrls &&
+                Array.isArray(profileData.crawledUrls) &&
+                profileData.crawledUrls.length > 0 ? (
                   <div className="mb-6 p-4 bg-green-950/30 border border-green-700/50 rounded-lg">
-                    <h5 className="text-sm font-semibold text-green-300 mb-2">Saved Crawl Results</h5>
+                    <h5 className="text-sm font-semibold text-green-300 mb-2">
+                      Saved Crawl Results
+                    </h5>
                     <p className="text-xs text-gray-300 mb-3">
-                      {profileData.crawledUrls.length} URLs discovered from your website
+                      {profileData.crawledUrls.length} URLs discovered from your
+                      website
                     </p>
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3 text-xs">
                         <div className="p-2 bg-gray-800/50 rounded">
-                          <div className="text-gray-400 mb-1">Current Context</div>
+                          <div className="text-gray-400 mb-1">
+                            Current Context
+                          </div>
                           <div className="text-white">
-                            <div>Home: {formData.context_urls?.home_page ? '✓' : '—'}</div>
-                            <div>About: {formData.context_urls?.about_page ? '✓' : '—'}</div>
-                            <div>Services: {formData.context_urls?.service_pages?.length || 0}</div>
-                            <div>Blogs: {formData.context_urls?.blog_articles?.length || 0}</div>
+                            <div>
+                              Home:{" "}
+                              {formData.context_urls?.home_page ? "✓" : "—"}
+                            </div>
+                            <div>
+                              About:{" "}
+                              {formData.context_urls?.about_page ? "✓" : "—"}
+                            </div>
+                            <div>
+                              Services:{" "}
+                              {formData.context_urls?.service_pages?.length ||
+                                0}
+                            </div>
+                            <div>
+                              Blogs:{" "}
+                              {formData.context_urls?.blog_articles?.length ||
+                                0}
+                            </div>
                           </div>
                         </div>
                         <div className="p-2 bg-gray-800/50 rounded">
@@ -1438,9 +1778,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                           <div className="text-white">
                             {profileData.crawledUrls.length} pages crawled
                           </div>
-                          <div className="text-gray-400 mt-1">
-                            Ready to tag
-                          </div>
+                          <div className="text-gray-400 mt-1">Ready to tag</div>
                         </div>
                       </div>
                       <Button
@@ -1448,15 +1786,32 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                         onClick={() => {
                           const contextUrls = formData.context_urls || {};
                           const aboutMissing = !contextUrls.about_page;
-                          const servicesMissing = !contextUrls.service_pages || contextUrls.service_pages.length === 0;
-                          const blogsMissing = !contextUrls.blog_articles || contextUrls.blog_articles.length === 0;
-                          
+                          const servicesMissing =
+                            !contextUrls.service_pages ||
+                            contextUrls.service_pages.length === 0;
+                          const blogsMissing =
+                            !contextUrls.blog_articles ||
+                            contextUrls.blog_articles.length === 0;
+
                           setMissingPages({
                             about: aboutMissing,
                             products: servicesMissing,
                             blogs: blogsMissing,
                           });
-                          setCrawledUrlsForTagging(profileData.crawledUrls as { url: string; title: string; autoCategory?: string }[]);
+                          setCrawledUrlsForTagging(
+                            profileData.crawledUrls as {
+                              url: string;
+                              title: string;
+                              autoCategory?:
+                                | "untagged"
+                                | "about"
+                                | "blog"
+                                | "product"
+                                | "legals"
+                                | "company"
+                                | "knowledge";
+                            }[]
+                          );
                           setShowTaggingMode(true);
                         }}
                         className="w-full bg-green-600 hover:bg-green-700 text-white text-sm"
@@ -1469,37 +1824,53 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   </div>
                 ) : (
                   <div className="mb-6 p-4 bg-gray-800/30 border border-gray-600 rounded-lg">
-                    <h5 className="text-sm font-semibold text-gray-400 mb-1">No Saved Crawl Results</h5>
+                    <h5 className="text-sm font-semibold text-gray-400 mb-1">
+                      No Saved Crawl Results
+                    </h5>
                     <p className="text-xs text-gray-400">
-                      Run "Auto-Discover Context Pages" above to crawl your website and save the results for easy tagging.
+                      Run "Auto-Discover Context Pages" above to crawl your
+                      website and save the results for easy tagging.
                     </p>
                   </div>
                 )}
 
                 {/* URL Patterns */}
                 <div className="space-y-4">
-                  <h5 className="text-sm font-semibold text-gray-200">URL Patterns</h5>
+                  <h5 className="text-sm font-semibold text-gray-200">
+                    URL Patterns
+                  </h5>
                   <p className="text-xs text-gray-400 -mt-2">
-                    Control which pages are crawled during auto-discovery. Use wildcards (*) to match URL patterns.
+                    Control which pages are crawled during auto-discovery. Use
+                    wildcards (*) to match URL patterns.
                   </p>
 
                   <div className="bg-gray-800/30 p-3 rounded-lg">
-                    <Label htmlFor="exclusion-patterns" className="text-gray-200 font-semibold text-sm">
+                    <Label
+                      htmlFor="exclusion-patterns"
+                      className="text-gray-200 font-semibold text-sm"
+                    >
                       Exclusion Patterns (Skip These URLs)
                     </Label>
                     <p className="text-xs text-gray-400 mt-1 mb-2">
-                      Pages matching these patterns will be ignored. One pattern per line.
+                      Pages matching these patterns will be ignored. One pattern
+                      per line.
                     </p>
                     <Textarea
                       id="exclusion-patterns"
                       data-testid="textarea-exclusion-patterns"
-                      value={formData.exclusion_patterns?.join('\n') || ''}
+                      value={formData.exclusion_patterns?.join("\n") || ""}
                       onChange={(e) => {
-                        const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
-                        updateField('exclusion_patterns', patterns.length > 0 ? patterns : undefined);
+                        const patterns = e.target.value
+                          .split("\n")
+                          .map((p) => p.trim())
+                          .filter((p) => p);
+                        updateField(
+                          "exclusion_patterns",
+                          patterns.length > 0 ? patterns : undefined
+                        );
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           e.stopPropagation();
                         }
                       }}
@@ -1508,27 +1879,44 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                       className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-xs"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Examples: <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/page=*</code>, <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/category/*</code>
+                      Examples:{" "}
+                      <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">
+                        */page=*
+                      </code>
+                      ,{" "}
+                      <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">
+                        */category/*
+                      </code>
                     </p>
                   </div>
 
                   <div className="bg-gray-800/30 p-3 rounded-lg">
-                    <Label htmlFor="inclusion-patterns" className="text-gray-200 font-semibold text-sm">
+                    <Label
+                      htmlFor="inclusion-patterns"
+                      className="text-gray-200 font-semibold text-sm"
+                    >
                       Inclusion Patterns (Only Crawl These URLs)
                     </Label>
                     <p className="text-xs text-gray-400 mt-1 mb-2">
-                      If specified, only pages matching these patterns will be crawled. One pattern per line.
+                      If specified, only pages matching these patterns will be
+                      crawled. One pattern per line.
                     </p>
                     <Textarea
                       id="inclusion-patterns"
                       data-testid="textarea-inclusion-patterns"
-                      value={formData.inclusion_patterns?.join('\n') || ''}
+                      value={formData.inclusion_patterns?.join("\n") || ""}
                       onChange={(e) => {
-                        const patterns = e.target.value.split('\n').map(p => p.trim()).filter(p => p);
-                        updateField('inclusion_patterns', patterns.length > 0 ? patterns : undefined);
+                        const patterns = e.target.value
+                          .split("\n")
+                          .map((p) => p.trim())
+                          .filter((p) => p);
+                        updateField(
+                          "inclusion_patterns",
+                          patterns.length > 0 ? patterns : undefined
+                        );
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           e.stopPropagation();
                         }
                       }}
@@ -1537,7 +1925,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                       className="mt-2 bg-gray-800 border-gray-700 text-white font-mono text-xs"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Examples: <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/blog/*</code>, <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">*/products/*</code>
+                      Examples:{" "}
+                      <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">
+                        */blog/*
+                      </code>
+                      ,{" "}
+                      <code className="bg-gray-800 px-1 py-0.5 rounded text-xs">
+                        */products/*
+                      </code>
                     </p>
                   </div>
                 </div>
@@ -1545,42 +1940,65 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
               {/* Subdivision B: Manual Page URLs */}
               <div className="p-4 bg-gray-800/20 border border-gray-600 rounded-lg">
-                <h4 className="text-md font-semibold text-gray-200 mb-3">Manual Page URLs</h4>
+                <h4 className="text-md font-semibold text-gray-200 mb-3">
+                  Manual Page URLs
+                </h4>
                 <p className="text-xs text-gray-400 mb-4">
-                  Manually enter URLs for your About, Service, and Blog pages. These will be used to extract content for AI generation.
+                  Manually enter URLs for your About, Service, and Blog pages.
+                  These will be used to extract content for AI generation.
                 </p>
 
                 <div className="space-y-4">
                   <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <Label htmlFor="context-about-page" className="text-gray-200 font-semibold text-sm">About Us Page URL</Label>
+                    <Label
+                      htmlFor="context-about-page"
+                      className="text-gray-200 font-semibold text-sm"
+                    >
+                      About Us Page URL
+                    </Label>
                     <Input
                       id="context-about-page"
                       data-testid="input-context-about-page"
                       type="url"
                       value={formData.context_urls?.about_page || ""}
-                      onChange={(e) => updateField("context_urls", { ...formData.context_urls, about_page: e.target.value })}
+                      onChange={(e) =>
+                        updateField("context_urls", {
+                          ...formData.context_urls,
+                          about_page: e.target.value,
+                        })
+                      }
                       placeholder="https://yourbrand.com/about"
                       className="mt-2 bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
 
                   <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <Label className="text-gray-200 font-semibold text-sm">Service/Product Pages</Label>
+                    <Label className="text-gray-200 font-semibold text-sm">
+                      Service/Product Pages
+                    </Label>
                     <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-                      {[...(formData.context_urls?.service_pages || []), ""].map((url, index) => (
+                      {[
+                        ...(formData.context_urls?.service_pages || []),
+                        "",
+                      ].map((url, index) => (
                         <div key={index} className="flex gap-2">
                           <Input
                             data-testid={`input-context-service-page-${index}`}
                             type="url"
                             value={url}
                             onChange={(e) => {
-                              const pages = [...(formData.context_urls?.service_pages || [])];
+                              const pages = [
+                                ...(formData.context_urls?.service_pages || []),
+                              ];
                               if (e.target.value) {
                                 pages[index] = e.target.value;
                               } else {
                                 pages.splice(index, 1);
                               }
-                              updateField("context_urls", { ...formData.context_urls, service_pages: pages.filter(p => p) });
+                              updateField("context_urls", {
+                                ...formData.context_urls,
+                                service_pages: pages.filter((p) => p),
+                              });
                             }}
                             placeholder={`Service/Product page ${index + 1}`}
                             className="flex-1 bg-gray-800 border-gray-700 text-white"
@@ -1594,22 +2012,32 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                   </div>
 
                   <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <Label className="text-gray-200 font-semibold text-sm">Blog Articles/Resources</Label>
+                    <Label className="text-gray-200 font-semibold text-sm">
+                      Blog Articles/Resources
+                    </Label>
                     <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-                      {[...(formData.context_urls?.blog_articles || []), ""].map((url, index) => (
+                      {[
+                        ...(formData.context_urls?.blog_articles || []),
+                        "",
+                      ].map((url, index) => (
                         <div key={index} className="flex gap-2">
                           <Input
                             data-testid={`input-context-blog-article-${index}`}
                             type="url"
                             value={url}
                             onChange={(e) => {
-                              const articles = [...(formData.context_urls?.blog_articles || [])];
+                              const articles = [
+                                ...(formData.context_urls?.blog_articles || []),
+                              ];
                               if (e.target.value) {
                                 articles[index] = e.target.value;
                               } else {
                                 articles.splice(index, 1);
                               }
-                              updateField("context_urls", { ...formData.context_urls, blog_articles: articles.filter(a => a) });
+                              updateField("context_urls", {
+                                ...formData.context_urls,
+                                blog_articles: articles.filter((a) => a),
+                              });
                             }}
                             placeholder={`Blog article/resource ${index + 1}`}
                             className="flex-1 bg-gray-800 border-gray-700 text-white"
@@ -1626,19 +2054,40 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
             </div>
 
             {existingContext && existingContext.totalPages > 0 && (
-              <div className="p-4 bg-blue-950/30 border-2 border-blue-700/50 rounded-lg" data-testid="existing-context-info">
+              <div
+                className="p-4 bg-blue-950/30 border-2 border-blue-700/50 rounded-lg"
+                data-testid="existing-context-info"
+              >
                 <div className="flex items-start gap-3">
                   <Sparkles className="w-5 h-5 text-blue-400 mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-blue-300 mb-1">Existing Extracted Content</h4>
+                    <h4 className="text-sm font-semibold text-blue-300 mb-1">
+                      Existing Extracted Content
+                    </h4>
                     <p className="text-xs text-gray-300 mb-2">
-                      {existingContext.totalPages} pages already extracted{existingContext.extractedAt && ` on ${new Date(existingContext.extractedAt).toLocaleDateString()}`}
+                      {existingContext.totalPages} pages already extracted
+                      {existingContext.extractedAt &&
+                        ` on ${new Date(
+                          existingContext.extractedAt
+                        ).toLocaleDateString()}`}
                     </p>
                     <div className="text-xs text-gray-400 space-y-1">
                       {existingContext.home && <div>• Home page</div>}
                       {existingContext.about && <div>• About page</div>}
-                      {existingContext.services && existingContext.services.length > 0 && <div>• {existingContext.services.length} product/service page{existingContext.services.length > 1 ? 's' : ''}</div>}
-                      {existingContext.blogs && existingContext.blogs.length > 0 && <div>• {existingContext.blogs.length} blog article{existingContext.blogs.length > 1 ? 's' : ''}</div>}
+                      {existingContext.services &&
+                        existingContext.services.length > 0 && (
+                          <div>
+                            • {existingContext.services.length} product/service
+                            page{existingContext.services.length > 1 ? "s" : ""}
+                          </div>
+                        )}
+                      {existingContext.blogs &&
+                        existingContext.blogs.length > 0 && (
+                          <div>
+                            • {existingContext.blogs.length} blog article
+                            {existingContext.blogs.length > 1 ? "s" : ""}
+                          </div>
+                        )}
                     </div>
                     <p className="text-xs text-yellow-400 mt-2">
                       ⚠️ Extracting again will replace all existing content
@@ -1668,11 +2117,14 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         <TabsContent value="regulatory" className="space-y-6 mt-6">
           <div className="space-y-6">
             <div className="p-5 bg-gray-900/50 border-2 border-gray-600 rounded-lg">
-              <Label className="text-gray-200 font-semibold text-sm">Attach Regulatory Guideline</Label>
+              <Label className="text-gray-200 font-semibold text-sm">
+                Attach Regulatory Guideline
+              </Label>
               <p className="text-sm text-gray-400 mt-1 mb-3">
-                Attach an existing regulatory guideline profile or create a new one for this brand.
+                Attach an existing regulatory guideline profile or create a new
+                one for this brand.
               </p>
-              
+
               <div className="space-y-3">
                 <Select
                   data-testid="select-regulatory-mode"
@@ -1693,26 +2145,36 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
                     <SelectValue placeholder="Choose option..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No Regulatory Guideline</SelectItem>
-                    <SelectItem value="existing">Attach Existing Guideline</SelectItem>
+                    <SelectItem value="none">
+                      No Regulatory Guideline
+                    </SelectItem>
+                    <SelectItem value="existing">
+                      Attach Existing Guideline
+                    </SelectItem>
                     <SelectItem value="new">Create New Guideline</SelectItem>
                   </SelectContent>
                 </Select>
 
                 {regulatoryMode === "existing" && (
                   <div>
-                    <Label className="text-gray-300 text-sm">Select Regulatory Guideline</Label>
+                    <Label className="text-gray-300 text-sm">
+                      Select Regulatory Guideline
+                    </Label>
                     <Select
                       data-testid="select-existing-regulatory"
                       value={formData.regulatory_guideline_id || ""}
-                      onValueChange={(value) => updateField("regulatory_guideline_id", value)}
+                      onValueChange={(value) =>
+                        updateField("regulatory_guideline_id", value)
+                      }
                     >
                       <SelectTrigger className="mt-2 bg-gray-800 border-gray-700 text-white">
                         <SelectValue placeholder="Select a regulatory guideline..." />
                       </SelectTrigger>
                       <SelectContent>
                         {regulatoryGuidelines.length === 0 ? (
-                          <SelectItem value="none" disabled>No regulatory guidelines available</SelectItem>
+                          <SelectItem value="none" disabled>
+                            No regulatory guidelines available
+                          </SelectItem>
                         ) : (
                           regulatoryGuidelines.map((guideline) => (
                             <SelectItem key={guideline.id} value={guideline.id}>
@@ -1727,34 +2189,48 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
 
                 {regulatoryMode === "new" && (
                   <div>
-                    <Label htmlFor="new-regulatory-text" className="text-gray-300 text-sm">
+                    <Label
+                      htmlFor="new-regulatory-text"
+                      className="text-gray-300 text-sm"
+                    >
                       New Regulatory Guideline Content
                     </Label>
                     <p className="text-xs text-gray-400 mt-1 mb-2">
-                      Note: This will create a temporary guideline. To save it permanently, create a regulatory profile in Profile Settings.
+                      Note: This will create a temporary guideline. To save it
+                      permanently, create a regulatory profile in Profile
+                      Settings.
                     </p>
                     <Textarea
                       id="new-regulatory-text"
                       data-testid="textarea-new-regulatory"
                       value={formData.temporary_regulatory_text || ""}
-                      onChange={(e) => updateField("temporary_regulatory_text", e.target.value)}
+                      onChange={(e) =>
+                        updateField("temporary_regulatory_text", e.target.value)
+                      }
                       placeholder="Enter regulatory guidelines, compliance requirements, or industry-specific rules..."
                       rows={6}
                       className="mt-2 bg-gray-800 border-gray-700 text-white"
                     />
                     <p className="text-xs text-amber-500 mt-2">
-                      ⚠️ Temporary guidelines are not saved permanently. Consider creating a regulatory profile for reuse.
+                      ⚠️ Temporary guidelines are not saved permanently.
+                      Consider creating a regulatory profile for reuse.
                     </p>
                   </div>
                 )}
 
-                {formData.regulatory_guideline_id && regulatoryMode === "existing" && (
-                  <div className="p-3 bg-green-950/20 border border-green-800 rounded-lg">
-                    <p className="text-sm text-green-400">
-                      ✓ Regulatory guideline attached: {regulatoryGuidelines.find(g => g.id === formData.regulatory_guideline_id)?.name}
-                    </p>
-                  </div>
-                )}
+                {formData.regulatory_guideline_id &&
+                  regulatoryMode === "existing" && (
+                    <div className="p-3 bg-green-950/20 border border-green-800 rounded-lg">
+                      <p className="text-sm text-green-400">
+                        ✓ Regulatory guideline attached:{" "}
+                        {
+                          regulatoryGuidelines.find(
+                            (g) => g.id === formData.regulatory_guideline_id
+                          )?.name
+                        }
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -1762,30 +2238,46 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       </Tabs>
 
       {/* Auto-populate options dialog */}
-      <AlertDialog open={showAutoPopulateDialog} onOpenChange={setShowAutoPopulateDialog}>
+      <AlertDialog
+        open={showAutoPopulateDialog}
+        onOpenChange={setShowAutoPopulateDialog}
+      >
         <AlertDialogContent className="bg-gray-900 border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-100">Auto-Populate Options</AlertDialogTitle>
+            <AlertDialogTitle className="text-gray-100">
+              Auto-Populate Options
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              You have existing brand guideline data. How would you like to apply the new information from {autoPopulateSource === "url" ? "the website" : "the PDF"}?
+              You have existing brand guideline data. How would you like to
+              apply the new information from{" "}
+              {autoPopulateSource === "url" ? "the website" : "the PDF"}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
             <div className="p-3 bg-blue-950/30 border border-blue-800 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-400 mb-1">Fill Empty Fields Only</h4>
+              <h4 className="text-sm font-semibold text-blue-400 mb-1">
+                Fill Empty Fields Only
+              </h4>
               <p className="text-xs text-gray-400">
-                Keep all your existing data and only populate fields that are currently empty.
+                Keep all your existing data and only populate fields that are
+                currently empty.
               </p>
             </div>
             <div className="p-3 bg-amber-950/30 border border-amber-800 rounded-lg">
-              <h4 className="text-sm font-semibold text-amber-400 mb-1">Overwrite All Fields</h4>
+              <h4 className="text-sm font-semibold text-amber-400 mb-1">
+                Overwrite All Fields
+              </h4>
               <p className="text-xs text-gray-400">
-                Replace all existing data with the new information extracted from the {autoPopulateSource === "url" ? "website" : "PDF"}.
+                Replace all existing data with the new information extracted
+                from the {autoPopulateSource === "url" ? "website" : "PDF"}.
               </p>
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-gray-200" data-testid="button-cancel-autopopulate">
+            <AlertDialogCancel
+              className="bg-gray-800 hover:bg-gray-700 text-gray-200"
+              data-testid="button-cancel-autopopulate"
+            >
               Cancel
             </AlertDialogCancel>
             <Button
@@ -1807,22 +2299,35 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       </AlertDialog>
 
       {/* Extract warning dialog */}
-      <AlertDialog open={showExtractWarningDialog} onOpenChange={setShowExtractWarningDialog}>
+      <AlertDialog
+        open={showExtractWarningDialog}
+        onOpenChange={setShowExtractWarningDialog}
+      >
         <AlertDialogContent className="bg-gray-900 border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-100">Replace Existing Content?</AlertDialogTitle>
+            <AlertDialogTitle className="text-gray-100">
+              Replace Existing Content?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              You have {existingContext?.totalPages || 0} pages of content already extracted. Extracting again will permanently delete all existing content and replace it with the new extraction.
+              You have {existingContext?.totalPages || 0} pages of content
+              already extracted. Extracting again will permanently delete all
+              existing content and replace it with the new extraction.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="p-4 bg-amber-950/30 border border-amber-800 rounded-lg my-4">
-            <p className="text-sm text-amber-400 font-semibold mb-2">⚠️ This action cannot be undone</p>
+            <p className="text-sm text-amber-400 font-semibold mb-2">
+              ⚠️ This action cannot be undone
+            </p>
             <p className="text-xs text-gray-400">
-              All previously extracted page content and generated embeddings will be permanently deleted.
+              All previously extracted page content and generated embeddings
+              will be permanently deleted.
             </p>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-gray-200" data-testid="button-cancel-extract">
+            <AlertDialogCancel
+              className="bg-gray-800 hover:bg-gray-700 text-gray-200"
+              data-testid="button-cancel-extract"
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1842,7 +2347,7 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
         onOpenChange={setShowServiceFallbackDialog}
         onSubmit={handleServiceFallback}
       />
-      
+
       <ManualBlogUrlDialog
         open={showBlogFallbackDialog}
         onOpenChange={setShowBlogFallbackDialog}
@@ -1859,55 +2364,109 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       />
 
       {/* Overwrite Confirmation Dialog */}
-      <AlertDialog open={showOverwriteConfirmDialog} onOpenChange={setShowOverwriteConfirmDialog}>
+      <AlertDialog
+        open={showOverwriteConfirmDialog}
+        onOpenChange={setShowOverwriteConfirmDialog}
+      >
         <AlertDialogContent className="bg-gray-900 border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-100">Auto-Discovery Options</AlertDialogTitle>
+            <AlertDialogTitle className="text-gray-100">
+              Auto-Discovery Options
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              You have existing context pages configured. How would you like to apply the newly discovered pages?
+              You have existing context pages configured. How would you like to
+              apply the newly discovered pages?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-4">
             <div className="p-3 bg-blue-950/30 border border-blue-800 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-400 mb-1">Fill Empty Fields Only</h4>
+              <h4 className="text-sm font-semibold text-blue-400 mb-1">
+                Fill Empty Fields Only
+              </h4>
               <p className="text-xs text-gray-400">
-                Keep your existing pages and only add newly discovered pages to empty fields.
+                Keep your existing pages and only add newly discovered pages to
+                empty fields.
               </p>
               <div className="text-xs text-gray-300 mt-2 space-y-1">
-                {!formData.context_urls?.about_page && <div>• Will add About page</div>}
-                {(!formData.context_urls?.service_pages || formData.context_urls.service_pages.length === 0) && <div>• Will add Service/Product pages</div>}
-                {(!formData.context_urls?.blog_articles || formData.context_urls.blog_articles.length === 0) && <div>• Will add Blog articles</div>}
-                {formData.context_urls?.about_page && <div className="text-gray-500">• About page will be kept</div>}
-                {formData.context_urls?.service_pages && formData.context_urls.service_pages.length > 0 && (
-                  <div className="text-gray-500">• {formData.context_urls.service_pages.length} existing service page{formData.context_urls.service_pages.length > 1 ? 's' : ''} will be kept</div>
+                {!formData.context_urls?.about_page && (
+                  <div>• Will add About page</div>
                 )}
-                {formData.context_urls?.blog_articles && formData.context_urls.blog_articles.length > 0 && (
-                  <div className="text-gray-500">• {formData.context_urls.blog_articles.length} existing blog article{formData.context_urls.blog_articles.length > 1 ? 's' : ''} will be kept</div>
+                {(!formData.context_urls?.service_pages ||
+                  formData.context_urls.service_pages.length === 0) && (
+                  <div>• Will add Service/Product pages</div>
                 )}
+                {(!formData.context_urls?.blog_articles ||
+                  formData.context_urls.blog_articles.length === 0) && (
+                  <div>• Will add Blog articles</div>
+                )}
+                {formData.context_urls?.about_page && (
+                  <div className="text-gray-500">• About page will be kept</div>
+                )}
+                {formData.context_urls?.service_pages &&
+                  formData.context_urls.service_pages.length > 0 && (
+                    <div className="text-gray-500">
+                      • {formData.context_urls.service_pages.length} existing
+                      service page
+                      {formData.context_urls.service_pages.length > 1
+                        ? "s"
+                        : ""}{" "}
+                      will be kept
+                    </div>
+                  )}
+                {formData.context_urls?.blog_articles &&
+                  formData.context_urls.blog_articles.length > 0 && (
+                    <div className="text-gray-500">
+                      • {formData.context_urls.blog_articles.length} existing
+                      blog article
+                      {formData.context_urls.blog_articles.length > 1
+                        ? "s"
+                        : ""}{" "}
+                      will be kept
+                    </div>
+                  )}
               </div>
             </div>
             <div className="p-3 bg-amber-950/30 border border-amber-800 rounded-lg">
-              <h4 className="text-sm font-semibold text-amber-400 mb-1">Overwrite All Fields</h4>
+              <h4 className="text-sm font-semibold text-amber-400 mb-1">
+                Overwrite All Fields
+              </h4>
               <p className="text-xs text-gray-400">
-                Replace all existing pages with newly discovered pages from your website.
+                Replace all existing pages with newly discovered pages from your
+                website.
               </p>
               <div className="text-xs text-gray-300 mt-2 space-y-1">
                 {formData.context_urls?.about_page && (
                   <div>• About page will be replaced</div>
                 )}
-                {formData.context_urls?.service_pages && formData.context_urls.service_pages.length > 0 && (
-                  <div>• {formData.context_urls.service_pages.length} service page{formData.context_urls.service_pages.length > 1 ? 's' : ''} will be replaced</div>
-                )}
-                {formData.context_urls?.blog_articles && formData.context_urls.blog_articles.length > 0 && (
-                  <div>• {formData.context_urls.blog_articles.length} blog article{formData.context_urls.blog_articles.length > 1 ? 's' : ''} will be replaced</div>
-                )}
+                {formData.context_urls?.service_pages &&
+                  formData.context_urls.service_pages.length > 0 && (
+                    <div>
+                      • {formData.context_urls.service_pages.length} service
+                      page
+                      {formData.context_urls.service_pages.length > 1
+                        ? "s"
+                        : ""}{" "}
+                      will be replaced
+                    </div>
+                  )}
+                {formData.context_urls?.blog_articles &&
+                  formData.context_urls.blog_articles.length > 0 && (
+                    <div>
+                      • {formData.context_urls.blog_articles.length} blog
+                      article
+                      {formData.context_urls.blog_articles.length > 1
+                        ? "s"
+                        : ""}{" "}
+                      will be replaced
+                    </div>
+                  )}
               </div>
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel 
+            <AlertDialogCancel
               onClick={handleCancelOverwrite}
-              className="bg-gray-800 hover:bg-gray-700 text-gray-200" 
+              className="bg-gray-800 hover:bg-gray-700 text-gray-200"
               data-testid="button-cancel-overwrite"
             >
               Cancel
@@ -1934,28 +2493,43 @@ export default function BrandGuidelineForm({ value, onChange, profileId }: Brand
       <AlertDialog open={showRecrawlDialog} onOpenChange={setShowRecrawlDialog}>
         <AlertDialogContent className="bg-gray-900 border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-100">Use Previous Crawl Results?</AlertDialogTitle>
+            <AlertDialogTitle className="text-gray-100">
+              Use Previous Crawl Results?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-400">
-              We found {Array.isArray(profileData?.crawledUrls) ? profileData.crawledUrls.length : 0} previously crawled URLs from this website. 
-              You can use these to tag your pages, or run a fresh crawl.
+              We found{" "}
+              {Array.isArray(profileData?.crawledUrls)
+                ? profileData.crawledUrls.length
+                : 0}{" "}
+              previously crawled URLs from this website. You can use these to
+              tag your pages, or run a fresh crawl.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2 my-4">
             <div className="p-3 bg-blue-950/30 border border-blue-800 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-400 mb-1">Use Previous Results</h4>
+              <h4 className="text-sm font-semibold text-blue-400 mb-1">
+                Use Previous Results
+              </h4>
               <p className="text-xs text-gray-400">
-                Open the tagging page with the previously crawled URLs to classify your pages.
+                Open the tagging page with the previously crawled URLs to
+                classify your pages.
               </p>
             </div>
             <div className="p-3 bg-purple-950/30 border border-purple-800 rounded-lg">
-              <h4 className="text-sm font-semibold text-purple-400 mb-1">Re-crawl Website</h4>
+              <h4 className="text-sm font-semibold text-purple-400 mb-1">
+                Re-crawl Website
+              </h4>
               <p className="text-xs text-gray-400">
-                Start a fresh crawl to discover the latest pages from your website (may take a few minutes).
+                Start a fresh crawl to discover the latest pages from your
+                website (may take a few minutes).
               </p>
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 text-gray-200" data-testid="button-cancel-recrawl">
+            <AlertDialogCancel
+              className="bg-gray-800 hover:bg-gray-700 text-gray-200"
+              data-testid="button-cancel-recrawl"
+            >
               Cancel
             </AlertDialogCancel>
             <Button
