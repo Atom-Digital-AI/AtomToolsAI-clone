@@ -186,10 +186,10 @@ export default function ContentWriterV2() {
     }
   }, [threadsData]);
 
-  // Fetch session data (for backward compatibility)
+  // Fetch session data (for backward compatibility - only when NOT using LangGraph)
   const { data: sessionData, isLoading: isSessionLoading, error: sessionError } = useQuery({
     queryKey: [`/api/content-writer/sessions/${sessionId}`],
-    enabled: !!sessionId,
+    enabled: !!sessionId && !threadId, // Only query legacy sessions when not using LangGraph
     retry: (failureCount, error: any) => {
       // Retry 404 errors up to 3 times with exponential backoff (for race conditions)
       if (error?.status === 404 && failureCount < 3) {
