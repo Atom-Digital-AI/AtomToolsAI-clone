@@ -418,20 +418,16 @@ export default function ContentWriterV2() {
           completed: data.state.status === 'completed',
         });
       }
-      
+
       // Clear selected concept since we're regenerating
       setSelectedConcept(null);
-      
-      // Invalidate and refetch to ensure consistency
-      if (threadId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
-        queryClient.refetchQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
-      }
-      if (sessionId) {
+
+      // Invalidate session data for legacy support (if not using LangGraph)
+      if (sessionId && !threadId) {
         queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
         queryClient.refetchQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
       }
-      
+
       setShowRegenerateDialog(false);
       setRegenerateFeedback("");
       toast({
