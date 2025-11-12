@@ -22,7 +22,8 @@ export async function awaitConceptApproval(state: ContentWriterState): Promise<P
     if (!conceptExists) {
       // Clear invalid selectedConceptId and interrupt again with current concepts
       // This prevents workflow failure when concepts are regenerated
-      console.warn(`Selected concept ID ${selectedConceptId} not found in available concepts. Available IDs: ${concepts.map(c => c.id).join(', ')}`);
+      // Using console.info instead of console.warn since this is expected behavior when concepts are regenerated
+      console.info(`Selected concept ID ${selectedConceptId} not found in available concepts (concepts were likely regenerated). Available IDs: ${concepts.map(c => c.id).join(', ')}`);
       
       await interrupt({
         message: "The previously selected concept is no longer available. Please select a concept from the updated list.",

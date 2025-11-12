@@ -291,35 +291,37 @@ function setupLangChainErrorCapture() {
         loggedErrors.add(reason);
       }
       
-      // Suppress frequent 403 errors - only log once per minute
+      // Suppress frequent 403 errors - only log first few, then completely suppress
       const now = Date.now();
       const is403Error = normalizedErrorStr.includes('403') && normalizedErrorStr.includes('Forbidden');
-      if (is403Error && (now - lastErrorTime) < ERROR_SUPPRESSION_WINDOW) {
-        // Increment counter even when suppressing
+      
+      if (is403Error) {
+        // Track 403 errors for auto-disable
         consecutive403Errors++;
         
-        // Disable tracing after threshold
-        if (consecutive403Errors >= MAX_403_ERRORS) {
-          disableTracing();
+        // After first 3 errors, completely suppress all subsequent 403 errors
+        if (consecutive403Errors > 3) {
+          // Silently suppress - these are non-critical and frequent
+          return;
         }
         
-        // Silently suppress - these are non-critical and frequent
-        return;
-      }
-      lastErrorTime = now;
-      
-      // Track 403 errors for auto-disable
-      if (is403Error) {
-        consecutive403Errors++;
-        
         // Disable tracing after threshold
         if (consecutive403Errors >= MAX_403_ERRORS) {
           disableTracing();
+          // After disabling, suppress all future 403 errors
+          return;
+        }
+        
+        // Suppress if within suppression window (only for first 3 errors)
+        if ((now - lastErrorTime) < ERROR_SUPPRESSION_WINDOW && consecutive403Errors <= 3) {
+          // Silently suppress - these are non-critical and frequent
+          return;
         }
       } else {
         // Reset counter on non-403 errors
         consecutive403Errors = 0;
       }
+      lastErrorTime = now;
       
       // Send to Sentry (first few errors only)
       if (sentryErrorCount < MAX_SENTRY_ERRORS) {

@@ -623,11 +623,26 @@ export default function ContentWriterV2() {
     },
     onError: (error: any) => {
       console.error("Resume workflow error:", error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to resume workflow",
-        variant: "destructive",
-      });
+      
+      // Handle concept not found error specifically
+      const errorData = error?.response?.data || error?.data;
+      if (errorData?.error === "CONCEPT_NOT_FOUND") {
+        toast({
+          title: "Concept No Longer Available",
+          description: "The selected concept is no longer available. Please select a concept from the updated list.",
+          variant: "destructive",
+        });
+        // Refresh concepts to show updated list
+        queryClient.invalidateQueries({
+          queryKey: ["/api/langgraph/content-writer/status"],
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: errorData?.message || error?.message || "Failed to resume workflow",
+          variant: "destructive",
+        });
+      }
       setSelectingConceptId(null);
     },
   });
@@ -637,10 +652,10 @@ export default function ContentWriterV2() {
     mutationFn: async () => {
       // Force log to ensure it's visible - using console.error so it won't be stripped
       console.error("🔴🔴🔴 [Regenerate Concepts] mutationFn: STARTING");
-      
+
       // Try to get threadId from multiple sources (most reliable first)
       let cachedThreadId: string | null = null;
-      
+
       // 1. Try from query cache using current threadId state
       if (threadId) {
         const cachedData = queryClient.getQueryData([
@@ -649,7 +664,7 @@ export default function ContentWriterV2() {
         ]) as any;
         cachedThreadId = cachedData?.threadId || null;
       }
-      
+
       // 2. If not found and we have sessionId, try to find threadId from threads list
       let threadIdFromThreadsList: string | null = null;
       if (!cachedThreadId && sessionId) {
@@ -661,7 +676,7 @@ export default function ContentWriterV2() {
         );
         threadIdFromThreadsList = matchingThread?.threadId || null;
       }
-      
+
       console.error("[Regenerate Concepts] mutationFn: Starting regeneration", {
         threadIdFromState: threadId,
         threadIdFromStatusData: statusData?.threadId,
@@ -673,7 +688,11 @@ export default function ContentWriterV2() {
       });
 
       // Get threadId from cache first, then threads list, then statusData, then state
-      const activeThreadId = cachedThreadId || threadIdFromThreadsList || statusData?.threadId || threadId;
+      const activeThreadId =
+        cachedThreadId ||
+        threadIdFromThreadsList ||
+        statusData?.threadId ||
+        threadId;
 
       console.error("[Regenerate Concepts] Active threadId determined:", {
         activeThreadId,
@@ -986,10 +1005,10 @@ export default function ContentWriterV2() {
         console.error("[STEP 2.3.2] onSuccess: Building new cache data object");
         const newCacheData = {
           threadId: data.threadId || activeThreadId,
-            state: data.state,
-            currentStep:
-              data.state.metadata?.currentStep || "awaitConceptApproval",
-            completed: data.state.status === "completed",
+          state: data.state,
+          currentStep:
+            data.state.metadata?.currentStep || "awaitConceptApproval",
+          completed: data.state.status === "completed",
         };
         console.error("[STEP 2.3.3] onSuccess: New cache data built:", {
           threadId: newCacheData.threadId,
@@ -1189,9 +1208,9 @@ export default function ContentWriterV2() {
           console.log(
             "[Regenerate Concepts] onError: Rolling back LangGraph cache"
           );
-        queryClient.setQueryData(
-          ["/api/langgraph/content-writer/status", threadId],
-          context.previousData
+          queryClient.setQueryData(
+            ["/api/langgraph/content-writer/status", threadId],
+            context.previousData
           );
         } else if (sessionId) {
           console.log(
