@@ -637,20 +637,51 @@ export default function ContentWriterV2() {
     mutationFn: async () => {
       // Force log to ensure it's visible - using console.error so it won't be stripped
       console.error("🔴🔴🔴 [Regenerate Concepts] mutationFn: STARTING");
+      
+      // Try to get threadId from multiple sources (most reliable first)
+      let cachedThreadId: string | null = null;
+      
+      // 1. Try from query cache using current threadId state
+      if (threadId) {
+        const cachedData = queryClient.getQueryData([
+          "/api/langgraph/content-writer/status",
+          threadId,
+        ]) as any;
+        cachedThreadId = cachedData?.threadId || null;
+      }
+      
+      // 2. If not found and we have sessionId, try to find threadId from threads list
+      let threadIdFromThreadsList: string | null = null;
+      if (!cachedThreadId && sessionId) {
+        const threadsData = queryClient.getQueryData([
+          "/api/langgraph/content-writer/threads",
+        ]) as any;
+        const matchingThread = threadsData?.threads?.find(
+          (t: any) => t.sessionId === sessionId
+        );
+        threadIdFromThreadsList = matchingThread?.threadId || null;
+      }
+      
       console.error("[Regenerate Concepts] mutationFn: Starting regeneration", {
         threadIdFromState: threadId,
         threadIdFromStatusData: statusData?.threadId,
+        threadIdFromCache: cachedThreadId,
+        threadIdFromThreadsList,
         sessionId,
         regenerateFeedback,
         matchStyle,
       });
 
-      // Get threadId from statusData first (most reliable), then fall back to state
-      const activeThreadId = statusData?.threadId || threadId;
+      // Get threadId from cache first, then threads list, then statusData, then state
+      const activeThreadId = cachedThreadId || threadIdFromThreadsList || statusData?.threadId || threadId;
 
       console.error("[Regenerate Concepts] Active threadId determined:", {
         activeThreadId,
-        source: statusData?.threadId
+        source: cachedThreadId
+          ? "cache"
+          : threadIdFromThreadsList
+          ? "threadsList"
+          : statusData?.threadId
           ? "statusData"
           : threadId
           ? "state"
@@ -955,10 +986,10 @@ export default function ContentWriterV2() {
         console.error("[STEP 2.3.2] onSuccess: Building new cache data object");
         const newCacheData = {
           threadId: data.threadId || activeThreadId,
-          state: data.state,
-          currentStep:
-            data.state.metadata?.currentStep || "awaitConceptApproval",
-          completed: data.state.status === "completed",
+            state: data.state,
+            currentStep:
+              data.state.metadata?.currentStep || "awaitConceptApproval",
+            completed: data.state.status === "completed",
         };
         console.error("[STEP 2.3.3] onSuccess: New cache data built:", {
           threadId: newCacheData.threadId,
@@ -1158,9 +1189,9 @@ export default function ContentWriterV2() {
           console.log(
             "[Regenerate Concepts] onError: Rolling back LangGraph cache"
           );
-          queryClient.setQueryData(
-            ["/api/langgraph/content-writer/status", threadId],
-            context.previousData
+        queryClient.setQueryData(
+          ["/api/langgraph/content-writer/status", threadId],
+          context.previousData
           );
         } else if (sessionId) {
           console.log(
