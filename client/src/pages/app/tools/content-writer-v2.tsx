@@ -176,11 +176,28 @@ const debugLog = (...args: any[]) => {
 export default function ContentWriterV2() {
   // Debug: Log component mount - using console.error so it won't be stripped in production
   useEffect(() => {
-    debugLog("🔵🔵🔵 [Content Writer] Component mounted/updated - logging is active");
+    // Force immediate log to verify logging works
+    console.error("═══════════════════════════════════════════════════════════");
+    console.error("🔵🔵🔵 [Content Writer] COMPONENT LOADED - LOGGING TEST");
+    console.error("🔵 [Content Writer] If you see this, logging is working!");
+    console.error("🔵 [Content Writer] Timestamp:", new Date().toISOString());
+    console.error("═══════════════════════════════════════════════════════════");
+    
+    debugLog("🔵🔵🔴 [Content Writer] Component mounted/updated - logging is active");
     debugLog("🔵 [Content Writer] Check browser console filter - make sure 'All levels' or 'Errors' is selected");
+    
     // Also set a global flag for debugging
     (window as any).__CONTENT_WRITER_DEBUG__ = true;
     debugLog("🔵 [Content Writer] Debug flag set: __CONTENT_WRITER_DEBUG__ =", (window as any).__CONTENT_WRITER_DEBUG__);
+    
+    // Test that we can access console
+    try {
+      console.error("🔵 [Content Writer] Console.error test: SUCCESS");
+      console.warn("🔵 [Content Writer] Console.warn test: SUCCESS");
+      console.log("🔵 [Content Writer] Console.log test: SUCCESS (may be filtered)");
+    } catch (e) {
+      console.error("🔵 [Content Writer] ERROR: Cannot access console!", e);
+    }
   }, []);
 
   const [stage, setStage] = useState<Stage>("topic");
@@ -1011,7 +1028,7 @@ export default function ContentWriterV2() {
           );
           queryClient.setQueryData(
             [`/api/content-writer/sessions/${sessionId}`],
-            context.previousData
+          context.previousData
           );
         }
       } else {
