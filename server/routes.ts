@@ -3902,17 +3902,25 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
     "/api/langgraph/content-writer/start",
     requireAuth,
     async (req: any, res) => {
+      const startTime = Date.now();
+      console.error("[LangGraph Start] ========== STARTING WORKFLOW ==========");
+      console.error("[LangGraph Start] Request received at:", new Date().toISOString());
+      console.error("[LangGraph Start] User ID:", req.user?.id);
+      
       try {
         const userId = req.user.id;
+        console.error("[LangGraph Start] Step 1: Validating request body");
 
         // Validate request body with Zod
         const validationResult = langgraphStartSchema.safeParse(req.body);
         if (!validationResult.success) {
+          console.error("[LangGraph Start] Validation failed:", validationResult.error.errors);
           return res.status(400).json({
             message: "Invalid request body",
             errors: validationResult.error.errors,
           });
         }
+        console.error("[LangGraph Start] Step 2: Validation passed");
 
         const {
           topic,
@@ -3928,6 +3936,7 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
           matchStyle,
         } = validationResult.data;
 
+        console.error("[LangGraph Start] Step 3: Creating session");
         // Create content_writer_session for backward compatibility
         const session = await storage.createContentWriterSession({
           userId,
@@ -3942,23 +3951,29 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
           internalLinks,
           selectedTargetAudiences,
         });
+        console.error("[LangGraph Start] Step 4: Session created:", session?.id);
 
         // Verify session was created successfully
         if (!session || !session.id) {
+          console.error("[LangGraph Start] ERROR: Session creation failed");
           throw new Error("Failed to create content writer session");
         }
 
+        console.error("[LangGraph Start] Step 5: Verifying session in database");
         // Verify session exists in database before proceeding
         const verifiedSession = await storage.getContentWriterSession(
           session.id,
           userId
         );
         if (!verifiedSession) {
+          console.error("[LangGraph Start] ERROR: Session not found after creation:", session.id);
           throw new Error(
             `Session created but not found in database: ${session.id}`
           );
         }
+        console.error("[LangGraph Start] Step 6: Session verified");
 
+        console.error("[LangGraph Start] Step 7: Creating initial state");
         // Create initial state for LangGraph
         const initialState = {
           topic,
@@ -3984,13 +3999,23 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
           matchStyle,
           status: "pending" as const,
         };
+        console.error("[LangGraph Start] Step 8: Initial state created");
 
+        console.error("[LangGraph Start] Step 9: Executing LangGraph workflow - THIS MAY TAKE TIME");
+        const graphStartTime = Date.now();
+        
         // Execute LangGraph workflow
         const result = await executeContentWriterGraph(initialState, {
           userId,
           sessionId: session.id,
         });
+        
+        const graphDuration = Date.now() - graphStartTime;
+        console.error("[LangGraph Start] Step 10: Graph execution completed in", graphDuration, "ms");
+        console.error("[LangGraph Start] Result threadId:", result.threadId);
+        console.error("[LangGraph Start] Result state status:", result.state.status);
 
+        console.error("[LangGraph Start] Step 11: Determining thread status");
         // Determine thread status based on result state
         const threadStatus =
           result.state.status === "completed"
@@ -4001,13 +4026,16 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
             ? "paused"
             : "active";
 
+        console.error("[LangGraph Start] Step 12: Checking for existing thread");
         // Check if thread already exists (created by checkpointer), then update or create
         const existingThread = await storage.getLanggraphThread(
           result.threadId,
           userId
         );
+        console.error("[LangGraph Start] Existing thread found:", !!existingThread);
 
         if (existingThread) {
+          console.error("[LangGraph Start] Step 13: Updating existing thread");
           // Update existing thread with metadata and sessionId
           await storage.updateLanggraphThread(result.threadId, userId, {
             sessionId: session.id,
@@ -4020,7 +4048,9 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
               errors: result.state.errors || [],
             },
           });
+          console.error("[LangGraph Start] Thread updated");
         } else {
+          console.error("[LangGraph Start] Step 13: Creating new thread record");
           // Create langgraph_thread record with initial status
           await storage.createLanggraphThread({
             id: result.threadId,
@@ -4035,15 +4065,27 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
               errors: result.state.errors || [],
             },
           });
+          console.error("[LangGraph Start] Thread created");
         }
 
+        const totalDuration = Date.now() - startTime;
+        console.error("[LangGraph Start] Step 14: Sending response - Total duration:", totalDuration, "ms");
+        console.error("[LangGraph Start] ========== WORKFLOW COMPLETED SUCCESSFULLY ==========");
+        
         res.json({
           threadId: result.threadId,
           sessionId: session.id,
           state: result.state,
         });
       } catch (error) {
-        console.error("Error starting LangGraph workflow:", error);
+        const totalDuration = Date.now() - startTime;
+        console.error("[LangGraph Start] ========== WORKFLOW FAILED ==========");
+        console.error("[LangGraph Start] Error after", totalDuration, "ms");
+        console.error("[LangGraph Start] Error type:", error?.constructor?.name);
+        console.error("[LangGraph Start] Error message:", error instanceof Error ? error.message : String(error));
+        console.error("[LangGraph Start] Error stack:", error instanceof Error ? error.stack : "No stack trace");
+        console.error("[LangGraph Start] Full error object:", error);
+        
         const errorMessage =
           error instanceof Error ? error.message : "Failed to start workflow";
         res
