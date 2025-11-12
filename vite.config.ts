@@ -28,6 +28,8 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    minify: false, // Disable minification for debugging
+    sourcemap: true, // Enable source maps for better debugging
   },
   server: {
     fs: {
