@@ -2973,14 +2973,16 @@ Return the response as a JSON array with this exact structure:
           }
         }
 
+        // If user provided explicit feedback for regeneration, prioritize it over historical RAG context
+        // This ensures the immediate feedback isn't diluted by past feedback
         const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${
           session.topic
         }"
 
+${feedbackText ? `\n⚠️ IMPORTANT - User feedback on previous concepts (prioritize this): ${feedbackText}\n` : ""}
 ${targetAudienceContext}
 ${brandContext}
-${ragContext}
-${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ""}
+${feedbackText ? "" : ragContext}
 
 ${getAntiFabricationInstructions()}
 
@@ -4403,14 +4405,16 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
           }
         }
 
+        // If user provided explicit feedback for regeneration, prioritize it over historical RAG context
+        // This ensures the immediate feedback isn't diluted by past feedback
         const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${
           currentState.topic
         }"
 
+${feedbackText ? `\n⚠️ IMPORTANT - User feedback on previous concepts (prioritize this): ${feedbackText}\n` : ""}
 ${targetAudienceContext}
 ${brandContext}
-${ragContext}
-${feedbackText ? `\nUser feedback on previous concepts: ${feedbackText}` : ""}
+${feedbackText ? "" : ragContext}
 
 ${getAntiFabricationInstructions()}
 
