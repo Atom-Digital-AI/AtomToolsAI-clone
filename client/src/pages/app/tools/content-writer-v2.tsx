@@ -256,6 +256,21 @@ export default function ContentWriterV2() {
     }
   }, [currentStep, stage, threadId, concepts.length]);
 
+  // Additional check: If we have subtopics but are still on concepts stage, move to subtopics
+  // This handles the case where currentStep might not be updated yet but subtopics exist
+  useEffect(() => {
+    if (!threadId) return;
+    
+    const hasConcepts = concepts.length > 0;
+    const hasSubtopics = subtopics.length > 0;
+    
+    // If we have concepts and subtopics, but are still on concepts stage, move to subtopics
+    // This handles the case where currentStep might not be updated yet but subtopics exist
+    if (hasConcepts && hasSubtopics && stage === 'concepts' && selectedConcept) {
+      setStage('subtopics');
+    }
+  }, [subtopics.length, concepts.length, stage, threadId, selectedConcept]);
+
   // Reset generateSubtopicsMutation state if stuck in pending and prerequisites are missing
   useEffect(() => {
     if (stage === 'subtopics' && generateSubtopicsMutation.isPending && (!sessionId || !selectedConcept)) {
@@ -408,6 +423,31 @@ export default function ContentWriterV2() {
         throw new Error("No session or thread ID available");
       }
     },
+    onMutate: async () => {
+      // Optimistically clear old concepts immediately when regeneration starts
+      if (threadId) {
+        // Cancel any outgoing refetches to prevent them from overwriting our optimistic update
+        await queryClient.cancelQueries({ queryKey: ['/api/langgraph/content-writer/status', threadId] });
+
+        // Snapshot the previous value for potential rollback
+        const previousData = queryClient.getQueryData(['/api/langgraph/content-writer/status', threadId]);
+
+        // Optimistically clear concepts to give instant feedback
+        queryClient.setQueryData(['/api/langgraph/content-writer/status', threadId], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            state: {
+              ...old.state,
+              concepts: [], // Clear old concepts immediately
+            }
+          };
+        });
+
+        return { previousData };
+      }
+      return {};
+    },
     onSuccess: (data: any) => {
       // Update cache immediately with response data
       if (data?.state && threadId) {
@@ -433,6 +473,18 @@ export default function ContentWriterV2() {
       toast({
         title: "Concepts Regenerated",
         description: "New concepts generated based on your feedback",
+      });
+    },
+    onError: (error: any, variables, context: any) => {
+      // Rollback optimistic update on error
+      if (context?.previousData && threadId) {
+        queryClient.setQueryData(['/api/langgraph/content-writer/status', threadId], context.previousData);
+      }
+
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to regenerate concepts",
+        variant: "destructive",
       });
     },
   });
@@ -495,6 +547,8 @@ export default function ContentWriterV2() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
+      // Ensure we're on the subtopics stage after generating subtopics
+      setStage('subtopics');
       toast({
         title: "Subtopics Generated",
         description: "Select the subtopics to include in your article",
