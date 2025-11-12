@@ -190,15 +190,7 @@ export default function ContentWriterV2() {
   const { data: sessionData, isLoading: isSessionLoading, error: sessionError } = useQuery({
     queryKey: [`/api/content-writer/sessions/${sessionId}`],
     enabled: !!sessionId && !threadId, // Only query legacy sessions when not using LangGraph
-    retry: (failureCount, error: any) => {
-      // Retry 404 errors up to 3 times with exponential backoff (for race conditions)
-      if (error?.status === 404 && failureCount < 3) {
-        return true;
-      }
-      // Don't retry other errors
-      return false;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Exponential backoff: 1s, 2s, 4s
+    retry: false, // Don't retry - if it fails, it's likely a LangGraph session
   });
 
   // Poll thread status when thread is active
@@ -210,7 +202,21 @@ export default function ContentWriterV2() {
   }>({
     queryKey: ['/api/langgraph/content-writer/status', threadId],
     enabled: !!threadId,
-    refetchInterval: 2000,
+    refetchInterval: (data) => {
+      // Stop polling if thread is completed
+      if (data?.completed || data?.state?.status === 'completed') {
+        return false;
+      }
+
+      // Stop polling if waiting for user approval
+      const step = data?.currentStep || data?.state?.metadata?.currentStep;
+      if (step === 'awaitConceptApproval' || step === 'awaitSubtopicApproval') {
+        return false;
+      }
+
+      // Poll every 5 seconds during active processing
+      return 5000;
+    },
   });
 
   const threadState = statusData?.state;
@@ -330,6 +336,7 @@ export default function ContentWriterV2() {
         });
         return;
       }
+      // Set threadId first to prevent race condition with session query
       setThreadId(data.threadId);
       setSessionId(data.sessionId);
       // Track when session was created to prevent immediate stage auto-advancement
@@ -475,8 +482,8 @@ export default function ContentWriterV2() {
       // Clear selected concept since we're regenerating
       setSelectedConcept(null);
 
-      // Invalidate session data for legacy support (if not using LangGraph)
-      if (sessionId && !threadId) {
+      // Invalidate session data for legacy support (only if response indicates it's NOT a LangGraph session)
+      if (sessionId && !data?.threadId) {
         queryClient.invalidateQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
         queryClient.refetchQueries({ queryKey: [`/api/content-writer/sessions/${sessionId}`] });
       }
