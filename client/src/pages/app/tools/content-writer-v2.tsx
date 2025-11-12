@@ -177,24 +177,37 @@ export default function ContentWriterV2() {
   // Debug: Log component mount - using console.error so it won't be stripped in production
   useEffect(() => {
     // Force immediate log to verify logging works
-    console.error("═══════════════════════════════════════════════════════════");
+    console.error(
+      "═══════════════════════════════════════════════════════════"
+    );
     console.error("🔵🔵🔵 [Content Writer] COMPONENT LOADED - LOGGING TEST");
     console.error("🔵 [Content Writer] If you see this, logging is working!");
     console.error("🔵 [Content Writer] Timestamp:", new Date().toISOString());
-    console.error("═══════════════════════════════════════════════════════════");
-    
-    debugLog("🔵🔵🔴 [Content Writer] Component mounted/updated - logging is active");
-    debugLog("🔵 [Content Writer] Check browser console filter - make sure 'All levels' or 'Errors' is selected");
-    
+    console.error(
+      "═══════════════════════════════════════════════════════════"
+    );
+
+    debugLog(
+      "🔵🔵🔴 [Content Writer] Component mounted/updated - logging is active"
+    );
+    debugLog(
+      "🔵 [Content Writer] Check browser console filter - make sure 'All levels' or 'Errors' is selected"
+    );
+
     // Also set a global flag for debugging
     (window as any).__CONTENT_WRITER_DEBUG__ = true;
-    debugLog("🔵 [Content Writer] Debug flag set: __CONTENT_WRITER_DEBUG__ =", (window as any).__CONTENT_WRITER_DEBUG__);
-    
+    debugLog(
+      "🔵 [Content Writer] Debug flag set: __CONTENT_WRITER_DEBUG__ =",
+      (window as any).__CONTENT_WRITER_DEBUG__
+    );
+
     // Test that we can access console
     try {
       console.error("🔵 [Content Writer] Console.error test: SUCCESS");
       console.warn("🔵 [Content Writer] Console.warn test: SUCCESS");
-      console.log("🔵 [Content Writer] Console.log test: SUCCESS (may be filtered)");
+      console.log(
+        "🔵 [Content Writer] Console.log test: SUCCESS (may be filtered)"
+      );
     } catch (e) {
       console.error("🔵 [Content Writer] ERROR: Cannot access console!", e);
     }
@@ -335,13 +348,13 @@ export default function ContentWriterV2() {
   useEffect(() => {
     const threadStateConcepts = threadState?.concepts || [];
     const sessionDataConcepts = (sessionData as any)?.concepts || [];
-    
+
     console.log("=".repeat(80));
     console.log("[STEP 3] Concepts Derivation: Component re-rendered");
     console.log("[STEP 3.1] Concepts Derivation: Current derived concepts:", {
       conceptsCount: concepts.length,
       concepts: concepts,
-      conceptIds: concepts.map(c => c.id),
+      conceptIds: concepts.map((c) => c.id),
     });
     console.log("[STEP 3.2] Concepts Derivation: Source data:", {
       threadId,
@@ -358,10 +371,19 @@ export default function ContentWriterV2() {
     console.log("[STEP 3.3] Concepts Derivation: Which source is being used?", {
       usingThreadState: concepts === threadStateConcepts,
       usingSessionData: concepts === sessionDataConcepts,
-      usingEmpty: concepts.length === 0 && threadStateConcepts.length === 0 && sessionDataConcepts.length === 0,
+      usingEmpty:
+        concepts.length === 0 &&
+        threadStateConcepts.length === 0 &&
+        sessionDataConcepts.length === 0,
     });
-    console.log("[STEP 3.4] Concepts Derivation: Full threadState:", threadState);
-    console.log("[STEP 3.5] Concepts Derivation: Full sessionData:", sessionData);
+    console.log(
+      "[STEP 3.4] Concepts Derivation: Full threadState:",
+      threadState
+    );
+    console.log(
+      "[STEP 3.5] Concepts Derivation: Full sessionData:",
+      sessionData
+    );
     console.log("=".repeat(80));
   }, [concepts, threadState, sessionData, threadId, sessionId]);
   const draft = threadState?.articleDraft
@@ -625,10 +647,14 @@ export default function ContentWriterV2() {
 
       // Get threadId from statusData first (most reliable), then fall back to state
       const activeThreadId = statusData?.threadId || threadId;
-      
+
       console.error("[Regenerate Concepts] Active threadId determined:", {
         activeThreadId,
-        source: statusData?.threadId ? "statusData" : threadId ? "state" : "none",
+        source: statusData?.threadId
+          ? "statusData"
+          : threadId
+          ? "state"
+          : "none",
       });
 
       // Use LangGraph endpoint if threadId is available, otherwise use legacy endpoint
@@ -653,7 +679,9 @@ export default function ContentWriterV2() {
           "[Regenerate Concepts] ⚠️ Using legacy endpoint (no threadId found):",
           `/api/content-writer/sessions/${sessionId}/regenerate`
         );
-        console.error("[Regenerate Concepts] ⚠️ WARNING: This is a LangGraph session but threadId is missing!");
+        console.error(
+          "[Regenerate Concepts] ⚠️ WARNING: This is a LangGraph session but threadId is missing!"
+        );
         const res = await apiRequest(
           "POST",
           `/api/content-writer/sessions/${sessionId}/regenerate`,
@@ -682,10 +710,10 @@ export default function ContentWriterV2() {
       console.error("🟡🟡🟡 [Regenerate Concepts] onMutate: STARTING");
       console.error("=".repeat(80));
       console.error("[STEP 1] onMutate: STARTING optimistic update");
-      
+
       // Get threadId from statusData first (most reliable), then fall back to state
       const activeThreadId = statusData?.threadId || threadId;
-      
+
       console.error("[STEP 1.1] onMutate: Current state", {
         threadIdFromState: threadId,
         threadIdFromStatusData: statusData?.threadId,
@@ -697,8 +725,11 @@ export default function ContentWriterV2() {
       // Optimistically clear old concepts immediately when regeneration starts
       if (activeThreadId) {
         console.error("[STEP 1.2] onMutate: LangGraph path detected");
-        console.error("[STEP 1.2.1] onMutate: Cancelling queries for threadId:", activeThreadId);
-        
+        console.error(
+          "[STEP 1.2.1] onMutate: Cancelling queries for threadId:",
+          activeThreadId
+        );
+
         // Cancel any outgoing refetches to prevent them from overwriting our optimistic update
         await queryClient.cancelQueries({
           queryKey: ["/api/langgraph/content-writer/status", activeThreadId],
@@ -706,7 +737,9 @@ export default function ContentWriterV2() {
         console.error("[STEP 1.2.2] onMutate: Queries cancelled");
 
         // Snapshot the previous value for potential rollback
-        console.error("[STEP 1.2.3] onMutate: Getting previous data from cache");
+        console.error(
+          "[STEP 1.2.3] onMutate: Getting previous data from cache"
+        );
         const previousData = queryClient.getQueryData([
           "/api/langgraph/content-writer/status",
           activeThreadId,
@@ -719,25 +752,36 @@ export default function ContentWriterV2() {
         });
 
         // Optimistically clear concepts to give instant feedback
-        console.error("[STEP 1.2.5] onMutate: CALLING setQueryData to clear concepts");
-        console.error("[STEP 1.2.5.1] onMutate: Query key:", ["/api/langgraph/content-writer/status", activeThreadId]);
-        
+        console.error(
+          "[STEP 1.2.5] onMutate: CALLING setQueryData to clear concepts"
+        );
+        console.error("[STEP 1.2.5.1] onMutate: Query key:", [
+          "/api/langgraph/content-writer/status",
+          activeThreadId,
+        ]);
+
         queryClient.setQueryData(
           ["/api/langgraph/content-writer/status", activeThreadId],
           (old: any) => {
-            console.error("[STEP 1.2.5.2] onMutate: Inside setQueryData updater function");
+            console.error(
+              "[STEP 1.2.5.2] onMutate: Inside setQueryData updater function"
+            );
             console.error("[STEP 1.2.5.3] onMutate: Old data received:", {
               hasOld: !!old,
               oldConceptsCount: old?.state?.concepts?.length || 0,
               oldConcepts: old?.state?.concepts,
             });
-            
+
             if (!old) {
-              console.error("[STEP 1.2.5.4] onMutate: No old data, returning as-is");
+              console.error(
+                "[STEP 1.2.5.4] onMutate: No old data, returning as-is"
+              );
               return old;
             }
-            
-            console.error("[STEP 1.2.5.5] onMutate: Creating updated object with empty concepts array");
+
+            console.error(
+              "[STEP 1.2.5.5] onMutate: Creating updated object with empty concepts array"
+            );
             const updated = {
               ...old,
               state: {
@@ -748,7 +792,9 @@ export default function ContentWriterV2() {
             console.error("[STEP 1.2.5.6] onMutate: Updated object created:", {
               updatedConceptsCount: updated.state.concepts.length,
               updatedConcepts: updated.state.concepts,
-              otherStateProps: Object.keys(updated.state).filter(k => k !== 'concepts'),
+              otherStateProps: Object.keys(updated.state).filter(
+                (k) => k !== "concepts"
+              ),
             });
             console.error("[STEP 1.2.5.7] onMutate: Returning updated object");
             return updated;
@@ -768,21 +814,31 @@ export default function ContentWriterV2() {
           concepts: afterUpdate?.state?.concepts,
           fullData: afterUpdate,
         });
-        console.error("[STEP 1.2.9] onMutate: Concepts cleared?", afterUpdate?.state?.concepts?.length === 0);
+        console.error(
+          "[STEP 1.2.9] onMutate: Concepts cleared?",
+          afterUpdate?.state?.concepts?.length === 0
+        );
 
-        console.error("[STEP 1.2.10] onMutate: Returning previousData for rollback");
+        console.error(
+          "[STEP 1.2.10] onMutate: Returning previousData for rollback"
+        );
         return { previousData };
       } else if (sessionId) {
         console.error("[STEP 1.3] onMutate: Legacy path detected");
-        console.error("[STEP 1.3.1] onMutate: Cancelling queries for sessionId:", sessionId);
-        
+        console.error(
+          "[STEP 1.3.1] onMutate: Cancelling queries for sessionId:",
+          sessionId
+        );
+
         // For legacy sessions, optimistically clear concepts
         await queryClient.cancelQueries({
           queryKey: [`/api/content-writer/sessions/${sessionId}`],
         });
         console.error("[STEP 1.3.2] onMutate: Queries cancelled");
 
-        console.error("[STEP 1.3.3] onMutate: Getting previous data from cache");
+        console.error(
+          "[STEP 1.3.3] onMutate: Getting previous data from cache"
+        );
         const previousData = queryClient.getQueryData([
           `/api/content-writer/sessions/${sessionId}`,
         ]) as any;
@@ -794,25 +850,35 @@ export default function ContentWriterV2() {
         });
 
         // Optimistically clear concepts in session data
-        console.error("[STEP 1.3.5] onMutate: CALLING setQueryData to clear concepts");
-        console.error("[STEP 1.3.5.1] onMutate: Query key:", [`/api/content-writer/sessions/${sessionId}`]);
-        
+        console.error(
+          "[STEP 1.3.5] onMutate: CALLING setQueryData to clear concepts"
+        );
+        console.error("[STEP 1.3.5.1] onMutate: Query key:", [
+          `/api/content-writer/sessions/${sessionId}`,
+        ]);
+
         queryClient.setQueryData(
           [`/api/content-writer/sessions/${sessionId}`],
           (old: any) => {
-            console.error("[STEP 1.3.5.2] onMutate: Inside setQueryData updater function");
+            console.error(
+              "[STEP 1.3.5.2] onMutate: Inside setQueryData updater function"
+            );
             console.error("[STEP 1.3.5.3] onMutate: Old data received:", {
               hasOld: !!old,
               oldConceptsCount: old?.concepts?.length || 0,
               oldConcepts: old?.concepts,
             });
-            
+
             if (!old) {
-              console.error("[STEP 1.3.5.4] onMutate: No old data, returning as-is");
+              console.error(
+                "[STEP 1.3.5.4] onMutate: No old data, returning as-is"
+              );
               return old;
             }
-            
-            console.error("[STEP 1.3.5.5] onMutate: Creating updated object with empty concepts array");
+
+            console.error(
+              "[STEP 1.3.5.5] onMutate: Creating updated object with empty concepts array"
+            );
             const updated = {
               ...old,
               concepts: [], // Clear old concepts immediately
@@ -820,7 +886,7 @@ export default function ContentWriterV2() {
             console.error("[STEP 1.3.5.6] onMutate: Updated object created:", {
               updatedConceptsCount: updated.concepts.length,
               updatedConcepts: updated.concepts,
-              otherProps: Object.keys(updated).filter(k => k !== 'concepts'),
+              otherProps: Object.keys(updated).filter((k) => k !== "concepts"),
             });
             console.error("[STEP 1.3.5.7] onMutate: Returning updated object");
             return updated;
@@ -839,20 +905,29 @@ export default function ContentWriterV2() {
           concepts: afterUpdate?.concepts,
           fullData: afterUpdate,
         });
-        console.error("[STEP 1.3.9] onMutate: Concepts cleared?", afterUpdate?.concepts?.length === 0);
+        console.error(
+          "[STEP 1.3.9] onMutate: Concepts cleared?",
+          afterUpdate?.concepts?.length === 0
+        );
 
-        console.error("[STEP 1.3.10] onMutate: Returning previousData for rollback");
+        console.error(
+          "[STEP 1.3.10] onMutate: Returning previousData for rollback"
+        );
         return { previousData };
       }
-      console.error("[STEP 1.4] onMutate: No threadId or sessionId, returning empty context");
+      console.error(
+        "[STEP 1.4] onMutate: No threadId or sessionId, returning empty context"
+      );
       return {};
     },
     onSuccess: (data: any) => {
       // Get threadId from statusData first (most reliable), then fall back to state
       const activeThreadId = statusData?.threadId || threadId;
-      
+
       console.error("=".repeat(80));
-      console.error("[STEP 2] onSuccess: STARTING cache update with new concepts");
+      console.error(
+        "[STEP 2] onSuccess: STARTING cache update with new concepts"
+      );
       console.error("[STEP 2.1] onSuccess: Received response data:", {
         hasData: !!data,
         hasState: !!data?.state,
@@ -875,15 +950,15 @@ export default function ContentWriterV2() {
           concepts: data.state.concepts,
           conceptsCount: data.state.concepts?.length || 0,
         });
-        
+
         // LangGraph response
         console.error("[STEP 2.3.2] onSuccess: Building new cache data object");
         const newCacheData = {
-            threadId: data.threadId || activeThreadId,
-            state: data.state,
-            currentStep:
-              data.state.metadata?.currentStep || "awaitConceptApproval",
-            completed: data.state.status === "completed",
+          threadId: data.threadId || activeThreadId,
+          state: data.state,
+          currentStep:
+            data.state.metadata?.currentStep || "awaitConceptApproval",
+          completed: data.state.status === "completed",
         };
         console.error("[STEP 2.3.3] onSuccess: New cache data built:", {
           threadId: newCacheData.threadId,
@@ -892,11 +967,19 @@ export default function ContentWriterV2() {
           currentStep: newCacheData.currentStep,
           completed: newCacheData.completed,
         });
-        
-        console.error("[STEP 2.3.4] onSuccess: CALLING setQueryData to INSERT new concepts");
-        console.error("[STEP 2.3.4.1] onSuccess: Query key:", ["/api/langgraph/content-writer/status", activeThreadId]);
-        console.error("[STEP 2.3.4.2] onSuccess: Setting cache with new concepts:", newCacheData.state.concepts);
-        
+
+        console.error(
+          "[STEP 2.3.4] onSuccess: CALLING setQueryData to INSERT new concepts"
+        );
+        console.error("[STEP 2.3.4.1] onSuccess: Query key:", [
+          "/api/langgraph/content-writer/status",
+          activeThreadId,
+        ]);
+        console.error(
+          "[STEP 2.3.4.2] onSuccess: Setting cache with new concepts:",
+          newCacheData.state.concepts
+        );
+
         queryClient.setQueryData(
           ["/api/langgraph/content-writer/status", activeThreadId],
           newCacheData
@@ -913,38 +996,56 @@ export default function ContentWriterV2() {
           hasData: !!afterUpdate,
           conceptsCount: afterUpdate?.state?.concepts?.length || 0,
           concepts: afterUpdate?.state?.concepts,
-          conceptsMatch: JSON.stringify(afterUpdate?.state?.concepts) === JSON.stringify(data.state.concepts),
+          conceptsMatch:
+            JSON.stringify(afterUpdate?.state?.concepts) ===
+            JSON.stringify(data.state.concepts),
           fullData: afterUpdate,
         });
-        console.error("[STEP 2.3.8] onSuccess: New concepts inserted?", afterUpdate?.state?.concepts?.length > 0);
+        console.error(
+          "[STEP 2.3.8] onSuccess: New concepts inserted?",
+          afterUpdate?.state?.concepts?.length > 0
+        );
       } else if (data?.concepts && sessionId) {
         console.error("[STEP 2.4] onSuccess: Legacy path - updating cache");
         console.error("[STEP 2.4.1] onSuccess: New concepts from response:", {
           concepts: data.concepts,
           conceptsCount: data.concepts.length,
         });
-        
+
         // Legacy response - update session data with new concepts
-        console.error("[STEP 2.4.2] onSuccess: CALLING setQueryData to INSERT new concepts");
-        console.error("[STEP 2.4.2.1] onSuccess: Query key:", [`/api/content-writer/sessions/${sessionId}`]);
-        console.error("[STEP 2.4.2.2] onSuccess: New concepts to insert:", data.concepts);
-        
+        console.error(
+          "[STEP 2.4.2] onSuccess: CALLING setQueryData to INSERT new concepts"
+        );
+        console.error("[STEP 2.4.2.1] onSuccess: Query key:", [
+          `/api/content-writer/sessions/${sessionId}`,
+        ]);
+        console.error(
+          "[STEP 2.4.2.2] onSuccess: New concepts to insert:",
+          data.concepts
+        );
+
         queryClient.setQueryData(
           [`/api/content-writer/sessions/${sessionId}`],
           (old: any) => {
-            console.error("[STEP 2.4.2.3] onSuccess: Inside setQueryData updater function");
+            console.error(
+              "[STEP 2.4.2.3] onSuccess: Inside setQueryData updater function"
+            );
             console.error("[STEP 2.4.2.4] onSuccess: Old data received:", {
               hasOld: !!old,
               oldConceptsCount: old?.concepts?.length || 0,
               oldConcepts: old?.concepts,
             });
-            
+
             if (!old) {
-              console.error("[STEP 2.4.2.5] onSuccess: No old data in legacy cache!");
+              console.error(
+                "[STEP 2.4.2.5] onSuccess: No old data in legacy cache!"
+              );
               return old;
             }
-            
-            console.error("[STEP 2.4.2.6] onSuccess: Creating updated object with new concepts");
+
+            console.error(
+              "[STEP 2.4.2.6] onSuccess: Creating updated object with new concepts"
+            );
             const updated = {
               ...old,
               concepts: data.concepts, // Set new concepts from response
@@ -952,10 +1053,14 @@ export default function ContentWriterV2() {
             console.error("[STEP 2.4.2.7] onSuccess: Updated object created:", {
               updatedConceptsCount: updated.concepts.length,
               updatedConcepts: updated.concepts,
-              conceptsMatch: JSON.stringify(updated.concepts) === JSON.stringify(data.concepts),
-              otherProps: Object.keys(updated).filter(k => k !== 'concepts'),
+              conceptsMatch:
+                JSON.stringify(updated.concepts) ===
+                JSON.stringify(data.concepts),
+              otherProps: Object.keys(updated).filter((k) => k !== "concepts"),
             });
-            console.error("[STEP 2.4.2.8] onSuccess: Returning updated object with new concepts");
+            console.error(
+              "[STEP 2.4.2.8] onSuccess: Returning updated object with new concepts"
+            );
             return updated;
           }
         );
@@ -970,10 +1075,15 @@ export default function ContentWriterV2() {
           hasData: !!afterUpdate,
           conceptsCount: afterUpdate?.concepts?.length || 0,
           concepts: afterUpdate?.concepts,
-          conceptsMatch: JSON.stringify(afterUpdate?.concepts) === JSON.stringify(data.concepts),
+          conceptsMatch:
+            JSON.stringify(afterUpdate?.concepts) ===
+            JSON.stringify(data.concepts),
           fullData: afterUpdate,
         });
-        console.error("[STEP 2.4.6] onSuccess: New concepts inserted?", afterUpdate?.concepts?.length > 0);
+        console.error(
+          "[STEP 2.4.6] onSuccess: New concepts inserted?",
+          afterUpdate?.concepts?.length > 0
+        );
       } else {
         console.error("[STEP 2.5] onSuccess: No matching condition!", {
           hasState: !!data?.state,
@@ -1023,7 +1133,9 @@ export default function ContentWriterV2() {
         title: "Concepts Regenerated",
         description: "New concepts generated based on your feedback",
       });
-      console.error("[STEP 2.17] onSuccess: COMPLETED - UI should now show new concepts");
+      console.error(
+        "[STEP 2.17] onSuccess: COMPLETED - UI should now show new concepts"
+      );
       console.error("=".repeat(80));
     },
     onError: (error: any, variables, context: any) => {
@@ -1046,9 +1158,9 @@ export default function ContentWriterV2() {
           console.log(
             "[Regenerate Concepts] onError: Rolling back LangGraph cache"
           );
-        queryClient.setQueryData(
-          ["/api/langgraph/content-writer/status", threadId],
-          context.previousData
+          queryClient.setQueryData(
+            ["/api/langgraph/content-writer/status", threadId],
+            context.previousData
           );
         } else if (sessionId) {
           console.log(
@@ -1056,7 +1168,7 @@ export default function ContentWriterV2() {
           );
           queryClient.setQueryData(
             [`/api/content-writer/sessions/${sessionId}`],
-          context.previousData
+            context.previousData
           );
         }
       } else {
@@ -1681,7 +1793,9 @@ export default function ContentWriterV2() {
                 <Button
                   onClick={() => {
                     // Force log to ensure it's visible - using debugLog so it won't be stripped
-                    debugLog("🟢🟢🟢 [Regenerate Concepts] BUTTON CLICKED - THIS SHOULD BE VISIBLE");
+                    debugLog(
+                      "🟢🟢🟢 [Regenerate Concepts] BUTTON CLICKED - THIS SHOULD BE VISIBLE"
+                    );
                     debugLog(
                       "[Regenerate Concepts] Button clicked - starting mutation",
                       {
