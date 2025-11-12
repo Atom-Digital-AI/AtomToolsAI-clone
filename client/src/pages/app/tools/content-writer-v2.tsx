@@ -165,6 +165,12 @@ interface ThreadState {
 type Stage = "topic" | "concepts" | "subtopics" | "article";
 
 export default function ContentWriterV2() {
+  // Debug: Log component mount
+  useEffect(() => {
+    console.log("🔵 [Content Writer] Component mounted/updated - logging is active");
+    console.log("🔵 [Content Writer] Check browser console filter - make sure 'All levels' or 'Info' is selected");
+  }, []);
+
   const [stage, setStage] = useState<Stage>("topic");
   const [topic, setTopic] = useState("");
   const [brandGuidelines, setBrandGuidelines] = useState<
@@ -578,6 +584,8 @@ export default function ContentWriterV2() {
   // Regenerate concepts mutation
   const regenerateConceptsMutation = useMutation({
     mutationFn: async () => {
+      // Force log to ensure it's visible
+      console.log("🔴🔴🔴 [Regenerate Concepts] mutationFn: STARTING - THIS SHOULD BE VISIBLE");
       console.log("[Regenerate Concepts] mutationFn: Starting regeneration", {
         threadId,
         sessionId,
@@ -626,6 +634,8 @@ export default function ContentWriterV2() {
       }
     },
     onMutate: async () => {
+      // Force log to ensure it's visible
+      console.log("🟡🟡🟡 [Regenerate Concepts] onMutate: STARTING - THIS SHOULD BE VISIBLE");
       console.log("=".repeat(80));
       console.log("[STEP 1] onMutate: STARTING optimistic update");
       console.log("[STEP 1.1] onMutate: Current state", {
@@ -1613,6 +1623,8 @@ export default function ContentWriterV2() {
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
+                    // Force log to ensure it's visible
+                    console.log("🟢🟢🟢 [Regenerate Concepts] BUTTON CLICKED - THIS SHOULD BE VISIBLE");
                     console.log(
                       "[Regenerate Concepts] Button clicked - starting mutation",
                       {
@@ -1624,7 +1636,9 @@ export default function ContentWriterV2() {
                         matchStyle,
                       }
                     );
+                    console.log("🟢 [Regenerate Concepts] About to call mutate()");
                     regenerateConceptsMutation.mutate();
+                    console.log("🟢 [Regenerate Concepts] mutate() called");
                   }}
                   disabled={regenerateConceptsMutation.isPending}
                   data-testid="button-confirm-regenerate"
