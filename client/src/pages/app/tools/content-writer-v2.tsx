@@ -247,6 +247,8 @@ export default function ContentWriterV2() {
     null
   );
   const sessionCreatedAtRef = useRef<number | null>(null);
+  const [justRegenerated, setJustRegenerated] = useState(false);
+  const regenerateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { toast } = useToast();
   const { selectedBrand } = useBrand();
@@ -260,6 +262,11 @@ export default function ContentWriterV2() {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      // Clean up regeneration timeout on unmount
+      if (regenerateTimeoutRef.current) {
+        clearTimeout(regenerateTimeoutRef.current);
+        regenerateTimeoutRef.current = null;
+      }
     };
   }, []);
 
@@ -319,8 +326,13 @@ export default function ContentWriterV2() {
       }
 
       // Stop polling if waiting for user approval
+      // BUT: Allow polling to continue if we just regenerated (to get fresh concepts)
       const step = data?.currentStep || data?.state?.metadata?.currentStep;
       if (step === "awaitConceptApproval" || step === "awaitSubtopicApproval") {
+        // Continue polling for 15 seconds after regeneration to ensure UI updates
+        if (justRegenerated) {
+          return 2000; // Poll more frequently after regeneration
+        }
         return false;
       }
 
@@ -1151,40 +1163,48 @@ export default function ContentWriterV2() {
       setSelectedConcept(null);
       console.error("[STEP 2.7] onSuccess: Selected concept cleared");
 
-      // Invalidate and refetch to ensure we have the latest data
+      // Set flag to allow polling to continue after regeneration
+      // This ensures the UI gets fresh data even when currentStep is "awaitConceptApproval"
+      console.error("[STEP 2.8] onSuccess: Setting justRegenerated flag to allow polling");
+      setJustRegenerated(true);
+      
+      // Clear any existing timeout
+      if (regenerateTimeoutRef.current) {
+        clearTimeout(regenerateTimeoutRef.current);
+      }
+      
+      // Clear the flag after 15 seconds to allow normal polling behavior
+      regenerateTimeoutRef.current = setTimeout(() => {
+        console.error("[Regenerate] Clearing justRegenerated flag after timeout");
+        setJustRegenerated(false);
+        regenerateTimeoutRef.current = null;
+      }, 15000);
+
+      // Force immediate refetch to get the latest state from server
+      // This ensures we have the most up-to-date concepts even if cache update was missed
       if (activeThreadId) {
-        console.error("[STEP 2.8] onSuccess: Invalidating LangGraph queries");
-        queryClient.invalidateQueries({
-          queryKey: ["/api/langgraph/content-writer/status", activeThreadId],
-        });
-        console.error("[STEP 2.9] onSuccess: Refetching LangGraph queries");
+        console.error("[STEP 2.9] onSuccess: Force refetching LangGraph status");
         queryClient.refetchQueries({
           queryKey: ["/api/langgraph/content-writer/status", activeThreadId],
         });
-        console.error("[STEP 2.10] onSuccess: LangGraph queries refetched");
       } else if (sessionId) {
-        console.error("[STEP 2.11] onSuccess: Invalidating legacy queries");
-        queryClient.invalidateQueries({
-          queryKey: [`/api/content-writer/sessions/${sessionId}`],
-        });
-        console.error("[STEP 2.12] onSuccess: Refetching legacy queries");
+        console.error("[STEP 2.10] onSuccess: Force refetching legacy session");
         queryClient.refetchQueries({
           queryKey: [`/api/content-writer/sessions/${sessionId}`],
         });
-        console.error("[STEP 2.13] onSuccess: Legacy queries refetched");
       }
 
-      console.error("[STEP 2.14] onSuccess: Closing dialog");
+      console.error("[STEP 2.11] onSuccess: Closing dialog");
       setShowRegenerateDialog(false);
-      console.error("[STEP 2.15] onSuccess: Clearing feedback text");
+      console.error("[STEP 2.12] onSuccess: Clearing feedback text");
       setRegenerateFeedback("");
-      console.error("[STEP 2.16] onSuccess: Showing success toast");
+      console.error("[STEP 2.13] onSuccess: Showing success toast");
       toast({
         title: "Concepts Regenerated",
         description: "New concepts generated based on your feedback",
       });
       console.error(
-        "[STEP 2.17] onSuccess: COMPLETED - UI should now show new concepts"
+        "[STEP 2.14] onSuccess: COMPLETED - UI should now show new concepts (polling will continue for 15s)"
       );
       console.error("=".repeat(80));
     },
