@@ -2698,18 +2698,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      const [feedback] = await db
-        .insert(contentFeedback)
-        .values({
-          userId,
-          toolType,
-          rating,
-          feedbackText: feedbackText || null,
-          inputData,
-          outputData,
-          guidelineProfileId: guidelineProfileId || null,
-        })
-        .returning();
+      // Use createOrIncrementFeedback to handle deduplication at brand level
+      const feedback = await storage.createOrIncrementFeedback({
+        userId,
+        toolType,
+        rating,
+        feedbackText: feedbackText || null,
+        inputData,
+        outputData,
+        guidelineProfileId: guidelineProfileId || null,
+      });
 
       res.json(feedback);
     } catch (error) {

@@ -253,6 +253,9 @@ export interface IStorage {
     guidelineProfileId?: string,
     limit?: number
   ): Promise<ContentFeedback[]>;
+  createOrIncrementFeedback(
+    feedback: InsertContentFeedback & { userId: string }
+  ): Promise<ContentFeedback>;
 
   // Content Writer operations (SECURITY: All methods enforce userId for tenant isolation)
   createContentWriterSession(
@@ -1589,6 +1592,96 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
 
     return feedback;
+  }
+
+  async createOrIncrementFeedback(
+    feedback: InsertContentFeedback & { userId: string }
+  ): Promise<ContentFeedback> {
+    const {
+      userId,
+      guidelineProfileId,
+      toolType,
+      rating,
+      feedbackText,
+      inputData,
+      outputData,
+    } = feedback;
+
+    // Build conditions to find existing feedback
+    // Match: same guidelineProfileId (or both NULL), same toolType, same rating,
+    // and exact JSONB match of inputData and outputData
+    // PostgreSQL JSONB = operator compares JSON structure semantically
+    // Serialize JSON to string for comparison (PostgreSQL will normalize JSONB)
+    const inputDataStr = JSON.stringify(inputData);
+    const outputDataStr = JSON.stringify(outputData);
+    const matchConditions = [
+      eq(contentFeedback.toolType, toolType),
+      eq(contentFeedback.rating, rating),
+      sql`${contentFeedback.inputData}::text = ${inputDataStr}`,
+      sql`${contentFeedback.outputData}::text = ${outputDataStr}`,
+    ];
+
+    // Handle guidelineProfileId matching (both NULL or same value)
+    if (guidelineProfileId) {
+      matchConditions.push(
+        eq(contentFeedback.guidelineProfileId, guidelineProfileId)
+      );
+    } else {
+      matchConditions.push(
+        sql`${contentFeedback.guidelineProfileId} IS NULL`
+      );
+    }
+
+    // Query for existing feedback matching all conditions
+    const existingFeedback = await db
+      .select()
+      .from(contentFeedback)
+      .where(and(...matchConditions))
+      .limit(1);
+
+    if (existingFeedback.length > 0) {
+      const existing = existingFeedback[0];
+      const votedUserIds = (existing.votedUserIds as string[]) || [];
+
+      // Check if user has already voted
+      if (votedUserIds.includes(userId)) {
+        // User already voted, return existing record (idempotent)
+        return existing;
+      }
+
+      // User hasn't voted yet, increment vote count and add user to voted list
+      const updatedVotedUserIds = [...votedUserIds, userId];
+      const updatedVoteCount = (existing.voteCount || 1) + 1;
+
+      const [updated] = await db
+        .update(contentFeedback)
+        .set({
+          voteCount: updatedVoteCount,
+          votedUserIds: updatedVotedUserIds,
+        })
+        .where(eq(contentFeedback.id, existing.id))
+        .returning();
+
+      return updated;
+    }
+
+    // No existing feedback found, create new record
+    const [newFeedback] = await db
+      .insert(contentFeedback)
+      .values({
+        userId,
+        guidelineProfileId: guidelineProfileId || null,
+        toolType,
+        rating,
+        feedbackText: feedbackText || null,
+        inputData,
+        outputData,
+        voteCount: 1,
+        votedUserIds: [userId],
+      })
+      .returning();
+
+    return newFeedback;
   }
 
   // Content Writer operations

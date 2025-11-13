@@ -903,6 +903,8 @@ export const contentFeedback = pgTable("content_feedback", {
   feedbackText: text("feedback_text"), // Optional: only for thumbs down
   inputData: jsonb("input_data").notNull(), // The input that generated the content
   outputData: jsonb("output_data").notNull(), // The generated content being rated
+  voteCount: integer("vote_count").default(1).notNull(), // Number of users who voted for this feedback
+  votedUserIds: jsonb("voted_user_ids").default(sql`'[]'::jsonb`).notNull(), // Array of user IDs who have voted
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
