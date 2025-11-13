@@ -2964,9 +2964,7 @@ Return the response as a JSON array with this exact structure:
         // Build list of previous concepts to explicitly avoid
         const previousConceptsList =
           currentConcepts && currentConcepts.length > 0
-            ? currentConcepts
-                .map((c, i) => `${i + 1}. "${c.title}"`)
-                .join("\n")
+            ? currentConcepts.map((c, i) => `${i + 1}. "${c.title}"`).join("\n")
             : "";
 
         // If user provided explicit feedback for regeneration, prioritize it over historical RAG context
