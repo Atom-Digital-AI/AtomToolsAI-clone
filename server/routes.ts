@@ -1555,10 +1555,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // analyzeBrandGuidelines will validate and normalize the URL internally
         const guidelines = await analyzeBrandGuidelines(domainUrl, userId);
-        console.log(
-          "Auto-populate guidelines result:",
-          JSON.stringify(guidelines, null, 2)
-        );
         res.json(guidelines);
       } catch (error) {
         console.error("Error auto-populating brand guidelines:", error);
@@ -1973,14 +1969,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/packages", async (req: any, res) => {
     try {
       const packages = await storage.getAllPackagesWithTiers();
-      console.log(
-        `[API] /api/packages: Found ${packages.length} total packages`
-      );
       // Filter to only active packages for public consumption
       const activePackages = packages.filter((pkg) => pkg.isActive);
-      console.log(
-        `[API] /api/packages: Returning ${activePackages.length} active packages`
-      );
       res.json(activePackages);
     } catch (error) {
       console.error("Error fetching public packages:", error);
@@ -2973,18 +2963,43 @@ Return the response as a JSON array with this exact structure:
           }
         }
 
+        // Build list of previous concepts to explicitly avoid
+        const previousConceptsList =
+          currentConcepts && currentConcepts.length > 0
+            ? currentConcepts
+                .map((c, i) => `${i + 1}. "${c.title}"`)
+                .join("\n")
+            : "";
+
         // If user provided explicit feedback for regeneration, prioritize it over historical RAG context
         // This ensures the immediate feedback isn't diluted by past feedback
-        const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${
+        const conceptPrompt = `Generate 5 NEW and DIFFERENT article concept ideas based on the following topic: "${
           session.topic
         }"
 
-${feedbackText ? `\n⚠️ IMPORTANT - User feedback on previous concepts (prioritize this): ${feedbackText}\n` : ""}
+${
+  previousConceptsList
+    ? `⚠️ CRITICAL: You must generate concepts that are DIFFERENT from these previous concepts (do not repeat or closely mimic them):
+${previousConceptsList}
+
+`
+    : ""
+}${
+          feedbackText
+            ? `\n⚠️ IMPORTANT - User feedback on previous concepts (prioritize this): ${feedbackText}\n`
+            : ""
+        }
 ${targetAudienceContext}
 ${brandContext}
 ${feedbackText ? "" : ragContext}
 
 ${getAntiFabricationInstructions()}
+
+IMPORTANT INSTRUCTIONS:
+- Generate concepts that explore DIFFERENT angles, perspectives, or approaches than the previous concepts
+- Avoid repeating similar titles, themes, or summaries
+- Be creative and explore new directions for the topic
+- Each concept should be unique and distinct from the previous ones
 
 For each concept, provide:
 1. A compelling title suitable for a web article
@@ -3009,7 +3024,7 @@ Return the response as a JSON array with this exact structure:
             return await openai.chat.completions.create({
               model: "gpt-4o-mini",
               messages: [{ role: "user", content: conceptPrompt }],
-              temperature: 0.8,
+              temperature: 0.9, // Slightly higher temperature for regeneration to encourage more variation
             });
           }
         );
@@ -4405,18 +4420,43 @@ Return ONLY the rewritten article, maintaining the markdown structure.`;
           }
         }
 
+        // Build list of previous concepts to explicitly avoid
+        const previousConceptsList =
+          currentState.concepts && currentState.concepts.length > 0
+            ? currentState.concepts
+                .map((c, i) => `${i + 1}. "${c.title}"`)
+                .join("\n")
+            : "";
+
         // If user provided explicit feedback for regeneration, prioritize it over historical RAG context
         // This ensures the immediate feedback isn't diluted by past feedback
-        const conceptPrompt = `Generate 5 unique article concept ideas based on the following topic: "${
+        const conceptPrompt = `Generate 5 NEW and DIFFERENT article concept ideas based on the following topic: "${
           currentState.topic
         }"
 
-${feedbackText ? `\n⚠️ IMPORTANT - User feedback on previous concepts (prioritize this): ${feedbackText}\n` : ""}
+${
+  previousConceptsList
+    ? `⚠️ CRITICAL: You must generate concepts that are DIFFERENT from these previous concepts (do not repeat or closely mimic them):
+${previousConceptsList}
+
+`
+    : ""
+}${
+          feedbackText
+            ? `\n⚠️ IMPORTANT - User feedback on previous concepts (prioritize this): ${feedbackText}\n`
+            : ""
+        }
 ${targetAudienceContext}
 ${brandContext}
 ${feedbackText ? "" : ragContext}
 
 ${getAntiFabricationInstructions()}
+
+IMPORTANT INSTRUCTIONS:
+- Generate concepts that explore DIFFERENT angles, perspectives, or approaches than the previous concepts
+- Avoid repeating similar titles, themes, or summaries
+- Be creative and explore new directions for the topic
+- Each concept should be unique and distinct from the previous ones
 
 For each concept, provide:
 1. A compelling title suitable for a web article
@@ -4441,7 +4481,7 @@ Return the response as a JSON array with this exact structure:
             return await openai.chat.completions.create({
               model: "gpt-4o-mini",
               messages: [{ role: "user", content: conceptPrompt }],
-              temperature: 0.8,
+              temperature: 0.9, // Slightly higher temperature for regeneration to encourage more variation
             });
           }
         );

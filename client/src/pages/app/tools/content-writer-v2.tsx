@@ -270,6 +270,28 @@ export default function ContentWriterV2() {
     };
   }, []);
 
+  // Clear all state when component loads with no active session (fresh start)
+  useEffect(() => {
+    // Only clear if we're on the topic stage and have no active session/thread
+    // This ensures a clean slate when starting fresh
+    if (stage === "topic" && !sessionId && !threadId) {
+      setTopic("");
+      setObjective("");
+      setTargetLength("1000");
+      setToneOfVoice("");
+      setLanguage("en-US");
+      setInternalLinks("");
+      setSelectedTargetAudiences("none");
+      setSelectedConcept(null);
+      setSelectedSubtopics(new Set());
+      setRegenerateFeedback("");
+      setShowRegenerateDialog(false);
+      setSelectingConceptId(null);
+      setJustRegenerated(false);
+      sessionCreatedAtRef.current = null;
+    }
+  }, []); // Only run on mount
+
   // Auto-populate from selected brand
   useEffect(() => {
     if (selectedBrand) {
@@ -487,6 +509,8 @@ export default function ContentWriterV2() {
   }, [session?.selectedConceptId, concepts, selectedConcept]);
 
   // Create session mutation - Using LangGraph API
+  // Only sends fields needed for concept generation (topic, brand guidelines, style settings)
+  // Other fields (objective, targetLength, etc.) are collected later in the subtopics stage
   const createSessionMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest(
@@ -498,18 +522,11 @@ export default function ContentWriterV2() {
             typeof brandGuidelines === "string" && brandGuidelines
               ? brandGuidelines
               : undefined,
-          objective,
-          targetLength: parseInt(targetLength),
-          toneOfVoice,
-          language,
-          internalLinks: internalLinks
-            .split(",")
-            .map((l) => l.trim())
-            .filter(Boolean),
-          useBrandGuidelines,
-          selectedTargetAudiences,
           styleMatchingMethod,
           matchStyle,
+          // Note: objective, targetLength, toneOfVoice, language, internalLinks,
+          // useBrandGuidelines, and selectedTargetAudiences are not sent here.
+          // They are collected in the subtopics stage and sent when generating subtopics.
         }
       );
       return await res.json();
@@ -527,9 +544,25 @@ export default function ContentWriterV2() {
         });
       }
 
-      // Clear local state
+      // Clear all local state to ensure no leftover data from previous runs
+      // Note: We keep topic since the user just entered it, but clear everything else
       setSelectedConcept(null);
       setSelectedSubtopics(new Set());
+      setObjective("");
+      setTargetLength("1000");
+      setToneOfVoice("");
+      setLanguage("en-US");
+      setInternalLinks("");
+      setSelectedTargetAudiences("none");
+      setRegenerateFeedback("");
+      setShowRegenerateDialog(false);
+      setSelectingConceptId(null);
+      setJustRegenerated(false);
+      sessionCreatedAtRef.current = null;
+      
+      // Clear session/thread IDs since we're starting fresh
+      setSessionId(null);
+      setThreadId(null);
     },
     onSuccess: (data: any) => {
       console.log("LangGraph workflow started:", data);
