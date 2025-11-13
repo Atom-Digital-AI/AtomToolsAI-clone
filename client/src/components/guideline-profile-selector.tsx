@@ -144,8 +144,9 @@ export default function GuidelineProfileSelector({
     
     const profile = profiles?.find(p => p.id === profileId);
     if (profile) {
-      // Pass the structured content directly to preserve all fields
-      onChange(profile.content);
+      // Pass the profile ID as a string so it can be used as guidelineProfileId in API calls
+      // The content is still accessible via the profile object if needed
+      onChange(profileId);
     }
   };
 
@@ -184,8 +185,10 @@ export default function GuidelineProfileSelector({
     });
   };
 
-  // Find current profile by comparing content
-  const currentProfile = profiles?.find(p => areContentsEqual(p.content, value));
+  // Find current profile by ID (if value is a string ID) or by comparing content (if value is content object)
+  const currentProfile = typeof value === 'string' && value
+    ? profiles?.find(p => p.id === value)
+    : profiles?.find(p => areContentsEqual(p.content, value));
 
   // Check if value is a string for conditional rendering
   const isString = isStringContent(value);
