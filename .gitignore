@@ -16,7 +16,19 @@ __pycache__/
 *.pyd
 .Python
 
-# Ad Copy Generator App (legacy Python app - not part of main deployment)
-Ad Copy Generator App/venv/
-Ad Copy Generator App/*.pyc
-Ad Copy Generator App/__pycache__/
+# Deleted - do not re-add
+Ad Copy Generator App/
+attached_assets/
+.cursor/
+.cursorignore
+.replit
+replit.md
+cookies.txt
+new_cookies.txt
+*.cookies
+*.bak
+*_logs.txt
+railway_*.txt
+
+# Environment (never commit)
+.env
