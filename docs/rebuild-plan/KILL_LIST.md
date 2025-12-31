@@ -16,14 +16,16 @@ This document lists files and directories that should be removed from the reposi
 
 ---
 
-## Priority 2: IDE/Platform-Specific (Not Needed)
+## Priority 2: IDE/Platform-Specific & Replit (Not Needed)
 
 | File/Directory | Reason |
 |----------------|--------|
 | `.cursor/` | Cursor IDE workspace config |
 | `.cursorignore` | Cursor IDE ignore file |
-| `.replit` | Replit configuration - not using Replit |
-| `replit.md` | Replit documentation - not using Replit |
+| `.replit` | Replit configuration - migrating away from Replit |
+| `replit.md` | Replit documentation - migrating away from Replit |
+
+**Database Note**: The existing Neon database is Replit-owned. Create your own Neon account at [neon.tech](https://neon.tech) with EU (Frankfurt) region. Do NOT use the Replit-provisioned database.
 
 ---
 
@@ -77,7 +79,7 @@ The following docs in `docs/rebuild-plan/` are superseded by the lean plan:
 | File | Lines | Reason |
 |------|-------|--------|
 | `00-MASTER_PLAN.md` | 874 | Replaced by LEAN_PLAN.md |
-| `01-SUPABASE_MIGRATION.md` | ~1100 | Over-engineered, Supabase optional |
+| `01-SUPABASE_MIGRATION.md` | ~1100 | Not using Supabase - using Neon instead |
 | `02-LOGGING_INFRASTRUCTURE.md` | ~1400 | Covered in LEAN_PLAN.md |
 | `03-AGENT_INTERFACE_SPEC.md` | ~1800 | Over-engineered agent system |
 | `prompts/PHASE1_01_SUPABASE_SETUP.md` | | Covered in lean plan |
