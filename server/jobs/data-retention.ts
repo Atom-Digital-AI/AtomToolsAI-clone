@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { errorLogs, langgraphThreads } from '@shared/schema';
-import { lt, and, or, eq } from 'drizzle-orm';
+import { lt, and, or, eq, sql } from 'drizzle-orm';
 import { logger } from '../utils/logger';
 
 /**
@@ -19,12 +19,12 @@ export async function cleanupStuckThreads() {
     const stuckThreads = await db.update(langgraphThreads)
       .set({
         status: 'failed',
-        metadata: db.raw(`
+        metadata: sql`
           CASE
             WHEN metadata IS NULL THEN '{"timedOut": true, "timeoutReason": "Thread stuck in active/paused state for > 2 hours"}'::jsonb
             ELSE metadata || '{"timedOut": true, "timeoutReason": "Thread stuck in active/paused state for > 2 hours"}'::jsonb
           END
-        `) as any
+        ` as any
       })
       .where(
         and(

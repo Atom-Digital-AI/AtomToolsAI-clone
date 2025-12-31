@@ -58,7 +58,8 @@ const QCAnnotation = Annotation.Root({
 
 // Cache the QC workflow definition to avoid recreating it on every execution
 // The workflow structure is stateless and can be reused
-let cachedQCWorkflow: StateGraph<typeof QCAnnotation> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedQCWorkflow: any = null;
 
 /**
  * Create the QC subgraph workflow
@@ -142,7 +143,7 @@ export async function executeQCSubgraph(
     };
     
     // Execute graph
-    const result = await graph.invoke(fullState);
+    const result = await graph.invoke(fullState as any);
     
     // Save QC reports to database if we have a threadId or contentId
     if (config?.threadId && result.userId) {

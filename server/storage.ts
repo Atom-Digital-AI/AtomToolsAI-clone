@@ -33,6 +33,7 @@ import {
   type InsertCrawlJob,
   type UpdateCrawlJob,
   type ContentFeedback,
+  type InsertContentFeedback,
   type ContentWriterSession,
   type InsertContentWriterSession,
   type ContentWriterConcept,

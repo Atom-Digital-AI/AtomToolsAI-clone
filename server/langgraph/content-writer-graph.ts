@@ -71,7 +71,8 @@ const ContentWriterAnnotation = Annotation.Root({
 
 // Cache the workflow definition to avoid recreating it on every execution
 // The workflow structure is stateless and can be reused
-let cachedWorkflow: StateGraph<typeof ContentWriterAnnotation> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedWorkflow: any = null;
 
 function createContentWriterGraph() {
   if (cachedWorkflow) {
@@ -345,7 +346,7 @@ export async function executeContentWriterGraph(
       status: initialState.status || "pending",
     };
 
-    const result = await graph.invoke(fullInitialState, {
+    const result = await graph.invoke(fullInitialState as any, {
       configurable: {
         thread_id: threadId,
       },
@@ -397,7 +398,7 @@ export async function resumeContentWriterGraph(
       ? { ...currentState, ...updates }
       : currentState;
 
-    const result = await graph.invoke(updatedState, {
+    const result = await graph.invoke(updatedState as any, {
       configurable: {
         thread_id: threadId,
       },
