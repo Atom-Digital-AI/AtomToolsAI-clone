@@ -16,7 +16,7 @@ This plan addresses actual gaps without over-engineering. We KEEP what works (La
 | Existing agent implementations | Business logic is solid, just needs validation wrappers |
 | React frontend | Works fine, minimal changes needed |
 | Express.js backend | Works fine, just needs middleware additions |
-| PostgreSQL/Drizzle | Works fine, Supabase migration is OPTIONAL phase |
+| Neon + Drizzle | Fresh Neon database (EU Frankfurt), existing Drizzle schema |
 
 ---
 
@@ -32,6 +32,46 @@ This plan addresses actual gaps without over-engineering. We KEEP what works (La
 | Monolithic storage.ts (2,957 lines) | Split into repositories | Medium |
 | CI/CD missing tests | Add `npm test` to pipeline | High |
 | Coverage reporting | Add to CI/CD | Medium |
+
+---
+
+## Database: Neon (Fresh Start)
+
+**Region**: EU (Frankfurt) - `aws-eu-central-1`
+
+### Setup
+
+1. Create account at [neon.tech](https://neon.tech)
+2. Create project → Select EU (Frankfurt)
+3. Copy connection string
+
+### Configuration
+
+```bash
+# .env / Railway environment
+DATABASE_URL=postgres://user:pass@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require
+```
+
+### Database Client
+
+```typescript
+// server/db.ts
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from './schema';
+
+const sql = neon(process.env.DATABASE_URL!);
+export const db = drizzle(sql, { schema });
+```
+
+### Fresh Schema Push
+
+```bash
+# Push existing Drizzle schema to new Neon database
+npx drizzle-kit push
+```
+
+No migration needed - starting fresh with existing schema definitions.
 
 ---
 
@@ -676,7 +716,7 @@ describe('validate middleware', () => {
 | Awilix DI container | Simple factory functions suffice |
 | YAML tool definitions | TypeScript LangGraph graphs work |
 | 14 separate prompt documents | Single consolidated plan |
-| Supabase migration | Optional, PostgreSQL works fine |
+| Supabase | Using Neon instead (simpler, just Postgres) |
 | 8-week timeline | 2-3 weeks is realistic |
 
 ---
