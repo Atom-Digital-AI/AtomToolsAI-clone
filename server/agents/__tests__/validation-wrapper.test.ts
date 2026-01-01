@@ -1,131 +1,29 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
+import {
+  wrapAgent,
+  wrapAgentWithResult,
+  AgentValidationError,
+  AgentWrapper,
+} from '../validation-wrapper';
 
-// Test the validation logic directly without mocking
-// by creating inline versions of the wrapper functions
+// Mock the logger module
+vi.mock('../../logging/logger', () => {
+  const mockLogger = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    child: vi.fn(() => mockLogger),
+  };
 
-class TestAgentValidationError extends Error {
-  constructor(
-    message: string,
-    public code: 'INPUT_VALIDATION_ERROR' | 'OUTPUT_VALIDATION_ERROR',
-    public details: Array<{ path: string; message: string }>
-  ) {
-    super(message);
-    this.name = 'AgentValidationError';
-  }
-}
-
-function testWrapAgent<TInput, TOutput>(
-  name: string,
-  inputSchema: z.ZodSchema<TInput>,
-  outputSchema: z.ZodSchema<TOutput>,
-  handler: (input: TInput) => Promise<TOutput>
-) {
   return {
-    name,
-    inputSchema,
-    outputSchema,
-    async execute(input: TInput): Promise<TOutput> {
-      // Validate input
-      let validatedInput: TInput;
-      try {
-        validatedInput = inputSchema.parse(input);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          const details = error.errors.map(e => ({
-            path: e.path.join('.'),
-            message: e.message,
-          }));
-          throw new TestAgentValidationError(
-            `Input validation failed for agent ${name}`,
-            'INPUT_VALIDATION_ERROR',
-            details
-          );
-        }
-        throw error;
-      }
-
-      const result = await handler(validatedInput);
-
-      // Validate output
-      try {
-        return outputSchema.parse(result);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          const details = error.errors.map(e => ({
-            path: e.path.join('.'),
-            message: e.message,
-          }));
-          throw new TestAgentValidationError(
-            `Output validation failed for agent ${name}`,
-            'OUTPUT_VALIDATION_ERROR',
-            details
-          );
-        }
-        throw error;
-      }
-    },
+    getLogger: vi.fn(() => mockLogger),
+    logger: mockLogger,
   };
-}
+});
 
-function testWrapAgentWithResult<TInput, TOutput>(
-  name: string,
-  inputSchema: z.ZodSchema<TInput>,
-  outputSchema: z.ZodSchema<TOutput>,
-  handler: (input: TInput) => Promise<TOutput>
-) {
-  const wrapper = testWrapAgent(name, inputSchema, outputSchema, handler);
-
-  return async (input: TInput) => {
-    const startedAt = new Date().toISOString();
-    const startTime = Date.now();
-
-    try {
-      const data = await wrapper.execute(input);
-      return {
-        success: true as const,
-        data,
-        timing: {
-          startedAt,
-          completedAt: new Date().toISOString(),
-          durationMs: Date.now() - startTime,
-        },
-      };
-    } catch (error) {
-      if (error instanceof TestAgentValidationError) {
-        return {
-          success: false as const,
-          error: {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-          },
-          timing: {
-            startedAt,
-            completedAt: new Date().toISOString(),
-            durationMs: Date.now() - startTime,
-          },
-        };
-      }
-
-      return {
-        success: false as const,
-        error: {
-          code: 'EXECUTION_ERROR' as const,
-          message: error instanceof Error ? error.message : String(error),
-        },
-        timing: {
-          startedAt,
-          completedAt: new Date().toISOString(),
-          durationMs: Date.now() - startTime,
-        },
-      };
-    }
-  };
-}
-
-describe('wrapAgent validation logic', () => {
+describe('wrapAgent', () => {
   const inputSchema = z.object({
     name: z.string().min(1),
     count: z.number().int().positive(),
@@ -136,76 +34,236 @@ describe('wrapAgent validation logic', () => {
     items: z.array(z.string()),
   });
 
-  it('should pass through valid input and output', async () => {
-    const handler = async (input: { name: string; count: number }) => ({
-      result: `Hello ${input.name}`,
-      items: Array(input.count).fill(input.name),
+  type Input = z.infer<typeof inputSchema>;
+  type Output = z.infer<typeof outputSchema>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('successful execution', () => {
+    it('should pass through valid input and output', async () => {
+      const handler = async (input: Input): Promise<Output> => ({
+        result: `Hello ${input.name}`,
+        items: Array(input.count).fill(input.name),
+      });
+
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+      const result = await wrapped.execute({ name: 'World', count: 3 });
+
+      expect(result.result).toBe('Hello World');
+      expect(result.items).toEqual(['World', 'World', 'World']);
     });
 
-    const wrapped = testWrapAgent('test-agent', inputSchema, outputSchema, handler);
-    const result = await wrapped.execute({ name: 'World', count: 3 });
+    it('should validate and transform input', async () => {
+      const transformingInput = z.object({
+        value: z.string().transform((s) => s.trim()),
+      });
 
-    assert.strictEqual(result.result, 'Hello World');
-    assert.deepStrictEqual(result.items, ['World', 'World', 'World']);
-  });
+      const simpleOutput = z.object({
+        processed: z.string(),
+      });
 
-  it('should throw validation error on invalid input', async () => {
-    const handler = async () => ({ result: 'test', items: [] });
-    const wrapped = testWrapAgent('test-agent', inputSchema, outputSchema, handler);
+      const handler = async (input: { value: string }) => ({
+        processed: input.value.toUpperCase(),
+      });
 
-    await assert.rejects(
-      async () => wrapped.execute({ name: '', count: 1 }),
-      (error: Error) => {
-        assert(error instanceof TestAgentValidationError);
-        assert.strictEqual(error.code, 'INPUT_VALIDATION_ERROR');
-        assert(error.details.length > 0);
-        return true;
-      }
-    );
-  });
+      const wrapped = wrapAgent('trim-agent', transformingInput, simpleOutput, handler);
+      const result = await wrapped.execute({ value: '  hello  ' });
 
-  it('should throw validation error on invalid output', async () => {
-    const handler = async () => ({
-      result: 123,
-      items: [],
+      expect(result.processed).toBe('HELLO');
     });
 
-    const wrapped = testWrapAgent('test-agent', inputSchema, outputSchema, handler as any);
+    it('should validate and transform output', async () => {
+      const simpleInput = z.object({ value: z.string() });
+      const transformingOutput = z.object({
+        result: z.string().transform((s) => s.toUpperCase()),
+      });
 
-    await assert.rejects(
-      async () => wrapped.execute({ name: 'Test', count: 1 }),
-      (error: Error) => {
-        assert(error instanceof TestAgentValidationError);
-        assert.strictEqual(error.code, 'OUTPUT_VALIDATION_ERROR');
-        return true;
-      }
-    );
+      const handler = async () => ({ result: 'hello' });
+
+      const wrapped = wrapAgent('transform-agent', simpleInput, transformingOutput, handler);
+      const result = await wrapped.execute({ value: 'test' });
+
+      expect(result.result).toBe('HELLO');
+    });
   });
 
-  it('should preserve handler errors', async () => {
-    const handler = async () => {
-      throw new Error('Handler failed');
-    };
+  describe('input validation errors', () => {
+    it('should throw validation error on invalid input', async () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
 
-    const wrapped = testWrapAgent('test-agent', inputSchema, outputSchema, handler);
+      await expect(wrapped.execute({ name: '', count: 1 })).rejects.toThrow(
+        AgentValidationError
+      );
+    });
 
-    await assert.rejects(
-      async () => wrapped.execute({ name: 'Test', count: 1 }),
-      (error: Error) => {
-        assert.strictEqual(error.message, 'Handler failed');
-        assert(!(error instanceof TestAgentValidationError));
-        return true;
+    it('should include error code INPUT_VALIDATION_ERROR', async () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      try {
+        await wrapped.execute({ name: '', count: 1 });
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(AgentValidationError);
+        expect((error as AgentValidationError).code).toBe('INPUT_VALIDATION_ERROR');
       }
-    );
+    });
+
+    it('should include validation error details', async () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      try {
+        await wrapped.execute({ name: '', count: -1 });
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(AgentValidationError);
+        const validationError = error as AgentValidationError;
+        expect(validationError.details.length).toBeGreaterThan(0);
+        expect(validationError.details[0]).toHaveProperty('path');
+        expect(validationError.details[0]).toHaveProperty('message');
+      }
+    });
+
+    it('should throw on missing required fields', async () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      // @ts-expect-error - Testing missing field
+      await expect(wrapped.execute({ name: 'test' })).rejects.toThrow(
+        AgentValidationError
+      );
+    });
+
+    it('should throw on wrong field types', async () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      // @ts-expect-error - Testing wrong type
+      await expect(wrapped.execute({ name: 123, count: 1 })).rejects.toThrow(
+        AgentValidationError
+      );
+    });
   });
 
-  it('should expose schemas on the wrapper', () => {
-    const handler = async () => ({ result: 'test', items: [] });
-    const wrapped = testWrapAgent('test-agent', inputSchema, outputSchema, handler);
+  describe('output validation errors', () => {
+    it('should throw validation error on invalid output', async () => {
+      const handler = async (): Promise<any> => ({
+        result: 123, // Should be string
+        items: [],
+      });
 
-    assert.strictEqual(wrapped.name, 'test-agent');
-    assert.strictEqual(wrapped.inputSchema, inputSchema);
-    assert.strictEqual(wrapped.outputSchema, outputSchema);
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      await expect(wrapped.execute({ name: 'Test', count: 1 })).rejects.toThrow(
+        AgentValidationError
+      );
+    });
+
+    it('should include error code OUTPUT_VALIDATION_ERROR', async () => {
+      const handler = async (): Promise<any> => ({
+        result: 123,
+        items: [],
+      });
+
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      try {
+        await wrapped.execute({ name: 'Test', count: 1 });
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(AgentValidationError);
+        expect((error as AgentValidationError).code).toBe('OUTPUT_VALIDATION_ERROR');
+      }
+    });
+
+    it('should throw on missing output fields', async () => {
+      const handler = async (): Promise<any> => ({
+        result: 'test',
+        // Missing 'items' field
+      });
+
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      await expect(wrapped.execute({ name: 'Test', count: 1 })).rejects.toThrow(
+        AgentValidationError
+      );
+    });
+  });
+
+  describe('handler errors', () => {
+    it('should preserve handler errors', async () => {
+      const handler = async (): Promise<Output> => {
+        throw new Error('Handler failed');
+      };
+
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      await expect(wrapped.execute({ name: 'Test', count: 1 })).rejects.toThrow(
+        'Handler failed'
+      );
+    });
+
+    it('should not wrap handler errors as AgentValidationError', async () => {
+      const handler = async (): Promise<Output> => {
+        throw new Error('Handler failed');
+      };
+
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      try {
+        await wrapped.execute({ name: 'Test', count: 1 });
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).not.toBeInstanceOf(AgentValidationError);
+        expect(error).toBeInstanceOf(Error);
+      }
+    });
+
+    it('should preserve custom error types', async () => {
+      class CustomError extends Error {
+        constructor(message: string) {
+          super(message);
+          this.name = 'CustomError';
+        }
+      }
+
+      const handler = async (): Promise<Output> => {
+        throw new CustomError('Custom failure');
+      };
+
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      await expect(wrapped.execute({ name: 'Test', count: 1 })).rejects.toThrow(
+        CustomError
+      );
+    });
+  });
+
+  describe('wrapper properties', () => {
+    it('should expose name on the wrapper', () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('my-agent', inputSchema, outputSchema, handler);
+
+      expect(wrapped.name).toBe('my-agent');
+    });
+
+    it('should expose inputSchema on the wrapper', () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      expect(wrapped.inputSchema).toBe(inputSchema);
+    });
+
+    it('should expose outputSchema on the wrapper', () => {
+      const handler = async (): Promise<Output> => ({ result: 'test', items: [] });
+      const wrapped = wrapAgent('test-agent', inputSchema, outputSchema, handler);
+
+      expect(wrapped.outputSchema).toBe(outputSchema);
+    });
   });
 });
 
@@ -218,86 +276,177 @@ describe('wrapAgentWithResult', () => {
     processed: z.string(),
   });
 
-  it('should return success result with data and timing', async () => {
-    const handler = async (input: { value: string }) => ({
-      processed: input.value.toUpperCase(),
+  type Input = z.infer<typeof inputSchema>;
+  type Output = z.infer<typeof outputSchema>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('successful execution', () => {
+    it('should return success result with data', async () => {
+      const handler = async (input: Input): Promise<Output> => ({
+        processed: input.value.toUpperCase(),
+      });
+
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: 'hello' });
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ processed: 'HELLO' });
     });
 
-    const execute = testWrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
-    const result = await execute({ value: 'hello' });
+    it('should include timing information', async () => {
+      const handler = async (input: Input): Promise<Output> => ({
+        processed: input.value.toUpperCase(),
+      });
 
-    assert.strictEqual(result.success, true);
-    if (result.success) {
-      assert.deepStrictEqual(result.data, { processed: 'HELLO' });
-    }
-    assert(result.timing.startedAt);
-    assert(result.timing.completedAt);
-    assert(typeof result.timing.durationMs === 'number');
-    assert(result.timing.durationMs >= 0);
-  });
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: 'hello' });
 
-  it('should return error result on input validation failure', async () => {
-    const handler = async () => ({ processed: 'test' });
-    const execute = testWrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
-    const result = await execute({ value: '' });
-
-    assert.strictEqual(result.success, false);
-    if (!result.success) {
-      assert.strictEqual(result.error?.code, 'INPUT_VALIDATION_ERROR');
-    }
-    assert(result.timing.durationMs >= 0);
-  });
-
-  it('should return error result on handler failure', async () => {
-    const handler = async (): Promise<{ processed: string }> => {
-      throw new Error('Something went wrong');
-    };
-
-    const execute = testWrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
-    const result = await execute({ value: 'test' });
-
-    assert.strictEqual(result.success, false);
-    if (!result.success) {
-      assert.strictEqual(result.error?.code, 'EXECUTION_ERROR');
-      assert.strictEqual(result.error?.message, 'Something went wrong');
-    }
-    assert(result.timing.durationMs >= 0);
-  });
-
-  it('should return error result on output validation failure', async () => {
-    const handler = async () => ({
-      processed: 123,
+      expect(result.timing).toBeDefined();
+      expect(result.timing.startedAt).toBeDefined();
+      expect(result.timing.completedAt).toBeDefined();
+      expect(typeof result.timing.durationMs).toBe('number');
+      expect(result.timing.durationMs).toBeGreaterThanOrEqual(0);
     });
 
-    const execute = testWrapAgentWithResult('test-agent', inputSchema, outputSchema, handler as any);
-    const result = await execute({ value: 'test' });
+    it('should have valid ISO date strings in timing', async () => {
+      const handler = async (input: Input): Promise<Output> => ({
+        processed: input.value,
+      });
 
-    assert.strictEqual(result.success, false);
-    if (!result.success) {
-      assert.strictEqual(result.error?.code, 'OUTPUT_VALIDATION_ERROR');
-    }
-    assert(result.timing.durationMs >= 0);
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: 'test' });
+
+      // Validate ISO date format
+      expect(new Date(result.timing.startedAt).toISOString()).toBe(
+        result.timing.startedAt
+      );
+      expect(new Date(result.timing.completedAt).toISOString()).toBe(
+        result.timing.completedAt
+      );
+    });
+  });
+
+  describe('input validation failure', () => {
+    it('should return error result on input validation failure', async () => {
+      const handler = async (): Promise<Output> => ({ processed: 'test' });
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: '' });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe('INPUT_VALIDATION_ERROR');
+    });
+
+    it('should include error details', async () => {
+      const handler = async (): Promise<Output> => ({ processed: 'test' });
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: '' });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.details).toBeDefined();
+      expect(result.error?.details?.length).toBeGreaterThan(0);
+    });
+
+    it('should include timing even on failure', async () => {
+      const handler = async (): Promise<Output> => ({ processed: 'test' });
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: '' });
+
+      expect(result.timing.durationMs).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('output validation failure', () => {
+    it('should return error result on output validation failure', async () => {
+      const handler = async (): Promise<any> => ({
+        processed: 123, // Wrong type
+      });
+
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: 'test' });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('OUTPUT_VALIDATION_ERROR');
+    });
+  });
+
+  describe('handler failure', () => {
+    it('should return error result on handler failure', async () => {
+      const handler = async (): Promise<Output> => {
+        throw new Error('Something went wrong');
+      };
+
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: 'test' });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('EXECUTION_ERROR');
+      expect(result.error?.message).toBe('Something went wrong');
+    });
+
+    it('should include timing on handler failure', async () => {
+      const handler = async (): Promise<Output> => {
+        throw new Error('Failed');
+      };
+
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: 'test' });
+
+      expect(result.timing.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle non-Error throws', async () => {
+      const handler = async (): Promise<Output> => {
+        throw 'string error';
+      };
+
+      const execute = wrapAgentWithResult('test-agent', inputSchema, outputSchema, handler);
+      const result = await execute({ value: 'test' });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('string error');
+    });
   });
 });
 
 describe('AgentValidationError class', () => {
   it('should have correct properties', () => {
     const details = [{ path: 'field', message: 'Invalid value' }];
-    const error = new TestAgentValidationError(
+    const error = new AgentValidationError(
       'Validation failed',
       'INPUT_VALIDATION_ERROR',
       details
     );
 
-    assert.strictEqual(error.name, 'AgentValidationError');
-    assert.strictEqual(error.message, 'Validation failed');
-    assert.strictEqual(error.code, 'INPUT_VALIDATION_ERROR');
-    assert.deepStrictEqual(error.details, details);
+    expect(error.name).toBe('AgentValidationError');
+    expect(error.message).toBe('Validation failed');
+    expect(error.code).toBe('INPUT_VALIDATION_ERROR');
+    expect(error.details).toEqual(details);
+  });
+
+  it('should accept OUTPUT_VALIDATION_ERROR code', () => {
+    const error = new AgentValidationError(
+      'Output invalid',
+      'OUTPUT_VALIDATION_ERROR',
+      []
+    );
+
+    expect(error.code).toBe('OUTPUT_VALIDATION_ERROR');
   });
 
   it('should be instanceof Error', () => {
-    const error = new TestAgentValidationError('Test', 'INPUT_VALIDATION_ERROR', []);
-    assert(error instanceof Error);
-    assert(error instanceof TestAgentValidationError);
+    const error = new AgentValidationError('Test', 'INPUT_VALIDATION_ERROR', []);
+
+    expect(error instanceof Error).toBe(true);
+    expect(error instanceof AgentValidationError).toBe(true);
+  });
+
+  it('should preserve stack trace', () => {
+    const error = new AgentValidationError('Test', 'INPUT_VALIDATION_ERROR', []);
+
+    expect(error.stack).toBeDefined();
   });
 });
