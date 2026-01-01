@@ -214,6 +214,33 @@ export const contacts = pgTable("contacts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// API Keys - For programmatic access to the API
+export const apiKeys = pgTable("api_keys", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(), // User-friendly name for the key
+  keyHash: varchar("key_hash", { length: 255 }).notNull(), // SHA-256 hash of the key
+  keyPrefix: varchar("key_prefix", { length: 10 }).notNull(), // First 8 chars for identification
+  scopes: text("scopes").array().default([]), // Permissions: ['read', 'write', 'admin']
+  rateLimit: integer("rate_limit").default(100), // Requests per minute
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// API Keys relations
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  user: one(users, {
+    fields: [apiKeys.userId],
+    references: [users.id],
+  }),
+}));
+
 // Package Definitions - Categories of products/tools with tiers
 export const packages = pgTable("packages", {
   id: varchar("id")

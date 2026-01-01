@@ -15,10 +15,11 @@ import cors from "cors";
 import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { logToolError, getErrorTypeFromError } from "./errorLogger";
 import { env } from "./config";
 import { apiLimiter } from "./rate-limit";
 import { validateAndInitializeLangSmith } from "./utils/langsmith-config";
+import { logger, getLogger } from "./logging/logger";
+import { correlationIdMiddleware, apiKeyAuth, errorHandler } from "./middleware";
 
 const app = express();
 
@@ -90,13 +91,14 @@ app.use(
       if (ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true);
       } else {
-        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        logger.warn({ origin }, 'CORS blocked request from origin');
         callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Correlation-ID"],
+    exposedHeaders: ["X-Correlation-ID"],
     maxAge: 86400, // 24 hours
   })
 );
@@ -114,6 +116,13 @@ app.use(express.json({ limit: "100kb" })); // Default fallback
 
 app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 
+// Correlation ID middleware - assigns unique ID to each request for tracing
+app.use(correlationIdMiddleware);
+
+// API Key authentication - allows programmatic access via X-API-Key header
+app.use("/api", apiKeyAuth);
+
+// Legacy request logging middleware (will be replaced by correlation ID logs)
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -147,63 +156,13 @@ app.use((req, res, next) => {
 (async () => {
   // Validate LangSmith configuration during server startup
   await validateAndInitializeLangSmith().catch((error) => {
-    console.error("Failed to validate LangSmith configuration:", error);
+    logger.error({ error }, "Failed to validate LangSmith configuration");
   });
 
   const server = await registerRoutes(app);
 
-  app.use(
-    async (err: any, req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-
-      // Send to Sentry (if configured)
-      if (env.SENTRY_DSN) {
-        Sentry.captureException(err, {
-          tags: {
-            endpoint: `${req.method} ${req.path}`,
-            statusCode: status,
-          },
-          user: {
-            id: (req as any).user?.id,
-            email: (req as any).user?.email,
-          },
-          extra: {
-            body: req.body,
-            query: req.query,
-            params: req.params,
-          },
-        });
-      }
-
-      // Log error to database
-      try {
-        const user = (req as any).user;
-        await logToolError({
-          userId: user?.id,
-          userEmail: user?.email,
-          toolName: "system",
-          errorType: getErrorTypeFromError(err),
-          errorMessage: message,
-          errorStack: err.stack,
-          requestData: {
-            body: req.body,
-            query: req.query,
-            params: req.params,
-          },
-          httpStatus: status,
-          endpoint: `${req.method} ${req.path}`,
-          req,
-          status: "to_do", // New errors start as "to_do"
-        });
-      } catch (logError) {
-        console.error("Failed to log error to database:", logError);
-      }
-
-      res.status(status).json({ message });
-      console.error(`[Global Error Handler] ${req.method} ${req.path}:`, err);
-    }
-  );
+  // Global error handler - must be registered after all routes
+  app.use(errorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -246,7 +205,7 @@ app.use((req, res, next) => {
       await pool.end();
       log("Database pool closed");
     } catch (error) {
-      console.error("Error closing database pool:", error);
+      logger.error({ error }, "Error closing database pool");
     }
 
     // Exit process
@@ -259,7 +218,7 @@ app.use((req, res, next) => {
 
   // Handle uncaught errors
   process.on("uncaughtException", (error) => {
-    console.error("Uncaught Exception:", error);
+    logger.fatal({ error }, "Uncaught Exception");
     if (env.SENTRY_DSN) {
       Sentry.captureException(error);
     }
@@ -267,7 +226,7 @@ app.use((req, res, next) => {
   });
 
   process.on("unhandledRejection", (reason, promise) => {
-    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+    logger.error({ reason, promise }, "Unhandled Rejection");
     if (env.SENTRY_DSN) {
       Sentry.captureException(reason);
     }
