@@ -1,5 +1,5 @@
 -- Verification Script: Check RLS Status
--- Run this in Supabase SQL Editor to see which tables need RLS
+-- Run this in your PostgreSQL client (Neon console, psql, etc.) to see which tables need RLS
 
 -- ============================================================================
 -- 1. Check which tables have RLS enabled
