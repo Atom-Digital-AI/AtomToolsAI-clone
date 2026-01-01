@@ -53,7 +53,9 @@ export function loadPromptSync(
   promptName: string,
   variables?: Record<string, string | number | boolean>
 ): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { readFileSync } = require('fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { join } = require('path');
   
   const promptPath = join(toolPath, 'prompts', `${promptName}.md`);

@@ -840,7 +840,7 @@ export class DatabaseStorage implements IStorage {
     let needsReset = false;
 
     switch (periodicity) {
-      case "day":
+      case "day": {
         // Reset if last reset was before today
         const todayStart = new Date(
           now.getFullYear(),
@@ -854,6 +854,7 @@ export class DatabaseStorage implements IStorage {
         );
         needsReset = lastResetDay < todayStart;
         break;
+      }
 
       case "month":
         // Reset if last reset was before this month

@@ -265,7 +265,7 @@ export default function GoogleAdsCopyGenerator() {
       }
 
       // Initialize variations array
-      let variations: GeneratedCopy[] = [];
+      const variations: GeneratedCopy[] = [];
 
       // Handle the headlines and descriptions arrays format
       const formattedHeadlines = response.headlines.map((h: string) =>

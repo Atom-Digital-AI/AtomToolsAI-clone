@@ -429,7 +429,11 @@ export function ProductManager() {
           type="button"
           variant="outline"
           onClick={() => {
-            editingProduct ? setEditingProduct(null) : setIsCreateOpen(false);
+            if (editingProduct) {
+              setEditingProduct(null);
+            } else {
+              setIsCreateOpen(false);
+            }
             resetForm();
           }}
           data-testid="button-cancel-product"

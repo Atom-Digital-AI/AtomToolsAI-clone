@@ -791,7 +791,7 @@ export const insertCmsPageSchema = createInsertSchema(cmsPages)
       .string()
       .min(1, "Slug is required")
       .regex(
-        /^\/[a-z0-9-\/]*$/,
+        /^\/[a-z0-9-/]*$/,
         "Slug must start with / and contain only lowercase letters, numbers, and hyphens"
       ),
     type: z.enum(["static", "blog", "resource"]),
@@ -940,7 +940,7 @@ export type InsertContentFeedback = typeof contentFeedback.$inferInsert;
 
 export const insertContentFeedbackSchema = createInsertSchema(
   contentFeedback
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt"]) as any;
 
 // Content Writer - Multi-stage article generation
@@ -1096,12 +1096,12 @@ export type InsertLanggraphCheckpoint =
 
 export const insertLanggraphThreadSchema = createInsertSchema(
   langgraphThreads
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt", "updatedAt"]) as any;
 
 export const insertLanggraphCheckpointSchema = createInsertSchema(
   langgraphCheckpoints
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt"]) as any;
 
 export type ContentWriterSession = typeof contentWriterSessions.$inferSelect;
@@ -1118,22 +1118,22 @@ export type InsertContentWriterDraft = typeof contentWriterDrafts.$inferInsert;
 
 export const insertContentWriterSessionSchema = createInsertSchema(
   contentWriterSessions
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt", "updatedAt"]) as any;
 
 export const insertContentWriterConceptSchema = createInsertSchema(
   contentWriterConcepts
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt"]) as any;
 
 export const insertContentWriterSubtopicSchema = createInsertSchema(
   contentWriterSubtopics
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt"]) as any;
 
 export const insertContentWriterDraftSchema = createInsertSchema(
   contentWriterDrafts
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt", "updatedAt"]) as any;
 
 // Error Log Status - Centralized status strings
@@ -1165,7 +1165,7 @@ export type ErrorLog = typeof errorLogs.$inferSelect;
 export type InsertErrorLog = typeof errorLogs.$inferInsert;
 
 export const insertErrorLogSchema = createInsertSchema(errorLogs)
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
   .omit(["id", "createdAt"]) as any;
 
 // Notifications table for in-app notifications
@@ -1189,7 +1189,7 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
 
 export const insertNotificationSchema = createInsertSchema(notifications)
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
   .omit(["id", "createdAt"]) as any;
 
 // User notification preferences for email notifications
@@ -1221,7 +1221,7 @@ export type InsertUserNotificationPreference =
 
 export const insertUserNotificationPreferenceSchema = createInsertSchema(
   userNotificationPreferences
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt", "updatedAt"]) as any;
 
 // Ad Specs - Platform ad format specifications
@@ -1256,7 +1256,7 @@ export type AdSpec = typeof adSpecs.$inferSelect;
 export type InsertAdSpec = typeof adSpecs.$inferInsert;
 
 export const insertAdSpecSchema = createInsertSchema(adSpecs)
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
   .omit(["id", "createdAt", "updatedAt"]) as any;
 
 // Social Content Sessions - Multi-stage social content generation
@@ -1295,7 +1295,7 @@ export type InsertSocialContentSession =
 
 export const insertSocialContentSessionSchema = createInsertSchema(
   socialContentSessions
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt", "updatedAt"]) as any;
 
 // Social Content Wireframes - Generated concepts per platform/format
@@ -1341,7 +1341,7 @@ export type InsertSocialContentWireframe =
 
 export const insertSocialContentWireframeSchema = createInsertSchema(
   socialContentWireframes
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt"]) as any;
 
 // AI Usage Logs - Track token usage and costs for all AI API calls
@@ -1552,7 +1552,7 @@ export type AiUsageLog = typeof aiUsageLogs.$inferSelect;
 export type InsertAiUsageLog = typeof aiUsageLogs.$inferInsert;
 
 export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs)
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
   .omit(["id", "createdAt"]) as any;
 
 // QC Types
@@ -1560,7 +1560,7 @@ export type QCReport = typeof qcReports.$inferSelect;
 export type InsertQCReport = typeof qcReports.$inferInsert;
 
 export const insertQCReportSchema = createInsertSchema(qcReports)
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
   .omit(["id", "createdAt"]) as any;
 
 export type QCUserDecision = typeof qcUserDecisions.$inferSelect;
@@ -1568,7 +1568,6 @@ export type InsertQCUserDecision = typeof qcUserDecisions.$inferInsert;
 
 export const insertQCUserDecisionSchema = createInsertSchema(
   qcUserDecisions
-  // @ts-ignore - drizzle-zod omit type inference issue
 ).omit({
   id: true,
   createdAt: true,
@@ -1580,7 +1579,7 @@ export type InsertQCConfiguration = typeof qcConfigurations.$inferInsert;
 
 export const insertQCConfigurationSchema = createInsertSchema(
   qcConfigurations
-  // @ts-ignore - drizzle-zod omit type inference issue
+  // @ts-expect-error - drizzle-zod omit type inference issue
 ).omit(["id", "createdAt", "updatedAt"]) as any;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

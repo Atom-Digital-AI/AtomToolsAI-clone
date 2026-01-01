@@ -7,6 +7,7 @@ import { getLogger, setContextUserId } from '../logging/logger';
 
 // Extend Express Request type to include API key info
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       apiKey?: {
