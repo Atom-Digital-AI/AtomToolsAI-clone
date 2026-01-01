@@ -15,7 +15,7 @@ Quick reference for verifying deployment configuration.
 Check these are set in Railway Variables:
 
 #### Critical (App won't start without these)
-- [ ] `DATABASE_URL` - PostgreSQL connection string
+- [ ] `DATABASE_URL` - PostgreSQL connection string (Neon)
 - [ ] `SESSION_SECRET` - At least 32 characters
 - [ ] `OPENAI_API_KEY` - Starts with `sk-`
 - [ ] `BREVO_API_KEY` - Brevo API key
@@ -28,30 +28,26 @@ Check these are set in Railway Variables:
 - [ ] `LANGCHAIN_API_KEY` - For LangSmith tracing
 - [ ] `COHERE_API_KEY` - For reranking (if RERANKING_ENABLED=true)
 - [ ] `SENTRY_DSN` - For error tracking
+- [ ] `NEON_API_KEY` - For Neon project management features
 
 ### 3. Database Configuration
-- [ ] Railway Postgres service exists ("attractive-vibrancy" project)
-- [ ] Postgres service is linked to AtomToolsAI service
-- [ ] `DATABASE_URL` is auto-set by Railway OR manually configured
+- [ ] Neon project exists (EU Frankfurt region recommended)
+- [ ] `DATABASE_URL` is set to Neon connection string
 - [ ] Database has `pgvector` extension installed
+- [ ] Connection string format: `postgres://user:pass@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require`
 
-### 4. Supabase Status
-- [ ] Supabase project URL: `https://nqsuvximwdipyvcxftbo.supabase.co`
-- [ ] ⚠️ **ISSUE**: Connection timeout - verify if Supabase is actually being used
-- [ ] If using Supabase: Verify connection string in `DATABASE_URL`
-
-### 5. Dependencies Check
+### 4. Dependencies Check
 - [ ] All packages in `package.json` are installed
 - [ ] No missing dependencies in build logs
 - [ ] TypeScript compiles without errors
 
-### 6. Connection Points
+### 5. Connection Points
 - [ ] Railway service is deployed and running
 - [ ] Domain is accessible: `atomtoolsai-production.up.railway.app`
 - [ ] Health check endpoint works: `/health/live`
 - [ ] Database connection works (check logs)
 
-### 7. API Keys Test
+### 6. API Keys Test
 Test that API keys are working:
 - [ ] OpenAI API key is valid (test with a simple request)
 - [ ] Brevo API key is valid (check email sending)
@@ -60,12 +56,12 @@ Test that API keys are working:
 ## Common Issues
 
 ### Database Connection Timeout
-- **Symptom**: Supabase connection times out
+- **Symptom**: Database connection times out
 - **Possible causes**:
   1. Wrong connection string
-  2. Using Railway Postgres instead of Supabase
-  3. Database not accessible
-- **Solution**: Check which database is actually configured in Railway
+  2. Database not accessible from Railway
+  3. SSL mode not set correctly
+- **Solution**: Verify DATABASE_URL format and check Neon dashboard
 
 ### Missing Environment Variables
 - **Symptom**: App fails to start with validation errors
@@ -73,7 +69,7 @@ Test that API keys are working:
 
 ### API Key Format Errors
 - **Symptom**: Validation errors for API keys
-- **Solution**: 
+- **Solution**:
   - OpenAI key must start with `sk-`
   - Brevo key must be valid API key format
   - Check no extra spaces or quotes
@@ -105,6 +101,6 @@ psql $DATABASE_URL -c "SELECT 1;"
 ## Support Resources
 
 - Railway Dashboard: https://railway.app
-- Supabase Dashboard: https://supabase.com/dashboard
+- Neon Dashboard: https://console.neon.tech
 - Full Configuration Report: See `ENV_CONFIGURATION_CHECK.md`
 

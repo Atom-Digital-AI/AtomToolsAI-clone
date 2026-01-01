@@ -1,15 +1,13 @@
 -- Migration: Add Row Level Security (RLS) policies to all tables
--- Purpose: Satisfy Supabase security requirements while maintaining session-based auth
--- Architecture: Application uses session-based authentication with service role connection
--- Security: RLS enabled but bypassed by service role; application handles access control
+-- Purpose: Enable PostgreSQL RLS for additional database-level security
+-- Architecture: Application uses session-based authentication with database connection
+-- Security: RLS enabled with permissive policies; application handles access control
 
 -- ============================================================================
--- IMPORTANT: SERVICE ROLE CONNECTION
+-- IMPORTANT: DATABASE CONNECTION
 -- ============================================================================
--- This application uses session-based authentication (not Supabase Auth)
--- Service role automatically bypasses RLS, so these policies are primarily
--- to satisfy Supabase's security advisor.
---
+-- This application uses session-based authentication (Express sessions)
+-- The database connection has full access, so these policies are permissive.
 -- Application security is handled at the Express middleware layer via sessions.
 
 -- ============================================================================
@@ -86,10 +84,10 @@ ALTER TABLE IF EXISTS qc_configurations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS sessions ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
--- SERVICE ROLE PERMISSIVE POLICIES
+-- PERMISSIVE POLICIES
 -- ============================================================================
--- Service role bypasses RLS automatically, but we create permissive policies
--- to satisfy Supabase security advisor. Application handles authorization.
+-- We create permissive policies for all tables. Application handles authorization
+-- at the Express middleware layer.
 
 -- User and contact policies
 CREATE POLICY "Service role full access" ON users FOR ALL USING (true) WITH CHECK (true);
