@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth } from "../auth";
+import { getLogger } from "../logging/logger";
 
 const router = Router();
+const log = getLogger({ module: 'user.routes' });
 
 /**
  * Get user tier subscriptions with full details
@@ -15,7 +17,7 @@ router.get("/tier-subscriptions", requireAuth, async (req, res) => {
     );
     res.json(subscriptions);
   } catch (error) {
-    console.error("Error fetching tier subscriptions:", error);
+    log.error({ error }, "Error fetching tier subscriptions");
     res.status(500).json({ message: "Failed to fetch tier subscriptions" });
   }
 });
@@ -71,7 +73,7 @@ router.get("/usage-stats", requireAuth, async (req: any, res) => {
       tierId: activeTierSub.tierId,
     });
   } catch (error) {
-    console.error("Error fetching usage stats:", error);
+    log.error({ error }, "Error fetching usage stats");
     res.status(500).json({ message: "Failed to fetch usage statistics" });
   }
 });
@@ -96,7 +98,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Error fetching notification preferences:", error);
+      log.error({ error }, "Error fetching notification preferences");
       res
         .status(500)
         .json({ message: "Failed to fetch notification preferences" });
@@ -125,7 +127,7 @@ router.patch(
 
       res.json({ preferences });
     } catch (error) {
-      console.error("Error updating notification preferences:", error);
+      log.error({ error }, "Error updating notification preferences");
       res
         .status(500)
         .json({ message: "Failed to update notification preferences" });
@@ -149,7 +151,7 @@ router.get("/notifications", requireAuth, async (req: any, res) => {
 
     res.json({ notifications: notificationsData, unreadCount });
   } catch (error) {
-    console.error("Error fetching notifications:", error);
+    log.error({ error }, "Error fetching notifications");
     res.status(500).json({ message: "Failed to fetch notifications" });
   }
 });
@@ -172,7 +174,7 @@ router.patch(
 
       res.json({ success: true });
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+      log.error({ error }, "Error marking notification as read");
       res
         .status(500)
         .json({ message: "Failed to mark notification as read" });
@@ -193,7 +195,7 @@ router.patch(
       const success = await storage.markAllNotificationsAsRead(userId);
       res.json({ success });
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
+      log.error({ error }, "Error marking all notifications as read");
       res
         .status(500)
         .json({ message: "Failed to mark all notifications as read" });
@@ -216,7 +218,7 @@ router.delete("/notifications/:id", requireAuth, async (req: any, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Error deleting notification:", error);
+    log.error({ error }, "Error deleting notification");
     res.status(500).json({ message: "Failed to delete notification" });
   }
 });

@@ -12,6 +12,7 @@ import { authLimiter, signupLimiter } from "../rate-limit";
 import { getLogger } from "../logging/logger";
 
 const router = Router();
+const log = getLogger({ module: 'auth.routes' });
 
 /**
  * Login endpoint
@@ -34,17 +35,12 @@ router.post("/login", authLimiter, async (req, res) => {
     // SECURITY: Regenerate session ID after successful authentication
     req.session.regenerate((err) => {
       if (err) {
-        console.error("Session regeneration error:", err);
+        log.error({ error: err }, "Session regeneration error");
         return res.status(500).json({ message: "Login failed" });
       }
 
       req.session.userId = user.id;
-      console.log(
-        "Login successful for user:",
-        user.id,
-        "New Session ID:",
-        req.sessionID
-      );
+      log.info({ userId: user.id, sessionId: req.sessionID }, "Login successful");
 
       res.json({
         user: {
@@ -55,7 +51,7 @@ router.post("/login", authLimiter, async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("Login error:", error);
+    log.error({ error }, "Login error");
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -64,15 +60,10 @@ router.post("/login", authLimiter, async (req, res) => {
  * Logout endpoint (POST)
  */
 router.post("/logout", (req, res) => {
-  console.log(
-    "POST logout - Session ID:",
-    req.sessionID,
-    "User ID:",
-    req.session.userId
-  );
+  log.debug({ sessionId: req.sessionID, userId: req.session.userId }, "POST logout");
   req.session.destroy((err) => {
     if (err) {
-      console.error("Logout error:", err);
+      log.error({ error: err }, "Logout error");
       return res.status(500).json({ message: "Could not log out" });
     }
     res.clearCookie("connect.sid");
@@ -84,15 +75,10 @@ router.post("/logout", (req, res) => {
  * Logout endpoint (GET) - for redirect compatibility
  */
 router.get("/logout", (req, res) => {
-  console.log(
-    "GET logout - Session ID:",
-    req.sessionID,
-    "User ID:",
-    req.session.userId
-  );
+  log.debug({ sessionId: req.sessionID, userId: req.session.userId }, "GET logout");
   req.session.destroy((err) => {
     if (err) {
-      console.error("Logout error:", err);
+      log.error({ error: err }, "Logout error");
     }
     res.clearCookie("connect.sid");
     res.redirect("/");
@@ -104,7 +90,7 @@ router.get("/logout", (req, res) => {
  */
 router.get("/me", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  console.log("User authenticated:", user.id, "Session ID:", req.sessionID);
+  log.debug({ userId: user.id, sessionId: req.sessionID }, "User authenticated");
   res.json({
     id: user.id,
     username: user.username,
@@ -140,7 +126,7 @@ router.put("/profile", requireAuth, async (req, res) => {
     await storage.updateUser(userId, updateData);
     res.json({ message: "Profile updated successfully" });
   } catch (error) {
-    console.error("Update profile error:", error);
+    log.error({ error }, "Update profile error");
     res.status(500).json({ message: "Failed to update profile" });
   }
 });
@@ -193,7 +179,7 @@ router.post(
       await storage.updateUserPassword(userId, hashedNewPassword);
       res.json({ message: "Password changed successfully" });
     } catch (error) {
-      console.error("Change password error:", error);
+      log.error({ error }, "Change password error");
       res.status(500).json({ message: "Failed to change password" });
     }
   }
@@ -231,7 +217,7 @@ router.get("/account-data", requireAuth, async (req, res) => {
     );
     res.json(accountData);
   } catch (error) {
-    console.error("Download account data error:", error);
+    log.error({ error }, "Download account data error");
     res.status(500).json({ message: "Failed to export account data" });
   }
 });
@@ -250,7 +236,7 @@ router.delete("/account", requireAuth, async (req, res) => {
       // Clear the session after successful deletion
       req.session.destroy((err) => {
         if (err) {
-          console.error("Session clear error after account deletion:", err);
+          log.error({ error: err }, "Session clear error after account deletion");
         }
         res.clearCookie("connect.sid");
         res.json({ message: "Account deleted successfully" });
@@ -259,7 +245,7 @@ router.delete("/account", requireAuth, async (req, res) => {
       res.status(404).json({ message: "User account not found" });
     }
   } catch (error) {
-    console.error("Error deleting user account:", error);
+    log.error({ error }, "Error deleting user account");
     res.status(500).json({ message: "Failed to delete account" });
   }
 });
@@ -303,14 +289,12 @@ router.post("/signup", signupLimiter, async (req, res) => {
           tierId: freeTier.id,
           isActive: true,
         });
-        console.log(`Assigned Free tier to new user ${user.id}`);
+        log.info({ userId: user.id }, "Assigned Free tier to new user");
       } else {
-        console.warn(
-          "Free tier not found - new user will have no tier subscription"
-        );
+        log.warn("Free tier not found - new user will have no tier subscription");
       }
     } catch (tierError) {
-      console.error("Failed to assign Free tier to new user:", tierError);
+      log.error({ error: tierError }, "Failed to assign Free tier to new user");
       // Continue anyway - user is created, they just won't have a tier subscription yet
     }
 
@@ -321,7 +305,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
     );
 
     if (!emailResult.success) {
-      console.error("Failed to send verification email:", emailResult.error);
+      log.error({ error: emailResult.error }, "Failed to send verification email");
     }
 
     res.json({
@@ -332,7 +316,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
       user: { id: user.id, email: user.email },
     });
   } catch (error) {
-    console.error("Signup error:", error);
+    log.error({ error }, "Signup error");
     res.status(400).json({
       success: false,
       message: "Failed to create account",
@@ -382,7 +366,7 @@ router.get("/verify-email", async (req, res) => {
       user: { id: user.id, email: user.email },
     });
   } catch (error) {
-    console.error("Email verification error:", error);
+    log.error({ error }, "Email verification error");
     res.status(400).json({
       success: false,
       message: "Failed to verify email",
@@ -433,7 +417,7 @@ router.post("/resend-verification", async (req, res) => {
     );
 
     if (!emailResult.success) {
-      console.error("Failed to send verification email:", emailResult.error);
+      log.error({ error: emailResult.error }, "Failed to send verification email");
       return res.status(500).json({
         success: false,
         message: "Failed to send verification email",
@@ -445,7 +429,7 @@ router.post("/resend-verification", async (req, res) => {
       message: "Verification email sent successfully",
     });
   } catch (error) {
-    console.error("Resend verification error:", error);
+    log.error({ error }, "Resend verification error");
     res.status(500).json({
       success: false,
       message: "Failed to resend verification email",
@@ -486,7 +470,7 @@ router.post("/complete-profile", async (req, res) => {
         errors: error.errors,
       });
     }
-    console.error("Complete profile error:", error);
+    log.error({ error }, "Complete profile error");
     res.status(500).json({
       success: false,
       message: "Failed to complete profile",

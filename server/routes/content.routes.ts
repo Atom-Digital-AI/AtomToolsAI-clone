@@ -1,127 +1,126 @@
 import { Router } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { z } from "zod";
 import { db } from "../db";
 import { storage } from "../storage";
 import { requireAuth } from "../auth";
 import { generatedContent } from "@shared/schema";
-import { ragService } from "../utils/rag-service";
-import { loggedOpenAICall } from "../utils/ai-logger";
 import {
   executeContentWriterGraph,
   resumeContentWriterGraph,
   getGraphState,
-  updateGraphState,
 } from "../langgraph/content-writer-graph";
+import { validate } from "../middleware/validate";
+import { getLogger } from "../logging/logger";
+import {
+  generatedContentQuerySchema,
+  generatedContentIdSchema,
+  createGeneratedContentSchema,
+  contentFeedbackSchema,
+  langgraphStartSchema,
+  langgraphResumeSchema,
+  threadIdParamsSchema,
+  langgraphThreadsQuerySchema,
+  draftIdParamsSchema,
+} from "../schemas";
 
 const router = Router();
-
-// LangGraph Content Writer API Validation Schemas
-const langgraphStartSchema = z.object({
-  topic: z.string().min(1, "Topic is required"),
-  guidelineProfileId: z.string().optional(),
-  objective: z.string().optional(),
-  targetLength: z.number().optional(),
-  toneOfVoice: z.string().optional(),
-  language: z.string().optional(),
-  internalLinks: z.array(z.string()).optional(),
-  useBrandGuidelines: z.boolean().optional(),
-  selectedTargetAudiences: z
-    .union([z.literal("all"), z.literal("none"), z.array(z.number()), z.null()])
-    .optional(),
-  styleMatchingMethod: z.enum(["continuous", "end-rewrite"]).optional(),
-  matchStyle: z.boolean().optional(),
-});
-
-const langgraphResumeSchema = z.object({
-  selectedConceptId: z.string().optional(),
-  selectedSubtopicIds: z.array(z.string()).optional(),
-});
+const log = getLogger({ module: 'content.routes' });
 
 /**
  * Get generated content for the authenticated user
  */
-router.get("/generated-content", requireAuth, async (req: any, res) => {
-  try {
-    const userId = req.user.id;
-    const toolType = req.query.toolType as string | undefined;
+router.get(
+  "/generated-content",
+  requireAuth,
+  validate({ query: generatedContentQuerySchema }),
+  async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const toolType = req.query.toolType as string | undefined;
 
-    // Build conditions
-    const conditions = [eq(generatedContent.userId, userId)];
-    if (toolType) {
-      conditions.push(eq(generatedContent.toolType, toolType));
+      // Build conditions
+      const conditions = [eq(generatedContent.userId, userId)];
+      if (toolType) {
+        conditions.push(eq(generatedContent.toolType, toolType));
+      }
+
+      const query = db
+        .select()
+        .from(generatedContent)
+        .where(and(...conditions));
+
+      const contents = await query.orderBy(
+        sql`${generatedContent.createdAt} DESC`
+      );
+      res.json(contents);
+    } catch (error) {
+      log.error({ error }, "Error fetching generated content");
+      res.status(500).json({ message: "Failed to fetch generated content" });
     }
-
-    const query = db
-      .select()
-      .from(generatedContent)
-      .where(and(...conditions));
-
-    const contents = await query.orderBy(
-      sql`${generatedContent.createdAt} DESC`
-    );
-    res.json(contents);
-  } catch (error) {
-    console.error("Error fetching generated content:", error);
-    res.status(500).json({ message: "Failed to fetch generated content" });
   }
-});
+);
 
 /**
  * Get single generated content by ID
  */
-router.get("/generated-content/:id", requireAuth, async (req: any, res) => {
-  try {
-    const userId = req.user.id;
-    const { id } = req.params;
+router.get(
+  "/generated-content/:id",
+  requireAuth,
+  validate({ params: generatedContentIdSchema }),
+  async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
 
-    const [content] = await db
-      .select()
-      .from(generatedContent)
-      .where(
-        eq(generatedContent.id, id) && eq(generatedContent.userId, userId)
-      );
+      const [content] = await db
+        .select()
+        .from(generatedContent)
+        .where(
+          eq(generatedContent.id, id) && eq(generatedContent.userId, userId)
+        );
 
-    if (!content) {
-      return res.status(404).json({ message: "Generated content not found" });
+      if (!content) {
+        return res.status(404).json({ message: "Generated content not found" });
+      }
+
+      res.json(content);
+    } catch (error) {
+      log.error({ error }, "Error fetching generated content by ID");
+      res.status(500).json({ message: "Failed to fetch generated content" });
     }
-
-    res.json(content);
-  } catch (error) {
-    console.error("Error fetching generated content:", error);
-    res.status(500).json({ message: "Failed to fetch generated content" });
   }
-});
+);
 
 /**
  * Save generated content
  */
-router.post("/generated-content", requireAuth, async (req: any, res) => {
-  try {
-    const userId = req.user.id;
-    const { toolType, title, inputData, outputData } = req.body;
+router.post(
+  "/generated-content",
+  requireAuth,
+  validate({ body: createGeneratedContentSchema }),
+  async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { toolType, title, inputData, outputData } = req.body;
 
-    if (!toolType || !title || !inputData || !outputData) {
-      return res.status(400).json({ message: "Missing required fields" });
+      const [savedContent] = await db
+        .insert(generatedContent)
+        .values({
+          userId,
+          toolType,
+          title,
+          inputData,
+          outputData,
+        })
+        .returning();
+
+      res.json(savedContent);
+    } catch (error) {
+      log.error({ error }, "Error saving generated content");
+      res.status(500).json({ message: "Failed to save generated content" });
     }
-
-    const [savedContent] = await db
-      .insert(generatedContent)
-      .values({
-        userId,
-        toolType,
-        title,
-        inputData,
-        outputData,
-      })
-      .returning();
-
-    res.json(savedContent);
-  } catch (error) {
-    console.error("Error saving generated content:", error);
-    res.status(500).json({ message: "Failed to save generated content" });
   }
-});
+);
 
 /**
  * Delete generated content
@@ -129,6 +128,7 @@ router.post("/generated-content", requireAuth, async (req: any, res) => {
 router.delete(
   "/generated-content/:id",
   requireAuth,
+  validate({ params: generatedContentIdSchema }),
   async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -152,7 +152,7 @@ router.delete(
 
       res.json({ success: true, message: "Content deleted successfully" });
     } catch (error) {
-      console.error("Error deleting generated content:", error);
+      log.error({ error }, "Error deleting generated content");
       res.status(500).json({ message: "Failed to delete generated content" });
     }
   }
@@ -161,39 +161,40 @@ router.delete(
 /**
  * Save content feedback for AI learning
  */
-router.post("/content-feedback", requireAuth, async (req: any, res) => {
-  try {
-    const userId = req.user.id;
-    const {
-      toolType,
-      rating,
-      feedbackText,
-      inputData,
-      outputData,
-      guidelineProfileId,
-    } = req.body;
+router.post(
+  "/content-feedback",
+  requireAuth,
+  validate({ body: contentFeedbackSchema }),
+  async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const {
+        toolType,
+        rating,
+        feedbackText,
+        inputData,
+        outputData,
+        guidelineProfileId,
+      } = req.body;
 
-    if (!toolType || !rating || !inputData || !outputData) {
-      return res.status(400).json({ message: "Missing required fields" });
+      // Use createOrIncrementFeedback to handle deduplication at brand level
+      const feedback = await storage.createOrIncrementFeedback({
+        userId,
+        toolType,
+        rating,
+        feedbackText: feedbackText || null,
+        inputData,
+        outputData,
+        guidelineProfileId: guidelineProfileId || null,
+      });
+
+      res.json(feedback);
+    } catch (error) {
+      log.error({ error }, "Error saving content feedback");
+      res.status(500).json({ message: "Failed to save feedback" });
     }
-
-    // Use createOrIncrementFeedback to handle deduplication at brand level
-    const feedback = await storage.createOrIncrementFeedback({
-      userId,
-      toolType,
-      rating,
-      feedbackText: feedbackText || null,
-      inputData,
-      outputData,
-      guidelineProfileId: guidelineProfileId || null,
-    });
-
-    res.json(feedback);
-  } catch (error) {
-    console.error("Error saving content feedback:", error);
-    res.status(500).json({ message: "Failed to save feedback" });
   }
-});
+);
 
 /**
  * Get all user's content writer drafts
@@ -204,7 +205,7 @@ router.get("/content-writer/drafts", requireAuth, async (req: any, res) => {
     const drafts = await storage.getUserContentWriterDrafts(userId);
     res.json(drafts);
   } catch (error) {
-    console.error("Error fetching user drafts:", error);
+    log.error({ error }, "Error fetching user drafts");
     res.status(500).json({ message: "Failed to fetch drafts" });
   }
 });
@@ -215,6 +216,7 @@ router.get("/content-writer/drafts", requireAuth, async (req: any, res) => {
 router.delete(
   "/content-writer/drafts/:id",
   requireAuth,
+  validate({ params: draftIdParamsSchema }),
   async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -228,7 +230,7 @@ router.delete(
 
       res.json({ success: true, message: "Draft deleted successfully" });
     } catch (error) {
-      console.error("Error deleting content writer draft:", error);
+      log.error({ error }, "Error deleting content writer draft");
       res.status(500).json({ message: "Failed to delete draft" });
     }
   }
@@ -240,23 +242,13 @@ router.delete(
 router.post(
   "/langgraph/content-writer/start",
   requireAuth,
+  validate({ body: langgraphStartSchema }),
   async (req: any, res) => {
     const startTime = Date.now();
-    console.error("[LangGraph Start] ========== STARTING WORKFLOW ==========");
-    console.error("[LangGraph Start] Request received at:", new Date().toISOString());
+    log.info("Starting LangGraph content-writer workflow");
 
     try {
       const userId = req.user.id;
-
-      // Validate request body with Zod
-      const validationResult = langgraphStartSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          message: "Invalid request body",
-          errors: validationResult.error.errors,
-        });
-      }
-
       const {
         topic,
         guidelineProfileId,
@@ -269,7 +261,7 @@ router.post(
         selectedTargetAudiences,
         styleMatchingMethod,
         matchStyle,
-      } = validationResult.data;
+      } = req.body;
 
       // Create content_writer_session for backward compatibility
       const session = await storage.createContentWriterSession({
@@ -329,7 +321,7 @@ router.post(
       });
 
       const duration = Date.now() - startTime;
-      console.error("[LangGraph Start] Completed in", duration, "ms");
+      log.info({ duration, threadId: result.threadId }, "LangGraph workflow completed");
 
       // Return result
       res.json({
@@ -342,7 +334,7 @@ router.post(
       });
     } catch (error) {
       const duration = Date.now() - startTime;
-      console.error("[LangGraph Start] Error after", duration, "ms:", error);
+      log.error({ error, duration }, "LangGraph workflow failed");
       res.status(500).json({
         message: "Failed to start content writer workflow",
         error: (error as Error).message,
@@ -357,21 +349,12 @@ router.post(
 router.post(
   "/langgraph/content-writer/:threadId/resume",
   requireAuth,
+  validate({ params: threadIdParamsSchema, body: langgraphResumeSchema }),
   async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { threadId } = req.params;
-
-      // Validate request body
-      const validationResult = langgraphResumeSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          message: "Invalid request body",
-          errors: validationResult.error.errors,
-        });
-      }
-
-      const { selectedConceptId, selectedSubtopicIds } = validationResult.data;
+      const { selectedConceptId, selectedSubtopicIds } = req.body;
 
       // Resume workflow with user's selections
       const result = await resumeContentWriterGraph(
@@ -389,7 +372,7 @@ router.post(
         status: result.state.status,
       });
     } catch (error) {
-      console.error("Error resuming LangGraph workflow:", error);
+      log.error({ error }, "Error resuming LangGraph workflow");
       res.status(500).json({
         message: "Failed to resume content writer workflow",
         error: (error as Error).message,
@@ -404,6 +387,7 @@ router.post(
 router.get(
   "/langgraph/content-writer/:threadId/state",
   requireAuth,
+  validate({ params: threadIdParamsSchema }),
   async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -417,7 +401,7 @@ router.get(
 
       res.json({ state });
     } catch (error) {
-      console.error("Error getting LangGraph state:", error);
+      log.error({ error }, "Error getting LangGraph state");
       res.status(500).json({
         message: "Failed to get thread state",
         error: (error as Error).message,
@@ -429,21 +413,26 @@ router.get(
 /**
  * Get user's LangGraph threads
  */
-router.get("/langgraph/threads", requireAuth, async (req: any, res) => {
-  try {
-    const userId = req.user.id;
-    const { sessionId } = req.query;
+router.get(
+  "/langgraph/threads",
+  requireAuth,
+  validate({ query: langgraphThreadsQuerySchema }),
+  async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { sessionId } = req.query;
 
-    const threads = await storage.getUserLanggraphThreads(
-      userId,
-      sessionId as string | undefined
-    );
-    res.json(threads);
-  } catch (error) {
-    console.error("Error fetching LangGraph threads:", error);
-    res.status(500).json({ message: "Failed to fetch threads" });
+      const threads = await storage.getUserLanggraphThreads(
+        userId,
+        sessionId as string | undefined
+      );
+      res.json(threads);
+    } catch (error) {
+      log.error({ error }, "Error fetching LangGraph threads");
+      res.status(500).json({ message: "Failed to fetch threads" });
+    }
   }
-});
+);
 
 /**
  * Delete a LangGraph thread
@@ -451,6 +440,7 @@ router.get("/langgraph/threads", requireAuth, async (req: any, res) => {
 router.delete(
   "/langgraph/threads/:threadId",
   requireAuth,
+  validate({ params: threadIdParamsSchema }),
   async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -469,7 +459,7 @@ router.delete(
 
       res.json({ success: true, message: "Thread deleted successfully" });
     } catch (error) {
-      console.error("Error deleting LangGraph thread:", error);
+      log.error({ error }, "Error deleting LangGraph thread");
       res.status(500).json({ message: "Failed to delete thread" });
     }
   }

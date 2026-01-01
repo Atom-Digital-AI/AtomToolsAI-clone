@@ -8,8 +8,10 @@ import {
   getCrawlJobStatus,
   cancelCrawlJob,
 } from "../crawl-handler";
+import { getLogger } from "../logging/logger";
 
 const router = Router();
+const log = getLogger({ module: 'cms.routes' });
 
 // ============================================================================
 // Crawl Job Routes
@@ -51,7 +53,7 @@ router.post("/crawl/start", requireAuth, async (req: any, res) => {
 
     res.json({ jobId, message: "Crawl job started successfully" });
   } catch (error) {
-    console.error("Error starting crawl job:", error);
+    log.error({ error }, "Error starting crawl job");
     res.status(500).json({ message: "Failed to start crawl job" });
   }
 });
@@ -67,7 +69,7 @@ router.get("/crawl/:jobId/status", requireAuth, async (req: any, res) => {
     const status = await getCrawlJobStatus(jobId, userId);
     res.json(status);
   } catch (error: any) {
-    console.error("Error getting crawl job status:", error);
+    log.error({ error }, "Error getting crawl job status");
     if (error.message === "Crawl job not found") {
       return res.status(404).json({ message: error.message });
     }
@@ -93,7 +95,7 @@ router.post("/crawl/:jobId/cancel", requireAuth, async (req: any, res) => {
       });
     }
   } catch (error) {
-    console.error("Error cancelling crawl job:", error);
+    log.error({ error }, "Error cancelling crawl job");
     res.status(500).json({ message: "Failed to cancel crawl job" });
   }
 });
@@ -133,7 +135,7 @@ router.get("/qc/config", requireAuth, async (req: any, res) => {
       });
     }
   } catch (error) {
-    console.error("Error getting QC configuration:", error);
+    log.error({ error }, "Error getting QC configuration");
     res.status(500).json({ message: "Failed to get QC configuration" });
   }
 });
@@ -187,7 +189,7 @@ router.post("/qc/config", requireAuth, async (req: any, res) => {
 
     res.json(config);
   } catch (error) {
-    console.error("Error saving QC configuration:", error);
+    log.error({ error }, "Error saving QC configuration");
     res.status(500).json({ message: "Failed to save QC configuration" });
   }
 });
@@ -203,7 +205,7 @@ router.get("/qc/reports/:threadId", requireAuth, async (req: any, res) => {
     const reports = await storage.getQCReportsByThread(threadId, userId);
     res.json(reports);
   } catch (error) {
-    console.error("Error getting QC reports:", error);
+    log.error({ error }, "Error getting QC reports");
     res.status(500).json({ message: "Failed to get QC reports" });
   }
 });
@@ -239,7 +241,7 @@ router.post("/qc/decisions", requireAuth, async (req: any, res) => {
 
     res.json(decision);
   } catch (error) {
-    console.error("Error saving QC decision:", error);
+    log.error({ error }, "Error saving QC decision");
     res.status(500).json({ message: "Failed to save QC decision" });
   }
 });
@@ -265,7 +267,7 @@ router.get("/qc/decisions", requireAuth, async (req: any, res) => {
 
     res.json(decisions);
   } catch (error) {
-    console.error("Error getting QC decisions:", error);
+    log.error({ error }, "Error getting QC decisions");
     res.status(500).json({ message: "Failed to get QC decisions" });
   }
 });
@@ -341,7 +343,7 @@ router.get("/crawls/:id/pages", requireAuth, async (req: any, res) => {
       totalPages: Math.ceil(totalCount / pageLimit),
     });
   } catch (error) {
-    console.error("Error getting crawl pages:", error);
+    log.error({ error }, "Error getting crawl pages");
     res.status(500).json({ message: "Failed to get crawl pages" });
   }
 });
@@ -405,7 +407,7 @@ router.patch("/pages/:id/review", requireAuth, async (req: any, res) => {
         errors: error.errors,
       });
     }
-    console.error("Error updating page review:", error);
+    log.error({ error }, "Error updating page review");
     res.status(500).json({ message: "Failed to update page review" });
   }
 });

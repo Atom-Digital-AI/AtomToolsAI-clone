@@ -19,8 +19,8 @@ export async function runRegulatory(state: QCState): Promise<Partial<QCState>> {
   
   try {
     // Get regulatory guidelines
-    let regulatoryGuidelines: string[] = [];
-    let rulesetNames: string[] = [];
+    const regulatoryGuidelines: string[] = [];
+    const rulesetNames: string[] = [];
     
     // If specific rulesets provided, use those
     if (state.regulatoryRulesetIds && state.regulatoryRulesetIds.length > 0) {
