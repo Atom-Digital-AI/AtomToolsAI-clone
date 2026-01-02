@@ -40,14 +40,25 @@ router.post("/login", authLimiter, async (req, res) => {
       }
 
       req.session.userId = user.id;
-      log.info({ userId: user.id, sessionId: req.sessionID }, "Login successful");
 
-      res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-        },
+      // SECURITY: Explicitly save session before responding to prevent race conditions
+      // This ensures the session is persisted to PostgreSQL before the client
+      // makes subsequent authenticated requests
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          log.error({ error: saveErr }, "Session save error");
+          return res.status(500).json({ message: "Login failed" });
+        }
+
+        log.info({ userId: user.id, sessionId: req.sessionID }, "Login successful");
+
+        res.json({
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+          },
+        });
       });
     });
   } catch (error) {
@@ -359,13 +370,38 @@ router.post("/verify-email", async (req, res) => {
     // Verify the user's email
     await storage.verifyUserEmail(user.id);
 
-    // Auto-login after verification
-    req.session.userId = user.id;
+    // SECURITY: Auto-login after verification with proper session regeneration
+    // This prevents session fixation attacks and ensures session is saved
+    req.session.regenerate((err) => {
+      if (err) {
+        log.error({ error: err }, "Session regeneration error during email verification");
+        // Still return success - email is verified, user can login manually
+        return res.json({
+          success: true,
+          message: "Email verified successfully. Please log in.",
+          user: { id: user.id, email: user.email },
+        });
+      }
 
-    res.json({
-      success: true,
-      message: "Email verified successfully",
-      user: { id: user.id, email: user.email },
+      req.session.userId = user.id;
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          log.error({ error: saveErr }, "Session save error during email verification");
+          // Still return success - email is verified, user can login manually
+          return res.json({
+            success: true,
+            message: "Email verified successfully. Please log in.",
+            user: { id: user.id, email: user.email },
+          });
+        }
+
+        res.json({
+          success: true,
+          message: "Email verified successfully",
+          user: { id: user.id, email: user.email },
+        });
+      });
     });
   } catch (error) {
     log.error({ error }, "Email verification error");
@@ -464,6 +500,7 @@ router.post("/resend-verification", async (req, res) => {
 
 /**
  * Complete profile endpoint
+ * Requires authenticated session with verified email
  */
 router.post("/complete-profile", async (req, res) => {
   try {
@@ -480,12 +517,38 @@ router.post("/complete-profile", async (req, res) => {
 
     const userId = req.session.userId;
 
+    // Verify user exists and email is verified
+    const user = await storage.getUser(userId);
+    if (!user) {
+      req.session.userId = undefined;
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Email verification required before completing profile",
+        requiresVerification: true,
+      });
+    }
+
     // Complete the user's profile
     await storage.completeUserProfile(userId, profileData);
 
-    res.json({
-      success: true,
-      message: "Profile completed successfully",
+    // Save session to ensure any updated state is persisted
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        log.error({ error: saveErr }, "Session save error after profile completion");
+        // Still return success - profile is completed
+      }
+
+      res.json({
+        success: true,
+        message: "Profile completed successfully",
+      });
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

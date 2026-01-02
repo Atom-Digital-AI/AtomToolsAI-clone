@@ -14,12 +14,26 @@ declare module "express-session" {
 
 const PgSession = connectPgSimple(session);
 
+// Create session store with error handling
+const sessionStore = new PgSession({
+  pool,
+  tableName: 'sessions',
+  createTableIfMissing: true,
+  // Prune expired sessions every hour
+  pruneSessionInterval: 60 * 60,
+  // Log errors for debugging
+  errorLog: (error: Error) => {
+    console.error('[Session Store Error]', error.message);
+  },
+});
+
+// Handle session store errors to prevent silent failures
+sessionStore.on('error', (error: Error) => {
+  console.error('[Session Store Connection Error]', error.message);
+});
+
 export const sessionMiddleware = session({
-  store: new PgSession({
-    pool,
-    tableName: 'sessions',
-    createTableIfMissing: true,
-  }),
+  store: sessionStore,
   secret: env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
@@ -28,7 +42,10 @@ export const sessionMiddleware = session({
     secure: env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 4 * 60 * 60 * 1000, // 4 hours (reduced from 24 for security)
-    sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    // Use 'lax' instead of 'strict' to allow sessions from email links
+    // 'lax' still protects against CSRF for non-GET requests while allowing
+    // top-level navigation from external sites (email verification, password reset)
+    sameSite: 'lax',
   },
 });
 
