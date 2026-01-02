@@ -7,42 +7,49 @@ import { env } from "./config";
 /**
  * Parse DATABASE_URL manually to handle special characters in passwords.
  * This bypasses URL encoding issues by extracting components directly.
+ * Supports: postgresql:// and postgres:// with optional port
  */
 function parseDatabaseUrl(url: string) {
   if (!url || url === 'postgresql://placeholder') {
     console.warn('DATABASE_URL is placeholder - database connection will fail');
     return null;
   }
-  
-  // Extract components WITHOUT encoding/decoding
-  // Format: postgresql://user:password@host:port/database
-  const match = url.match(/^postgresql?:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+?)(?:\?.*)?$/);
-  
-  if (!match) {
-    console.error('Could not parse DATABASE_URL - invalid format');
-    return null;
+
+  // Try format with explicit port first: postgres(ql)://user:password@host:port/database
+  let match = url.match(/^postgres(?:ql)?:\/\/([^:]+):([^@]+)@([^:/]+):(\d+)\/([^?]+)(?:\?.*)?$/);
+
+  if (match) {
+    const [, user, password, host, port, database] = match;
+    const decodedPassword = decodeURIComponent(password);
+    console.log(`Parsed DATABASE_URL: ${user}@${host}:${port}/${database}`);
+    return {
+      host,
+      port: parseInt(port),
+      user,
+      password: decodedPassword,
+      database,
+    };
   }
-  
-  const [, user, password, host, port, database] = match;
-  
-  // Basic validation
-  if (!host || !port || !user || !password) {
-    console.error('Missing required connection parameters in DATABASE_URL');
-    return null;
+
+  // Try format without port: postgres(ql)://user:password@host/database (default port 5432)
+  match = url.match(/^postgres(?:ql)?:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)(?:\?.*)?$/);
+
+  if (match) {
+    const [, user, password, host, database] = match;
+    const decodedPassword = decodeURIComponent(password);
+    console.log(`Parsed DATABASE_URL: ${user}@${host}:5432/${database} (default port)`);
+    return {
+      host,
+      port: 5432,
+      user,
+      password: decodedPassword,
+      database,
+    };
   }
-  
-  // Decode the password in case it's URL-encoded in the DATABASE_URL
-  const decodedPassword = decodeURIComponent(password);
-  
-  console.log(`Parsed DATABASE_URL: ${user}@${host}:${port}/${database.split('?')[0]}`);
-  
-  return {
-    host,
-    port: parseInt(port),
-    user,
-    password: decodedPassword, // Decode URL-encoded password
-    database: database.split('?')[0], // Remove query params
-  };
+
+  // If neither format matches, log warning and return null (will use connectionString fallback)
+  console.warn('Could not parse DATABASE_URL with regex - falling back to connectionString');
+  return null;
 }
 
 const dbConfig = parseDatabaseUrl(env.DATABASE_URL);
