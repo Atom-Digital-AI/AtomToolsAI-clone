@@ -1,11 +1,7 @@
 import { pool } from "../db";
 import { readdir, readFile } from "fs/promises";
 import { join } from "path";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { existsSync } from "fs";
 
 /**
  * Run all pending SQL migrations on application startup.
@@ -28,7 +24,19 @@ export async function runMigrations(): Promise<void> {
     `);
 
     // Get list of migration files
-    const migrationsDir = join(__dirname, "migrations");
+    // Use process.cwd() to get the project root, which works in both development and production
+    // In production (bundled with esbuild), __dirname points to dist/ but migrations are in server/db/migrations/
+    const projectRoot = process.cwd();
+    let migrationsDir = join(projectRoot, "server/db/migrations");
+
+    // Fallback: check if running from a different working directory
+    if (!existsSync(migrationsDir)) {
+      // Try relative to /app (Railway deployment root)
+      migrationsDir = "/app/server/db/migrations";
+    }
+
+    console.log(`Migrations directory: ${migrationsDir} (exists: ${existsSync(migrationsDir)})`);
+
     let migrationFiles: string[];
 
     try {
