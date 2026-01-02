@@ -19,6 +19,8 @@ import Pricing from "@/pages/pricing";
 import Contact from "@/pages/contact";
 import SignUp from "@/pages/sign-up";
 import Login from "@/pages/login";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import VerifyEmail from "@/pages/verify-email";
 import EmailVerificationSent from "@/pages/email-verification-sent";
 import CompleteProfile from "@/pages/complete-profile";
@@ -87,6 +89,8 @@ export default function App() {
               <Route path="/contact" component={Contact} />
               <Route path="/sign-up" component={SignUp} />
               <Route path="/login" component={Login} />
+              <Route path="/forgot-password" component={ForgotPassword} />
+              <Route path="/reset-password" component={ResetPassword} />
               <Route path="/verify-email" component={VerifyEmail} />
               <Route path="/email-verification-sent" component={() => <EmailVerificationSent email="" />} />
               <Route path="/complete-profile" component={CompleteProfile} />

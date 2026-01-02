@@ -7,7 +7,7 @@ import { storage } from "../storage";
 import { db } from "../db";
 import { users, insertUserSchema, completeProfileSchema } from "@shared/schema";
 import { requireAuth, authenticateUser } from "../auth";
-import { sendVerificationEmail } from "../email";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../email";
 import { authLimiter, signupLimiter } from "../rate-limit";
 import { getLogger } from "../logging/logger";
 
@@ -499,6 +499,171 @@ router.post("/complete-profile", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to complete profile",
+    });
+  }
+});
+
+/**
+ * Request password reset endpoint
+ * Sends a password reset email to the user
+ */
+router.post("/forgot-password", authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await storage.getUserByEmail(email);
+
+    // Always return success to prevent email enumeration attacks
+    // Even if the user doesn't exist, we say we sent an email
+    if (!user) {
+      log.info({ email }, "Password reset requested for non-existent email");
+      return res.json({
+        success: true,
+        message: "If an account with that email exists, a password reset link has been sent.",
+      });
+    }
+
+    // Generate reset token and set expiry (1 hour)
+    const resetToken = nanoid(32);
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await storage.setPasswordResetToken(user.id, resetToken, expiry);
+
+    // Send password reset email
+    const emailResult = await sendPasswordResetEmail(user.email, resetToken);
+
+    if (!emailResult.success) {
+      log.error({ error: emailResult.error }, "Failed to send password reset email");
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send password reset email. Please try again later.",
+      });
+    }
+
+    log.info({ userId: user.id }, "Password reset email sent successfully");
+
+    res.json({
+      success: true,
+      message: "If an account with that email exists, a password reset link has been sent.",
+    });
+  } catch (error) {
+    log.error({ error }, "Forgot password error");
+    res.status(500).json({
+      success: false,
+      message: "Failed to process password reset request",
+    });
+  }
+});
+
+/**
+ * Reset password endpoint (POST)
+ * Resets the password using the token from the email
+ */
+router.post("/reset-password", authLimiter, async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid reset token",
+      });
+    }
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long",
+      });
+    }
+
+    // Find user by reset token
+    const user = await storage.getUserByPasswordResetToken(token);
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    // Check if token has expired
+    if (user.passwordResetTokenExpiry && new Date() > user.passwordResetTokenExpiry) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token has expired. Please request a new password reset.",
+      });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Reset the password and clear the token
+    await storage.resetPassword(user.id, hashedPassword);
+
+    log.info({ userId: user.id }, "Password reset successfully");
+
+    res.json({
+      success: true,
+      message: "Password has been reset successfully. You can now log in with your new password.",
+    });
+  } catch (error) {
+    log.error({ error }, "Reset password error");
+    res.status(500).json({
+      success: false,
+      message: "Failed to reset password",
+    });
+  }
+});
+
+/**
+ * Validate reset token endpoint (GET)
+ * Checks if a reset token is valid before showing the reset form
+ */
+router.get("/validate-reset-token", async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({
+        valid: false,
+        message: "Invalid reset token",
+      });
+    }
+
+    const user = await storage.getUserByPasswordResetToken(token);
+
+    if (!user) {
+      return res.status(400).json({
+        valid: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    // Check if token has expired
+    if (user.passwordResetTokenExpiry && new Date() > user.passwordResetTokenExpiry) {
+      return res.status(400).json({
+        valid: false,
+        message: "Reset token has expired. Please request a new password reset.",
+      });
+    }
+
+    res.json({
+      valid: true,
+      message: "Token is valid",
+    });
+  } catch (error) {
+    log.error({ error }, "Validate reset token error");
+    res.status(500).json({
+      valid: false,
+      message: "Failed to validate reset token",
     });
   }
 });
