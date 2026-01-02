@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
@@ -21,6 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -40,69 +41,97 @@ export default function LoginPage() {
         credentials: "include",
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to login");
       }
-      
+
       return response.json();
     },
     onSuccess: async (data) => {
       console.log("Login successful, user data:", data);
-      
+
+      // Clear any stale auth cache before checking auth state
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+
       // Check if user needs email verification or profile completion
-      try {
-        const authResponse = await fetch("/api/auth/me", {
-          credentials: "include",
-        });
-        
-        if (authResponse.status === 403) {
-          const authData = await authResponse.json();
-          
-          if (authData.requiresVerification) {
-            toast({
-              title: "Email verification required",
-              description: "Please check your email to verify your account.",
-              variant: "destructive",
-            });
-            setTimeout(() => {
-              window.location.href = `/email-verification-sent?email=${encodeURIComponent(data.user.email)}`;
-            }, 1000);
-            return;
+      // Retry logic in case session isn't immediately available
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const authResponse = await fetch("/api/auth/me", {
+            credentials: "include",
+          });
+
+          if (authResponse.status === 403) {
+            const authData = await authResponse.json();
+
+            if (authData.requiresVerification) {
+              toast({
+                title: "Email verification required",
+                description: "Please check your email to verify your account.",
+                variant: "destructive",
+              });
+              setTimeout(() => {
+                window.location.href = `/email-verification-sent?email=${encodeURIComponent(data.user.email)}`;
+              }, 1000);
+              return;
+            }
+
+            if (authData.requiresProfileCompletion) {
+              toast({
+                title: "Profile completion required",
+                description: "Please complete your profile to continue.",
+              });
+              setTimeout(() => {
+                window.location.href = "/complete-profile";
+              }, 500);
+              return;
+            }
           }
-          
-          if (authData.requiresProfileCompletion) {
+
+          if (authResponse.ok) {
             toast({
-              title: "Profile completion required",
-              description: "Please complete your profile to continue.",
+              title: "Welcome back!",
+              description: "You have been successfully logged in.",
             });
             setTimeout(() => {
-              window.location.href = "/complete-profile";
+              window.location.href = "/app";
             }, 500);
             return;
           }
+
+          // If we got a 401, the session might not be ready yet
+          if (authResponse.status === 401 && attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 200 * (attempt + 1)));
+            continue;
+          }
+
+          // Unexpected response, break out of retry loop
+          break;
+        } catch (error) {
+          lastError = error as Error;
+          console.error(`Authentication check attempt ${attempt + 1} failed:`, error);
+
+          // Wait before retrying
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 200 * (attempt + 1)));
+          }
         }
-        
-        if (authResponse.ok) {
-          toast({
-            title: "Welcome back!",
-            description: "You have been successfully logged in.",
-          });
-          setTimeout(() => {
-            window.location.href = "/app";
-          }, 500);
-        }
-      } catch (error) {
-        console.error("Authentication check failed:", error);
-        toast({
-          title: "Login successful",
-          description: "Redirecting...",
-        });
-        setTimeout(() => {
-          window.location.href = "/app";
-        }, 500);
       }
+
+      // If all retries failed but login was successful, redirect anyway
+      console.error("Authentication check failed after retries:", lastError);
+      toast({
+        title: "Login successful",
+        description: "Redirecting...",
+      });
+      setTimeout(() => {
+        window.location.href = "/app";
+      }, 500);
     },
     onError: (error: any) => {
       toast({

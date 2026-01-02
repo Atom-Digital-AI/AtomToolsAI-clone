@@ -3,29 +3,61 @@ import type { User } from "@shared/schema";
 import * as Sentry from "@sentry/react";
 import { useEffect } from "react";
 
+// Response type for auth state including verification/completion requirements
+interface AuthResponse {
+  user: User | null;
+  requiresVerification?: boolean;
+  requiresProfileCompletion?: boolean;
+}
+
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<AuthResponse>({
     queryKey: ["/api/auth/me"],
-    queryFn: async () => {
+    queryFn: async (): Promise<AuthResponse> => {
       const response = await fetch("/api/auth/me", {
         credentials: "include",
       });
+
       if (!response.ok) {
         if (response.status === 401) {
-          return null; // User is not authenticated, return null instead of throwing
+          // User is not authenticated
+          return { user: null };
         }
         if (response.status === 403) {
+          // User is authenticated but needs verification or profile completion
           const errorData = await response.json();
-          // Return special state for email verification or profile completion
-          throw new Error(JSON.stringify(errorData));
+          return {
+            user: null,
+            requiresVerification: errorData.requiresVerification || false,
+            requiresProfileCompletion: errorData.requiresProfileCompletion || false,
+          };
         }
         throw new Error(`${response.status}: ${response.statusText}`);
       }
-      return response.json();
+
+      const user = await response.json();
+      return { user };
     },
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Retry up to 2 times for network errors, but not for auth errors
+      if (error?.message?.startsWith("401") || error?.message?.startsWith("403")) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * (attemptIndex + 1), 3000),
+    // Shorter stale time to catch session changes faster
+    staleTime: 30 * 1000, // 30 seconds
+    // Refetch when window regains focus to catch session expiry
+    refetchOnWindowFocus: true,
+    // Don't refetch on mount if data is fresh
+    refetchOnMount: true,
   });
+
+  // Extract user and flags from response
+  const user = data?.user;
+  const requiresVerification = data?.requiresVerification || false;
+  const requiresProfileCompletion = data?.requiresProfileCompletion || false;
 
   // Set user context in Sentry when user data changes
   useEffect(() => {
@@ -41,26 +73,13 @@ export function useAuth() {
     }
   }, [user, isLoading]);
 
-  // Parse 403 errors to check for specific requirements
-  let requiresVerification = false;
-  let requiresProfileCompletion = false;
-  
-  if (error?.message) {
-    try {
-      const errorData = JSON.parse(error.message);
-      requiresVerification = errorData.requiresVerification;
-      requiresProfileCompletion = errorData.requiresProfileCompletion;
-    } catch {
-      // Not a JSON error, ignore
-    }
-  }
-
   return {
     user: user as User | undefined,
     isLoading,
-    isAuthenticated: !!user && !error,
+    isAuthenticated: !!user && !error && !requiresVerification && !requiresProfileCompletion,
     requiresVerification,
     requiresProfileCompletion,
     error,
+    refetch,
   };
 }
