@@ -20,6 +20,7 @@ import { apiLimiter } from "./rate-limit";
 import { validateAndInitializeLangSmith } from "./utils/langsmith-config";
 import { logger, getLogger } from "./logging/logger";
 import { correlationIdMiddleware, apiKeyAuth, errorHandler } from "./middleware";
+import { runMigrations } from "./db/run-migrations";
 
 const app = express();
 
@@ -162,6 +163,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run database migrations before starting the server
+  try {
+    await runMigrations();
+  } catch (error) {
+    logger.error({ error }, "Failed to run database migrations");
+    // Continue startup - migrations may have already been applied
+  }
+
   // Validate LangSmith configuration during server startup
   await validateAndInitializeLangSmith().catch((error) => {
     logger.error({ error }, "Failed to validate LangSmith configuration");
