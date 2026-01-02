@@ -81,18 +81,27 @@ const ALLOWED_ORIGINS = [
   env.NODE_ENV === "development" ? "http://localhost:5000" : null,
 ].filter(Boolean) as string[];
 
+// Railway domain pattern - allows *.up.railway.app
+const RAILWAY_DOMAIN_PATTERN = /^https:\/\/[\w-]+\.up\.railway\.app$/;
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, Postman, server-to-server)
       if (!origin) return callback(null, true);
 
+      // Allow explicitly configured origins
       if (ALLOWED_ORIGINS.includes(origin)) {
-        callback(null, true);
-      } else {
-        logger.warn({ origin }, 'CORS blocked request from origin');
-        callback(new Error("Not allowed by CORS"));
+        return callback(null, true);
       }
+
+      // Allow Railway domains (production deployments)
+      if (RAILWAY_DOMAIN_PATTERN.test(origin)) {
+        return callback(null, true);
+      }
+
+      logger.warn({ origin }, 'CORS blocked request from origin');
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
