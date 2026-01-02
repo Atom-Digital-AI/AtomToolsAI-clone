@@ -23,7 +23,6 @@ const envSchema = z.object({
   
   // Deployment
   FRONTEND_URL: z.string().url().optional(),
-  REPLIT_DOMAIN: z.string().optional(),
   
   // Database Pool
   DB_POOL_SIZE: z.string().default('10'),

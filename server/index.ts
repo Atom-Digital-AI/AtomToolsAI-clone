@@ -77,7 +77,6 @@ app.use(
 // CORS configuration
 const ALLOWED_ORIGINS = [
   env.FRONTEND_URL,
-  env.REPLIT_DOMAIN ? `https://${env.REPLIT_DOMAIN}` : null,
   env.NODE_ENV === "development" ? "http://localhost:5173" : null,
   env.NODE_ENV === "development" ? "http://localhost:5000" : null,
 ].filter(Boolean) as string[];
