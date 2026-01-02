@@ -325,11 +325,13 @@ router.post("/signup", signupLimiter, async (req, res) => {
 });
 
 /**
- * Email verification endpoint
+ * Email verification endpoint (POST)
+ * Uses POST to prevent email security scanners from consuming tokens
+ * when they pre-fetch links to check for malicious content.
  */
-router.get("/verify-email", async (req, res) => {
+router.post("/verify-email", async (req, res) => {
   try {
-    const { token } = req.query;
+    const { token } = req.body;
 
     if (!token || typeof token !== "string") {
       return res.status(400).json({
@@ -372,6 +374,29 @@ router.get("/verify-email", async (req, res) => {
       message: "Failed to verify email",
     });
   }
+});
+
+/**
+ * Email verification endpoint (GET) - Legacy support
+ * Redirects to the verification page for user interaction
+ */
+router.get("/verify-email", async (req, res) => {
+  const { token } = req.query;
+
+  if (!token || typeof token !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid verification token",
+    });
+  }
+
+  // Redirect to frontend verification page - user must click button to verify
+  // This prevents email security scanners from consuming tokens
+  const baseUrl = process.env.FRONTEND_URL
+    || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null)
+    || '';
+
+  res.redirect(`${baseUrl}/verify-email?token=${encodeURIComponent(token)}`);
 });
 
 /**
