@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import { isSameSite, generateContentHash, normalizeUrlForDedup } from '../../../../../server/utils/url-normalizer';
 import { type DatabaseStorage as DbStorage } from '../../../../../server/storage';
 import type { InsertPage } from '@shared/schema';
+import { ATOMBOT_USER_AGENT } from '../../../../../server/utils/browser-fetcher';
 
 interface CrawledPage {
   url: string;
@@ -394,7 +395,7 @@ async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
   const response = await axios.get(url, {
     timeout: 10000,
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
+      'User-Agent': ATOMBOT_USER_AGENT
     },
     httpsAgent: agent
   });
@@ -525,7 +526,7 @@ async function checkUrlExists(url: string): Promise<boolean> {
     const response = await axios.head(url, {
       timeout: 5000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
+        'User-Agent': ATOMBOT_USER_AGENT
       },
       httpsAgent: agent,
       validateStatus: (status) => status === 200
@@ -847,7 +848,7 @@ export async function extractBlogPostsFromPage(
       const response = await axios.get(currentUrl, {
         timeout: 10000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
+          'User-Agent': ATOMBOT_USER_AGENT
         },
         httpsAgent: agent
       });

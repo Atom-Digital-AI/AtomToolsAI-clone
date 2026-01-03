@@ -3,6 +3,12 @@ import * as cheerio from 'cheerio';
 import { isSameSite, generateContentHash, normalizeUrlForDedup } from './url-normalizer';
 import { type DatabaseStorage as DbStorage } from '../storage';
 import type { InsertPage } from '@shared/schema';
+import {
+  fetchPage as browserFetch,
+  checkUrlExists as browserCheckUrl,
+  fetchCss,
+  ATOMBOT_USER_AGENT
+} from './browser-fetcher';
 
 interface CrawledPage {
   url: string;
@@ -45,7 +51,7 @@ export class BotBlockedError extends Error {
   public readonly userAgent: string;
 
   constructor(url: string, statusCode: number = 403) {
-    const userAgent = 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)';
+    const userAgent = ATOMBOT_USER_AGENT;
     const message = `The website "${new URL(url).hostname}" is blocking our crawler bot (HTTP ${statusCode}). ` +
       `To use the auto-populate feature, please ask the website owner to whitelist our bot.\n\n` +
       `Whitelist information:\n` +
@@ -426,35 +432,48 @@ export async function crawlWebsite(startUrl: string, maxPages: number = 5): Prom
 
 /**
  * Fetches a single page and extracts HTML and CSS
+ * Uses Playwright with stealth mode when available, falls back to enhanced Axios
  */
 async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
-  const https = await import('https');
-  const agent = new https.default.Agent({
-    rejectUnauthorized: false, // Allow self-signed or invalid SSL certificates
-  });
+  let html: string;
+  let statusCode: number;
 
-  let response;
   try {
-    response = await axios.get(url, {
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
-      },
-      httpsAgent: agent
+    // Use the browser fetcher which automatically selects Playwright or Axios
+    const result = await browserFetch(url, {
+      timeout: 30000,
+      useStealthMode: true,
+      referer: domain,
     });
-  } catch (error: any) {
-    // Check if this is a bot blocking error (403 Forbidden or similar)
-    const statusCode = error?.response?.status;
+
+    html = result.html;
+    statusCode = result.statusCode;
+
+    // Check for bot blocking status codes
     if (statusCode === 403 || statusCode === 401 || statusCode === 406) {
       throw new BotBlockedError(url, statusCode);
+    }
+
+    // Check for other errors
+    if (statusCode >= 400) {
+      throw new Error(`HTTP ${statusCode} error fetching ${url}`);
+    }
+  } catch (error: any) {
+    // Re-throw BotBlockedError as-is
+    if (error instanceof BotBlockedError) {
+      throw error;
+    }
+    // Check if this is a bot blocking error from axios
+    const axiosStatusCode = error?.response?.status;
+    if (axiosStatusCode === 403 || axiosStatusCode === 401 || axiosStatusCode === 406) {
+      throw new BotBlockedError(url, axiosStatusCode);
     }
     // Re-throw other errors
     throw error;
   }
 
-  const html = response.data;
   const $ = cheerio.load(html);
-  
+
   // Extract CSS links
   const cssUrls: string[] = [];
   $('link[rel="stylesheet"]').each((_, elem) => {
@@ -465,18 +484,10 @@ async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
     }
   });
 
-  // Fetch CSS content
+  // Fetch CSS content using the browser fetcher
   const cssContents = await Promise.all(
     cssUrls.slice(0, 3).map(async (cssUrl) => {
-      try {
-        const cssResponse = await axios.get(cssUrl, { 
-          timeout: 5000,
-          httpsAgent: agent
-        });
-        return cssResponse.data;
-      } catch {
-        return '';
-      }
+      return await fetchCss(cssUrl, 5000);
     })
   );
 
@@ -569,25 +580,7 @@ function extractUrls(html: string, domain: string, baseUrl: string): string[] {
  * Checks if a URL returns 200 status
  */
 async function checkUrlExists(url: string): Promise<boolean> {
-  try {
-    const https = await import('https');
-    const agent = new https.default.Agent({
-      rejectUnauthorized: false,
-    });
-    
-    const response = await axios.head(url, {
-      timeout: 5000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
-      },
-      httpsAgent: agent,
-      validateStatus: (status) => status === 200
-    });
-    
-    return response.status === 200;
-  } catch {
-    return false;
-  }
+  return await browserCheckUrl(url, 5000);
 }
 
 /**
@@ -892,20 +885,14 @@ export async function extractBlogPostsFromPage(
     console.log(`Extracting blog posts from: ${currentUrl}`);
     
     try {
-      const https = await import('https');
-      const agent = new https.default.Agent({
-        rejectUnauthorized: false,
-      });
-      
-      const response = await axios.get(currentUrl, {
+      // Use browser fetcher with stealth mode for blog post extraction
+      const result = await browserFetch(currentUrl, {
         timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
-        },
-        httpsAgent: agent
+        useStealthMode: true,
+        referer: domain,
       });
-      
-      const $ = cheerio.load(response.data);
+
+      const $ = cheerio.load(result.html);
       
       // Extract all links from the page
       $('a[href]').each((_, elem) => {
