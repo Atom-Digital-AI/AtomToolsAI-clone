@@ -7,6 +7,7 @@ import {
 } from "@shared/schema";
 import { analyzeBrandGuidelines } from "../utils/brand-analyzer";
 import { BotBlockedError } from "../utils/web-crawler";
+import { fetchPage as browserFetch } from "../utils/browser-fetcher";
 import { validate } from "../middleware/validate";
 import { getLogger } from "../logging/logger";
 import {
@@ -455,7 +456,6 @@ router.post(
       // Import utilities
       const { validateAndNormalizeUrl } = await import("../utils/url-validator");
       const { htmlToMarkdown } = await import("../utils/html-to-markdown");
-      const axios = (await import("axios")).default;
 
       // Delete existing context content and embeddings for this profile
       await storage.deleteBrandContextContent(id);
@@ -490,17 +490,15 @@ router.post(
           // Validate URL (security check)
           const validatedUrl = await validateAndNormalizeUrl(url);
 
-          // Fetch page content
-          const response = await axios.get(validatedUrl, {
+          // Fetch page content using browser fetcher with stealth mode
+          const fetchResult = await browserFetch(validatedUrl, {
             timeout: 10000,
-            headers: {
-              "User-Agent": "Mozilla/5.0 (compatible; BrandContextBot/1.0)",
-            },
+            useStealthMode: true,
           });
 
           // Convert HTML to markdown
           const { markdown, title } = htmlToMarkdown(
-            response.data,
+            fetchResult.html,
             validatedUrl
           );
 
