@@ -17,7 +17,7 @@
 -- Core user and contact tables
 ALTER TABLE IF EXISTS users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS contacts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS verification_codes ENABLE ROW LEVEL SECURITY;
+-- Note: verification_codes table removed as it doesn't exist in the schema
 
 -- Product, package, and tier tables
 ALTER TABLE IF EXISTS packages ENABLE ROW LEVEL SECURITY;
@@ -92,7 +92,7 @@ ALTER TABLE IF EXISTS sessions ENABLE ROW LEVEL SECURITY;
 -- User and contact policies
 CREATE POLICY "Service role full access" ON users FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON contacts FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON verification_codes FOR ALL USING (true) WITH CHECK (true);
+-- Note: verification_codes policy removed as the table doesn't exist in the schema
 
 -- Product and tier policies
 CREATE POLICY "Service role full access" ON packages FOR ALL USING (true) WITH CHECK (true);
