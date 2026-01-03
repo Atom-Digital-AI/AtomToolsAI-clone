@@ -6,6 +6,7 @@ import {
   updateGuidelineProfileSchema,
 } from "@shared/schema";
 import { analyzeBrandGuidelines } from "../utils/brand-analyzer";
+import { BotBlockedError } from "../utils/web-crawler";
 import { validate } from "../middleware/validate";
 import { getLogger } from "../logging/logger";
 import {
@@ -168,6 +169,17 @@ router.post(
       res.json(guidelines);
     } catch (error) {
       log.error({ error }, "Error auto-populating brand guidelines");
+
+      // Handle bot blocking errors specifically
+      if (error instanceof BotBlockedError) {
+        return res.status(403).json({
+          message: error.message,
+          errorType: "BOT_BLOCKED",
+          blockedUrl: error.blockedUrl,
+          userAgent: error.userAgent,
+        });
+      }
+
       const errorMessage =
         (error as any)?.message || "Failed to analyze website";
 
