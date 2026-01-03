@@ -172,12 +172,7 @@ router.post(
 
       // Handle bot blocking errors specifically
       if (error instanceof BotBlockedError) {
-        return res.status(403).json({
-          message: error.message,
-          errorType: "BOT_BLOCKED",
-          blockedUrl: error.blockedUrl,
-          userAgent: error.userAgent,
-        });
+        return res.status(403).send(error.message);
       }
 
       const errorMessage =
