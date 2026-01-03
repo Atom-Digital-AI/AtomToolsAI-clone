@@ -153,7 +153,7 @@ function DashboardContent() {
                       </Badge>
                     )}
                   </div>
-                  <Link href="/app/notifications">
+                  <Link href="/app">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -323,7 +323,7 @@ function DashboardContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link href="/brands">
+                <Link href="/app/account">
                   <Button
                     variant="outline"
                     className="w-full"

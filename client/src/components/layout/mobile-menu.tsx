@@ -121,7 +121,7 @@ export default function MobileMenu({ isOpen, onClose, navItems }: MobileMenuProp
             
             {/* User Actions Section */}
             <div className="space-y-3">
-              <Link href="/app/notifications">
+              <Link href="/app">
                 <Button 
                   variant="ghost"
                   className="flex w-full items-center justify-between text-text-secondary hover:text-text-primary"
