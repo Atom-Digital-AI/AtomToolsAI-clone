@@ -3,7 +3,18 @@ import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db";
 import { storage } from "../storage";
 import { requireAuth, requireAdmin } from "../auth";
-import { aiUsageLogs, langgraphThreads } from "@shared/schema";
+import {
+  aiUsageLogs,
+  langgraphThreads,
+  packages,
+  tiers,
+  tierLimits,
+  tierPrices,
+  packageProducts,
+  products,
+  users,
+  userTierSubscriptions,
+} from "@shared/schema";
 import { validate } from "../middleware/validate";
 import { getLogger } from "../logging/logger";
 import {
@@ -13,6 +24,16 @@ import {
   adminLanggraphThreadsQuerySchema,
   threadIdParamsSchema,
 } from "../schemas";
+import { z } from "zod";
+
+// Fixed IDs for Admin package and tier
+const ADMIN_PACKAGE_ID = "admin-package-00000000-0000-0000-0000-000000000001";
+const ADMIN_TIER_ID = "admin-tier-00000000-0000-0000-0000-000000000001";
+
+// Validation schemas
+const grantAdminAccessSchema = z.object({
+  email: z.string().email("Valid email required"),
+});
 
 const router = Router();
 const log = getLogger({ module: 'admin.routes' });
@@ -456,6 +477,307 @@ router.delete(
     } catch (error) {
       log.error({ error }, "Error deleting thread");
       res.status(500).json({ message: "Failed to delete thread" });
+    }
+  }
+);
+
+/**
+ * Setup Admin tier - Creates package, tier, and limits for all products
+ * POST /api/admin/setup-admin-tier
+ */
+router.post(
+  "/setup-admin-tier",
+  requireAuth,
+  requireAdmin,
+  async (req: any, res) => {
+    try {
+      log.info("Setting up Admin tier...");
+
+      // Step 1: Create or update Admin package
+      const [existingPackage] = await db
+        .select()
+        .from(packages)
+        .where(eq(packages.id, ADMIN_PACKAGE_ID));
+
+      if (existingPackage) {
+        await db
+          .update(packages)
+          .set({
+            name: "Admin Package",
+            description: "Full administrative access to all products and features",
+            category: "Admin",
+            isActive: true,
+            updatedAt: new Date(),
+          })
+          .where(eq(packages.id, ADMIN_PACKAGE_ID));
+      } else {
+        await db.insert(packages).values({
+          id: ADMIN_PACKAGE_ID,
+          name: "Admin Package",
+          description: "Full administrative access to all products and features",
+          category: "Admin",
+          version: 1,
+          isActive: true,
+        });
+      }
+
+      // Step 2: Create or update Admin tier
+      const [existingTier] = await db
+        .select()
+        .from(tiers)
+        .where(eq(tiers.id, ADMIN_TIER_ID));
+
+      if (existingTier) {
+        await db
+          .update(tiers)
+          .set({
+            name: "Admin",
+            promotionalTag: "Full Access",
+            sortOrder: 0,
+            isActive: true,
+            updatedAt: new Date(),
+          })
+          .where(eq(tiers.id, ADMIN_TIER_ID));
+      } else {
+        await db.insert(tiers).values({
+          id: ADMIN_TIER_ID,
+          packageId: ADMIN_PACKAGE_ID,
+          name: "Admin",
+          promotionalTag: "Full Access",
+          sortOrder: 0,
+          isActive: true,
+        });
+      }
+
+      // Step 3: Create tier price (free for admin)
+      const [existingPrice] = await db
+        .select()
+        .from(tierPrices)
+        .where(eq(tierPrices.tierId, ADMIN_TIER_ID));
+
+      if (!existingPrice) {
+        await db.insert(tierPrices).values({
+          tierId: ADMIN_TIER_ID,
+          interval: "lifetime",
+          amountMinor: 0,
+          currency: "GBP",
+        });
+      }
+
+      // Step 4: Create tier limits for all products
+      const allProducts = await db.select().from(products);
+      const allSubfeatures = {
+        bulk: true,
+        variations: true,
+        brand_guidelines: true,
+        platforms: ["Facebook", "Instagram", "TikTok", "X", "YouTube", "LinkedIn", "Pinterest"],
+        max_formats_per_platform: null,
+      };
+
+      for (const product of allProducts) {
+        const [existingLimit] = await db
+          .select()
+          .from(tierLimits)
+          .where(
+            and(
+              eq(tierLimits.tierId, ADMIN_TIER_ID),
+              eq(tierLimits.productId, product.id)
+            )
+          );
+
+        if (existingLimit) {
+          await db
+            .update(tierLimits)
+            .set({
+              includedInTier: true,
+              periodicity: "lifetime",
+              quantity: null,
+              subfeatures: allSubfeatures,
+            })
+            .where(eq(tierLimits.id, existingLimit.id));
+        } else {
+          await db.insert(tierLimits).values({
+            tierId: ADMIN_TIER_ID,
+            productId: product.id,
+            includedInTier: true,
+            periodicity: "lifetime",
+            quantity: null,
+            subfeatures: allSubfeatures,
+          });
+        }
+
+        // Link product to package
+        const [existingLink] = await db
+          .select()
+          .from(packageProducts)
+          .where(
+            and(
+              eq(packageProducts.packageId, ADMIN_PACKAGE_ID),
+              eq(packageProducts.productId, product.id)
+            )
+          );
+
+        if (!existingLink) {
+          await db.insert(packageProducts).values({
+            packageId: ADMIN_PACKAGE_ID,
+            productId: product.id,
+          });
+        }
+      }
+
+      log.info({ productCount: allProducts.length }, "Admin tier setup complete");
+      res.json({
+        success: true,
+        message: "Admin tier setup complete",
+        tierId: ADMIN_TIER_ID,
+        productCount: allProducts.length,
+      });
+    } catch (error) {
+      log.error({ error }, "Error setting up Admin tier");
+      res.status(500).json({ message: "Failed to setup Admin tier" });
+    }
+  }
+);
+
+/**
+ * Grant Admin tier access to a user by email
+ * POST /api/admin/grant-admin-access
+ */
+router.post(
+  "/grant-admin-access",
+  requireAuth,
+  requireAdmin,
+  validate({ body: grantAdminAccessSchema }),
+  async (req: any, res) => {
+    try {
+      const { email } = req.body;
+
+      // Check if Admin tier exists
+      const [tier] = await db
+        .select()
+        .from(tiers)
+        .where(eq(tiers.id, ADMIN_TIER_ID));
+
+      if (!tier) {
+        return res.status(400).json({
+          message: "Admin tier not found. Please run setup-admin-tier first.",
+        });
+      }
+
+      // Find user by email
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email));
+
+      if (!user) {
+        return res.status(404).json({ message: `User not found: ${email}` });
+      }
+
+      // Check if already subscribed
+      const [existingSub] = await db
+        .select()
+        .from(userTierSubscriptions)
+        .where(
+          and(
+            eq(userTierSubscriptions.userId, user.id),
+            eq(userTierSubscriptions.tierId, ADMIN_TIER_ID)
+          )
+        );
+
+      if (existingSub) {
+        // Reactivate if deactivated
+        await db
+          .update(userTierSubscriptions)
+          .set({
+            isActive: true,
+            expiresAt: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(userTierSubscriptions.id, existingSub.id));
+      } else {
+        await db.insert(userTierSubscriptions).values({
+          userId: user.id,
+          tierId: ADMIN_TIER_ID,
+          subscribedAt: new Date(),
+          expiresAt: null,
+          isActive: true,
+          paymentReference: "ADMIN_GRANT",
+          currentUsage: {},
+          lastResetAt: new Date(),
+        });
+      }
+
+      // Also ensure user has isAdmin flag set
+      if (!user.isAdmin) {
+        await db
+          .update(users)
+          .set({ isAdmin: true, updatedAt: new Date() })
+          .where(eq(users.id, user.id));
+      }
+
+      log.info({ email, userId: user.id }, "Admin tier access granted");
+      res.json({
+        success: true,
+        message: `Admin tier access granted to ${email}`,
+        userId: user.id,
+      });
+    } catch (error) {
+      log.error({ error }, "Error granting Admin tier access");
+      res.status(500).json({ message: "Failed to grant Admin tier access" });
+    }
+  }
+);
+
+/**
+ * Get Admin tier info
+ * GET /api/admin/admin-tier-info
+ */
+router.get(
+  "/admin-tier-info",
+  requireAuth,
+  requireAdmin,
+  async (req: any, res) => {
+    try {
+      const [tier] = await db
+        .select()
+        .from(tiers)
+        .where(eq(tiers.id, ADMIN_TIER_ID));
+
+      if (!tier) {
+        return res.json({
+          exists: false,
+          message: "Admin tier not set up. Use POST /api/admin/setup-admin-tier to create it.",
+        });
+      }
+
+      // Get subscribers count
+      const subscribers = await db
+        .select()
+        .from(userTierSubscriptions)
+        .where(
+          and(
+            eq(userTierSubscriptions.tierId, ADMIN_TIER_ID),
+            eq(userTierSubscriptions.isActive, true)
+          )
+        );
+
+      // Get tier limits
+      const limits = await db
+        .select()
+        .from(tierLimits)
+        .where(eq(tierLimits.tierId, ADMIN_TIER_ID));
+
+      res.json({
+        exists: true,
+        tierId: ADMIN_TIER_ID,
+        tierName: tier.name,
+        subscriberCount: subscribers.length,
+        productCount: limits.length,
+      });
+    } catch (error) {
+      log.error({ error }, "Error fetching Admin tier info");
+      res.status(500).json({ message: "Failed to fetch Admin tier info" });
     }
   }
 );
