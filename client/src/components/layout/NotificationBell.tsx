@@ -173,7 +173,7 @@ export default function NotificationBell() {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/app/notifications" data-testid="link-view-all-notifications">
+              <Link href="/app" data-testid="link-view-all-notifications">
                 <span className="w-full text-center text-sm">View all notifications</span>
               </Link>
             </DropdownMenuItem>
