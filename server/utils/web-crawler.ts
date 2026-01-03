@@ -37,6 +37,30 @@ interface CategorizedPagesWithCache extends CategorizedPages {
 }
 
 /**
+ * Custom error for when a website blocks our crawler bot
+ */
+export class BotBlockedError extends Error {
+  public readonly statusCode: number;
+  public readonly blockedUrl: string;
+  public readonly userAgent: string;
+
+  constructor(url: string, statusCode: number = 403) {
+    const userAgent = 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)';
+    const message = `The website "${new URL(url).hostname}" is blocking our crawler bot (HTTP ${statusCode}). ` +
+      `To use the auto-populate feature, please ask the website owner to whitelist our bot.\n\n` +
+      `Whitelist information:\n` +
+      `• User-Agent: ${userAgent}\n` +
+      `• Alternatively, you can manually enter your brand guidelines or upload a PDF.`;
+
+    super(message);
+    this.name = 'BotBlockedError';
+    this.statusCode = statusCode;
+    this.blockedUrl = url;
+    this.userAgent = userAgent;
+  }
+}
+
+/**
  * Checks if all required fields are populated
  */
 function checkAllFieldsFound(categorized: CategorizedPages): boolean {
@@ -321,7 +345,16 @@ export async function crawlWebsiteWithEarlyExit(
         }
       }
     } catch (error) {
-      console.error(`Error crawling ${currentUrl}:`, error);
+      // If the main URL (first URL) is blocked, propagate the error immediately
+      if (error instanceof BotBlockedError && crawledPages.length === 0) {
+        throw error;
+      }
+      // For other errors or subsequent pages, log and continue
+      if (error instanceof BotBlockedError) {
+        console.warn(`Bot blocked on ${currentUrl}: ${error.message}`);
+      } else {
+        console.error(`Error crawling ${currentUrl}:`, error);
+      }
       // Continue with next URL
     }
   }
@@ -368,7 +401,16 @@ export async function crawlWebsite(startUrl: string, maxPages: number = 5): Prom
         }
       }
     } catch (error) {
-      console.error(`Error crawling ${currentUrl}:`, error);
+      // If the main URL (first URL) is blocked, propagate the error immediately
+      if (error instanceof BotBlockedError && crawledPages.length === 0) {
+        throw error;
+      }
+      // For other errors or subsequent pages, log and continue
+      if (error instanceof BotBlockedError) {
+        console.warn(`Bot blocked on ${currentUrl}: ${error.message}`);
+      } else {
+        console.error(`Error crawling ${currentUrl}:`, error);
+      }
       // Continue with next URL
     }
   }
@@ -390,14 +432,25 @@ async function fetchPage(url: string, domain: string): Promise<CrawledPage> {
   const agent = new https.default.Agent({
     rejectUnauthorized: false, // Allow self-signed or invalid SSL certificates
   });
-  
-  const response = await axios.get(url, {
-    timeout: 10000,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
-    },
-    httpsAgent: agent
-  });
+
+  let response;
+  try {
+    response = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; BrandGuidelineBot/1.0)'
+      },
+      httpsAgent: agent
+    });
+  } catch (error: any) {
+    // Check if this is a bot blocking error (403 Forbidden or similar)
+    const statusCode = error?.response?.status;
+    if (statusCode === 403 || statusCode === 401 || statusCode === 406) {
+      throw new BotBlockedError(url, statusCode);
+    }
+    // Re-throw other errors
+    throw error;
+  }
 
   const html = response.data;
   const $ = cheerio.load(html);
