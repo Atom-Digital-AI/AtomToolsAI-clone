@@ -12,7 +12,15 @@ export default defineConfig({
       'client/**/*.test.ts',
       'client/**/*.test.tsx',
     ],
-    exclude: ['node_modules/**', 'dist/**'],
+    exclude: [
+      'node_modules/**',
+      'dist/**',
+      // Exclude standalone test scripts that use process.exit()
+      'server/__tests__/ad-spec-validator.test.ts',
+      'server/__tests__/social-content-types.test.ts',
+      // Exclude API tests that use node:test instead of vitest
+      'server/__tests__/api/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
